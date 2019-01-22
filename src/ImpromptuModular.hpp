@@ -280,6 +280,12 @@ struct InvisibleKeySmall : MomentarySwitch {
 	void onMouseUp(EventMouseUp &e) override;
 };
 
+struct LEDButtonWithRClick : LEDButton {// with right click that sets value to 2.0 instead of 1.0
+	void onMouseDown(EventMouseDown &e) override;
+	void onMouseUp(EventMouseUp &e) override;
+};
+
+
 struct ScrewSilverRandomRot : FramebufferWidget {// location: include/app.hpp and src/app/SVGScrew.cpp [some code also from src/app/SVGKnob.cpp]
 	SVGWidget *sw;
 	TransformWidget *tw;

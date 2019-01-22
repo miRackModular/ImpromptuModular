@@ -719,7 +719,11 @@ struct GateSeq64 : Module {
 					else if (displayState == DISP_MODES) {
 					}
 					else {
-						if (!getGate(sequence, stepPressed)) {// clicked inactive, so turn gate on
+						if (params[STEP_PARAMS + stepPressed].value > 1.5f) {// right button click
+							setGate(sequence, stepPressed, false);
+							displayProbInfo = 0l;
+						}
+						else if (!getGate(sequence, stepPressed)) {// clicked inactive, so turn gate on
 							setGate(sequence, stepPressed, true);
 							if (getGateP(sequence, stepPressed))
 								displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
@@ -1349,7 +1353,7 @@ struct GateSeq64Widget : ModuleWidget {
 		for (int y = 0; y < 4; y++) {
 			int posX = colRulerSteps;
 			for (int x = 0; x < 16; x++) {
-				addParam(createParam<LEDButton>(Vec(posX, rowRuler0 + 8 + y * spacingRows - 4.4f), module, GateSeq64::STEP_PARAMS + y * 16 + x, 0.0f, 1.0f, 0.0f));
+				addParam(createParam<LEDButtonWithRClick>(Vec(posX, rowRuler0 + 8 + y * spacingRows - 4.4f), module, GateSeq64::STEP_PARAMS + y * 16 + x, 0.0f, 1.0f, 0.0f));
 				addChild(createLight<MediumLight<GreenRedLight>>(Vec(posX + 4.4f, rowRuler0 + 8 + y * spacingRows), module, GateSeq64::STEP_LIGHTS + (y * 16 + x) * 2));
 				posX += spacingSteps;
 				if ((x + 1) % 4 == 0)
@@ -1455,6 +1459,9 @@ struct GateSeq64Widget : ModuleWidget {
 Model *modelGateSeq64 = Model::create<GateSeq64, GateSeq64Widget>("Impromptu Modular", "Gate-Seq-64", "SEQ - Gate-Seq-64", SEQUENCER_TAG);
 
 /*CHANGE LOG
+
+0.6.14:
+add right click steps to turn them off
 
 0.6.13:
 fix run mode bug (history not reset when hard reset)
