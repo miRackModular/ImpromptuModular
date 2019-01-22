@@ -5,6 +5,43 @@
 
 #include "PhraseSeqUtil.hpp"
 
+static const uint32_t advGateHitMask[NUM_GATES] = 
+{0x00003F, 0x0F0F0F, 0x000FFF, 0x0F0F00, 0x03FFFF, 0xFFFFFF, 0x00000F, 0x03F03F, 0x000F00, 0x03F000, 0x0F0000, 0};
+//	  25%		TRI		  50%		T23		  75%		FUL		  TR1 		DUO		  TR2 	     D2		  TR3  TRIG		
+
+
+int getAdvGate(int ppqnCount, int pulsesPerStep, int gateMode) { 
+	if (gateMode == 11)
+		return ppqnCount == 0 ? 3 : 0;
+	uint32_t shiftAmt = ppqnCount * (24 / pulsesPerStep);
+	return (int)((advGateHitMask[gateMode] >> shiftAmt) & (uint32_t)0x1);
+}
+
+int calcGate1Code(StepAttributes attribute, int ppqnCount, int pulsesPerStep, float randKnob) {
+	// -1 = gate off for whole step, 0 = gate off for current ppqn, 1 = gate on, 2 = clock high, 3 = trigger
+	if (ppqnCount == 0 && attribute.getGate1P() && !(randomUniform() < randKnob))// randomUniform is [0.0, 1.0), see include/util/common.hpp
+		return -1;// must do this first in this method since it will kill rest of step if prob turns off the step
+	if (!attribute.getGate1())
+		return 0;
+	int gateType = attribute.getGate1Mode();
+	if (pulsesPerStep == 1 && gateType == 0)
+		return 2;// clock high
+	if (gateType == 11)
+		return (ppqnCount == 0 ? 3 : 0);
+	return getAdvGate(ppqnCount, pulsesPerStep, gateType);
+}
+
+int calcGate2Code(StepAttributes attribute, int ppqnCount, int pulsesPerStep) {
+	// 0 = gate off, 1 = clock high, 2 = trigger, 3 = gate on
+	if (!attribute.getGate2())
+		return 0;
+	int gateType = attribute.getGate2Mode();
+	if (pulsesPerStep == 1 && gateType == 0)
+		return 2;// clock high
+	if (gateType == 11)
+		return (ppqnCount == 0 ? 3 : 0);
+	return getAdvGate(ppqnCount, pulsesPerStep, gateType);
+}
 
 bool moveIndexRunMode(int* index, int numSteps, int runMode, unsigned long* history) {// some of this code if from PS32EX)
 	int reps = 1;

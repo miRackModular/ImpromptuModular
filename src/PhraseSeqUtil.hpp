@@ -12,10 +12,10 @@ using namespace rack;
 enum RunModeIds {MODE_FWD, MODE_REV, MODE_PPG, MODE_PEN, MODE_BRN, MODE_RND, MODE_FW2, MODE_FW3, MODE_FW4, MODE_RN2, NUM_MODES};
 static const std::string modeLabels[NUM_MODES] = {"FWD","REV","PPG","PEN","BRN","RND","FW2","FW3","FW4","RN2"};// PS16 and SMS16 use NUM_MODES - 1 since no RN2!!!
 
-static const int NUM_GATES = 12;												
-static const uint32_t advGateHitMask[NUM_GATES] = 
-{0x00003F, 0x0F0F0F, 0x000FFF, 0x0F0F00, 0x03FFFF, 0xFFFFFF, 0x00000F, 0x03F03F, 0x000F00, 0x03F000, 0x0F0000, 0};
-//	  25%		TRI		  50%		T23		  75%		FUL		  TR1 		DUO		  TR2 	     D2		  TR3  TRIG		
+static const int NUM_GATES = 12;// advanced gate types												
+
+
+//*****************************************************************************
 
 
 class StepAttributes {
@@ -66,7 +66,63 @@ class StepAttributes {
 	inline void toggleGate2() {attributes ^= ATT_MSK_GATE2;}
 	inline void toggleSlide() {attributes ^= ATT_MSK_SLIDE;}
 };// class StepAttributes
-			
+		
+
+
+//*****************************************************************************
+
+
+class SeqAttributes {
+	unsigned long attributes;
+	
+	public:
+
+	static const unsigned long SEQ_MSK_LENGTH  =   0x000000FF;// number of steps in each sequence, min value is 1
+	static const unsigned long SEQ_MSK_RUNMODE =   0x0000FF00, runModeShift = 8;
+	static const unsigned long SEQ_MSK_TRANSPOSE = 0x007F0000, transposeShift = 16;
+	static const unsigned long SEQ_MSK_TRANSIGN =  0x00800000;// manually implement sign bit
+	static const unsigned long SEQ_MSK_ROTATE =    0x7F000000, rotateShift = 24;
+	static const unsigned long SEQ_MSK_ROTSIGN =   0x80000000;// manually implement sign bit (+ is right, - is left)
+	
+	inline void init(int length, int runMode) {attributes = ((length) | (((unsigned long)runMode) << runModeShift));}
+	inline void randomize(int maxSteps, int numModes) {attributes = ( (1 + (randomu32() % maxSteps)) | (((unsigned long)(randomu32() % numModes) << runModeShift)) );}
+	
+	inline int getLength() {return (int)(attributes & SEQ_MSK_LENGTH);}
+	inline int getRunMode() {return (int)((attributes & SEQ_MSK_RUNMODE) >> runModeShift);}
+	inline int getTranspose() {
+		int ret = (int)((attributes & SEQ_MSK_TRANSPOSE) >> transposeShift);
+		if ( (attributes & SEQ_MSK_TRANSIGN) != 0)// if negative
+			ret *= -1;
+		return ret;
+	}
+	inline int getRotate() {
+		int ret = (int)((attributes & SEQ_MSK_ROTATE) >> rotateShift);
+		if ( (attributes & SEQ_MSK_ROTSIGN) != 0)// if negative
+			ret *= -1;
+		return ret;
+	}
+	inline unsigned long getSeqAttrib() {return attributes;}
+	
+	inline void setLength(int length) {attributes &= ~SEQ_MSK_LENGTH; attributes |= ((unsigned long)length);}
+	inline void setRunMode(int runMode) {attributes &= ~SEQ_MSK_RUNMODE; attributes |= (((unsigned long)runMode) << runModeShift);}
+	inline void setTranspose(int transp) {
+		attributes &= ~ (SEQ_MSK_TRANSPOSE | SEQ_MSK_TRANSIGN); 
+		attributes |= (((unsigned long)abs(transp)) << transposeShift);
+		if (transp < 0) 
+			attributes |= SEQ_MSK_TRANSIGN;
+	}
+	inline void setRotate(int rotn) {
+		attributes &= ~ (SEQ_MSK_ROTATE | SEQ_MSK_ROTSIGN); 
+		attributes |= (((unsigned long)abs(rotn)) << rotateShift);
+		if (rotn < 0) 
+			attributes |= SEQ_MSK_ROTSIGN;
+	}
+	inline void setSeqAttrib(unsigned long _attributes) {attributes = _attributes;}
+};// class SeqAttributes
+
+
+//*****************************************************************************
+		
 
 inline int ppsToIndex(int pulsesPerStep) {// map 1,2,4,6,8,10,12...24, to 0,1,2,3,4,5,6...12
 	if (pulsesPerStep == 1) return 0;
@@ -91,38 +147,6 @@ inline bool calcGate(int gateCode, SchmittTrigger clockTrigger, unsigned long cl
 	return clockStep < (unsigned long) (sampleRate * 0.01f);
 }
 
-inline int getAdvGate(int ppqnCount, int pulsesPerStep, int gateMode) { 
-	if (gateMode == 11)
-		return ppqnCount == 0 ? 3 : 0;
-	uint32_t shiftAmt = ppqnCount * (24 / pulsesPerStep);
-	return (int)((advGateHitMask[gateMode] >> shiftAmt) & (uint32_t)0x1);
-}
-
-inline int calcGate1Code(StepAttributes attribute, int ppqnCount, int pulsesPerStep, float randKnob) {
-	// -1 = gate off for whole step, 0 = gate off for current ppqn, 1 = gate on, 2 = clock high, 3 = trigger
-	if (ppqnCount == 0 && attribute.getGate1P() && !(randomUniform() < randKnob))// randomUniform is [0.0, 1.0), see include/util/common.hpp
-		return -1;// must do this first in this method since it will kill rest of step if prob turns off the step
-	if (!attribute.getGate1())
-		return 0;
-	int gateType = attribute.getGate1Mode();
-	if (pulsesPerStep == 1 && gateType == 0)
-		return 2;// clock high
-	if (gateType == 11)
-		return (ppqnCount == 0 ? 3 : 0);
-	return getAdvGate(ppqnCount, pulsesPerStep, gateType);
-}
-inline int calcGate2Code(StepAttributes attribute, int ppqnCount, int pulsesPerStep) {
-	// 0 = gate off, 1 = clock high, 2 = trigger, 3 = gate on
-	if (!attribute.getGate2())
-		return 0;
-	int gateType = attribute.getGate2Mode();
-	if (pulsesPerStep == 1 && gateType == 0)
-		return 2;// clock high
-	if (gateType == 11)
-		return (ppqnCount == 0 ? 3 : 0);
-	return getAdvGate(ppqnCount, pulsesPerStep, gateType);
-}
-
 inline int gateModeToKeyLightIndex(StepAttributes attribute, bool isGate1) {// keyLight index now matches gate modes, so no mapping table needed anymore
 	return isGate1 ? attribute.getGate1Mode() : attribute.getGate2Mode();
 }
@@ -130,7 +154,10 @@ inline int gateModeToKeyLightIndex(StepAttributes attribute, bool isGate1) {// k
 
 
 // Other methods (code in PhraseSeqUtil.cpp)	
-												
+
+int getAdvGate(int ppqnCount, int pulsesPerStep, int gateMode);
+int calcGate1Code(StepAttributes attribute, int ppqnCount, int pulsesPerStep, float randKnob);
+int calcGate2Code(StepAttributes attribute, int ppqnCount, int pulsesPerStep);
 bool moveIndexRunMode(int* index, int numSteps, int runMode, unsigned long* history);
 int keyIndexToGateMode(int keyIndex, int pulsesPerStep);
 

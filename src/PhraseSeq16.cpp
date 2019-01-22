@@ -250,6 +250,7 @@ struct PhraseSeq16 : Module {
 			runModeSeq[i] = randomu32() % (NUM_MODES - 1);
 			phrase[i] = randomu32() % 16;
 			lengths[i] = 1 + (randomu32() % 16);
+			transposeOffsets[i] = 0;
 			for (int s = 0; s < 16; s++) {
 				cv[i][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
 				attributes[i][s].randomize();
