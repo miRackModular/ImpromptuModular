@@ -94,10 +94,12 @@ class SeqAttributes {
 	
 	public:
 
-	static const unsigned long SEQ_MSK_LENGTH  =   0x0000FF;// number of steps in each sequence, min value is 1
-	static const unsigned long SEQ_MSK_RUNMODE =   0x00FF00, runModeShift = 8;
-	static const unsigned long SEQ_MSK_TRANSPOSE = 0x7F0000, transposeShift = 16;
-	static const unsigned long SEQ_MSK_TRANSIGN  = 0x800000;// manually implement sign bit
+	static const unsigned long SEQ_MSK_LENGTH  =   0x000000FF;// number of steps in each sequence, min value is 1
+	static const unsigned long SEQ_MSK_RUNMODE =   0x0000FF00, runModeShift = 8;
+	static const unsigned long SEQ_MSK_TRANSPOSE = 0x007F0000, transposeShift = 16;
+	static const unsigned long SEQ_MSK_TRANSIGN =  0x00800000;// manually implement sign bit
+	static const unsigned long SEQ_MSK_ROTATE =    0x7F000000, rotateShift = 24;
+	static const unsigned long SEQ_MSK_ROTSIGN =   0x80000000;// manually implement sign bit (+ is right, - is left)
 	
 	inline void init(int length, int runMode) {attributes = ((length) | (((unsigned long)runMode) << runModeShift));}
 	inline void randomize(int maxSteps, int numModes) {attributes = ( (1 + (randomu32() % maxSteps)) | (((unsigned long)(randomu32() % numModes) << runModeShift)) );}
@@ -110,6 +112,12 @@ class SeqAttributes {
 			ret *= -1;
 		return ret;
 	}
+	inline int getRotate() {
+		int ret = (int)((attributes & SEQ_MSK_ROTATE) >> rotateShift);
+		if ( (attributes & SEQ_MSK_ROTSIGN) != 0)// if negative
+			ret *= -1;
+		return ret;
+	}
 	inline unsigned long getSeqAttrib() {return attributes;}
 	
 	inline void setLength(int length) {attributes &= ~SEQ_MSK_LENGTH; attributes |= ((unsigned long)length);}
@@ -119,6 +127,12 @@ class SeqAttributes {
 		attributes |= (((unsigned long)abs(transp)) << transposeShift);
 		if (transp < 0) 
 			attributes |= SEQ_MSK_TRANSIGN;
+	}
+	inline void setRotate(int rotn) {
+		attributes &= ~ (SEQ_MSK_ROTATE | SEQ_MSK_ROTSIGN); 
+		attributes |= (((unsigned long)abs(rotn)) << rotateShift);
+		if (rotn < 0) 
+			attributes |= SEQ_MSK_ROTSIGN;
 	}
 	inline void setSeqAttrib(unsigned long _attributes) {attributes = _attributes;}
 };// class SeqAttributes
@@ -206,6 +220,7 @@ class SequencerKernel {
 	inline int getPulsesPerStep() {return (pulsesPerStep > 2 ? ((pulsesPerStep - 1) << 1) : pulsesPerStep);}
 	inline int getDelay() {return delay;}
 	inline int getTransposeOffset(int seqn) {return sequences[seqn].getTranspose();}
+	inline int getRotateOffset(int seqn) {return sequences[seqn].getRotate();}
 	inline int getStepIndexRun() {return stepIndexRun;}
 	inline int getPhraseIndexRun() {return phraseIndexRun;}
 	inline float getCV(int seqn, int stepn) {return cv[seqn][stepn];}
@@ -366,7 +381,10 @@ class SequencerKernel {
 	void unTransposeSeq(int seqn) {
 		transposeSeq(seqn, getTransposeOffset(seqn) * -1);
 	}
-	void rotateSeq(int* rotateOffset, int seqn, int delta);	
+	void rotateSeq(int seqn, int delta);	
+	void unRotateSeq(int seqn) {
+		rotateSeq(seqn, getRotateOffset(seqn) * -1);
+	}
 
 	
 	private:
@@ -476,6 +494,7 @@ class Sequencer {
 	inline int getBegin() {return sek[trackIndexEdit].getBegin();}
 	inline int getEnd() {return sek[trackIndexEdit].getEnd();}
 	inline int getTransposeOffset() {return sek[trackIndexEdit].getTransposeOffset(seqIndexEdit);}
+	inline int getRotateOffset() {return sek[trackIndexEdit].getRotateOffset(seqIndexEdit);}
 	inline int getPhraseSeq() {return sek[trackIndexEdit].getPhraseSeq(phraseIndexEdit);}
 	
 	
@@ -556,7 +575,8 @@ class Sequencer {
 	void modPhraseSeqNum(int deltaSeqKnob, bool multiTracks);
 	void transposeSeq(int deltaSeqKnob, bool multiTracks);
 	void unTransposeSeq(bool multiTracks);
-	void rotateSeq(int *rotateOffsetPtr, int deltaSeqKnob, bool multiTracks);
+	void rotateSeq(int deltaSeqKnob, bool multiTracks);
+	void unRotateSeq(bool multiTracks);
 
 	void toggleGate(int multiSteps, bool multiTracks);
 	bool toggleGateP(int multiSteps, bool multiTracks); // returns true if tied

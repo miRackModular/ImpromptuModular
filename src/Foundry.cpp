@@ -106,7 +106,6 @@ struct Foundry : Module {
 
 	// No need to save
 	int displayState;
-	int rotateOffset;// no need to initialize, this goes with displayMode = DISP_ROTATE
 	long clockIgnoreOnReset;
 	long tiedWarning;// 0 when no warning, positive downward step counter timer when warning
 	long attachedWarning;// 0 when no warning, positive downward step counter timer when warning
@@ -494,7 +493,6 @@ struct Foundry : Module {
 					}
 					else if (displayState == DISP_TRANSPOSE) {
 						displayState = DISP_ROTATE;
-						rotateOffset = 0;
 					}
 					else 
 						displayState = DISP_NORMAL;
@@ -619,7 +617,7 @@ struct Foundry : Module {
 						seq.transposeSeq(deltaSeqKnob, multiTracks);
 					}
 					else if (displayState == DISP_ROTATE) {
-						seq.rotateSeq(&rotateOffset, deltaSeqKnob, multiTracks);
+						seq.rotateSeq(deltaSeqKnob, multiTracks);
 					}							
 					else if (displayState == DISP_REPS) {
 						seq.modPhraseReps(deltaSeqKnob, multiTracks);
@@ -1145,9 +1143,12 @@ struct FoundryWidget : ModuleWidget {
 				}
 				break;
 				case Foundry::DISP_ROTATE :
-					snprintf(displayStr, 4, ")%2u", (unsigned) abs(module->rotateOffset));
-					if (module->rotateOffset < 0)
+				{
+					int rotOffset = module->seq.getRotateOffset();
+					snprintf(displayStr, 4, ")%2u", (unsigned) abs(rotOffset));
+					if (rotOffset < 0)
 						displayStr[0] = '(';
+				}
 				break;
 				default :
 					// two paths below are equivalent when attached, so no need to check attached
@@ -1442,7 +1443,7 @@ struct FoundryWidget : ModuleWidget {
 					module->seq.unTransposeSeq(module->multiTracks);
 				}
 				else if (module->displayState == Foundry::DISP_ROTATE) {
-					module->seq.rotateSeq(&(module->rotateOffset), module->rotateOffset * -1, module->multiTracks);
+					module->seq.unRotateSeq(module->multiTracks);
 				}							
 				else if (module->displayState == Foundry::DISP_REPS) {
 					module->seq.initPhraseReps(module->multiTracks);
@@ -1795,6 +1796,9 @@ struct FoundryWidget : ModuleWidget {
 Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular", "Foundry", "SEQ - Foundry", SEQUENCER_TAG);
 
 /*CHANGE LOG
+
+0.6.14: 
+rotate offsets are now persistent and stored in the sequencer
 
 0.6.13:
 created

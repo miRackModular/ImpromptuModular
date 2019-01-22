@@ -445,20 +445,22 @@ void SequencerKernel::transposeSeq(int seqn, int delta) {
 }
 
 
-void SequencerKernel::rotateSeq(int* rotateOffset, int seqn, int delta) {
-	int oldRotateOffset = *rotateOffset;
-	*rotateOffset = clamp(*rotateOffset + delta, -99, 99);
+void SequencerKernel::rotateSeq(int seqn, int delta) {
+	int rVal = sequences[seqn].getRotate();
+	int oldRotateOffset = rVal;
+	rVal = clamp(rVal + delta, -99, 99);
+	sequences[seqn].setRotate(rVal);
 	
-	delta = *rotateOffset - oldRotateOffset;
+	delta = rVal - oldRotateOffset;
 	if (delta == 0) 
 		return;// if end of range, no transpose to do
 	
-	if (delta > 0 && delta < 201) {// Rotate right, 201 is safety
+	if (delta > 0 && delta < 201) {// Rotate right, 201 is safety (account for a delta of 2*99 when min to max in one shot)
 		for (int i = delta; i > 0; i--) {
 			rotateSeqByOne(seqn, true);
 		}
 	}
-	if (delta < 0 && delta > -201) {// Rotate left, 201 is safety
+	if (delta < 0 && delta > -201) {// Rotate left, 201 is safety (account for a delta of 2*99 when min to max in one shot)
 		for (int i = delta; i < 0; i++) {
 			rotateSeqByOne(seqn, false);
 		}
@@ -1211,17 +1213,24 @@ void Sequencer::unTransposeSeq(bool multiTracks) {
 		}
 	}		
 }
-void Sequencer::rotateSeq(int *rotateOffsetPtr, int deltaSeqKnob, bool multiTracks) {
-	sek[trackIndexEdit].rotateSeq(rotateOffsetPtr, seqIndexEdit, deltaSeqKnob);
+void Sequencer::rotateSeq(int deltaSeqKnob, bool multiTracks) {
+	sek[trackIndexEdit].rotateSeq(seqIndexEdit, deltaSeqKnob);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
-			int rotateOffset = *rotateOffsetPtr;// dummy so not to affect the original pointer
 			if (i == trackIndexEdit) continue;
-			sek[i].rotateSeq(&rotateOffset, seqIndexEdit, deltaSeqKnob);
+			sek[i].rotateSeq(seqIndexEdit, deltaSeqKnob);
 		}
 	}		
 }
-
+void Sequencer::unRotateSeq(bool multiTracks) {
+	sek[trackIndexEdit].unRotateSeq(seqIndexEdit);
+	if (multiTracks) {
+		for (int i = 0; i < NUM_TRACKS; i++) {
+			if (i == trackIndexEdit) continue;
+			sek[i].unRotateSeq(seqIndexEdit);
+		}
+	}		
+}
 void Sequencer::toggleGate(int multiSteps, bool multiTracks) {
 	bool newGate = sek[trackIndexEdit].toggleGate(seqIndexEdit, stepIndexEdit, multiSteps);
 	if (multiTracks) {

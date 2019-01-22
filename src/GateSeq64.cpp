@@ -1461,7 +1461,7 @@ Model *modelGateSeq64 = Model::create<GateSeq64, GateSeq64Widget>("Impromptu Mod
 /*CHANGE LOG
 
 0.6.14:
-add right click steps to turn them off
+allow right click to turn steps off
 
 0.6.13:
 fix run mode bug (history not reset when hard reset)
