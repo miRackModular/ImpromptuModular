@@ -347,7 +347,7 @@ struct Foundry : Module {
 			// Track CV input
 			if (inputs[TRKCV_INPUT].active) {
 				int newTrk = (int)( inputs[TRKCV_INPUT].value * (2.0f * (float)Sequencer::NUM_TRACKS - 1.0f) / 10.0f + 0.5f );
-				seq.setTrackIndexEdit(newTrk & 0x3);
+				seq.setTrackIndexEdit(abs(newTrk) % Sequencer::NUM_TRACKS);
 				if (newTrk > 3)
 					multiTracks = true;
 				else
