@@ -944,11 +944,11 @@ struct PhraseSeq32 : Module {
 					else if (displayState == DISP_ROTATE) {
 						if (editingSequence) {
 							sequences[sequence].setRotate(clamp(sequences[sequence].getRotate() + deltaKnob, -99, 99));
-							if (deltaKnob > 0 && deltaKnob < 201) {// Rotate right, 99 is safety
+							if (deltaKnob > 0 && deltaKnob < 201) {// Rotate right, 201 is safety
 								for (int i = deltaKnob; i > 0; i--)
 									rotateSeq(sequence, true, sequences[sequence].getLength(), stepConfig == 1 && stepIndexEdit >= 16);
 							}
-							if (deltaKnob < 0 && deltaKnob > -201) {// Rotate left, 99 is safety
+							if (deltaKnob < 0 && deltaKnob > -201) {// Rotate left, 201 is safety
 								for (int i = deltaKnob; i < 0; i++)
 									rotateSeq(sequence, false, sequences[sequence].getLength(), stepConfig == 1 && stepIndexEdit >= 16);
 							}
