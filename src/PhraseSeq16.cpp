@@ -1498,7 +1498,6 @@ struct PhraseSeq16Widget : ModuleWidget {
 				if (module->infoCopyPaste > 0l)
 					snprintf(displayStr, 4, "CPY");
 				else {
-					// int lenCP = module->lengthCPbuffer;
 					float cpMode = module->params[PhraseSeq16::CPMODE_PARAM].value;
 					if (editingSequence && !module->seqCopied) {// cross paste to seq
 						if (cpMode > 1.5f)// All = toggle gate 1
@@ -1951,6 +1950,9 @@ struct PhraseSeq16Widget : ModuleWidget {
 Model *modelPhraseSeq16 = Model::create<PhraseSeq16, PhraseSeq16Widget>("Impromptu Modular", "Phrase-Seq-16", "SEQ - Phrase-Seq-16", SEQUENCER_TAG);
 
 /*CHANGE LOG
+
+0.6.14: 
+rotate offsets are now persistent and stored in the sequencer
 
 0.6.13:
 fix run mode bug (history not reset when hard reset)

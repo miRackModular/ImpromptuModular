@@ -103,17 +103,15 @@ struct PhraseSeq32 : Module {
 	int seqCVmethod = 0;// 0 is 0-10V, 1 is C4-G6, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
-	int runModeSeq[32];
+	SeqAttributes sequences[32];
 	int runModeSong;
 	int sequence;
-	int lengths[32];//1 to 32
 	int phrase[32];// This is the song (series of phases; a phrase is a patten number)
 	int phrases;//1 to 32
 	float cv[32][32];// [-3.0 : 3.917]. First index is patten number, 2nd index is step
 	StepAttributes attributes[32][32];// First index is patten number, 2nd index is step (see enum AttributeBitMasks for details)
 	bool resetOnRun;
 	bool attached;
-	int transposeOffsets[32];
 
 	// No need to save
 	int stepIndexEdit;
@@ -132,12 +130,11 @@ struct PhraseSeq32 : Module {
 	float slideCVdelta[2];// no need to initialize, this is a companion to slideStepsRemain
 	float cvCPbuffer[32];// copy paste buffer for CVs
 	StepAttributes attribCPbuffer[32];
+	SeqAttributes seqAttribCPbuffer;
+	bool seqCopied;
 	int phraseCPbuffer[32];
-	int lengthCPbuffer;
-	int modeCPbuffer;
 	int countCP;// number of steps to paste (in case CPMODE_PARAM changes between copy and paste)
 	int startCP;
-	int rotateOffset;// no need to initialize, this is companion to displayMode = DISP_ROTATE
 	long clockIgnoreOnReset;
 	unsigned long clockPeriod;// counts number of step() calls upward from last clock (reset after clock processed)
 	long tiedWarning;// 0 when no warning, positive downward step counter timer when warning
@@ -182,7 +179,7 @@ struct PhraseSeq32 : Module {
 	SchmittTrigger keyGateTrigger;
 	SchmittTrigger seqCVTrigger;
 	HoldDetect modeHoldDetect;
-	int lengthsBuffer[32];// buffer from Json for thread safety
+	SeqAttributes seqAttribBuffer[32];// buffer from Json for thread safety
 
 
 	inline bool isEditingSequence(void) {return params[EDIT_PARAM].value > 0.5f;}
@@ -201,7 +198,7 @@ struct PhraseSeq32 : Module {
 		
 	PhraseSeq32() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 		for (int i = 0; i < 32; i++)
-			lengthsBuffer[i] = 16;
+			seqAttribBuffer[i].init(16, MODE_FWD);
 		onReset();
 	}
 
@@ -223,17 +220,14 @@ struct PhraseSeq32 : Module {
 				cv[i][s] = 0.0f;
 				attributes[i][s].init();
 			}
-			runModeSeq[i] = MODE_FWD;
+			sequences[i].init(16 * stepConfig, MODE_FWD);
 			phrase[i] = 0;
-			lengths[i] = 16 * stepConfig;
 			cvCPbuffer[i] = 0.0f;
 			attribCPbuffer[i].init();
 			phraseCPbuffer[i] = 0;
-			transposeOffsets[i] = 0;
 		}
 		initRun();
-		lengthCPbuffer = 32;
-		modeCPbuffer = MODE_FWD;
+		seqAttribCPbuffer.init(32, MODE_FWD);
 		countCP = 32;
 		startCP = 0;
 		editingGate = 0ul;
@@ -263,10 +257,8 @@ struct PhraseSeq32 : Module {
 		sequence = randomu32() % 32;
 		phrases = 1 + (randomu32() % 32);
 		for (int i = 0; i < 32; i++) {
-			runModeSeq[i] = randomu32() % NUM_MODES;
+			sequences[i].init(16 * stepConfig, NUM_MODES);
 			phrase[i] = randomu32() % 32;
-			lengths[i] = 1 + (randomu32() % (16 * stepConfig));
-			transposeOffsets[i] = 0;
 			for (int s = 0; s < 32; s++) {
 				cv[i][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
 				attributes[i][s].randomize();
@@ -284,8 +276,8 @@ struct PhraseSeq32 : Module {
 		phraseIndexRunHistory = 0;
 
 		int seq = (isEditingSequence() ? sequence : phrase[phraseIndexRun]);
-		stepIndexRun[0] = (runModeSeq[seq] == MODE_REV ? lengths[seq] - 1 : 0);
-		fillStepIndexRunVector(runModeSeq[seq], lengths[seq]);
+		stepIndexRun[0] = (sequences[seq].getRunMode() == MODE_REV ? sequences[seq].getLength() - 1 : 0);
+		fillStepIndexRunVector(sequences[seq].getRunMode(), sequences[seq].getLength());
 		stepIndexRunHistory = 0;
 
 		ppqnCount = 0;
@@ -322,23 +314,11 @@ struct PhraseSeq32 : Module {
 		// running
 		json_object_set_new(rootJ, "running", json_boolean(running));
 		
-		// runModeSeq
-		json_t *runModeSeqJ = json_array();
-		for (int i = 0; i < 32; i++)
-			json_array_insert_new(runModeSeqJ, i, json_integer(runModeSeq[i]));
-		json_object_set_new(rootJ, "runModeSeq3", runModeSeqJ);
-
 		// runModeSong
 		json_object_set_new(rootJ, "runModeSong3", json_integer(runModeSong));
 
 		// sequence
 		json_object_set_new(rootJ, "sequence", json_integer(sequence));
-
-		// lengths
-		json_t *lengthsJ = json_array();
-		for (int i = 0; i < 32; i++)
-			json_array_insert_new(lengthsJ, i, json_integer(lengths[i]));
-		json_object_set_new(rootJ, "lengths", lengthsJ);
 
 		// phrase 
 		json_t *phraseJ = json_array();
@@ -377,11 +357,11 @@ struct PhraseSeq32 : Module {
 		// phraseIndexEdit
 		json_object_set_new(rootJ, "phraseIndexEdit", json_integer(phraseIndexEdit));
 
-		// transposeOffsets
-		json_t *transposeOffsetsJ = json_array();
+		// sequences
+		json_t *sequencesJ = json_array();
 		for (int i = 0; i < 32; i++)
-			json_array_insert_new(transposeOffsetsJ, i, json_integer(transposeOffsets[i]));
-		json_object_set_new(rootJ, "transposeOffsets", transposeOffsetsJ);
+			json_array_insert_new(sequencesJ, i, json_integer(sequences[i].getSeqAttrib()));
+		json_object_set_new(rootJ, "sequences", sequencesJ);
 
 		return rootJ;
 	}
@@ -425,29 +405,70 @@ struct PhraseSeq32 : Module {
 		if (runningJ)
 			running = json_is_true(runningJ);
 
-		// runModeSeq
-		json_t *runModeSeqJ = json_object_get(rootJ, "runModeSeq3");
-		if (runModeSeqJ) {
+		// sequences
+		json_t *sequencesJ = json_object_get(rootJ, "sequences");
+		if (sequencesJ) {
 			for (int i = 0; i < 32; i++)
 			{
-				json_t *runModeSeqArrayJ = json_array_get(runModeSeqJ, i);
-				if (runModeSeqArrayJ)
-					runModeSeq[i] = json_integer_value(runModeSeqArrayJ);
+				json_t *sequencesArrayJ = json_array_get(sequencesJ, i);
+				if (sequencesArrayJ)
+					sequences[i].setSeqAttrib(json_integer_value(sequencesArrayJ));
 			}			
-		}		
+		}
 		else {// legacy
-			runModeSeqJ = json_object_get(rootJ, "runModeSeq2");
+			int lengths[32];//1 to 32
+			int runModeSeq[32]; 
+			int transposeOffsets[32];	
+			
+			// runModeSeq
+			json_t *runModeSeqJ = json_object_get(rootJ, "runModeSeq3");
 			if (runModeSeqJ) {
-				for (int i = 0; i < 16; i++)// bug, should be 32 but keep since legacy patches were written with 16
+				for (int i = 0; i < 32; i++)
 				{
 					json_t *runModeSeqArrayJ = json_array_get(runModeSeqJ, i);
-					if (runModeSeqArrayJ) {
+					if (runModeSeqArrayJ)
 						runModeSeq[i] = json_integer_value(runModeSeqArrayJ);
-						if (runModeSeq[i] >= MODE_PEN)// this mode was not present in version runModeSeq2
-							runModeSeq[i]++;
-					}
 				}			
-			}			
+			}		
+			else {// legacy
+				runModeSeqJ = json_object_get(rootJ, "runModeSeq2");
+				if (runModeSeqJ) {
+					for (int i = 0; i < 32; i++)// bug, should be 32 but keep since legacy patches were written with 16
+					{
+						json_t *runModeSeqArrayJ = json_array_get(runModeSeqJ, i);
+						if (runModeSeqArrayJ) {
+							runModeSeq[i] = json_integer_value(runModeSeqArrayJ);
+							if (runModeSeq[i] >= MODE_PEN)// this mode was not present in version runModeSeq2
+								runModeSeq[i]++;
+						}
+					}			
+				}			
+			}
+			// lengths
+			json_t *lengthsJ = json_object_get(rootJ, "lengths");
+			if (lengthsJ)
+				for (int i = 0; i < 32; i++)
+				{
+					json_t *lengthsArrayJ = json_array_get(lengthsJ, i);
+					if (lengthsArrayJ)
+						lengths[i] = json_integer_value(lengthsArrayJ);
+				}
+			// transposeOffsets
+			json_t *transposeOffsetsJ = json_object_get(rootJ, "transposeOffsets");
+			if (transposeOffsetsJ) {
+				for (int i = 0; i < 32; i++)
+				{
+					json_t *transposeOffsetsArrayJ = json_array_get(transposeOffsetsJ, i);
+					if (transposeOffsetsArrayJ)
+						transposeOffsets[i] = json_integer_value(transposeOffsetsArrayJ);
+				}			
+			}
+			
+			// now write into new object
+			for (int i = 0; i < 32; i++) {
+				seqAttribBuffer[i].init(lengths[i], runModeSeq[i]);
+				seqAttribBuffer[i].setTranspose(transposeOffsets[i]);
+			}
 		}
 		
 		// runModeSong
@@ -468,16 +489,6 @@ struct PhraseSeq32 : Module {
 		if (sequenceJ)
 			sequence = json_integer_value(sequenceJ);
 		
-		// lengths
-		json_t *lengthsJ = json_object_get(rootJ, "lengths");
-		if (lengthsJ)
-			for (int i = 0; i < 32; i++)
-			{
-				json_t *lengthsArrayJ = json_array_get(lengthsJ, i);
-				if (lengthsArrayJ)
-					lengthsBuffer[i] = json_integer_value(lengthsArrayJ);
-			}
-			
 		// phrase
 		json_t *phraseJ = json_object_get(rootJ, "phrase");
 		if (phraseJ)
@@ -535,18 +546,7 @@ struct PhraseSeq32 : Module {
 		if (phraseIndexEditJ)
 			phraseIndexEdit = json_integer_value(phraseIndexEditJ);
 		
-		// transposeOffsets
-		json_t *transposeOffsetsJ = json_object_get(rootJ, "transposeOffsets");
-		if (transposeOffsetsJ) {
-			for (int i = 0; i < 32; i++)
-			{
-				json_t *transposeOffsetsArrayJ = json_array_get(transposeOffsetsJ, i);
-				if (transposeOffsetsArrayJ)
-					transposeOffsets[i] = json_integer_value(transposeOffsetsArrayJ);
-			}			
-		}
-
-		stepConfigSync = 1;// signal a sync from fromJson so that step will get lengths from lengthsBuffer
+		stepConfigSync = 1;// signal a sync from fromJson so that step will get lengths from seqAttribBuffer
 	}
 
 	void rotateSeq(int seqNum, bool directionRight, int seqLength, bool chanB_16) {
@@ -608,13 +608,13 @@ struct PhraseSeq32 : Module {
 			// Config switch
 			if (stepConfigSync != 0) {
 				stepConfig = getStepConfig(params[CONFIG_PARAM].value);
-				if (stepConfigSync == 1) {// sync from fromJson, so read lengths from lengthsBuffer
+				if (stepConfigSync == 1) {// sync from fromJson, so read lengths from seqAttribBuffer
 					for (int i = 0; i < 32; i++)
-						lengths[i] = lengthsBuffer[i];
+						sequences[i].setSeqAttrib(seqAttribBuffer[i].getSeqAttrib());
 				}
 				else if (stepConfigSync == 2) {// sync from a real mouse drag event on the switch itself, so init lengths
 					for (int i = 0; i < 32; i++)
-						lengths[i] = 16 * stepConfig;
+						sequences[i].setLength(16 * stepConfig);
 				}
 				initRun();			
 				attachedChanB = false;
@@ -640,7 +640,7 @@ struct PhraseSeq32 : Module {
 			// Mode CV input
 			if (inputs[MODECV_INPUT].active) {
 				if (editingSequence)
-					runModeSeq[sequence] = (int) clamp( round(inputs[MODECV_INPUT].value * ((float)NUM_MODES - 1.0f) / 10.0f), 0.0f, (float)NUM_MODES - 1.0f );
+					sequences[sequence].setRunMode((int) clamp( round(inputs[MODECV_INPUT].value * ((float)NUM_MODES - 1.0f) / 10.0f), 0.0f, (float)NUM_MODES - 1.0f ));
 			}
 			
 			// Attach button
@@ -676,13 +676,13 @@ struct PhraseSeq32 : Module {
 						cvCPbuffer[i] = cv[sequence][s];
 						attribCPbuffer[i] = attributes[sequence][s];
 					}
-					lengthCPbuffer = lengths[sequence];
-					modeCPbuffer = runModeSeq[sequence];
+					seqAttribCPbuffer.setSeqAttrib(sequences[sequence].getSeqAttrib());
+					seqCopied = true;
 				}
 				else {
 					for (int i = 0, p = startCP; i < countCP; i++, p++)
 						phraseCPbuffer[i] = phrase[p];
-					lengthCPbuffer = -1;// so that a cross paste can be detected
+					seqCopied = false;// so that a cross paste can be detected
 				}
 				infoCopyPaste = (long) (copyPasteInfoTime * sampleRate / displayRefreshStepSkips);
 				displayState = DISP_NORMAL;
@@ -698,15 +698,13 @@ struct PhraseSeq32 : Module {
 				// else nothing to do for ALL
 
 				if (editingSequence) {
-					if (lengthCPbuffer >= 0) {// non-crossed paste (seq vs song)
+					if (seqCopied) {// non-crossed paste (seq vs song)
 						for (int i = 0, s = startCP; i < countCP; i++, s++) {
 							cv[sequence][s] = cvCPbuffer[i];
 							attributes[sequence][s] = attribCPbuffer[i];
 						}
 						if (params[CPMODE_PARAM].value > 1.5f) {// all
-							lengths[sequence] = lengthCPbuffer;
-							runModeSeq[sequence] = modeCPbuffer;
-							transposeOffsets[sequence] = 0;
+							sequences[sequence].setSeqAttrib(seqAttribCPbuffer.getSeqAttrib());
 						}
 					}
 					else {// crossed paste to seq (seq vs song)
@@ -716,12 +714,12 @@ struct PhraseSeq32 : Module {
 								//attributes[sequence][s].init();
 								attributes[sequence][s].toggleGate1();
 							}
-							transposeOffsets[sequence] = 0;
+							sequences[sequence].setTranspose(0);
 						}
 						else if (params[CPMODE_PARAM].value < 0.5f) {// 4 (randomize CVs)
 							for (int s = 0; s < 32; s++)
 								cv[sequence][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
-							transposeOffsets[sequence] = 0;
+							sequences[sequence].setTranspose(0);
 						}
 						else {// 8 (randomize gate 1)
 							for (int s = 0; s < 32; s++)
@@ -734,7 +732,7 @@ struct PhraseSeq32 : Module {
 					}
 				}
 				else {
-					if (lengthCPbuffer < 0) {// non-crossed paste (seq vs song)
+					if (!seqCopied) {// non-crossed paste (seq vs song)
 						for (int i = 0, p = startCP; i < countCP; i++, p++)
 							phrase[p] = phraseCPbuffer[i];
 					}
@@ -796,8 +794,8 @@ struct PhraseSeq32 : Module {
 			if (delta != 0) {
 				if (displayState == DISP_LENGTH) {
 					if (editingSequence) {
-						lengths[sequence] = clamp(lengths[sequence] + delta, 1, (16 * stepConfig));
-						lengths[sequence] = ((lengths[sequence] - 1) % (16 * stepConfig)) + 1;
+						sequences[sequence].setLength(clamp(sequences[sequence].getLength() + delta, 1, (16 * stepConfig)));
+						sequences[sequence].setLength(((sequences[sequence].getLength() - 1) % (16 * stepConfig)) + 1);
 					}
 					else {
 						phrases = clamp(phrases + delta, 1, 32);
@@ -834,7 +832,7 @@ struct PhraseSeq32 : Module {
 			if (stepPressed != -1) {
 				if (displayState == DISP_LENGTH) {
 					if (editingSequence)
-						lengths[sequence] = (stepPressed % (16 * stepConfig)) + 1;
+						sequences[sequence].setLength((stepPressed % (16 * stepConfig)) + 1);
 					else
 						phrases = stepPressed + 1;
 					revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
@@ -891,7 +889,6 @@ struct PhraseSeq32 : Module {
 					}
 					else if (displayState == DISP_TRANSPOSE) {
 						displayState = DISP_ROTATE;
-						rotateOffset = 0;
 					}
 					else 
 						displayState = DISP_NORMAL;
@@ -914,7 +911,7 @@ struct PhraseSeq32 : Module {
 					else if (displayState == DISP_MODE) {
 						if (editingSequence) {
 							if (!inputs[MODECV_INPUT].active) {
-								runModeSeq[sequence] = clamp(runModeSeq[sequence] + deltaKnob, 0, NUM_MODES - 1);
+								sequences[sequence].setRunMode(clamp(sequences[sequence].getRunMode() + deltaKnob, 0, NUM_MODES - 1));
 							}
 						}
 						else {
@@ -923,7 +920,7 @@ struct PhraseSeq32 : Module {
 					}
 					else if (displayState == DISP_LENGTH) {
 						if (editingSequence) {
-							lengths[sequence] = clamp(lengths[sequence] + deltaKnob, 1, (16 * stepConfig));
+							sequences[sequence].setLength(clamp(sequences[sequence].getLength() + deltaKnob, 1, (16 * stepConfig)));
 						}
 						else {
 							phrases = clamp(phrases + deltaKnob, 1, 32);
@@ -931,7 +928,7 @@ struct PhraseSeq32 : Module {
 					}
 					else if (displayState == DISP_TRANSPOSE) {
 						if (editingSequence) {
-							transposeOffsets[sequence] = clamp(transposeOffsets[sequence] + deltaKnob, -99, 99);
+							sequences[sequence].setTranspose(clamp(sequences[sequence].getTranspose() + deltaKnob, -99, 99));
 							float transposeOffsetCV = ((float)(deltaKnob))/12.0f;// Tranpose by deltaKnob number of semi-tones
 							if (stepConfig == 1){ // 2x16 (transpose only the 16 steps corresponding to row where stepIndexEdit is located)
 								int offset = stepIndexEdit < 16 ? 0 : 16;
@@ -946,14 +943,14 @@ struct PhraseSeq32 : Module {
 					}
 					else if (displayState == DISP_ROTATE) {
 						if (editingSequence) {
-							rotateOffset = clamp(rotateOffset + deltaKnob, -99, 99);
-							if (deltaKnob > 0 && deltaKnob < 99) {// Rotate right, 99 is safety
+							sequences[sequence].setRotate(clamp(sequences[sequence].getRotate() + deltaKnob, -99, 99));
+							if (deltaKnob > 0 && deltaKnob < 201) {// Rotate right, 99 is safety
 								for (int i = deltaKnob; i > 0; i--)
-									rotateSeq(sequence, true, lengths[sequence], stepConfig == 1 && stepIndexEdit >= 16);
+									rotateSeq(sequence, true, sequences[sequence].getLength(), stepConfig == 1 && stepIndexEdit >= 16);
 							}
-							if (deltaKnob < 0 && deltaKnob > -99) {// Rotate left, 99 is safety
+							if (deltaKnob < 0 && deltaKnob > -201) {// Rotate left, 99 is safety
 								for (int i = deltaKnob; i < 0; i++)
-									rotateSeq(sequence, false, lengths[sequence], stepConfig == 1 && stepIndexEdit >= 16);
+									rotateSeq(sequence, false, sequences[sequence].getLength(), stepConfig == 1 && stepIndexEdit >= 16);
 							}
 						}						
 					}
@@ -1115,18 +1112,18 @@ struct PhraseSeq32 : Module {
 					if (editingSequence) {
 						for (int i = 0; i < 2; i += stepConfig)
 							slideFromCV[i] = cv[sequence][(i * 16) + stepIndexRun[i]];
-						moveIndexRunMode(&stepIndexRun[0], lengths[sequence], runModeSeq[sequence], &stepIndexRunHistory);
+						moveIndexRunMode(&stepIndexRun[0], sequences[sequence].getLength(), sequences[sequence].getRunMode(), &stepIndexRunHistory);
 					}
 					else {
 						for (int i = 0; i < 2; i += stepConfig)
 							slideFromCV[i] = cv[phrase[phraseIndexRun]][(i * 16) + stepIndexRun[i]];
-						if (moveIndexRunMode(&stepIndexRun[0], lengths[phrase[phraseIndexRun]], runModeSeq[phrase[phraseIndexRun]], &stepIndexRunHistory)) {
+						if (moveIndexRunMode(&stepIndexRun[0], sequences[phrase[phraseIndexRun]].getLength(), sequences[phrase[phraseIndexRun]].getRunMode(), &stepIndexRunHistory)) {
 							moveIndexRunMode(&phraseIndexRun, phrases, runModeSong, &phraseIndexRunHistory);
-							stepIndexRun[0] = (runModeSeq[phrase[phraseIndexRun]] == MODE_REV ? lengths[phrase[phraseIndexRun]] - 1 : 0);// must always refresh after phraseIndexRun has changed
+							stepIndexRun[0] = (sequences[phrase[phraseIndexRun]].getRunMode() == MODE_REV ? sequences[phrase[phraseIndexRun]].getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
 						}
 						newSeq = phrase[phraseIndexRun];
 					}
-					fillStepIndexRunVector(runModeSeq[newSeq], lengths[newSeq]);
+					fillStepIndexRunVector(sequences[newSeq].getRunMode(), sequences[newSeq].getLength());
 
 					// Slide
 					for (int i = 0; i < 2; i += stepConfig) {
@@ -1259,9 +1256,9 @@ struct PhraseSeq32 : Module {
 					int col = (stepConfig == 1 ? (i & 0xF) : i);//i % (16 * stepConfig);// optimized
 					if (displayState == DISP_LENGTH) {
 						if (editingSequence) {
-							if (col < (lengths[sequence] - 1))
+							if (col < (sequences[sequence].getLength() - 1))
 								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.1f, 0.0f);
-							else if (col == (lengths[sequence] - 1))
+							else if (col == (sequences[sequence].getLength() - 1))
 								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 1.0f, 0.0f);
 							else 
 								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.0f, 0.0f);
@@ -1558,9 +1555,8 @@ struct PhraseSeq32Widget : ModuleWidget {
 				if (module->infoCopyPaste > 0l)
 					snprintf(displayStr, 4, "CPY");
 				else {
-					int lenCP = module->lengthCPbuffer;
 					float cpMode = module->params[PhraseSeq32::CPMODE_PARAM].value;
-					if (editingSequence && lenCP == -1) {// cross paste to seq
+					if (editingSequence && !module->seqCopied) {// cross paste to seq
 						if (cpMode > 1.5f)// All = toggle gate 1
 							snprintf(displayStr, 4, "TG1");
 						else if (cpMode < 0.5f)// 4 = random CV
@@ -1568,7 +1564,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 						else// 8 = random gate 1
 							snprintf(displayStr, 4, "RG1");
 					}
-					else if (!editingSequence && lenCP != -1) {// cross paste to song
+					else if (!editingSequence && module->seqCopied) {// cross paste to song
 						if (cpMode > 1.5f)// All = init
 							snprintf(displayStr, 4, "CLR");
 						else if (cpMode < 0.5f)// 4 = increase by 1
@@ -1585,24 +1581,24 @@ struct PhraseSeq32Widget : ModuleWidget {
 			}
 			else if (module->displayState == PhraseSeq32::DISP_MODE) {
 				if (editingSequence)
-					runModeToStr(module->runModeSeq[module->sequence]);
+					runModeToStr(module->sequences[module->sequence].getRunMode());
 				else
 					runModeToStr(module->runModeSong);
 			}
 			else if (module->displayState == PhraseSeq32::DISP_LENGTH) {
 				if (editingSequence)
-					snprintf(displayStr, 4, "L%2u", (unsigned) module->lengths[module->sequence]);
+					snprintf(displayStr, 4, "L%2u", (unsigned) module->sequences[module->sequence].getLength());
 				else
 					snprintf(displayStr, 4, "L%2u", (unsigned) module->phrases);
 			}
 			else if (module->displayState == PhraseSeq32::DISP_TRANSPOSE) {
-				snprintf(displayStr, 4, "+%2u", (unsigned) abs(module->transposeOffsets[module->sequence]));
-				if (module->transposeOffsets[module->sequence] < 0)
+				snprintf(displayStr, 4, "+%2u", (unsigned) abs(module->sequences[module->sequence].getTranspose()));
+				if (module->sequences[module->sequence].getTranspose() < 0)
 					displayStr[0] = '-';
 			}
 			else if (module->displayState == PhraseSeq32::DISP_ROTATE) {
-				snprintf(displayStr, 4, ")%2u", (unsigned) abs(module->rotateOffset));
-				if (module->rotateOffset < 0)
+				snprintf(displayStr, 4, ")%2u", (unsigned) abs(module->sequences[module->sequence].getRotate()));
+				if (module->sequences[module->sequence].getRotate() < 0)
 					displayStr[0] = '(';
 			}
 			else {// DISP_NORMAL
@@ -1756,7 +1752,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 				else if (module->displayState == PhraseSeq32::DISP_MODE) {
 					if (module->isEditingSequence()) {
 						if (!module->inputs[PhraseSeq32::MODECV_INPUT].active) {
-							module->runModeSeq[module->sequence] = MODE_FWD;
+							module->sequences[module->sequence].setRunMode(MODE_FWD);
 						}
 					}
 					else {
@@ -1765,7 +1761,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 				}
 				else if (module->displayState == PhraseSeq32::DISP_LENGTH) {
 					if (module->isEditingSequence()) {
-						module->lengths[module->sequence] = 16;
+						module->sequences[module->sequence].setLength(16 * module->stepConfig);
 					}
 					else {
 						module->phrases = 4;
@@ -2025,6 +2021,9 @@ struct PhraseSeq32Widget : ModuleWidget {
 Model *modelPhraseSeq32 = Model::create<PhraseSeq32, PhraseSeq32Widget>("Impromptu Modular", "Phrase-Seq-32", "SEQ - Phrase-Seq-32", SEQUENCER_TAG);
 
 /*CHANGE LOG
+
+0.6.14: 
+rotate offsets are now persistent and stored in the sequencer
 
 0.6.13:
 fix run mode bug (history not reset when hard reset)
