@@ -111,17 +111,15 @@ struct PhraseSeq16 : Module {
 	int seqCVmethod = 0;// 0 is 0-10V, 1 is C4-D5#, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
-	int runModeSeq[16]; 
+	SeqAttributes sequences[16];
 	int runModeSong;
 	int sequence;
-	int lengths[16];//1 to 16
 	int phrase[16];// This is the song (series of phases; a phrase is a patten number)
 	int phrases;//1 to 16
 	float cv[16][16];// [-3.0 : 3.917]. First index is patten number, 2nd index is step
 	StepAttributes attributes[16][16];// First index is patten number, 2nd index is step (see enum AttributeBitMasks for details)
 	bool resetOnRun;
 	bool attached;
-	int transposeOffsets[16];
 
 	// No need to save
 	int stepIndexEdit;
@@ -139,12 +137,11 @@ struct PhraseSeq16 : Module {
 	float slideCVdelta;// no need to initialize, this is a companion to slideStepsRemain
 	float cvCPbuffer[16];// copy paste buffer for CVs
 	StepAttributes attribCPbuffer[16];
+	SeqAttributes seqAttribCPbuffer;
+	bool seqCopied;
 	int phraseCPbuffer[16];
-	int lengthCPbuffer;
-	int modeCPbuffer;
 	int countCP;// number of steps to paste (in case CPMODE_PARAM changes between copy and paste)
 	int startCP;
-	int rotateOffset;// no need to initialize, this is companion to displayMode = DISP_ROTATE
 	long clockIgnoreOnReset;
 	unsigned long clockPeriod;// counts number of step() calls upward from last clock (reset after clock processed)
 	long tiedWarning;// 0 when no warning, positive downward step counter timer when warning
@@ -210,17 +207,15 @@ struct PhraseSeq16 : Module {
 				cv[i][s] = 0.0f;
 				attributes[i][s].init();
 			}
-			runModeSeq[i] = MODE_FWD;
+			sequences[i].init(16, MODE_FWD);
 			phrase[i] = 0;
-			lengths[i] = 16;
 			cvCPbuffer[i] = 0.0f;
 			attribCPbuffer[i].init();
 			phraseCPbuffer[i] = 0;
-			transposeOffsets[i] = 0;
 		}
 		initRun();
-		lengthCPbuffer = 16;
-		modeCPbuffer = MODE_FWD;
+		seqAttribCPbuffer.init(16, MODE_FWD);
+		seqCopied = true;
 		countCP = 16;
 		startCP = 0;
 		editingGate = 0ul;
@@ -247,10 +242,8 @@ struct PhraseSeq16 : Module {
 		sequence = randomu32() % 16;
 		phrases = 1 + (randomu32() % 16);
 		for (int i = 0; i < 16; i++) {
-			runModeSeq[i] = randomu32() % (NUM_MODES - 1);
+			sequences[i].randomize(16, NUM_MODES - 1);
 			phrase[i] = randomu32() % 16;
-			lengths[i] = 1 + (randomu32() % 16);
-			transposeOffsets[i] = 0;
 			for (int s = 0; s < 16; s++) {
 				cv[i][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
 				attributes[i][s].randomize();
@@ -268,7 +261,7 @@ struct PhraseSeq16 : Module {
 		phraseIndexRunHistory = 0;
 
 		int seq = (isEditingSequence() ? sequence : phrase[phraseIndexRun]);
-		stepIndexRun = (runModeSeq[seq] == MODE_REV ? lengths[seq] - 1 : 0);
+		stepIndexRun = (sequences[seq].getRunMode() == MODE_REV ? sequences[seq].getLength() - 1 : 0);
 		stepIndexRunHistory = 0;
 
 		ppqnCount = 0;
@@ -302,23 +295,11 @@ struct PhraseSeq16 : Module {
 		// running
 		json_object_set_new(rootJ, "running", json_boolean(running));
 		
-		// runModeSeq
-		json_t *runModeSeqJ = json_array();
-		for (int i = 0; i < 16; i++)
-			json_array_insert_new(runModeSeqJ, i, json_integer(runModeSeq[i]));
-		json_object_set_new(rootJ, "runModeSeq3", runModeSeqJ);
-
 		// runModeSong
 		json_object_set_new(rootJ, "runModeSong3", json_integer(runModeSong));
 
 		// sequence
 		json_object_set_new(rootJ, "sequence", json_integer(sequence));
-
-		// lengths
-		json_t *lengthsJ = json_array();
-		for (int i = 0; i < 16; i++)
-			json_array_insert_new(lengthsJ, i, json_integer(lengths[i]));
-		json_object_set_new(rootJ, "lengths", lengthsJ);
 
 		// phrase 
 		json_t *phraseJ = json_array();
@@ -357,12 +338,12 @@ struct PhraseSeq16 : Module {
 		// phraseIndexEdit
 		json_object_set_new(rootJ, "phraseIndexEdit", json_integer(phraseIndexEdit));
 
-		// transposeOffsets
-		json_t *transposeOffsetsJ = json_array();
+		// sequences
+		json_t *sequencesJ = json_array();
 		for (int i = 0; i < 16; i++)
-			json_array_insert_new(transposeOffsetsJ, i, json_integer(transposeOffsets[i]));
-		json_object_set_new(rootJ, "transposeOffsets", transposeOffsetsJ);
-
+			json_array_insert_new(sequencesJ, i, json_integer(sequences[i].getSeqAttrib()));
+		json_object_set_new(rootJ, "sequences", sequencesJ);
+		
 		return rootJ;
 	}
 
@@ -404,38 +385,90 @@ struct PhraseSeq16 : Module {
 		if (runningJ)
 			running = json_is_true(runningJ);
 
-		// runModeSeq
-		json_t *runModeSeqJ = json_object_get(rootJ, "runModeSeq3");
-		if (runModeSeqJ) {
+		// sequences
+		json_t *sequencesJ = json_object_get(rootJ, "sequences");
+		if (sequencesJ) {
 			for (int i = 0; i < 16; i++)
 			{
-				json_t *runModeSeqArrayJ = json_array_get(runModeSeqJ, i);
-				if (runModeSeqArrayJ)
-					runModeSeq[i] = json_integer_value(runModeSeqArrayJ);
+				json_t *sequencesArrayJ = json_array_get(sequencesJ, i);
+				if (sequencesArrayJ)
+					sequences[i].setSeqAttrib(json_integer_value(sequencesArrayJ));
 			}			
-		}		
+		}
 		else {// legacy
-			runModeSeqJ = json_object_get(rootJ, "runModeSeq2");
+			int lengths[16];//1 to 16
+			int runModeSeq[16]; 
+			int transposeOffsets[16];
+
+			// runModeSeq
+			json_t *runModeSeqJ = json_object_get(rootJ, "runModeSeq3");
 			if (runModeSeqJ) {
 				for (int i = 0; i < 16; i++)
 				{
 					json_t *runModeSeqArrayJ = json_array_get(runModeSeqJ, i);
-					if (runModeSeqArrayJ) {
+					if (runModeSeqArrayJ)
 						runModeSeq[i] = json_integer_value(runModeSeqArrayJ);
-						if (runModeSeq[i] >= MODE_PEN)// this mode was not present in version runModeSeq2
-							runModeSeq[i]++;
-					}
 				}			
 			}		
 			else {// legacy
-				runModeSeqJ = json_object_get(rootJ, "runModeSeq");
+				runModeSeqJ = json_object_get(rootJ, "runModeSeq2");
 				if (runModeSeqJ) {
-					runModeSeq[0] = json_integer_value(runModeSeqJ);
-					if (runModeSeq[0] >= MODE_PEN)// this mode was not present in original version
-						runModeSeq[0]++;
+					for (int i = 0; i < 16; i++)
+					{
+						json_t *runModeSeqArrayJ = json_array_get(runModeSeqJ, i);
+						if (runModeSeqArrayJ) {
+							runModeSeq[i] = json_integer_value(runModeSeqArrayJ);
+							if (runModeSeq[i] >= MODE_PEN)// this mode was not present in version runModeSeq2
+								runModeSeq[i]++;
+						}
+					}			
+				}		
+				else {// legacy
+					runModeSeqJ = json_object_get(rootJ, "runModeSeq");
+					if (runModeSeqJ) {
+						runModeSeq[0] = json_integer_value(runModeSeqJ);
+						if (runModeSeq[0] >= MODE_PEN)// this mode was not present in original version
+							runModeSeq[0]++;
+					}
+					for (int i = 1; i < 16; i++)// there was only one global runModeSeq in original version
+						runModeSeq[i] = runModeSeq[0];
 				}
-				for (int i = 1; i < 16; i++)// there was only one global runModeSeq in original version
-					runModeSeq[i] = runModeSeq[0];
+			}
+			
+			// lengths
+			json_t *lengthsJ = json_object_get(rootJ, "lengths");
+			if (lengthsJ) {
+				for (int i = 0; i < 16; i++)
+				{
+					json_t *lengthsArrayJ = json_array_get(lengthsJ, i);
+					if (lengthsArrayJ)
+						lengths[i] = json_integer_value(lengthsArrayJ);
+				}			
+			}
+			else {// legacy
+				json_t *stepsJ = json_object_get(rootJ, "steps");
+				if (stepsJ) {
+					int steps = json_integer_value(stepsJ);
+					for (int i = 0; i < 16; i++)
+						lengths[i] = steps;
+				}
+			}
+			
+			// transposeOffsets
+			json_t *transposeOffsetsJ = json_object_get(rootJ, "transposeOffsets");
+			if (transposeOffsetsJ) {
+				for (int i = 0; i < 16; i++)
+				{
+					json_t *transposeOffsetsArrayJ = json_array_get(transposeOffsetsJ, i);
+					if (transposeOffsetsArrayJ)
+						transposeOffsets[i] = json_integer_value(transposeOffsetsArrayJ);
+				}			
+			}
+			
+			// now write into new object
+			for (int i = 0; i < 16; i++) {
+				sequences[i].init(lengths[i], runModeSeq[i]);
+				sequences[i].setTranspose(transposeOffsets[i]);
 			}
 		}
 		
@@ -456,25 +489,6 @@ struct PhraseSeq16 : Module {
 		json_t *sequenceJ = json_object_get(rootJ, "sequence");
 		if (sequenceJ)
 			sequence = json_integer_value(sequenceJ);
-		
-		// lengths
-		json_t *lengthsJ = json_object_get(rootJ, "lengths");
-		if (lengthsJ) {
-			for (int i = 0; i < 16; i++)
-			{
-				json_t *lengthsArrayJ = json_array_get(lengthsJ, i);
-				if (lengthsArrayJ)
-					lengths[i] = json_integer_value(lengthsArrayJ);
-			}			
-		}
-		else {// legacy
-			json_t *stepsJ = json_object_get(rootJ, "steps");
-			if (stepsJ) {
-				int steps = json_integer_value(stepsJ);
-				for (int i = 0; i < 16; i++)
-					lengths[i] = steps;
-			}
-		}
 		
 		// phrase
 		json_t *phraseJ = json_object_get(rootJ, "phrase");
@@ -588,17 +602,6 @@ struct PhraseSeq16 : Module {
 		if (phraseIndexEditJ)
 			phraseIndexEdit = json_integer_value(phraseIndexEditJ);
 		
-		// transposeOffsets
-		json_t *transposeOffsetsJ = json_object_get(rootJ, "transposeOffsets");
-		if (transposeOffsetsJ) {
-			for (int i = 0; i < 16; i++)
-			{
-				json_t *transposeOffsetsArrayJ = json_array_get(transposeOffsetsJ, i);
-				if (transposeOffsetsArrayJ)
-					transposeOffsets[i] = json_integer_value(transposeOffsetsArrayJ);
-			}			
-		}
-		
 		// Initialize dependants after everything loaded
 		initRun();
 	}
@@ -674,7 +677,7 @@ struct PhraseSeq16 : Module {
 			// Mode CV input
 			if (inputs[MODECV_INPUT].active) {
 				if (editingSequence)
-					runModeSeq[sequence] = (int) clamp( round(inputs[MODECV_INPUT].value * ((float)NUM_MODES - 1.0f - 1.0f) / 10.0f), 0.0f, (float)NUM_MODES - 1.0f - 1.0f );
+					sequences[sequence].setRunMode((int) clamp( round(inputs[MODECV_INPUT].value * ((float)NUM_MODES - 1.0f - 1.0f) / 10.0f), 0.0f, (float)NUM_MODES - 1.0f - 1.0f ));
 			}
 			
 			// Attach button
@@ -704,13 +707,13 @@ struct PhraseSeq16 : Module {
 						cvCPbuffer[i] = cv[sequence][s];
 						attribCPbuffer[i] = attributes[sequence][s];
 					}
-					lengthCPbuffer = lengths[sequence];
-					modeCPbuffer = runModeSeq[sequence];
+					seqAttribCPbuffer.setSeqAttrib(sequences[sequence].getSeqAttrib());
+					seqCopied = true;
 				}
 				else {
 					for (int i = 0, p = startCP; i < countCP; i++, p++)
 						phraseCPbuffer[i] = phrase[p];
-					lengthCPbuffer = -1;// so that a cross paste can be detected
+					seqCopied = false;// so that a cross paste can be detected
 				}
 				infoCopyPaste = (long) (copyPasteInfoTime * sampleRate / displayRefreshStepSkips);
 				displayState = DISP_NORMAL;
@@ -726,15 +729,13 @@ struct PhraseSeq16 : Module {
 				// else nothing to do for ALL
 
 				if (editingSequence) {
-					if (lengthCPbuffer >= 0) {// non-crossed paste (seq vs song)
+					if (seqCopied) {// non-crossed paste (seq vs song)
 						for (int i = 0, s = startCP; i < countCP; i++, s++) {
 							cv[sequence][s] = cvCPbuffer[i];
 							attributes[sequence][s] = attribCPbuffer[i];
 						}
 						if (params[CPMODE_PARAM].value > 1.5f) {// all
-							lengths[sequence] = lengthCPbuffer;
-							runModeSeq[sequence] = modeCPbuffer;
-							transposeOffsets[sequence] = 0;
+							sequences[sequence].setSeqAttrib(seqAttribCPbuffer.getSeqAttrib());
 						}
 					}
 					else {// crossed paste to seq (seq vs song)
@@ -744,12 +745,12 @@ struct PhraseSeq16 : Module {
 								//attributes[sequence][s].init();
 								attributes[sequence][s].toggleGate1();
 							}
-							transposeOffsets[sequence] = 0;
+							sequences[sequence].setTranspose(0);
 						}
 						else if (params[CPMODE_PARAM].value < 0.5f) {// 4 (randomize CVs)
 							for (int s = 0; s < 16; s++)
 								cv[sequence][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
-							transposeOffsets[sequence] = 0;
+							sequences[sequence].setTranspose(0);
 						}
 						else {// 8 (randomize gate 1)
 							for (int s = 0; s < 16; s++)
@@ -762,7 +763,7 @@ struct PhraseSeq16 : Module {
 					}
 				}
 				else {
-					if (lengthCPbuffer < 0) {// non-crossed paste (seq vs song)
+					if (!seqCopied) {// non-crossed paste (seq vs song)
 						for (int i = 0, p = startCP; i < countCP; i++, p++)
 							phrase[p] = phraseCPbuffer[i];
 					}
@@ -823,7 +824,7 @@ struct PhraseSeq16 : Module {
 			if (delta != 0) {
 				if (displayState == DISP_LENGTH) {
 					if (editingSequence) {
-						lengths[sequence] = clamp(lengths[sequence] + delta, 1, 16);
+						sequences[sequence].setLength(clamp(sequences[sequence].getLength() + delta, 1, 16));
 					}
 					else {
 						phrases = clamp(phrases + delta, 1, 16);
@@ -859,7 +860,7 @@ struct PhraseSeq16 : Module {
 			if (stepPressed != -1) {
 				if (displayState == DISP_LENGTH) {
 					if (editingSequence)
-						lengths[sequence] = stepPressed + 1;
+						sequences[sequence].setLength(stepPressed + 1);
 					else
 						phrases = stepPressed + 1;
 					revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
@@ -907,7 +908,6 @@ struct PhraseSeq16 : Module {
 					}
 					else if (displayState == DISP_TRANSPOSE) {
 						displayState = DISP_ROTATE;
-						rotateOffset = 0;
 					}
 					else 
 						displayState = DISP_NORMAL;
@@ -930,7 +930,7 @@ struct PhraseSeq16 : Module {
 					else if (displayState == DISP_MODE) {
 						if (editingSequence) {
 							if (!inputs[MODECV_INPUT].active) {
-								runModeSeq[sequence] = clamp(runModeSeq[sequence] + deltaKnob, 0, (NUM_MODES - 1 - 1));
+								sequences[sequence].setRunMode(clamp(sequences[sequence].getRunMode() + deltaKnob, 0, (NUM_MODES - 1 - 1)));
 							}
 						}
 						else {
@@ -939,7 +939,7 @@ struct PhraseSeq16 : Module {
 					}
 					else if (displayState == DISP_LENGTH) {
 						if (editingSequence) {
-							lengths[sequence] = clamp(lengths[sequence] + deltaKnob, 1, 16);
+							sequences[sequence].setLength(clamp(sequences[sequence].getLength() + deltaKnob, 1, 16));
 						}
 						else {
 							phrases = clamp(phrases + deltaKnob, 1, 16);
@@ -947,7 +947,7 @@ struct PhraseSeq16 : Module {
 					}
 					else if (displayState == DISP_TRANSPOSE) {
 						if (editingSequence) {
-							transposeOffsets[sequence] = clamp(transposeOffsets[sequence] + deltaKnob, -99, 99);
+							sequences[sequence].setTranspose(clamp(sequences[sequence].getTranspose() + deltaKnob, -99, 99));
 							float transposeOffsetCV = ((float)(deltaKnob))/12.0f;// Tranpose by deltaKnob number of semi-tones
 							for (int s = 0; s < 16; s++) {
 								cv[sequence][s] += transposeOffsetCV;
@@ -956,14 +956,14 @@ struct PhraseSeq16 : Module {
 					}
 					else if (displayState == DISP_ROTATE) {
 						if (editingSequence) {
-							rotateOffset = clamp(rotateOffset + deltaKnob, -99, 99);
-							if (deltaKnob > 0 && deltaKnob < 99) {// Rotate right, 99 is safety
+							sequences[sequence].setRotate(clamp(sequences[sequence].getRotate() + deltaKnob, -99, 99));
+							if (deltaKnob > 0 && deltaKnob < 201) {// Rotate right, 201 is safety
 								for (int i = deltaKnob; i > 0; i--)
-									rotateSeq(sequence, true, lengths[sequence]);
+									rotateSeq(sequence, true, sequences[sequence].getLength());
 							}
-							if (deltaKnob < 0 && deltaKnob > -99) {// Rotate left, 99 is safety
+							if (deltaKnob < 0 && deltaKnob > -201) {// Rotate left, 201 is safety
 								for (int i = deltaKnob; i < 0; i++)
-									rotateSeq(sequence, false, lengths[sequence]);
+									rotateSeq(sequence, false, sequences[sequence].getLength());
 							}
 						}						
 					}
@@ -1118,13 +1118,13 @@ struct PhraseSeq16 : Module {
 					float slideFromCV = 0.0f;
 					if (editingSequence) {
 						slideFromCV = cv[sequence][stepIndexRun];
-						moveIndexRunMode(&stepIndexRun, lengths[sequence], runModeSeq[sequence], &stepIndexRunHistory);
+						moveIndexRunMode(&stepIndexRun, sequences[sequence].getLength(), sequences[sequence].getRunMode(), &stepIndexRunHistory);
 					}
 					else {
 						slideFromCV = cv[phrase[phraseIndexRun]][stepIndexRun];
-						if (moveIndexRunMode(&stepIndexRun, lengths[phrase[phraseIndexRun]], runModeSeq[phrase[phraseIndexRun]], &stepIndexRunHistory)) {
+						if (moveIndexRunMode(&stepIndexRun, sequences[phrase[phraseIndexRun]].getLength(), sequences[phrase[phraseIndexRun]].getRunMode(), &stepIndexRunHistory)) {
 							moveIndexRunMode(&phraseIndexRun, phrases, runModeSong, &phraseIndexRunHistory);
-							stepIndexRun = (runModeSeq[phrase[phraseIndexRun]] == MODE_REV ? lengths[phrase[phraseIndexRun]] - 1 : 0);// must always refresh after phraseIndexRun has changed
+							stepIndexRun = (sequences[phrase[phraseIndexRun]].getRunMode() == MODE_REV ? sequences[phrase[phraseIndexRun]].getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
 						}
 						newSeq = phrase[phraseIndexRun];
 					}
@@ -1202,9 +1202,9 @@ struct PhraseSeq16 : Module {
 				for (int i = 0; i < 16; i++) {
 					if (displayState == DISP_LENGTH) {
 						if (editingSequence) {
-							if (i < (lengths[sequence] - 1))
+							if (i < (sequences[sequence].getLength() - 1))
 								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.1f, 0.0f);
-							else if (i == (lengths[sequence] - 1))
+							else if (i == (sequences[sequence].getLength() - 1))
 								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 1.0f, 0.0f);
 							else 
 								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.0f, 0.0f);
@@ -1498,9 +1498,9 @@ struct PhraseSeq16Widget : ModuleWidget {
 				if (module->infoCopyPaste > 0l)
 					snprintf(displayStr, 4, "CPY");
 				else {
-					int lenCP = module->lengthCPbuffer;
+					// int lenCP = module->lengthCPbuffer;
 					float cpMode = module->params[PhraseSeq16::CPMODE_PARAM].value;
-					if (editingSequence && lenCP == -1) {// cross paste to seq
+					if (editingSequence && !module->seqCopied) {// cross paste to seq
 						if (cpMode > 1.5f)// All = toggle gate 1
 							snprintf(displayStr, 4, "TG1");
 						else if (cpMode < 0.5f)// 4 = random CV
@@ -1508,7 +1508,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 						else// 8 = random gate 1
 							snprintf(displayStr, 4, "RG1");
 					}
-					else if (!editingSequence && lenCP != -1) {// cross paste to song
+					else if (!editingSequence && module->seqCopied) {// cross paste to song
 						if (cpMode > 1.5f)// All = init
 							snprintf(displayStr, 4, "CLR");
 						else if (cpMode < 0.5f)// 4 = increase by 1
@@ -1525,24 +1525,24 @@ struct PhraseSeq16Widget : ModuleWidget {
 			}
 			else if (module->displayState == PhraseSeq16::DISP_MODE) {
 				if (editingSequence)
-					runModeToStr(module->runModeSeq[module->sequence]);
+					runModeToStr(module->sequences[module->sequence].getRunMode());
 				else
 					runModeToStr(module->runModeSong);
 			}
 			else if (module->displayState == PhraseSeq16::DISP_LENGTH) {
 				if (editingSequence)
-					snprintf(displayStr, 4, "L%2u", (unsigned) module->lengths[module->sequence]);
+					snprintf(displayStr, 4, "L%2u", (unsigned) module->sequences[module->sequence].getLength());
 				else
 					snprintf(displayStr, 4, "L%2u", (unsigned) module->phrases);
 			}
 			else if (module->displayState == PhraseSeq16::DISP_TRANSPOSE) {
-				snprintf(displayStr, 4, "+%2u", (unsigned) abs(module->transposeOffsets[module->sequence]));
-				if (module->transposeOffsets[module->sequence] < 0)
+				snprintf(displayStr, 4, "+%2u", (unsigned) abs(module->sequences[module->sequence].getTranspose()));
+				if (module->sequences[module->sequence].getTranspose() < 0)
 					displayStr[0] = '-';
 			}
 			else if (module->displayState == PhraseSeq16::DISP_ROTATE) {
-				snprintf(displayStr, 4, ")%2u", (unsigned) abs(module->rotateOffset));
-				if (module->rotateOffset < 0)
+				snprintf(displayStr, 4, ")%2u", (unsigned) abs(module->sequences[module->sequence].getRotate()));
+				if (module->sequences[module->sequence].getRotate() < 0)
 					displayStr[0] = '(';
 			}
 			else {// DISP_NORMAL
@@ -1688,7 +1688,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 				else if (module->displayState == PhraseSeq16::DISP_MODE) {
 					if (module->isEditingSequence()) {
 						if (!module->inputs[PhraseSeq16::MODECV_INPUT].active) {
-							module->runModeSeq[module->sequence] = MODE_FWD;
+							module->sequences[module->sequence].setRunMode(MODE_FWD);
 						}
 					}
 					else {
@@ -1697,7 +1697,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 				}
 				else if (module->displayState == PhraseSeq16::DISP_LENGTH) {
 					if (module->isEditingSequence()) {
-						module->lengths[module->sequence] = 16;
+						module->sequences[module->sequence].setLength(16);
 					}
 					else {
 						module->phrases = 4;
