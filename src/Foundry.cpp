@@ -346,8 +346,12 @@ struct Foundry : Module {
 			
 			// Track CV input
 			if (inputs[TRKCV_INPUT].active) {
-				int newTrk = (int)( inputs[TRKCV_INPUT].value * ((float)Sequencer::NUM_TRACKS - 1.0f) / 10.0f + 0.5f );
-				seq.setTrackIndexEdit(clamp(newTrk, 0, Sequencer::NUM_TRACKS - 1));
+				int newTrk = (int)( inputs[TRKCV_INPUT].value * (2.0f * (float)Sequencer::NUM_TRACKS - 1.0f) / 10.0f + 0.5f );
+				seq.setTrackIndexEdit(newTrk & 0x3);
+				if (newTrk > 3)
+					multiTracks = true;
+				else
+					multiTracks = false;
 			}
 			
 			// Attach button
@@ -403,13 +407,15 @@ struct Foundry : Module {
 				if (editingSequence && !attached) {
 					int multiStepsCount = multiSteps ? cpMode : 1;
 					for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-						if (inputs[CV_INPUTS + trkn].active) {
-							seq.writeCV(trkn, clamp(inputs[CV_INPUTS + trkn].value, -10.0f, 10.0f), multiStepsCount, sampleRate, multiTracks);
-						}
-						if (inputs[VEL_INPUTS + trkn].active) {	
-							float maxVel = (velocityMode > 0 ? 127.0f : 200.0f);
-							int intVel = (int)(inputs[VEL_INPUTS + trkn].value * maxVel / 10.0f + 0.5f);
-							seq.setVelocityVal(trkn, clamp(intVel, 0, 200), multiStepsCount, multiTracks);
+						if (trkn == seq.getTrackIndexEdit() || multiTracks) {
+							if (inputs[CV_INPUTS + trkn].active) {
+								seq.writeCV(trkn, clamp(inputs[CV_INPUTS + trkn].value, -10.0f, 10.0f), multiStepsCount, sampleRate, multiTracks);
+							}
+							if (inputs[VEL_INPUTS + trkn].active) {	
+								float maxVel = (velocityMode > 0 ? 127.0f : 200.0f);
+								int intVel = (int)(inputs[VEL_INPUTS + trkn].value * maxVel / 10.0f + 0.5f);
+								seq.setVelocityVal(trkn, clamp(intVel, 0, 200), multiStepsCount, multiTracks);
+							}
 						}
 					}
 					seq.setEditingGateKeyLight(-1);
@@ -544,11 +550,14 @@ struct Foundry : Module {
 			}
 			// All button
 			if (allTrigger.process(params[ALLTRACKS_PARAM].value)) {
-				if (!attached)
-					multiTracks = !multiTracks;
-				else {
-					multiTracks = false;
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+				if (!inputs[TRKCV_INPUT].active) {
+					if (!attached) {
+						multiTracks = !multiTracks;
+					}
+					else {
+						multiTracks = false;
+						attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					}
 				}
 			}	
 			
@@ -1799,6 +1808,7 @@ Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular",
 
 0.6.14: 
 rotate offsets are now persistent and stored in the sequencer
+expand TRACK cv input to allow starred tracks (ALL) to be selected, and write CVs only to selected track when not starred
 
 0.6.13:
 created

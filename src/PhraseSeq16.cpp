@@ -746,11 +746,13 @@ struct PhraseSeq16 : Module {
 								attributes[sequence][s].toggleGate1();
 							}
 							sequences[sequence].setTranspose(0);
+							sequences[sequence].setRotate(0);
 						}
 						else if (params[CPMODE_PARAM].value < 0.5f) {// 4 (randomize CVs)
 							for (int s = 0; s < 16; s++)
 								cv[sequence][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
 							sequences[sequence].setTranspose(0);
+							sequences[sequence].setRotate(0);
 						}
 						else {// 8 (randomize gate 1)
 							for (int s = 0; s < 16; s++)

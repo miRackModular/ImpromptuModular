@@ -206,7 +206,7 @@ Here are some further details on the different functions of the sequencer.
     * 0-127: midi-like numbered levels, mapped to 0-10V on the CV2 outputs;
     * 0-127semitone: same as 0-127 but rescales the CV2 outputs to semitones. The mapping is as follows: `0 = C4 = 0V; 1 = C4# = 0.08V; 2 = D4 = 0.17V; ... 120 = 10V`. Values from 121 to 127 are clamped to 10V.
 	
-* **CV IN and CV2 IN**: These inputs can be used for programming the sequencer from external sources. The CV2 IN inputs are located in the expansion panel (see right click menu). When a trigger is sent to the WRITE input, the states of the inputs is written into the sequencer at the current step/sequence. Unconnected inputs are ignored. When planning a project, all sequences that are to hold chords must have the same sequence numbers across all tracks. AUTOSTEP automatically moves to the next step in the sequence when a write occurs.
+* **CV IN and CV2 IN**: These inputs can be used for programming the sequencer from external sources. The CV2 IN inputs are located in the expansion panel (see right click menu). When a trigger is sent to the WRITE input, the states of the inputs is written into the sequencer at the current step/sequence. Unconnected inputs are ignored. When planning a project, all sequences that are to hold chords must have the same sequence numbers across all tracks. AUTOSTEP automatically moves to the next step in the sequence when a write occurs. New in upcoming 0.6.14: the TRACK CV input has been extended to allow ALL tracks to be selected, and unless all tracks are selected, writing via CV inputs is now only done in the currently selected track.
 
 * **CLK RES / DELAY**: Settings for clock resolution and clock delay. The clock resolution allows [advanced gate types](#advanced-gate-mode-ps) to be used, and functions similarly to that found in the PhraseSequencers. Clock delay is used to delay the clock of a track by a given number of clock pulses (0 to 99). When clock resolutions above 1 are used, the clock can be delayed by fractions of a step. For example, with a clock resolution of 4 and a clock delay of 1, a track will be delayed by one quarter of a step. A reset must be performed in order for a new clock delay value to take effect.
 
@@ -214,9 +214,9 @@ Here are some further details on the different functions of the sequencer.
 
 * **COPY-PASTE**: Copies part or all of a sequence to the sequence buffer when the main switch is set to SEQ, or copies part or all of a song to the song buffer when the main switch is set to SONG. The number of steps/phrases copy-pasted is given by the 4/8/END switch. When copy-pasting sequence steps, they do not need to be selected with the SEL button. The END setting, when properly used, allows insert and delete to be performed more efficiently. In order to copy paste all steps/phrases, the edit head (cursor) must be in the first step/phrase. Since there is only one sequence buffer, there is currently no way to copy sequence #1 of all tracks to sequence #2 of their respective tracks, for example, in a single operation. This must be repeated manually in each track.
 
-* **SEQ# CV input**: This CV input is located in the expansion panel. Please see [general concepts](#general-concepts) above.
+* **SEQ# input**: This CV input is located in the expansion panel. Please see [general concepts](#general-concepts) above.
 
-* **TRACK input**: This CV input is located in the expansion panel, and allows the selection of the track number (0-10V mapped to tracks A-D).
+* **TRACK input**: This CV input is located in the expansion panel, and allows the selection of the track number. New in upcoming 0.6.14: A 0-10V CV is linearly mapped to the following track selections: A, B, C, D, A\*, B\*, C\*, D\*, where the star denotes that any change will be done across all tracks. This applies to the CV and CV2 inputs as well (see "CV IN and CV2 IN" above).
 
 * **TIED**: Please see [PhraseSeq16](#phrase-seq-16)'s section on [tied steps](#tied-ps).
 
