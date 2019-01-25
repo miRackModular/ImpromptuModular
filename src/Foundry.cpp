@@ -93,7 +93,8 @@ struct Foundry : Module {
 	// Need to save
 	int panelTheme = 0;
 	int expansion = 0;
-	int velocityMode = 0;
+	int velocityMode;
+	bool velocityBipol;
 	bool holdTiedNotes = true;
 	bool autoseq;
 	bool showSharp = true;
@@ -172,6 +173,8 @@ struct Foundry : Module {
 	void onReset() override {
 		autoseq = false;
 		running = true;
+		velocityMode = 0;
+		velocityBipol = false;
 		displayState = DISP_NORMAL;
 		tiedWarning = 0l;
 		attachedWarning = 0l;
@@ -206,6 +209,9 @@ struct Foundry : Module {
 
 		// velocityMode
 		json_object_set_new(rootJ, "velocityMode", json_integer(velocityMode));
+
+		// velocityBipol
+		json_object_set_new(rootJ, "velocityBipol", json_integer(velocityBipol));
 
 		// autoseq
 		json_object_set_new(rootJ, "autoseq", json_boolean(autoseq));
@@ -252,6 +258,11 @@ struct Foundry : Module {
 		json_t *velocityModeJ = json_object_get(rootJ, "velocityMode");
 		if (velocityModeJ)
 			velocityMode = json_integer_value(velocityModeJ);
+
+		// velocityBipol
+		json_t *velocityBipolJ = json_object_get(rootJ, "velocityBipol");
+		if (velocityBipolJ)
+			velocityBipol = json_integer_value(velocityBipolJ);
 
 		// autoseq
 		json_t *autoseqJ = json_object_get(rootJ, "autoseq");
@@ -413,7 +424,8 @@ struct Foundry : Module {
 							}
 							if (inputs[VEL_INPUTS + trkn].active) {	
 								float maxVel = (velocityMode > 0 ? 127.0f : 200.0f);
-								int intVel = (int)(inputs[VEL_INPUTS + trkn].value * maxVel / 10.0f + 0.5f);
+								float capturedCV = inputs[VEL_INPUTS + trkn].value + (velocityBipol ? 5.0f : 0.0f);
+								int intVel = (int)(capturedCV * maxVel / 10.0f + 0.5f);
 								seq.setVelocityVal(trkn, clamp(intVel, 0, 200), multiStepsCount, multiTracks);
 							}
 						}
@@ -768,7 +780,7 @@ struct Foundry : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		bool realClockEdgeToHandle = running && clockIgnoreOnReset == 0l;
+		bool realClockEdgeToHandle = running && clockIgnoreOnReset == 0l; // TODO explore mute trigger process also to make run work 100%
 		bool clockTrigged[Sequencer::NUM_TRACKS];
 		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 			clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].value);
@@ -799,7 +811,7 @@ struct Foundry : Module {
 		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 			outputs[CV_OUTPUTS + trkn].value = seq.calcCvOutputAndDecSlideStepsRemain(trkn, running);
 			outputs[GATE_OUTPUTS + trkn].value = seq.calcGateOutput(trkn, running, clockTriggers[clkInSources[trkn]], sampleRate);
-			outputs[VEL_OUTPUTS + trkn].value = seq.calcVelOutput(trkn, running);			
+			outputs[VEL_OUTPUTS + trkn].value = seq.calcVelOutput(trkn, running) - (velocityBipol ? 5.0f : 0.0f);			
 		}
 
 		// lights
@@ -1061,18 +1073,23 @@ struct FoundryWidget : ModuleWidget {
 			nvgTextLetterSpacing(vg, -0.4);
 
 			Vec textPos = Vec(6.3f, textOffsetY);
+			char useRed = printText();
+			if (useRed == 1)
+				textColor = nvgRGB(0xE0, 0xD0, 0x30);
 			nvgFillColor(vg, nvgTransRGBA(textColor, displayAlpha));
 			nvgText(vg, textPos.x, textPos.y, "~", NULL);
 			std::string initString(".~~");
 			nvgText(vg, textPos.x + offsetXfrac, textPos.y, initString.c_str(), NULL);
+			if (useRed == 1)
+				textColor = nvgRGB(0xFF, 0x4C, 0x40);
 			nvgFillColor(vg, textColor);
-			printText();
 			nvgText(vg, textPos.x + offsetXfrac, textPos.y, &displayStr[1], NULL);
 			displayStr[1] = 0;
 			nvgText(vg, textPos.x, textPos.y, displayStr, NULL);
 		}
 
 		char printText() override {
+			char ret = 0;// used for a color instead of overlay char. 0 = default (green), 1 = red
 			if (module->isEditingSequence() || module->attached) {
 				StepAttributes attributesVal = module->seq.getAttribute();
 				if (module->velEditMode == 2) {
@@ -1095,14 +1112,22 @@ struct FoundryWidget : ModuleWidget {
 				}
 				else {
 					unsigned int velocityDisp = (unsigned)(attributesVal.getVelocityVal());
-					if (module->velocityMode > 0) {// velocity is 0-127
-						snprintf(displayStr, 5, " %3u", min(velocityDisp, 127));
+					if (module->velocityMode > 0) {// velocity is 0-127 or semitone
+						if (module->velocityMode == 2)// semitone
+							printNote(((float)velocityDisp)/12.0f - (module->velocityBipol ? 5.0f : 0.0f), &displayStr[1], true);// given str pointer must be 4 chars (3 display and one end of string)
+						else// 0-127
+							snprintf(displayStr, 5, " %3u", min(velocityDisp, 127));
 						displayStr[0] = displayStr[1];
 						displayStr[1] = ' ';
 					}
 					else {// velocity is 0-10V
 						float cvValPrint = (float)velocityDisp;
 						cvValPrint /= 20.0f;
+						if (module->velocityBipol) {						
+							if (cvValPrint < 5.0f)
+								ret = 1;
+							cvValPrint = fabs(cvValPrint - 5.0f);
+						}
 						if (cvValPrint > 9.975f)
 							snprintf(displayStr, 5, "  10");
 						else if (cvValPrint < 0.025f)
@@ -1116,7 +1141,7 @@ struct FoundryWidget : ModuleWidget {
 			}
 			else 				
 				snprintf(displayStr, 5, "  - ");
-			return 0;
+			return ret;
 		}
 	};
 	
@@ -1302,12 +1327,18 @@ struct FoundryWidget : ModuleWidget {
 		}
 		void step() override {
 			if (module->velocityMode == 0)
-				text = "CV2: <Volts>,  0-127,  0-127semitone";
+				text = "CV2 mode: <Volts>,  0-127,  Notes";
 			else if (module->velocityMode == 1)
-				text = "CV2: Volts,  <0-127>,  0-127semitone";
+				text = "CV2 mode: Volts,  <0-127>,  Notes";
 			else
-				text = "CV2: Volts,  0-127,  <0-127semitone>";
+				text = "CV2 mode: Volts,  0-127,  <Notes>";
 		}	
+	};
+	struct VelBipolItem : MenuItem {
+		Foundry *module;
+		void onAction(EventAction &e) override {
+			module->velocityBipol = !module->velocityBipol;
+		}
 	};
 	struct HoldTiedItem : MenuItem {
 		Foundry *module;
@@ -1364,7 +1395,11 @@ struct FoundryWidget : ModuleWidget {
 		holdItem->module = module;
 		menu->addChild(holdItem);
 
-		VelModeItem *velItem = MenuItem::create<VelModeItem>("CV2: ", "");
+		VelBipolItem *bipolItem = MenuItem::create<VelBipolItem>("CV2 bipolar", CHECKMARK(module->velocityBipol));
+		bipolItem->module = module;
+		menu->addChild(bipolItem);
+		
+		VelModeItem *velItem = MenuItem::create<VelModeItem>("CV2 mode: ", "");
 		velItem->module = module;
 		menu->addChild(velItem);
 		
@@ -1807,6 +1842,7 @@ Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular",
 /*CHANGE LOG
 
 0.6.14: 
+add CV2 bipol option in right click menu; display notes for semitone CV2 mode (now called "Notes")
 rotate offsets are now persistent and stored in the sequencer
 expand TRACK cv input to allow starred tracks (ALL) to be selected, and write CVs only to selected track when not starred
 
