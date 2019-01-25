@@ -84,6 +84,8 @@ struct Foundry : Module {
 		ATTACH_LIGHT,
 		ENUMS(VEL_PROB_LIGHT, 2),// room for GreenRed
 		VEL_SLIDE_LIGHT,
+		ENUMS(WRITECV_LIGHTS, Sequencer::NUM_TRACKS),
+		ENUMS(WRITECV2_LIGHTS, Sequencer::NUM_TRACKS),
 		NUM_LIGHTS
 	};
 	
@@ -103,6 +105,7 @@ struct Foundry : Module {
 	bool resetOnRun;
 	bool attached;
 	int velEditMode;// 0 is velocity, 1 is gate-prob, 2 is slide-rate
+	int writeMode;// 0 is both, 1 is CV only, 2 is CV2 only
 	Sequencer seq;
 
 	// No need to save
@@ -188,6 +191,7 @@ struct Foundry : Module {
 			clkInSources[trkn] = 0;
 		}
 		velEditMode = 0;
+		writeMode = 0;
 		seq.reset();
 		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
 	}
@@ -236,6 +240,9 @@ struct Foundry : Module {
 
 		// velEditMode
 		json_object_set_new(rootJ, "velEditMode", json_integer(velEditMode));
+
+		// writeMode
+		json_object_set_new(rootJ, "writeMode", json_integer(writeMode));
 
 		seq.toJson(rootJ);
 		
@@ -303,6 +310,11 @@ struct Foundry : Module {
 		json_t *velEditModeJ = json_object_get(rootJ, "velEditMode");
 		if (velEditModeJ)
 			velEditMode = json_integer_value(velEditModeJ);
+
+		// writeMode
+		json_t *writeModeJ = json_object_get(rootJ, "writeMode");
+		if (writeModeJ)
+			writeMode = json_integer_value(writeModeJ);
 
 		seq.fromJson(rootJ);
 		
@@ -419,10 +431,10 @@ struct Foundry : Module {
 					int multiStepsCount = multiSteps ? cpMode : 1;
 					for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 						if (trkn == seq.getTrackIndexEdit() || multiTracks) {
-							if (inputs[CV_INPUTS + trkn].active) {
+							if (inputs[CV_INPUTS + trkn].active && ((writeMode & 0x2) == 0)) {
 								seq.writeCV(trkn, clamp(inputs[CV_INPUTS + trkn].value, -10.0f, 10.0f), multiStepsCount, sampleRate, multiTracks);
 							}
-							if (inputs[VEL_INPUTS + trkn].active) {	
+							if (inputs[VEL_INPUTS + trkn].active && ((writeMode & 0x1) == 0)) {	
 								float maxVel = (velocityMode > 0 ? 127.0f : 200.0f);
 								float capturedCV = inputs[VEL_INPUTS + trkn].value + (velocityBipol ? 5.0f : 0.0f);
 								int intVel = (int)(capturedCV * maxVel / 10.0f + 0.5f);
@@ -588,8 +600,11 @@ struct Foundry : Module {
 				if (attached || editingSequence) {
 					if (velEditMode < 2)
 						velEditMode++;
-					else 
+					else {
 						velEditMode = 0;
+						if (++writeMode > 2)
+							writeMode =0;
+					}
 				}
 			}
 		
@@ -780,7 +795,7 @@ struct Foundry : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		bool realClockEdgeToHandle = running && clockIgnoreOnReset == 0l; // TODO explore mute trigger process also to make run work 100%
+		bool realClockEdgeToHandle = running && clockIgnoreOnReset == 0l;
 		bool clockTrigged[Sequencer::NUM_TRACKS];
 		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 			clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].value);
@@ -973,6 +988,12 @@ struct Foundry : Module {
 				setGreenRed(VEL_PROB_LIGHT, 0.0f, 0.0f);
 				lights[VEL_SLIDE_LIGHT].value = 0.0f;
 			}
+			
+			// CV writing lights
+			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
+				lights[WRITECV_LIGHTS + trkn].value = (((writeMode & 0x2) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
+				lights[WRITECV2_LIGHTS + trkn].value = (((writeMode & 0x1) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
+			}				
 				
 			seq.stepEditingGate();
 			if (tiedWarning > 0l)
@@ -1081,7 +1102,7 @@ struct FoundryWidget : ModuleWidget {
 			std::string initString(".~~");
 			nvgText(vg, textPos.x + offsetXfrac, textPos.y, initString.c_str(), NULL);
 			if (useRed == 1)
-				textColor = nvgRGB(0xFF, 0x4C, 0x40);
+				textColor = nvgRGB(0xFF, 0x3C, 0x30);
 			nvgFillColor(vg, textColor);
 			nvgText(vg, textPos.x + offsetXfrac, textPos.y, &displayStr[1], NULL);
 			displayStr[1] = 0;
@@ -1424,9 +1445,10 @@ struct FoundryWidget : ModuleWidget {
 	
 	void step() override {
 		if(module->expansion != oldExpansion) {
-			if (oldExpansion!= -1 && module->expansion == 0) {// if just removed expansion panel, disconnect wires to those jacks
+			if (oldExpansion != -1 && module->expansion == 0) {// if just removed expansion panel, disconnect wires to those jacks
 				for (int i = 0; i < 12; i++)
 					gRackWidget->wireContainer->removeAllWires(expPorts[i]);
+				module->writeMode = 0;
 			}
 			oldExpansion = module->expansion;		
 		}
@@ -1774,10 +1796,18 @@ struct FoundryWidget : ModuleWidget {
 		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB0, rowRulerBLow), Port::INPUT, module, Foundry::WRITE_INPUT, &module->panelTheme));
 	
 		// CV IN inputs
+		static const int writeLEDoffset = 13;
 		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB1, rowRulerBHigh), Port::INPUT, module, Foundry::CV_INPUTS + 0, &module->panelTheme));
+		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(columnRulerB1 - writeLEDoffset, rowRulerBHigh + writeLEDoffset), module, Foundry::WRITECV_LIGHTS + 0));
+		
 		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB2, rowRulerBHigh), Port::INPUT, module, Foundry::CV_INPUTS + 2, &module->panelTheme));
+		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(columnRulerB2 - writeLEDoffset, rowRulerBHigh + writeLEDoffset), module, Foundry::WRITECV_LIGHTS + 2));
+
 		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB1, rowRulerBLow), Port::INPUT, module, Foundry::CV_INPUTS + 1, &module->panelTheme));
+		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(columnRulerB1 - writeLEDoffset, rowRulerBLow + writeLEDoffset), module, Foundry::WRITECV_LIGHTS + 1));
+
 		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB2, rowRulerBLow), Port::INPUT, module, Foundry::CV_INPUTS + 3, &module->panelTheme));
+		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(columnRulerB2 - writeLEDoffset, rowRulerBLow + writeLEDoffset), module, Foundry::WRITECV_LIGHTS + 3));
 		
 		// Clock+CV+Gate+Vel outputs
 		// Track A
@@ -1828,12 +1858,16 @@ struct FoundryWidget : ModuleWidget {
 		
 		// Velocity inputs 
 		addInput(expPorts[8] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh), Port::INPUT, module, Foundry::VEL_INPUTS + 0, &module->panelTheme));
+		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(colRulerExp - colOffsetX - writeLEDoffset, rowRulerBHigh + writeLEDoffset), module, Foundry::WRITECV2_LIGHTS + 0));
 		
 		addInput(expPorts[9] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh), Port::INPUT, module, Foundry::VEL_INPUTS + 2, &module->panelTheme));
+		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(colRulerExp + colOffsetX - writeLEDoffset, rowRulerBHigh + writeLEDoffset), module, Foundry::WRITECV2_LIGHTS + 2));
 
 		addInput(expPorts[10] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBLow), Port::INPUT, module, Foundry::VEL_INPUTS + 1, &module->panelTheme));
+		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(colRulerExp - colOffsetX - writeLEDoffset, rowRulerBLow + writeLEDoffset), module, Foundry::WRITECV2_LIGHTS + 1));
 
 		addInput(expPorts[11] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBLow), Port::INPUT, module, Foundry::VEL_INPUTS + 3, &module->panelTheme));
+		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(colRulerExp + colOffsetX - writeLEDoffset, rowRulerBLow + writeLEDoffset), module, Foundry::WRITECV2_LIGHTS + 3));
 	}
 };
 
@@ -1842,6 +1876,7 @@ Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular",
 /*CHANGE LOG
 
 0.6.14: 
+add CV IN and CV2 IN LEDs, and make CV2 button, when returning to CV2 mode, toggle which CV or CV2 groups can be written (see LEDs)
 add CV2 bipol option in right click menu; display notes for semitone CV2 mode (now called "Notes")
 rotate offsets are now persistent and stored in the sequencer
 expand TRACK cv input to allow starred tracks (ALL) to be selected, and write CVs only to selected track when not starred
