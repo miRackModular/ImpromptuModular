@@ -75,6 +75,7 @@ struct WriteSeq32 : Module {
 	bool gateCPbuffer[32];// copy paste buffer for gates
 	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
 	int pendingPaste;// 0 = nothing to paste, 1 = paste on clk, 2 = paste on seq, destination channel in next msbits
+	long clockIgnoreOnReset;
 
 
 	unsigned int lightRefreshCounter = 0;	
@@ -116,6 +117,7 @@ struct WriteSeq32 : Module {
 		}
 		infoCopyPaste = 0l;
 		pendingPaste = 0;
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
 		resetOnRun = false;
 	}
 
@@ -249,6 +251,7 @@ struct WriteSeq32 : Module {
 			if (running && resetOnRun) {
 				indexStep = 0;
 				indexStepStage = 0;
+				clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
 			}
 		}
 		
@@ -358,33 +361,31 @@ struct WriteSeq32 : Module {
 		
 		//********** Clock and reset **********
 		
+		// Clock
+		if (clockTrigger.process(inputs[CLOCK_INPUT].value)) {
+			if (running && clockIgnoreOnReset == 0l) {
+				indexStep = moveIndex(indexStep, indexStep + 1, numSteps);
+				
+				// Pending paste on clock or end of seq
+				if ( ((pendingPaste&0x3) == 1) || ((pendingPaste&0x3) == 2 && indexStep == 0) ) {
+					int pasteChannel = pendingPaste>>2;
+					infoCopyPaste = (long) (-1 * copyPasteInfoTime * engineGetSampleRate() / displayRefreshStepSkips);
+					for (int s = 0; s < 32; s++) {
+						cv[pasteChannel][s] = cvCPbuffer[s];
+						gates[pasteChannel][s] = gateCPbuffer[s];
+					}
+					pendingPaste = 0;
+				}
+			}
+		}
+		
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].value)) {
 			indexStep = 0;
 			indexStepStage = 0;	
 			pendingPaste = 0;
-			clockTrigger.reset();
+			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
 		}		
-		
-		// Clock
-		if (running) {
-			if (clockTrigger.process(inputs[CLOCK_INPUT].value)) {
-				if (!resetTrigger.isHigh()) {
-					indexStep = moveIndex(indexStep, indexStep + 1, numSteps);
-					
-					// Pending paste on clock or end of seq
-					if ( ((pendingPaste&0x3) == 1) || ((pendingPaste&0x3) == 2 && indexStep == 0) ) {
-						int pasteChannel = pendingPaste>>2;
-						infoCopyPaste = (long) (-1 * copyPasteInfoTime * engineGetSampleRate() / displayRefreshStepSkips);
-						for (int s = 0; s < 32; s++) {
-							cv[pasteChannel][s] = cvCPbuffer[s];
-							gates[pasteChannel][s] = gateCPbuffer[s];
-						}
-						pendingPaste = 0;
-					}
-				}
-			}
-		}
 		
 		
 		//********** Outputs and lights **********
@@ -449,6 +450,9 @@ struct WriteSeq32 : Module {
 					infoCopyPaste ++;
 			}
 		}// lightRefreshCounter
+		
+		if (clockIgnoreOnReset > 0l)
+			clockIgnoreOnReset--;
 	}
 };
 
