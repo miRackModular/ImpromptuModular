@@ -46,6 +46,7 @@ struct Foundry : Module {
 		KEY_GATE_PARAM,
 		ATTACH_PARAM,
 		VEL_EDIT_PARAM,
+		WRITEMODE_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -154,6 +155,7 @@ struct Foundry : Module {
 	SchmittTrigger selTrigger;
 	SchmittTrigger allTrigger;
 	SchmittTrigger velEditTrigger;
+	SchmittTrigger writeModeTrigger;
 
 	
 	inline bool isEditingSequence(void) {return params[EDIT_PARAM].value < 0.5f;}
@@ -602,9 +604,15 @@ struct Foundry : Module {
 						velEditMode++;
 					else {
 						velEditMode = 0;
-						if (++writeMode > 2)
-							writeMode =0;
 					}
+				}
+			}
+			
+			// Write mode button
+			if (writeModeTrigger.process(params[WRITEMODE_PARAM].value)) {
+				if (attached || editingSequence) {
+					if (++writeMode > 2)
+						writeMode =0;
 				}
 			}
 		
@@ -991,8 +999,14 @@ struct Foundry : Module {
 			
 			// CV writing lights
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-				lights[WRITECV_LIGHTS + trkn].value = (((writeMode & 0x2) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
-				lights[WRITECV2_LIGHTS + trkn].value = (((writeMode & 0x1) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
+				if (editingSequence && !attached) {
+					lights[WRITECV_LIGHTS + trkn].value = (((writeMode & 0x2) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
+					lights[WRITECV2_LIGHTS + trkn].value = (((writeMode & 0x1) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
+				}
+				else {
+					lights[WRITECV_LIGHTS + trkn].value = 0.0f;
+					lights[WRITECV2_LIGHTS + trkn].value = 0.0f;
+				}
 			}				
 				
 			seq.stepEditingGate();
@@ -1796,18 +1810,19 @@ struct FoundryWidget : ModuleWidget {
 		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB0, rowRulerBLow), Port::INPUT, module, Foundry::WRITE_INPUT, &module->panelTheme));
 	
 		// CV IN inputs
-		static const int writeLEDoffset = 13;
+		static const int writeLEDoffsetX = 16;
+		static const int writeLEDoffsetY = 18;
 		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB1, rowRulerBHigh), Port::INPUT, module, Foundry::CV_INPUTS + 0, &module->panelTheme));
-		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(columnRulerB1 - writeLEDoffset, rowRulerBHigh + writeLEDoffset), module, Foundry::WRITECV_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GreenLight>>(Vec(columnRulerB1 + writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV_LIGHTS + 0));
 		
 		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB2, rowRulerBHigh), Port::INPUT, module, Foundry::CV_INPUTS + 2, &module->panelTheme));
-		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(columnRulerB2 - writeLEDoffset, rowRulerBHigh + writeLEDoffset), module, Foundry::WRITECV_LIGHTS + 2));
+		addChild(createLightCentered<SmallLight<GreenLight>>(Vec(columnRulerB2 - writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV_LIGHTS + 2));
 
 		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB1, rowRulerBLow), Port::INPUT, module, Foundry::CV_INPUTS + 1, &module->panelTheme));
-		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(columnRulerB1 - writeLEDoffset, rowRulerBLow + writeLEDoffset), module, Foundry::WRITECV_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GreenLight>>(Vec(columnRulerB1 + writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV_LIGHTS + 1));
 
 		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB2, rowRulerBLow), Port::INPUT, module, Foundry::CV_INPUTS + 3, &module->panelTheme));
-		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(columnRulerB2 - writeLEDoffset, rowRulerBLow + writeLEDoffset), module, Foundry::WRITECV_LIGHTS + 3));
+		addChild(createLightCentered<SmallLight<GreenLight>>(Vec(columnRulerB2 - writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV_LIGHTS + 3));
 		
 		// Clock+CV+Gate+Vel outputs
 		// Track A
@@ -1855,19 +1870,21 @@ struct FoundryWidget : ModuleWidget {
 		// Step arrow CV inputs
 		addInput(expPorts[6] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerExpTop + rowSpacingExp * 3), Port::INPUT, module, Foundry::LEFTCV_INPUT, &module->panelTheme));
 		addInput(expPorts[7] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerExpTop + rowSpacingExp * 3), Port::INPUT, module, Foundry::RIGHTCV_INPUT, &module->panelTheme));
+
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3 + 20), module, Foundry::WRITEMODE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		
 		// Velocity inputs 
 		addInput(expPorts[8] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh), Port::INPUT, module, Foundry::VEL_INPUTS + 0, &module->panelTheme));
-		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(colRulerExp - colOffsetX - writeLEDoffset, rowRulerBHigh + writeLEDoffset), module, Foundry::WRITECV2_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<GreenLight>>(Vec(colRulerExp - colOffsetX + writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 0));
 		
 		addInput(expPorts[9] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh), Port::INPUT, module, Foundry::VEL_INPUTS + 2, &module->panelTheme));
-		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(colRulerExp + colOffsetX - writeLEDoffset, rowRulerBHigh + writeLEDoffset), module, Foundry::WRITECV2_LIGHTS + 2));
+		addChild(createLightCentered<SmallLight<GreenLight>>(Vec(colRulerExp + colOffsetX - writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 2));
 
 		addInput(expPorts[10] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBLow), Port::INPUT, module, Foundry::VEL_INPUTS + 1, &module->panelTheme));
-		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(colRulerExp - colOffsetX - writeLEDoffset, rowRulerBLow + writeLEDoffset), module, Foundry::WRITECV2_LIGHTS + 1));
+		addChild(createLightCentered<SmallLight<GreenLight>>(Vec(colRulerExp - colOffsetX + writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 1));
 
 		addInput(expPorts[11] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBLow), Port::INPUT, module, Foundry::VEL_INPUTS + 3, &module->panelTheme));
-		addChild(createLightCentered<TinyLight<GreenLight>>(Vec(colRulerExp + colOffsetX - writeLEDoffset, rowRulerBLow + writeLEDoffset), module, Foundry::WRITECV2_LIGHTS + 3));
+		addChild(createLightCentered<SmallLight<GreenLight>>(Vec(colRulerExp + colOffsetX - writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 3));
 	}
 };
 

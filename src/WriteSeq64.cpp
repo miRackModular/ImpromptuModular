@@ -75,7 +75,6 @@ struct WriteSeq64 : Module {
 	int stepsCPbuffer;
 	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
 	int pendingPaste;// 0 = nothing to paste, 1 = paste on clk, 2 = paste on seq, destination channel in next msbits
-	long clockIgnoreOnReset;
 
 
 	unsigned int lightRefreshCounter = 0;	
@@ -123,7 +122,6 @@ struct WriteSeq64 : Module {
 		stepsCPbuffer = 64;
 		infoCopyPaste = 0l;
 		pendingPaste = 0;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
 		resetOnRun = false;
 	}
 
@@ -277,7 +275,6 @@ struct WriteSeq64 : Module {
 			if (running && resetOnRun) {
 				for (int c = 0; c < 5; c++) 
 					indexStep[c] = 0;
-				clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
 			}
 		}
 	
@@ -383,45 +380,49 @@ struct WriteSeq64 : Module {
 		
 		//********** Clock and reset **********
 		
-		// Clock
-		bool clk12step = clock12Trigger.process(inputs[CLOCK12_INPUT].value);
-		bool clk34step = ((!inputs[CLOCK34_INPUT].active) && clk12step) || 
-						  clock34Trigger.process(inputs[CLOCK34_INPUT].value);
-		if (running && clockIgnoreOnReset == 0l) {
-			if (clk12step) {
-				indexStep[0] = moveIndex(indexStep[0], indexStep[0] + 1, indexSteps[0]);
-				indexStep[1] = moveIndex(indexStep[1], indexStep[1] + 1, indexSteps[1]);
-			}
-			if (clk34step) {
-				indexStep[2] = moveIndex(indexStep[2], indexStep[2] + 1, indexSteps[2]);
-				indexStep[3] = moveIndex(indexStep[3], indexStep[3] + 1, indexSteps[3]);
-			}	
-
-			// Pending paste on clock or end of seq
-			if ( ((pendingPaste&0x3) == 1) || ((pendingPaste&0x3) == 2 && indexStep[indexChannel] == 0) ) {
-				if ( (clk12step && (indexChannel == 0 || indexChannel == 1)) ||
-					 (clk34step && (indexChannel == 2 || indexChannel == 3)) ) {
-					infoCopyPaste = (long) (-1 * copyPasteInfoTime * engineGetSampleRate() / displayRefreshStepSkips);
-					int pasteChannel = pendingPaste>>2;
-					for (int s = 0; s < 64; s++) {
-						cv[pasteChannel][s] = cvCPbuffer[s];
-						gates[pasteChannel][s] = gateCPbuffer[s];
-					}
-					indexSteps[pasteChannel] = stepsCPbuffer;
-					if (indexStep[pasteChannel] >= stepsCPbuffer)
-						indexStep[pasteChannel] = stepsCPbuffer - 1;
-					pendingPaste = 0;
-				}
-			}
-		}
-		
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].value + params[RESET_PARAM].value)) {
 			for (int t = 0; t < 5; t++)
 				indexStep[t] = 0;
 			resetLight = 1.0f;
 			pendingPaste = 0;
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			clock12Trigger.reset();
+			clock34Trigger.reset();
+		}
+		
+		
+		// Clock
+		if (running) {
+			bool clk12step = clock12Trigger.process(inputs[CLOCK12_INPUT].value);
+			bool clk34step = clock34Trigger.process(inputs[CLOCK34_INPUT].value);
+			if (!resetTrigger.isHigh()) {
+				clk34step = clk34step || (clk12step && (!inputs[CLOCK34_INPUT].active));
+				if (clk12step) {
+					indexStep[0] = moveIndex(indexStep[0], indexStep[0] + 1, indexSteps[0]);
+					indexStep[1] = moveIndex(indexStep[1], indexStep[1] + 1, indexSteps[1]);
+				}
+				if (clk34step) {
+					indexStep[2] = moveIndex(indexStep[2], indexStep[2] + 1, indexSteps[2]);
+					indexStep[3] = moveIndex(indexStep[3], indexStep[3] + 1, indexSteps[3]);
+				}	
+
+				// Pending paste on clock or end of seq
+				if ( ((pendingPaste&0x3) == 1) || ((pendingPaste&0x3) == 2 && indexStep[indexChannel] == 0) ) {
+					if ( (clk12step && (indexChannel == 0 || indexChannel == 1)) ||
+						 (clk34step && (indexChannel == 2 || indexChannel == 3)) ) {
+						infoCopyPaste = (long) (-1 * copyPasteInfoTime * engineGetSampleRate() / displayRefreshStepSkips);
+						int pasteChannel = pendingPaste>>2;
+						for (int s = 0; s < 64; s++) {
+							cv[pasteChannel][s] = cvCPbuffer[s];
+							gates[pasteChannel][s] = gateCPbuffer[s];
+						}
+						indexSteps[pasteChannel] = stepsCPbuffer;
+						if (indexStep[pasteChannel] >= stepsCPbuffer)
+							indexStep[pasteChannel] = stepsCPbuffer - 1;
+						pendingPaste = 0;
+					}
+				}
+			}
 		}
 		
 		
@@ -461,6 +462,7 @@ struct WriteSeq64 : Module {
 			lights[GATE_LIGHT].value = gates[indexChannel][indexStep[indexChannel]] ? 1.0f : 0.0f;			
 			
 			// Reset light
+			if (resetTrigger.isHigh()) resetLight = 1.0f;
 			lights[RESET_LIGHT].value =	resetLight;	
 			resetLight -= (resetLight / lightLambda) * engineGetSampleTime() * displayRefreshStepSkips;
 
@@ -481,9 +483,6 @@ struct WriteSeq64 : Module {
 					infoCopyPaste ++;
 			}
 		}// lightRefreshCounter
-		
-		if (clockIgnoreOnReset > 0l)
-			clockIgnoreOnReset--;
 	}
 };
 
