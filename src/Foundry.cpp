@@ -1855,7 +1855,7 @@ struct FoundryWidget : ModuleWidget {
 		
 		// Expansion module
 		static const int rowRulerExpTop = 67;
-		static const int rowSpacingExp = 55;
+		static const int rowSpacingExp = 51;
 		static const int colRulerExp = panel->box.size.x - expWidth / 2;
 		static const int colOffsetX = 23;
 		addInput(expPorts[0] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerExpTop + rowSpacingExp * 0), Port::INPUT, module, Foundry::GATECV_INPUT, &module->panelTheme));
@@ -1871,7 +1871,7 @@ struct FoundryWidget : ModuleWidget {
 		addInput(expPorts[6] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerExpTop + rowSpacingExp * 3), Port::INPUT, module, Foundry::LEFTCV_INPUT, &module->panelTheme));
 		addInput(expPorts[7] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerExpTop + rowSpacingExp * 3), Port::INPUT, module, Foundry::RIGHTCV_INPUT, &module->panelTheme));
 
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3 + 20), module, Foundry::WRITEMODE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerExp, rowRulerExpTop + 180), module, Foundry::WRITEMODE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		
 		// Velocity inputs 
 		addInput(expPorts[8] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh), Port::INPUT, module, Foundry::VEL_INPUTS + 0, &module->panelTheme));

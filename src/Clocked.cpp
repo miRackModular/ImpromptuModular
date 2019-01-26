@@ -13,6 +13,8 @@
 
 #include "ImpromptuModular.hpp"
 
+static const bool resetClockOutputsHigh = true;
+
 
 class Clock {
 	// The -1.0 step is used as a reset state every double-period so that 
@@ -108,8 +110,8 @@ class Clock {
 			else if ((step >= p3) && (step < p4))
 				high = 2;
 		}
-		else
-			high = 1;// default state is clock high, in first pulse, when reset
+		else if (resetClockOutputsHigh)
+			high = 1;
 		return high;
 	}	
 };
@@ -136,7 +138,7 @@ class ClockDelay {
 	void reset() {
 		stepCounter = 0l;
 		lastWriteValue = 0;
-		readState = true;// default is clock high
+		readState = resetClockOutputsHigh;
 		stepRise1 = 0l;
 		stepFall1 = 0l;
 		stepRise2 = 0l;
@@ -357,7 +359,7 @@ struct Clocked : Module {
 			syncRatios[i] = false;
 			ratiosDoubled[i] = getRatioDoubled(i);
 			updatePulseSwingDelay();
-			outputs[CLK_OUTPUTS + i].value = 10.0f;
+			outputs[CLK_OUTPUTS + i].value = (resetClockOutputsHigh ? 10.0f : 0.0f);
 		}
 		extPulseNumber = -1;
 		extIntervalTime = 0.0;
@@ -1013,7 +1015,7 @@ Model *modelClocked = Model::create<Clocked, ClockedWidget>("Impromptu Modular",
 
 0.6.14:
 optimize swing, pw and delay knobs (those with CV inputs have the CV input effect now visible in value when move knob)
-rail clock outputs high when reset
+rail clock outputs high when reset (NOT SURE YET)
 
 0.6.13:
 run button now serves as a pause, and will not reset the internal counters in the clock (except when 
