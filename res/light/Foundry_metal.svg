@@ -36,13 +36,13 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:window-width="1920"
-     inkscape:window-height="1017"
+     inkscape:window-height="1018"
      id="namedview643"
      showgrid="false"
-     inkscape:zoom="2.380069"
-     inkscape:cx="552.80245"
-     inkscape:cy="210.45059"
-     inkscape:window-x="-8"
+     inkscape:zoom="1.1900345"
+     inkscape:cx="552.13684"
+     inkscape:cy="139.27321"
+     inkscape:window-x="1912"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg641" />
@@ -84,32 +84,34 @@
     <linearGradient
        xlink:href="#a"
        id="e"
-       x1="7.937"
-       x2="142.875"
-       y2="100.542"
-       gradientUnits="userSpaceOnUse" />
+       x1="141.289"
+       x2="9.2589998"
+       y2="99.221001"
+       gradientUnits="userSpaceOnUse"
+       y1="1.322" />
     <linearGradient
        xlink:href="#b"
        id="f"
        gradientUnits="userSpaceOnUse"
-       x1="141.289"
-       y1="99.219"
+       x1="41.930176"
+       y1="98.275719"
        x2="92.604"
        y2="5.292" />
     <linearGradient
        xlink:href="#a"
        id="g"
-       x1="150.813"
-       x2="178.594"
-       y2="100.542"
-       gradientUnits="userSpaceOnUse" />
+       x1="178.59399"
+       x2="151.5533"
+       y2="100.69921"
+       gradientUnits="userSpaceOnUse"
+       y1="0" />
     <linearGradient
        xlink:href="#b"
        id="h"
-       x1="177.271"
-       y1="95.25"
-       x2="134.938"
-       y2="-21.167"
+       x1="151.25801"
+       y1="98.140335"
+       x2="176.95898"
+       y2="-15.831002"
        gradientUnits="userSpaceOnUse" />
     <linearGradient
        xlink:href="#c"
@@ -359,19 +361,23 @@
   <path
      d="M9.26 0S8.202 0 8.202 1.323v1.323s0 1.323-1.323 1.323H1.323S0 3.969 0 5.292V95.25s0 1.323 1.323 1.323h5.556s1.323 0 1.323 1.323v1.323s0 1.323 1.323 1.323h131.763s1.323 0 1.323-1.323v-1.323s0-1.323 1.323-1.323h5.556s1.323 0 1.323-1.323V5.292s0-1.323-1.323-1.323h-5.556s-1.323 0-1.323-1.323V1.323S142.61 0 141.288 0z"
      fill="url(#e)"
-     id="path57" />
+     id="path57"
+     style="fill:url(#e)" />
   <path
      d="M9.26 1.322v1.324s.018.606-.305 1.252c-.323.647-1.238 1.393-2.34 1.393H1.322V95.25h5.293a1.323 1.323 0 0 1 .002 0s.606-.019 1.252.305c.646.323 1.39 1.24 1.39 2.341v1.325h132.028l.002-.002v-1.323s-.02-.605.303-1.251c.323-.647 1.239-1.395 2.342-1.395h5.556V5.291h-5.556s-.606.018-1.252-.305c-.647-.323-1.393-1.237-1.393-2.34V1.322h-.002z"
      fill="url(#f)"
-     id="path59" />
+     id="path59"
+     style="fill:url(#f)" />
   <path
      d="M152.4 3.969s-1.323 0-1.323 1.323V95.25s0 1.323 1.323 1.323h5.292s1.323 0 1.323 1.323v1.323s0 1.323 1.323 1.323h8.731s1.323 0 1.323-1.323v-1.323s0-1.323 1.323-1.323h5.555s1.323 0 1.323-1.323V5.292s0-1.323-1.323-1.323h-5.556s-1.323 0-1.323-1.323V1.323s0-1.323-1.323-1.323h-8.996s-1.058 0-1.058 1.323v1.323s0 1.323-1.323 1.323z"
      fill="url(#g)"
-     id="path61" />
+     id="path61"
+     style="fill:url(#g)" />
   <path
      d="M160.072 1.322v1.324s.019.606-.304 1.252c-.323.647-1.238 1.393-2.34 1.393H152.4V95.25h5.028a1.323 1.323 0 0 1 .002 0s.606-.019 1.252.305c.645.323 1.39 1.24 1.39 2.341v1.325h8.996l.002-.002v-1.323s-.02-.605.303-1.251c.323-.647 1.24-1.395 2.342-1.395h5.557V5.291h-5.557s-.606.018-1.252-.305-1.393-1.237-1.393-2.34V1.322h-.002z"
      fill="url(#h)"
-     id="path63" />
+     id="path63"
+     style="fill:url(#h)" />
   <rect
      ry="1.418"
      rx="1.418"
