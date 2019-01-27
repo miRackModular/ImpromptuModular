@@ -686,8 +686,8 @@ struct SemiModularSynth : Module {
 			if (running) {
 				if (resetOnRun)
 					initRun();
-				if (resetOnRun || clockIgnoreOnRun)
-					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);// keep this since CLK gets reset when run turned on
+				//if (resetOnRun || clockIgnoreOnRun)
+					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);// always keep this since CLK gets reset when run turned on
 			}
 			displayState = DISP_NORMAL;
 		}
@@ -1130,8 +1130,8 @@ struct SemiModularSynth : Module {
 		
 		// Clock
 		float clockInput = inputs[CLOCK_INPUT].active ? inputs[CLOCK_INPUT].value : clkValue;// Pre-patching
-		if (clockTrigger.process(clockInput)) {
-			if (running && clockIgnoreOnReset == 0l) {
+		if (running && clockIgnoreOnReset == 0l) {
+			if (clockTrigger.process(clockInput)) {
 				ppqnCount++;
 				if (ppqnCount >= pulsesPerStep)
 					ppqnCount = 0;
@@ -1193,8 +1193,9 @@ struct SemiModularSynth : Module {
 			bool muteGate2 = !editingSequence && (params[GATE2_PARAM].value > 0.5f);// live mute
 			float slideOffset = (slideStepsRemain > 0ul ? (slideCVdelta * (float)slideStepsRemain) : 0.0f);
 			outputs[CV_OUTPUT].value = cv[seq][step] - slideOffset;
-			outputs[GATE1_OUTPUT].value = (calcGate(gate1Code, clockTrigger, clockPeriod, sampleRate) && !muteGate1) ? 10.0f : 0.0f;
-			outputs[GATE2_OUTPUT].value = (calcGate(gate2Code, clockTrigger, clockPeriod, sampleRate) && !muteGate2) ? 10.0f : 0.0f;
+			bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
+			outputs[GATE1_OUTPUT].value = (calcGate(gate1Code, clockTrigger, clockPeriod, sampleRate) && !muteGate1 && !retriggingOnReset) ? 10.0f : 0.0f;
+			outputs[GATE2_OUTPUT].value = (calcGate(gate2Code, clockTrigger, clockPeriod, sampleRate) && !muteGate2 && !retriggingOnReset) ? 10.0f : 0.0f;
 		}
 		else {// not running 
 			outputs[CV_OUTPUT].value = (editingGate > 0ul) ? editingGateCV : cv[seq][step];

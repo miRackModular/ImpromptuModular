@@ -387,10 +387,10 @@ struct WriteSeq64 : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		bool clk12step = clock12Trigger.process(inputs[CLOCK12_INPUT].value);
-		bool clk34step = ((!inputs[CLOCK34_INPUT].active) && clk12step) || 
-						  clock34Trigger.process(inputs[CLOCK34_INPUT].value);
 		if (running && clockIgnoreOnReset == 0l) {
+			bool clk12step = clock12Trigger.process(inputs[CLOCK12_INPUT].value);
+			bool clk34step = ((!inputs[CLOCK34_INPUT].active) && clk12step) || 
+							  clock34Trigger.process(inputs[CLOCK34_INPUT].value);
 			if (clk12step) {
 				indexStep[0] = moveIndex(indexStep[0], indexStep[0] + 1, indexSteps[0]);
 				indexStep[1] = moveIndex(indexStep[1], indexStep[1] + 1, indexSteps[1]);
@@ -425,6 +425,8 @@ struct WriteSeq64 : Module {
 			resetLight = 1.0f;
 			pendingPaste = 0;
 			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			clock12Trigger.reset();
+			clock34Trigger.reset();
 		}
 		
 		
@@ -433,13 +435,11 @@ struct WriteSeq64 : Module {
 		// CV and gate outputs (staging area not used)
 		if (running) {
 			bool clockHigh = false;
+			bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
 			for (int i = 0; i < 4; i++) {
-				// CV
 				outputs[CV_OUTPUTS + i].value = cv[i][indexStep[i]];
-				
-				// Gate
 				clockHigh = i < 2 ? clock12Trigger.isHigh() : clock34Trigger.isHigh();
-				outputs[GATE_OUTPUTS + i].value = (clockHigh && gates[i][indexStep[i]]) ? 10.0f : 0.0f;
+				outputs[GATE_OUTPUTS + i].value = (clockHigh && gates[i][indexStep[i]] && !retriggingOnReset) ? 10.0f : 0.0f;
 			}
 		}
 		else {

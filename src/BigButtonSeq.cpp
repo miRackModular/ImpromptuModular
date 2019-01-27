@@ -290,8 +290,8 @@ struct BigButtonSeq : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		if (clockTrigger.process(inputs[CLK_INPUT].value)) {
-			if (clockIgnoreOnReset == 0l) {
+		if (clockIgnoreOnReset == 0l) {
+			if (clockTrigger.process(inputs[CLK_INPUT].value)) {
 				if ((++indexStep) >= len) indexStep = 0;
 				
 				// Fill button
@@ -329,6 +329,7 @@ struct BigButtonSeq : Module {
 			metronomeLightStart = 1.0f;
 			metronomeLightDiv = 0.0f;
 			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			clockTrigger.reset();
 		}		
 		
 		
@@ -339,10 +340,11 @@ struct BigButtonSeq : Module {
 		// Gate outputs
 		bool bigPulseState = bigPulse.process((float)sampleTime);
 		bool outPulseState = outPulse.process((float)sampleTime);
+		bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
 		for (int i = 0; i < 6; i++) {
 			bool gate = getGate(i);
 			bool outSignal = (((gate || (i == chan && fillPressed)) && outPulseState) || (gate && bigPulseState && i == chan));
-			outputs[CHAN_OUTPUTS + i].value = outSignal ? 10.0f : 0.0f;
+			outputs[CHAN_OUTPUTS + i].value = ((outSignal && !retriggingOnReset) ? 10.0f : 0.0f);
 		}
 
 		

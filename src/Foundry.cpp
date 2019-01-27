@@ -803,24 +803,37 @@ struct Foundry : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		bool realClockEdgeToHandle = running && clockIgnoreOnReset == 0l;
-		bool clockTrigged[Sequencer::NUM_TRACKS];
-		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-			clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].value);
-			if (clockTrigged[clkInSources[trkn]])
-				seq.clockStep(trkn, realClockEdgeToHandle);
+		if (running && clockIgnoreOnReset == 0l) {
+			bool clockTrigged[Sequencer::NUM_TRACKS];
+			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
+				clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].value);
+				if (clockTrigged[clkInSources[trkn]])
+					seq.clockStep(trkn, true);
+			}
 		}
 		seq.step();
+		
+		// OLD VERSION
+		// bool realClockEdgeToHandle = running && clockIgnoreOnReset == 0l;
+		// bool clockTrigged[Sequencer::NUM_TRACKS];
+		// for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
+			// clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].value);
+			// if (clockTrigged[clkInSources[trkn]])
+				// seq.clockStep(trkn, realClockEdgeToHandle);
+		// }
+		// seq.step();		
 		
 		
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].value + params[RESET_PARAM].value)) {
 			seq.initRun();
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			resetLight = 1.0f;
 			displayState = DISP_NORMAL;
 			multiSteps = false;
 			multiTracks = false;
+			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
+			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++)
+				clockTriggers[trkn].reset();		
 			if (inputs[SEQCV_INPUT].active && seqCVmethod == 2)
 				seq.setSeqIndexEdit(0);
 		}
@@ -833,8 +846,9 @@ struct Foundry : Module {
 		// CV, gate and velocity outputs
 		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 			outputs[CV_OUTPUTS + trkn].value = seq.calcCvOutputAndDecSlideStepsRemain(trkn, running);
-			outputs[GATE_OUTPUTS + trkn].value = seq.calcGateOutput(trkn, running, clockTriggers[clkInSources[trkn]], sampleRate);
-			outputs[VEL_OUTPUTS + trkn].value = seq.calcVelOutput(trkn, running) - (velocityBipol ? 5.0f : 0.0f);			
+			bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
+			outputs[GATE_OUTPUTS + trkn].value = seq.calcGateOutput(trkn, running && !retriggingOnReset, clockTriggers[clkInSources[trkn]], sampleRate);
+			outputs[VEL_OUTPUTS + trkn].value = seq.calcVelOutput(trkn, running && !retriggingOnReset) - (velocityBipol ? 5.0f : 0.0f);			
 		}
 
 		// lights

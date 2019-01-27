@@ -396,8 +396,8 @@ struct BigButtonSeq2 : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		if (clockTrigger.process(inputs[CLK_INPUT].value + params[CLOCK_PARAM].value)) {
-			if (clockIgnoreOnReset == 0l) {			
+		if (clockIgnoreOnReset == 0l) {			
+			if (clockTrigger.process(inputs[CLK_INPUT].value + params[CLOCK_PARAM].value)) {
 				if ((++indexStep) >= length) indexStep = 0;
 				
 				// Fill button
@@ -437,6 +437,7 @@ struct BigButtonSeq2 : Module {
 			metronomeLightStart = 1.0f;
 			metronomeLightDiv = 0.0f;
 			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			clockTrigger.reset();
 		}		
 		
 		
@@ -446,14 +447,15 @@ struct BigButtonSeq2 : Module {
 		
 		// Gate outputs
 		bool bigPulseState = bigPulse.process((float)sampleTime);
-		bool outPulseState = clockTrigger.isHigh();//outPulse.process((float)sampleTime);
+		bool outPulseState = clockTrigger.isHigh();
+		bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
 		for (int i = 0; i < 6; i++) {
 			bool gate = getGate(i);
 			bool outSignal = ( ((gate || (i == channel && fillPressed)) && outPulseState) || (gate && bigPulseState && i == channel) );
 			float outGateValue = outSignal ? 10.0f : 0.0f;
 			if (internalSHTriggers[i].process(outGateValue))
 				sampleOutput(i);
-			outputs[CHAN_OUTPUTS + i].value = outGateValue;
+			outputs[CHAN_OUTPUTS + i].value = (retriggingOnReset ? 0.0f : outGateValue);
 			outputs[CV_OUTPUTS + i].value = sampleAndHold ? sampleHoldBuf[i] : cv[i][bank[i]][indexStep];
 		}
 

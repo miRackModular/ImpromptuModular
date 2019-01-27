@@ -1114,8 +1114,8 @@ struct PhraseSeq16 : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		if (clockTrigger.process(inputs[CLOCK_INPUT].value)) {
-			if (running && clockIgnoreOnReset == 0l) {
+		if (running && clockIgnoreOnReset == 0l) {
+			if (clockTrigger.process(inputs[CLOCK_INPUT].value)) {
 				ppqnCount++;
 				if (ppqnCount >= pulsesPerStep)
 					ppqnCount = 0;
@@ -1162,9 +1162,10 @@ struct PhraseSeq16 : Module {
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].value + params[RESET_PARAM].value)) {
 			initRun();// must be after sequence reset
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
 			resetLight = 1.0f;
 			displayState = DISP_NORMAL;
+			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			clockTrigger.reset();
 			if (inputs[SEQCV_INPUT].active && seqCVmethod == 2)
 				sequence = 0;
 		}
@@ -1180,8 +1181,9 @@ struct PhraseSeq16 : Module {
 			bool muteGate2 = !editingSequence && ((params[GATE2_PARAM].value + inputs[GATE2CV_INPUT].value) > 0.5f);// live mute
 			float slideOffset = (slideStepsRemain > 0ul ? (slideCVdelta * (float)slideStepsRemain) : 0.0f);
 			outputs[CV_OUTPUT].value = cv[seq][step] - slideOffset;
-			outputs[GATE1_OUTPUT].value = (calcGate(gate1Code, clockTrigger, clockPeriod, sampleRate) && !muteGate1) ? 10.0f : 0.0f;
-			outputs[GATE2_OUTPUT].value = (calcGate(gate2Code, clockTrigger, clockPeriod, sampleRate) && !muteGate2) ? 10.0f : 0.0f;
+			bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
+			outputs[GATE1_OUTPUT].value = (calcGate(gate1Code, clockTrigger, clockPeriod, sampleRate) && !muteGate1 && !retriggingOnReset) ? 10.0f : 0.0f;
+			outputs[GATE2_OUTPUT].value = (calcGate(gate2Code, clockTrigger, clockPeriod, sampleRate) && !muteGate2 && !retriggingOnReset) ? 10.0f : 0.0f;
 		}
 		else {// not running
 			outputs[CV_OUTPUT].value = (editingGate > 0ul) ? editingGateCV : cv[seq][step];

@@ -889,8 +889,8 @@ struct GateSeq64 : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		if (clockTrigger.process(inputs[CLOCK_INPUT].value)) {
-			if (running && clockIgnoreOnReset == 0l) {
+		if (running && clockIgnoreOnReset == 0l) {
+			if (clockTrigger.process(inputs[CLOCK_INPUT].value)) {
 				ppqnCount++;
 				if (ppqnCount >= pulsesPerStep)
 					ppqnCount = 0;
@@ -922,10 +922,11 @@ struct GateSeq64 : Module {
 		
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].value + params[RESET_PARAM].value)) {
-			initRun();// must be after sequence reset
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			initRun();// must be before SEQCV_INPUT below
 			resetLight = 1.0f;
 			displayState = DISP_GATE;
+			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			clockTrigger.reset();
 			if (inputs[SEQCV_INPUT].active && seqCVmethod == 2)
 				sequence = 0;
 		}
@@ -935,8 +936,9 @@ struct GateSeq64 : Module {
 				
 		// Gate outputs
 		if (running) {
+			bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
 			for (int i = 0; i < 4; i++)
-				outputs[GATE_OUTPUTS + i].value = calcGate(gateCode[i], clockTrigger) ? 10.0f : 0.0f;
+				outputs[GATE_OUTPUTS + i].value = (calcGate(gateCode[i], clockTrigger) && !retriggingOnReset)  ? 10.0f : 0.0f;
 		}
 		else {// not running (no gates, no need to hear anything)
 			for (int i = 0; i < 4; i++)

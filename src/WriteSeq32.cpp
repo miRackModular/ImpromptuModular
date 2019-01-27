@@ -365,8 +365,8 @@ struct WriteSeq32 : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		if (clockTrigger.process(inputs[CLOCK_INPUT].value)) {
-			if (running && clockIgnoreOnReset == 0l) {
+		if (running && clockIgnoreOnReset == 0l) {
+			if (clockTrigger.process(inputs[CLOCK_INPUT].value)) {
 				indexStep = moveIndex(indexStep, indexStep + 1, numSteps);
 				
 				// Pending paste on clock or end of seq
@@ -388,6 +388,7 @@ struct WriteSeq32 : Module {
 			indexStepStage = 0;	
 			pendingPaste = 0;
 			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			clockTrigger.reset();
 		}		
 		
 		
@@ -395,9 +396,10 @@ struct WriteSeq32 : Module {
 		
 		// CV and gate outputs (staging area not used)
 		if (running) {
+			bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
 			for (int i = 0; i < 3; i++) {
 				outputs[CV_OUTPUTS + i].value = cv[i][indexStep];
-				outputs[GATE_OUTPUTS + i].value = (clockTrigger.isHigh() && gates[i][indexStep]) ? 10.0f : 0.0f;
+				outputs[GATE_OUTPUTS + i].value = (clockTrigger.isHigh() && gates[i][indexStep] && !retriggingOnReset) ? 10.0f : 0.0f;
 			}
 		}
 		else {			

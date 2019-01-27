@@ -1105,8 +1105,8 @@ struct PhraseSeq32 : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		if (clockTrigger.process(inputs[CLOCK_INPUT].value)) {
-			if (running && clockIgnoreOnReset == 0l) {
+		if (running && clockIgnoreOnReset == 0l) {
+			if (clockTrigger.process(inputs[CLOCK_INPUT].value)) {
 				ppqnCount++;
 				if (ppqnCount >= pulsesPerStep)
 					ppqnCount = 0;
@@ -1159,10 +1159,11 @@ struct PhraseSeq32 : Module {
 		
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].value + params[RESET_PARAM].value)) {
-			initRun();// must be after sequence reset
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			initRun();// must be before SEQCV_INPUT below
 			resetLight = 1.0f;
 			displayState = DISP_NORMAL;
+			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			clockTrigger.reset();
 			if (inputs[SEQCV_INPUT].active && seqCVmethod == 2)
 				sequence = 0;
 		}
@@ -1193,13 +1194,14 @@ struct PhraseSeq32 : Module {
 			for (int i = 0; i < 2; i += stepConfig)
 				slideOffset[i] = (slideStepsRemain[i] > 0ul ? (slideCVdelta[i] * (float)slideStepsRemain[i]) : 0.0f);
 			outputs[CVA_OUTPUT].value = cv[seq][step0] - slideOffset[0];
-			outputs[GATE1A_OUTPUT].value = (calcGate(gate1Code[0], clockTrigger, clockPeriod, sampleRate) && !muteGate1A) ? 10.0f : 0.0f;
-			outputs[GATE2A_OUTPUT].value = (calcGate(gate2Code[0], clockTrigger, clockPeriod, sampleRate) && !muteGate2A) ? 10.0f : 0.0f;
+			bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
+			outputs[GATE1A_OUTPUT].value = (calcGate(gate1Code[0], clockTrigger, clockPeriod, sampleRate) && !muteGate1A && !retriggingOnReset) ? 10.0f : 0.0f;
+			outputs[GATE2A_OUTPUT].value = (calcGate(gate2Code[0], clockTrigger, clockPeriod, sampleRate) && !muteGate2A && !retriggingOnReset) ? 10.0f : 0.0f;
 			if (stepConfig == 1) {
 				int step1 = editingSequence ? (running ? stepIndexRun[1] : stepIndexEdit) : (stepIndexRun[1]);
 				outputs[CVB_OUTPUT].value = cv[seq][16 + step1] - slideOffset[1];
-				outputs[GATE1B_OUTPUT].value = (calcGate(gate1Code[1], clockTrigger, clockPeriod, sampleRate) && !muteGate1B) ? 10.0f : 0.0f;
-				outputs[GATE2B_OUTPUT].value = (calcGate(gate2Code[1], clockTrigger, clockPeriod, sampleRate) && !muteGate2B) ? 10.0f : 0.0f;
+				outputs[GATE1B_OUTPUT].value = (calcGate(gate1Code[1], clockTrigger, clockPeriod, sampleRate) && !muteGate1B && !retriggingOnReset) ? 10.0f : 0.0f;
+				outputs[GATE2B_OUTPUT].value = (calcGate(gate2Code[1], clockTrigger, clockPeriod, sampleRate) && !muteGate2B && !retriggingOnReset) ? 10.0f : 0.0f;
 			} 
 			else {
 				outputs[CVB_OUTPUT].value = 0.0f;
