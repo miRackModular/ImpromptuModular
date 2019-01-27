@@ -1005,12 +1005,12 @@ struct PhraseSeq32 : Module {
 							int newMode = keyIndexToGateMode(i, pulsesPerStep);
 							if (newMode != -1) {
 								editingPpqn = 0l;
-								if (editingGateLength > 0l) 
-									attributes[sequence][stepIndexEdit].setGate1Mode(newMode);
-								else
-									attributes[sequence][stepIndexEdit].setGate2Mode(newMode);
-								if (params[KEY_PARAMS + i].value > 1.5f)
+								attributes[sequence][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
+								if (params[KEY_PARAMS + i].value > 1.5f) {
 									stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
+									if (windowIsModPressed())
+										attributes[sequence][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
+								}
 							}
 							else
 								editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
@@ -1022,7 +1022,8 @@ struct PhraseSeq32 : Module {
 								tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 						}
 						else {			
-							cv[sequence][stepIndexEdit] = floor(cv[sequence][stepIndexEdit]) + ((float) i) / 12.0f;
+							float newCV = floor(cv[sequence][stepIndexEdit]) + ((float) i) / 12.0f;
+							cv[sequence][stepIndexEdit] = newCV;
 							propagateCVtoTied(sequence, stepIndexEdit);
 							editingGate = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 							editingGateCV = cv[sequence][stepIndexEdit];
@@ -1031,6 +1032,8 @@ struct PhraseSeq32 : Module {
 							if (params[KEY_PARAMS + i].value > 1.5f) {// if right-click
 								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
 								editingGateKeyLight = i;
+								if (windowIsModPressed())
+									cv[sequence][stepIndexEdit] = newCV;
 							}
 						}						
 					}
@@ -2026,6 +2029,7 @@ Model *modelPhraseSeq32 = Model::create<PhraseSeq32, PhraseSeq32Widget>("Impromp
 
 0.6.14: 
 rotate offsets are now persistent and stored in the sequencer
+allow ctrl-right-click of notes to copy note/gate-type over to next step (not just move to next step)
 
 0.6.13:
 fix run mode bug (history not reset when hard reset)

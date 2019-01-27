@@ -59,6 +59,7 @@ class StepAttributes {
 	}
 	inline void setGate1Mode(int gateMode) {attributes &= ~ATT_MSK_GATE1MODE; attributes |= (gateMode << gate1ModeShift);}
 	inline void setGate2Mode(int gateMode) {attributes &= ~ATT_MSK_GATE2MODE; attributes |= (gateMode << gate2ModeShift);}
+	inline void setGateMode(int gateMode, bool gate1) {if (gate1) setGate1Mode(gateMode); else setGate2Mode(gateMode);}
 	inline void setAttribute(unsigned short _attributes) {attributes = _attributes;}
 
 	inline void toggleGate1() {attributes ^= ATT_MSK_GATE1;}

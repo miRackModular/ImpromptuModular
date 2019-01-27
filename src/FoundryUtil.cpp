@@ -907,8 +907,11 @@ bool Sequencer::setGateType(int keyn, int multiSteps, bool autostepClick, bool m
 			sek[i].setGateType(seqIndexEdit, stepIndexEdit, newMode, multiSteps);
 		}
 	}
-	if (autostepClick) // if right-click then move to next step
+	if (autostepClick){ // if right-click then move to next step
 		moveStepIndexEdit(1);
+		if (windowIsModPressed() && multiSteps < 2)
+			setGateType(keyn, 1, false, multiTracks);
+	}
 	return true;
 }
 
@@ -1083,6 +1086,8 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 		}
 		if (autostepClick) {// if right-click then move to next step
 			moveStepIndexEdit(1);
+			if (windowIsModPressed() && multiSteps < 2)
+				writeCV(trackIndexEdit, editingGateCV[trackIndexEdit], 1, sampleRate, multiTracks);
 			editingGateKeyLight = keyn;
 		}
 	}

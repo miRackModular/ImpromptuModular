@@ -1893,6 +1893,7 @@ Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular",
 /*CHANGE LOG
 
 0.6.14: 
+allow ctrl-right-click of notes to copy note/gate-type over to next step (not just move to next step)
 add CV IN and CV2 IN LEDs, and make CV2 button, when returning to CV2 mode, toggle which CV or CV2 groups can be written (see LEDs)
 add CV2 bipol option in right click menu; display notes for semitone CV2 mode (now called "Notes")
 rotate offsets are now persistent and stored in the sequencer
