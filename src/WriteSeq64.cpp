@@ -274,10 +274,13 @@ struct WriteSeq64 : Module {
 		if (runningTrigger.process(params[RUN_PARAM].value + inputs[RUNCV_INPUT].value)) {// no input refresh here, don't want to introduce startup skew
 			running = !running;
 			//pendingPaste = 0;// no pending pastes across run state toggles
-			if (running && resetOnRun) {
-				for (int c = 0; c < 5; c++) 
-					indexStep[c] = 0;
-				clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			if (running) {
+				if (resetOnRun) {
+					for (int c = 0; c < 5; c++) 
+						indexStep[c] = 0;
+				}
+				if (resetOnRun || clockIgnoreOnRun)
+					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
 			}
 		}
 	
