@@ -810,8 +810,8 @@ struct Foundry : Module {
 				if (clockTrigged[clkInSources[trkn]])
 					seq.clockStep(trkn, true);
 			}
+			seq.step();
 		}
-		seq.step();
 		
 		// OLD VERSION
 		// bool realClockEdgeToHandle = running && clockIgnoreOnReset == 0l;
