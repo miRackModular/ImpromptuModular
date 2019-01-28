@@ -25,7 +25,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -43,11 +43,11 @@
      id="namedview223"
      showgrid="false"
      inkscape:zoom="1.597898"
-     inkscape:cx="181.83422"
+     inkscape:cx="67.621673"
      inkscape:cy="279.30348"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1"
+     inkscape:window-x="-30080"
+     inkscape:window-y="-31692"
+     inkscape:window-maximized="0"
      inkscape:current-layer="svg221"
      showguides="true"
      inkscape:guide-bbox="true">
@@ -554,12 +554,12 @@
        sodipodi:role="line">STEP :    </tspan></text>
   <text
      id="text972-4"
-     y="33.173103"
+     y="35.289764"
      x="4.5615435"
      style="font-style:normal;font-weight:normal;font-size:10.58330917px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458272"
      xml:space="preserve"><tspan
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2.82221556px;font-family:Sniglet;-inkscape-font-specification:'Sniglet, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:0.26458272"
-       y="33.173103"
+       y="35.289764"
        x="4.5615435"
        id="tspan970-9"
        sodipodi:role="line">SEQUENCE :</tspan></text>
@@ -1213,7 +1213,7 @@
      id="rect91-7-1-0"
      ry="2.3524745"
      rx="2.3524745"
-     y="28.598583"
+     y="30.715244"
      x="22.789597"
      height="7.5999999"
      width="5.902" />

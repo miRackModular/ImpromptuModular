@@ -173,7 +173,7 @@ When using external clock synchronization, Clocked syncs itself to the incoming 
 
 A 4-track phrase sequencer with 32 steps per sequence, 64 sequences per track, 99 phrases per song. A phrase is a sequence number and a repetition count. Each track holds one song and can be independently clocked and edited. The SEL and ALL buttons allow the selection and simultaneous editing across multiple steps and tracks respectively. 
 
-CVs can be entered into the sequencer via CV inputs when using an external keyboard controller or via the built-in controls on the module itself. When notes are entered with the **right mouse button** on the built-in keyboard (instead of the left mouse button), the sequencer automatically moves to the next step. *New in version 0.6.14*: holding ctrl while right clicking also copies the current note/gate-type over when moving to the next step. Right-click defaults are also supported on the three main knobs.
+CVs can be entered into the sequencer via CV inputs when using an external keyboard controller or via the built-in controls on the module itself. When notes are entered with the **right mouse button** on the built-in keyboard (instead of the left mouse button), the sequencer automatically moves to the next step. *New in version 0.6.14*: holding ctrl while right-clicking also copies the current note (or gate-type) over when moving to the next step. Right-click defaults are also supported on the three main knobs.
 
 Although this sequencer has many similarities to [PhraseSeq32](#phrase-seq-32), many differences must also be kept in mind for existing PhraseSeq users. Notably:
 
