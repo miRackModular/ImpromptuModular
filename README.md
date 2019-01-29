@@ -524,6 +524,8 @@ Here are a few videos featuring Impromptu Modular, which I find particularly ver
 
 * **Omri Cohen**, [Arvo Pärt - Spiegel im Spiegel VCV Rack Cover](https://www.youtube.com/watch?v=6bm4LjRYDmI)
 
+* **Omri Cohen**, [Neutron & VCV Rack - Clapping Music](https://www.youtube.com/watch?v=VMbZfQDpgcA)
+
 * **Isaac Hu**, [In the Hall of the Mountain King](https://www.youtube.com/watch?v=fxYc0H5i6HA)
 
 * **John Melcher**, [Steppes](https://www.youtube.com/watch?v=ruo4s_Hyhrw)
