@@ -1130,7 +1130,7 @@ struct FoundryWidget : ModuleWidget {
 			std::string initString(".~~");
 			nvgText(vg, textPos.x + offsetXfrac, textPos.y, initString.c_str(), NULL);
 			if (useRed == 1)
-				textColor = nvgRGB(0xFF, 0x3C, 0x30);
+				textColor = nvgRGB(0xFF, 0x2C, 0x20);
 			nvgFillColor(vg, textColor);
 			nvgText(vg, textPos.x + offsetXfrac, textPos.y, &displayStr[1], NULL);
 			displayStr[1] = 0;
