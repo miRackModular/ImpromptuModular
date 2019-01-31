@@ -412,7 +412,7 @@ struct PhraseSeq32 : Module {
 			{
 				json_t *sequencesArrayJ = json_array_get(sequencesJ, i);
 				if (sequencesArrayJ)
-					sequences[i].setSeqAttrib(json_integer_value(sequencesArrayJ));
+					seqAttribBuffer[i].setSeqAttrib(json_integer_value(sequencesArrayJ));
 			}			
 		}
 		else {// legacy

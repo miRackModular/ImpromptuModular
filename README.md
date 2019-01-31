@@ -79,7 +79,17 @@ Many sequencers feature a **SEQ# CV input**, which can be used to select the act
 * C4-D5# (or other note intervals): CV levels corresponding to the note voltages are mapped to the 1 to N sequence numbers;
 * Trig-Incr: the input is trigger sensitive and moves to the next sequence number every time a trigger is received. A reset can be used to move back to the first sequence.
 
-When Run is activated, the sequencer automatically starts playing in the current step position, provided **Reset on Run** is not checked in the right-click menu; sequencers will start at the first step when this option is checked. All edge sensitive inputs have a threshold of 1V. In all sequencers, the duration of the gates normally corresponds to the pulse width (high time) of the clock signal. When sequencers offer an **Advanced gate mode** and this mode is activated, the pulse width of the clock signal has no effect on the sequencer.
+All edge sensitive inputs have a threshold of 1V. In all sequencers, the duration of the gates normally corresponds to the pulse width (high time) of the clock signal. When sequencers offer an **Advanced gate mode** and this mode is activated, the pulse width of the clock signal has no effect on the sequencer.
+
+### On resets, clocks and run states... <a id="clk_rst_run"></a>
+
+Impromptu sequencers implement two particular mechanisms related to resets and clocks in order to ensure proper reset behavior. 
+
+* **1ms-clock-ignore-on-reset**: A rising edge on the reset inputs repositions all play heads to the start of their respective sequences or songs. However, when such a reset also resets the clock module, a rising edge can sometimes be produced on the sequencer's clock input. Because of routing delays though other modules (ex.: separate clock dividers), this clock edge can sometimes arrive at the sequencer *after* the reset signal. In order to not count this clock as a true clock event, which would effectively skip the first step in the sequencer, all incoming [clock edges are ignored during 1ms after the reset](https://vcvrack.com/manual/VoltageStandards.html#timing) was received.
+
+* **Gate retriggering on reset**: When resetting a running clock that is driving a sequencer, particularly when the pulse width of the clock is non-negligible in length, pressing the reset while the gate and clock are high can lead to a continuous gate, thereby not triggering a drum module for example. Therefore, all gate outputs are forced low during 1ms after reset, to ensure any trigger sensitive targets are effectively triggered. In order for this to function properly, the incoming clock pulses should be at least 2ms in duration.
+
+For sequencers with Run inputs/buttons, when Run is turned on, a sequencer automatically continues playing in the current step position, provided **Reset on Run** is not checked in the right-click menu. 
 
 
 
@@ -89,21 +99,21 @@ When Run is activated, the sequencer automatically starts playing in the current
 
 A touch-like controller module with dual CV outputs and variable rate of change. With a fast rate of change, the controller offers an alternative to knobs for setting parameters, and with a slow rate of change it can be used to automate in-out fades, for example, freeing the performer to work elsewhere in the patch. Tact-1 is a single channel version of Tact with fewer options. 
 
-**RATE**: Transition time of CV, from 0 (instant transition) to 4 seconds per volt. Transition time is the inverse of slew rate. This knob can be turned in real time to affect the rate of change of a transition already under way. An option in the right click menu called **Rate knob x3** can be used for even slower transitions, in which case a full transition from 0 to 10V (or vice versa) will last 2 minutes instead of 40 seconds in the default setting.
+* **RATE**: Transition time of CV, from 0 (instant transition) to 4 seconds per volt. Transition time is the inverse of slew rate. This knob can be turned in real time to affect the rate of change of a transition already under way. An option in the right click menu called **Rate knob x3** can be used for even slower transitions, in which case a full transition from 0 to 10V (or vice versa) will last 2 minutes instead of 40 seconds in the default setting.
 
-**LINK**: Both controls are linked and will be synchronized to the same value. Useful when controlling stereo sounds. Only the left side controls have an effect in this mode; however, both touch pads can be used to change the single CV (which is sent to both output jacks).
+* **LINK**: Both controls are linked and will be synchronized to the same value. Useful when controlling stereo sounds. Only the left side controls have an effect in this mode; however, both touch pads can be used to change the single CV (which is sent to both output jacks).
 
-**STORE**: memorize the current CV to later be recalled when a trigger is sent to the Recall CV input.
+* **STORE**: memorize the current CV to later be recalled when a trigger is sent to the Recall CV input.
 
-**RECALL and ARROW Inputs**: CV inputs for setting the CVs to their stored/top/bottom position. These are edge sensitive inputs with a 1V threshold.
+* **RECALL and ARROW Inputs**: CV inputs for setting the CVs to their stored/top/bottom position. These are edge sensitive inputs with a 1V threshold.
 
-**SLIDE**: determines whether the recall operation is instantaneous or transitions according to the current rate knob's setting.
+* **SLIDE**: determines whether the recall operation is instantaneous or transitions according to the current rate knob's setting.
 
-**ATTV**: Typical attenuverter to set the maximum CV range output by the module. At full right, a 0 to 10V CV is produced, and at full left, a 0 to -10V CV is produced.
+* **ATTV**: Typical attenuverter to set the maximum CV range output by the module. At full right, a 0 to 10V CV is produced, and at full left, a 0 to -10V CV is produced.
 
-**EXP**: Produces an exponential slide (top position) instead of a linear slide (bottom position).
+* **EXP**: Produces an exponential slide (top position) instead of a linear slide (bottom position).
 
-**EOC**:  EOC is an end-of-cycle trigger that is emitted when a slide is completed (to signal its end); this can be used for more automation, for example, by triggering or chaining other operations when a fade in/out completes. The EOC triggers upon the end of any slide event, whether the end position is at the top/bottom or not.
+* **EOC**:  EOC is an end-of-cycle trigger that is emitted when a slide is completed (to signal its end); this can be used for more automation, for example, by triggering or chaining other operations when a fade in/out completes. The EOC triggers upon the end of any slide event, whether the end position is at the top/bottom or not.
 
 A 0V CV is initially stored in the CV memory and the slide switches are in the off position, thereby allowing the Recall to act as a **Reset** by default. An option in the right-click menu, called **Level sensitive arrow CV inputs** can be activated to control the duration of the transition. When this option is turned on, the input must be continuously held above 1V for the transition to progress, and when the input goes back under 1V, the transition will stop at its current level.
 
@@ -141,11 +151,15 @@ A chainable master clock module with swing, clock delay and pulse width controls
 
 For a tutorial on Clocked regarding chaining, clock multiplications and divisions, swing and clock delay features, please see Nigel Sixsmith's [Talking Rackheads episode 12](https://www.youtube.com/watch?v=ymfOh1yCzU4). 
 
-**SWING**: The clock swing is loosely based on the [Roger Linn method](https://www.attackmagazine.com/technique/passing-notes/daw-drum-machine-swing/). For a given clock, all even clocks pulses are offset forward/backward according to the setting of the Swing knob; at 0 (top) everything is aligned as normal. At -100, all even clocks would coincide with odd clocks preceding them, and at +100 they would line up with subsequent clock pulses). The knob thus goes from -99 to +99 such that no beats are missed. In its extreme positions, the timing is tighter than 99 percent of a clock period (the 99 value is only a rough indication). 
+* **RESET**: Restart all channels' time keeping. *New in upcoming version 0.6.14*: the clock outputs are held high when a stopped clock is reset (instead of low). This is required so that when controlling sequential switches (which are assumed to also be reset on the same event) will not get triggered and moved to step 2 when the clock is started again.
 
-**PW**: Pulse width is dependent on the swing knob, but can be used to control the general duration of the clock pulse. In the worst-case knob settings, the pulse width is guaranteed to be a minimum of 1ms, with a minimum 1ms pause between pulses. 
+* **RUN**: The run button functions as a pause/play button. When turned off, the clock outputs are held in their current states. When run is turned on again, the clock engine resumes where it left off, such that when using multiple outputs with different clock ratios, a large patch with multiple sequencers playing at different speeds will not be out of sync. This effectively makes for proper pausing behavior in multi-track and multi-clock patches. For sequencers with RUN inputs, it may be beneficial to connect the RUN output of Clocked to the RUN input of the sequencers. In the case of the Phrase Sequencers (see below), this will ensure gates are not kept high while stopped, and will also allow feedback of the notes that are entered when programming a stopped sequencer.
 
-**DELAY**: Clock delay can be used to offset a sub-clock relative to the master clock, and is expressed in fractions of the clock period of the given sub-clock. Using the right click menu, the delay value can also be displayed in notes where one quarter note corresponds to a clock period. 
+* **SWING**: The clock swing is loosely based on the [Roger Linn method](https://www.attackmagazine.com/technique/passing-notes/daw-drum-machine-swing/). For a given clock, all even clocks pulses are offset forward/backward according to the setting of the Swing knob; at 0 (top) everything is aligned as normal. At -100, all even clocks would coincide with odd clocks preceding them, and at +100 they would line up with subsequent clock pulses). The knob thus goes from -99 to +99 such that no beats are missed. In its extreme positions, the timing is tighter than 99 percent of a clock period (the 99 value is only a rough indication). 
+
+* **PW**: Pulse width is dependent on the swing knob, but can be used to control the general duration of the clock pulse. In the worst-case knob settings, the pulse width is guaranteed to be a minimum of 1ms, with a minimum 1ms pause between pulses. 
+
+* **DELAY**: Clock delay can be used to offset a sub-clock relative to the master clock, and is expressed in fractions of the clock period of the given sub-clock. Using the right click menu, the delay value can also be displayed in notes where one quarter note corresponds to a clock period. 
 
 In place of a detailed explanation of these three main controls, it is recommended to connect the outputs to a scope or a logic analyzer, such as the Fundamental Scope (pictured above) or the SubmarineFree LA-108, to observe the effects of the different controls.
 
@@ -173,7 +187,7 @@ When using external clock synchronization, Clocked syncs itself to the incoming 
 
 A 4-track phrase sequencer with 32 steps per sequence, 64 sequences per track, 99 phrases per song. A phrase is a sequence number and a repetition count. Each track holds one song and can be independently clocked and edited. The SEL and ALL buttons allow the selection and simultaneous editing across multiple steps and tracks respectively. 
 
-CVs can be entered into the sequencer via CV inputs when using an external keyboard controller or via the built-in controls on the module itself. When notes are entered with the **right mouse button** on the built-in keyboard (instead of the left mouse button), the sequencer automatically moves to the next step. *New in version 0.6.14*: holding ctrl while right-clicking also copies the current note (or gate-type) over when moving to the next step. Right-click defaults are also supported on the three main knobs.
+CVs can be entered into the sequencer via CV inputs when using an external keyboard controller or via the built-in controls on the module itself. When notes are entered with the **right mouse button** on the built-in keyboard (instead of the left mouse button), the sequencer automatically moves to the next step. *New in upcoming version 0.6.14*: holding ctrl while right-clicking also copies the current note (or gate-type) over when moving to the next step. Right-click defaults are also supported on the three main knobs.
 
 Although this sequencer has many similarities to [PhraseSeq32](#phrase-seq-32), many differences must also be kept in mind for existing PhraseSeq users. Notably:
 
@@ -208,7 +222,7 @@ Here are some further details on the different functions of the sequencer.
 	
 * **CV IN and CV2 IN**: These inputs can be used for programming the sequencer from external sources. The CV2 IN inputs are located in the expansion panel (see right click menu). When a trigger is sent to the WRITE input, the states of the inputs is written into the sequencer at the current step/sequence. Unconnected inputs are ignored. When planning a project, all sequences that are to hold chords must have the same sequence numbers across all tracks. AUTOSTEP automatically moves to the next step in the sequence when a write occurs. *New in upcoming 0.6.14*: the TRACK CV input has been extended to allow ALL tracks to be selected, and unless all tracks are selected, writing via CV inputs is now only done in the currently selected track. A button located in the expansion panel allows the writing of CV IN only, CV2 IN only, or both.
 
-* **CLK RES / DELAY**: Settings for clock resolution and clock delay. The clock resolution allows [advanced gate types](#advanced-gate-mode-ps) to be used, and functions similarly to that found in the PhraseSequencers. Clock delay is used to delay the clock of a track by a given number of clock pulses (0 to 99). When clock resolutions above 1 are used, the clock can be delayed by fractions of a step. For example, with a clock resolution of 4 and a clock delay of 1, a track will be delayed by one quarter of a step. A reset must be performed in order for a new clock delay value to take effect.
+* **CLK RES / DELAY**: Settings for clock resolution and clock delay. The clock resolution allows [advanced gate types](#advanced-gate-mode-ps) to be used, and functions similarly to that found in the PhraseSequencers. In Foundry however, when using only one clock source, clock resolution also effectively functions as a clock divider, provided the gate types required are compatible with the multiple chosen; clock resolution can thus be used to slow down the clocks of certain tracks compared to others. Clock delay is used to delay the clock of a track by a given number of clock pulses (0 to 99). When clock resolutions above 1 are used, the clock can be delayed by fractions of a step. For example, with a clock resolution of 4 and a clock delay of 1, a track will be delayed by one quarter of a step. A reset must be performed in order for a new clock delay value to take effect.
 
 * **SEL and ALL**:  The SEL and ALL buttons allow the selection and simultaneous editing across multiple steps and tracks respectively; however, since there is currently no undo feature in the sequencer; patches should be saved often. The number of steps selected by SEL is specified using the 4/8/END switch. 
 
@@ -419,25 +433,25 @@ A 6-channel 64-step trigger sequencer based on the infamous [BigButton](https://
 
 Here are a few more details on some of the uses of the buttons. The sequencer uses has two types of pushbuttons, namely trigger buttons and state buttons. Trigger buttons react to the change in a button's state as it's being pressed, while state buttons react to the position of the push-button, i.e. pressed or not pressed.
 
-**CHAN**: channel select button (can be changed in real time). All state buttons will have an effect immediately when the channel is changed.
+* **CHAN**: channel select button (can be changed in real time). All state buttons will have an effect immediately when the channel is changed.
 
-**BIG BUTTON**: trigger-type button to set the trigger at the current step in the current channel and bank. When pressing on a step that has a trigger, nothing is done.
+* **BIG BUTTON**: trigger-type button to set the trigger at the current step in the current channel and bank. When pressing on a step that has a trigger, nothing is done.
 
-**CLK**: clock input. The sequencer is always running. To stop it, the clock has to be stopped.
+* **CLK**: clock input. The sequencer is always running. To stop it, the clock has to be stopped.
 
-**RND**: a 0 to 1 probability knob, used to randomly change the state of a step. The probability is applied to the trigger of the next step being reached at every clock pulse, in the current channel. A 0 value means no change, 1 means the state of the trigger will be toggled (useful for inverting a pattern). The RND CV input's voltage is divided by 10 and added to the value of the knob to yield the actual probability. For example, with the knob at full right, the CV input has no effect, and with the knob at full left, a value of 10V on the CV input gives a probability of 1.  
+* **RND**: a 0 to 1 probability knob, used to randomly change the state of a step. The probability is applied to the trigger of the next step being reached at every clock pulse, in the current channel. A 0 value means no change, 1 means the state of the trigger will be toggled (useful for inverting a pattern). The RND CV input's voltage is divided by 10 and added to the value of the knob to yield the actual probability. For example, with the knob at full right, the CV input has no effect, and with the knob at full left, a value of 10V on the CV input gives a probability of 1.  
 
-**CLEAR**: state-type button that turns of all triggers of the current channel.
+* **CLEAR**: state-type button that turns of all triggers of the current channel.
 
-**BANK**: trigger-type button that toggles between two possible banks (i.e. sequences) for the current channel.
+* **BANK**: trigger-type button that toggles between two possible banks (i.e. sequences) for the current channel.
 
-**DEL**: state-type button that clears the trigger at the current step. The button can be held to clear multiple steps.
+* **DEL**: state-type button that clears the trigger at the current step. The button can be held to clear multiple steps.
 
-**FILL**: state-type button that plays continuous triggers for the given channel as long as the button is kept pressed. The fill starts on the next clock edge and continues on each clock edge while the button is held. 
+* **FILL**: state-type button that plays continuous triggers for the given channel as long as the button is kept pressed. The fill starts on the next clock edge and continues on each clock edge while the button is held. 
 
-**MEM**: when the MEM button is turned off, the fills are not written to memory and are only for playback. 
+* **MEM**: when the MEM button is turned off, the fills are not written to memory and are only for playback. 
 
-**SNAP**: the BIG and DEL buttons are quantized to the nearest beat when the SNAP button is active. Without quantization, button presses always affect the current beat (step) of the sequencer. With quantized buttons, they affect the nearest beat. For example, without quantization, pressing the big button 1 microsecond before a beat would normally record the beat in the current step and not the next one that is about to occur (which is actually the closest). For the quantization to work properly however, the sequencer must receive a stable clock of at least 30 BPM. When this is not the case, the option is automatically disabled internally. When manually advancing the clock to program a sequence in non real-time, for example, the option has no effect and the current step is always the target of a button press.
+* **SNAP**: the BIG and DEL buttons are quantized to the nearest beat when the SNAP button is active. Without quantization, button presses always affect the current beat (step) of the sequencer. With quantized buttons, they affect the nearest beat. For example, without quantization, pressing the big button 1 microsecond before a beat would normally record the beat in the current step and not the next one that is about to occur (which is actually the closest). For the quantization to work properly however, the sequencer must receive a stable clock of at least 30 BPM. When this is not the case, the option is automatically disabled internally. When manually advancing the clock to program a sequence in non real-time, for example, the option has no effect and the current step is always the target of a button press.
 
 ([Back to module list](#modules))
 
@@ -449,13 +463,13 @@ Here are a few more details on some of the uses of the buttons. The sequencer us
 
 A 6-channel 128-step gate and CV sequencer based on [BigButtonSeq](#big-button-seq). Familiarity with that sequencer is recommended since only the differences are discussed here. With its long sequence lengths and CV capabilities, the sequencer can be used as a CV recorder by setting the FILL CV input to a constant voltage greater than 1V and activating the MEM button, thereby sampling the CV IN port at every clock edge and committing its voltage to memory.
 
-**BIG BUTTON**: as well as turning on the gate of the current step, the CV IN port is also read and stored as the CV value of the given step.
+* **BIG BUTTON**: as well as turning on the gate of the current step, the CV IN port is also read and stored as the CV value of the given step.
 
-**GATE**: the clock signal's pulse is used as the gate out pulse, contrary to BigButtonSeq that emits 1 millisecond triggers.
+* **GATE**: the clock signal's pulse is used as the gate out pulse, contrary to BigButtonSeq that emits 1 millisecond triggers.
 
-**CLEAR**: trigger-type button that turns of all gates and reinitialized all CVs to C4 for the current channel, contrary to BigButtonSeq where CLEAR is a state-type button.
+* **CLEAR**: trigger-type button that turns of all gates and reinitialized all CVs to C4 for the current channel, contrary to BigButtonSeq where CLEAR is a state-type button.
 
-**S&H**: sample and hold the CV outputs using the gate outputs as the triggers for the sampling.
+* **S&H**: sample and hold the CV outputs using the gate outputs as the triggers for the sampling.
 
 ([Back to module list](#modules))
 
