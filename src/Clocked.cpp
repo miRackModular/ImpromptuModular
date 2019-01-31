@@ -1015,7 +1015,7 @@ Model *modelClocked = Model::create<Clocked, ClockedWidget>("Impromptu Modular",
 
 0.6.14:
 optimize swing, pw and delay knobs (those with CV inputs have the CV input effect now visible in value when move knob)
-rail clock outputs high when reset (NOT SURE YET)
+rail clock outputs high when reset
 
 0.6.13:
 run button now serves as a pause, and will not reset the internal counters in the clock (except when 
