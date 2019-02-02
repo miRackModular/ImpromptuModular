@@ -99,6 +99,7 @@ struct PhraseSeq32 : Module {
 	int panelTheme = 0;
 	int expansion = 0;
 	bool autoseq;
+	bool autostepLen;
 	bool holdTiedNotes = true;
 	int seqCVmethod = 0;// 0 is 0-10V, 1 is C4-G6, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
@@ -208,6 +209,7 @@ struct PhraseSeq32 : Module {
 	void onReset() override {
 		stepConfig = getStepConfig(CONFIG_PARAM_INIT_VALUE);
 		autoseq = false;
+		autostepLen = false;
 		pulsesPerStep = 1;
 		running = true;
 		runModeSong = MODE_FWD;
@@ -299,6 +301,9 @@ struct PhraseSeq32 : Module {
 		// expansion
 		json_object_set_new(rootJ, "expansion", json_integer(expansion));
 
+		// autostepLen
+		json_object_set_new(rootJ, "autostepLen", json_boolean(autostepLen));
+		
 		// autoseq
 		json_object_set_new(rootJ, "autoseq", json_boolean(autoseq));
 		
@@ -377,6 +382,11 @@ struct PhraseSeq32 : Module {
 		json_t *expansionJ = json_object_get(rootJ, "expansion");
 		if (expansionJ)
 			expansion = json_integer_value(expansionJ);
+
+		// autostepLen
+		json_t *autostepLenJ = json_object_get(rootJ, "autostepLen");
+		if (autostepLenJ)
+			autostepLen = json_is_true(autostepLenJ);
 
 		// autoseq
 		json_t *autoseqJ = json_object_get(rootJ, "autoseq");
@@ -774,7 +784,16 @@ struct PhraseSeq32 : Module {
 					editingChannel = (stepIndexEdit >= 16 * stepConfig) ? 1 : 0;
 					// Autostep (after grab all active inputs)
 					if (params[AUTOSTEP_PARAM].value > 0.5f) {
-						stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
+						if (stepConfig == 2 || !autostepLen) // 32
+							stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, autostepLen ? sequences[sequence].getLength() : 32);
+						else {// here 1x16 and autostepLen limit wanted
+							if (stepIndexEdit < 16) {
+								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, sequences[sequence].getLength());
+								if (stepIndexEdit == 0) stepIndexEdit = 16;
+							}
+							else
+								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, sequences[sequence].getLength() + 16);
+						}
 						if (stepIndexEdit == 0 && autoseq && !inputs[SEQCV_INPUT].active)
 							sequence = moveIndex(sequence, sequence + 1, 32);
 					}
@@ -1638,6 +1657,12 @@ struct PhraseSeq32Widget : ModuleWidget {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
+	struct AutoStepLenItem : MenuItem {
+		PhraseSeq32 *module;
+		void onAction(EventAction &e) override {
+			module->autostepLen = !module->autostepLen;
+		}
+	};
 	struct AutoseqItem : MenuItem {
 		PhraseSeq32 *module;
 		void onAction(EventAction &e) override {
@@ -1700,6 +1725,10 @@ struct PhraseSeq32Widget : ModuleWidget {
 		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on Run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
+
+		AutoStepLenItem *astlItem = MenuItem::create<AutoStepLenItem>("AutoStep write bounded by seq length", CHECKMARK(module->autostepLen));
+		astlItem->module = module;
+		menu->addChild(astlItem);
 
 		AutoseqItem *aseqItem = MenuItem::create<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
 		aseqItem->module = module;
@@ -2028,6 +2057,9 @@ struct PhraseSeq32Widget : ModuleWidget {
 Model *modelPhraseSeq32 = Model::create<PhraseSeq32, PhraseSeq32Widget>("Impromptu Modular", "Phrase-Seq-32", "SEQ - Phrase-Seq-32", SEQUENCER_TAG);
 
 /*CHANGE LOG
+
+0.6.15:
+add right-click menu option to bound AutoStep writes by sequence lengths
 
 0.6.14: 
 rotate offsets are now persistent and stored in the sequencer

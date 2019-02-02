@@ -547,12 +547,12 @@ class Sequencer {
 	
 	
 	void writeCV(int trkn, float cvVal, int multiStepsCount, float sampleRate, bool multiTracks);
-	void autostep(bool autoseq);
+	void autostep(bool autoseq, bool autostepLen);
 	bool applyNewOctave(int octn, int multiSteps, float sampleRate, bool multiTracks); // returns true if tied
 	bool applyNewKey(int keyn, int multiSteps, float sampleRate, bool autostepClick, bool multiTracks); // returns true if tied
 
-	inline void moveStepIndexEdit(int delta) {
-		stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + delta, SequencerKernel::MAX_STEPS);
+	inline void moveStepIndexEdit(int delta, bool loopOnLength) {
+		stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + delta, loopOnLength ? getLength() : SequencerKernel::MAX_STEPS);
 	}
 	void moveStepIndexEditWithEditingGate(int delta, bool writeTrig, float sampleRate);
 	inline void moveSeqIndexEdit(int deltaSeqKnob) {

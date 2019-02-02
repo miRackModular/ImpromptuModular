@@ -1039,7 +1039,7 @@ Model *modelClocked = Model::create<Clocked, ClockedWidget>("Impromptu Modular",
 /*CHANGE LOG
 
 0.6.15:
-add right click menu option for outputs reset higg/low when not running
+add right click menu option for outputs reset high/low when not running
 
 0.6.14:
 optimize swing, pw and delay knobs (those with CV inputs have the CV input effect now visible in value when move knob)

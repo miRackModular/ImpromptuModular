@@ -184,6 +184,7 @@ struct SemiModularSynth : Module {
 	// Need to save
 	int panelTheme = 2;
 	bool autoseq;
+	bool autostepLen;
 	bool holdTiedNotes = true;
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
@@ -304,6 +305,7 @@ struct SemiModularSynth : Module {
 	void onReset() override {
 		// SEQUENCER
 		autoseq = false;
+		autostepLen = false;
 		pulsesPerStep = 1;
 		running = true;
 		runModeSong = MODE_FWD;
@@ -395,6 +397,9 @@ struct SemiModularSynth : Module {
 		// panelTheme
 		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
 
+		// autostepLen
+		json_object_set_new(rootJ, "autostepLen", json_boolean(autostepLen));
+		
 		// autoseq
 		json_object_set_new(rootJ, "autoseq", json_boolean(autoseq));
 		
@@ -464,6 +469,11 @@ struct SemiModularSynth : Module {
 		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
 		if (panelThemeJ)
 			panelTheme = json_integer_value(panelThemeJ);
+
+		// autostepLen
+		json_t *autostepLenJ = json_object_get(rootJ, "autostepLen");
+		if (autostepLenJ)
+			autostepLen = json_is_true(autostepLenJ);
 
 		// autoseq
 		json_t *autoseqJ = json_object_get(rootJ, "autoseq");
@@ -823,7 +833,7 @@ struct SemiModularSynth : Module {
 					editingGateKeyLight = -1;
 					// Autostep (after grab all active inputs)
 					if (params[AUTOSTEP_PARAM].value > 0.5f) {
-						stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
+						stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, autostepLen ? sequences[sequence].getLength() : 16);
 						if (stepIndexEdit == 0 && autoseq)
 							sequence = moveIndex(sequence, sequence + 1, 16);
 					}
@@ -1723,6 +1733,12 @@ struct SemiModularSynthWidget : ModuleWidget {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
+	struct AutoStepLenItem : MenuItem {
+		SemiModularSynth *module;
+		void onAction(EventAction &e) override {
+			module->autostepLen = !module->autostepLen;
+		}
+	};
 	struct AutoseqItem : MenuItem {
 		SemiModularSynth *module;
 		void onAction(EventAction &e) override {
@@ -1776,6 +1792,10 @@ struct SemiModularSynthWidget : ModuleWidget {
 		rorItem->module = module;
 		menu->addChild(rorItem);
 		
+		AutoStepLenItem *astlItem = MenuItem::create<AutoStepLenItem>("AutoStep write bounded by seq length", CHECKMARK(module->autostepLen));
+		astlItem->module = module;
+		menu->addChild(astlItem);
+
 		AutoseqItem *aseqItem = MenuItem::create<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
 		aseqItem->module = module;
 		menu->addChild(aseqItem);
@@ -2145,6 +2165,9 @@ struct SemiModularSynthWidget : ModuleWidget {
 Model *modelSemiModularSynth = Model::create<SemiModularSynth, SemiModularSynthWidget>("Impromptu Modular", "Semi-Modular Synth", "MISC - Semi-Modular Synth", SEQUENCER_TAG, OSCILLATOR_TAG);
 
 /*CHANGE LOG
+
+0.6.15:
+add right-click menu option to bound AutoStep writes by sequence lengths
 
 0.6.14: 
 rotate offsets are now persistent and stored in the sequencer

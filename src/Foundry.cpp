@@ -100,6 +100,7 @@ struct Foundry : Module {
 	bool velocityBipol;
 	bool holdTiedNotes = true;
 	bool autoseq;
+	bool autostepLen;
 	bool showSharp = true;
 	int seqCVmethod = 0;// 0 is 0-10V, 1 is C2-D7#, 2 is TrigIncr
 	bool running;
@@ -177,6 +178,7 @@ struct Foundry : Module {
 	// onReset() is also called when right-click initialization of module
 	void onReset() override {
 		autoseq = false;
+		autostepLen = false;
 		running = true;
 		velocityMode = 0;
 		velocityBipol = false;
@@ -219,6 +221,9 @@ struct Foundry : Module {
 		// velocityBipol
 		json_object_set_new(rootJ, "velocityBipol", json_integer(velocityBipol));
 
+		// autostepLen
+		json_object_set_new(rootJ, "autostepLen", json_boolean(autostepLen));
+		
 		// autoseq
 		json_object_set_new(rootJ, "autoseq", json_boolean(autoseq));
 		
@@ -272,6 +277,11 @@ struct Foundry : Module {
 		json_t *velocityBipolJ = json_object_get(rootJ, "velocityBipol");
 		if (velocityBipolJ)
 			velocityBipol = json_integer_value(velocityBipolJ);
+
+		// autostepLen
+		json_t *autostepLenJ = json_object_get(rootJ, "autostepLen");
+		if (autostepLenJ)
+			autostepLen = json_is_true(autostepLenJ);
 
 		// autoseq
 		json_t *autoseqJ = json_object_get(rootJ, "autoseq");
@@ -446,7 +456,7 @@ struct Foundry : Module {
 					}
 					seq.setEditingGateKeyLight(-1);
 					if (params[AUTOSTEP_PARAM].value > 0.5f)
-						seq.autostep(autoseq && !inputs[SEQCV_INPUT].active);
+						seq.autostep(autoseq && !inputs[SEQCV_INPUT].active, autostepLen);
 				}
 				else if (attached)
 					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
@@ -812,18 +822,7 @@ struct Foundry : Module {
 			}
 			seq.step();
 		}
-		
-		// OLD VERSION
-		// bool realClockEdgeToHandle = running && clockIgnoreOnReset == 0l;
-		// bool clockTrigged[Sequencer::NUM_TRACKS];
-		// for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-			// clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].value);
-			// if (clockTrigged[clkInSources[trkn]])
-				// seq.clockStep(trkn, realClockEdgeToHandle);
-		// }
-		// seq.step();		
-		
-		
+				
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].value + params[RESET_PARAM].value)) {
 			seq.initRun();
@@ -1345,6 +1344,12 @@ struct FoundryWidget : ModuleWidget {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
+	struct AutoStepLenItem : MenuItem {
+		Foundry *module;
+		void onAction(EventAction &e) override {
+			module->autostepLen = !module->autostepLen;
+		}
+	};
 	struct AutoseqItem : MenuItem {
 		Foundry *module;
 		void onAction(EventAction &e) override {
@@ -1435,6 +1440,10 @@ struct FoundryWidget : ModuleWidget {
 		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on Run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
+
+		AutoStepLenItem *astlItem = MenuItem::create<AutoStepLenItem>("AutoStep write bounded by seq length", CHECKMARK(module->autostepLen));
+		astlItem->module = module;
+		menu->addChild(astlItem);
 
 		AutoseqItem *aseqItem = MenuItem::create<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
 		aseqItem->module = module;
@@ -1905,6 +1914,9 @@ struct FoundryWidget : ModuleWidget {
 Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular", "Foundry", "SEQ - Foundry", SEQUENCER_TAG);
 
 /*CHANGE LOG
+
+0.6.15:
+add right-click menu option to bound AutoStep writes by sequence lengths
 
 0.6.14: 
 allow ctrl-right-click of notes to copy note/gate-type over to next step (not just move to next step)

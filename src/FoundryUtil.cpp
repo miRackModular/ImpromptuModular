@@ -908,7 +908,7 @@ bool Sequencer::setGateType(int keyn, int multiSteps, bool autostepClick, bool m
 		}
 	}
 	if (autostepClick){ // if right-click then move to next step
-		moveStepIndexEdit(1);
+		moveStepIndexEdit(1, false);
 		if (windowIsModPressed() && multiSteps < 2)
 			setGateType(keyn, 1, false, multiTracks);
 	}
@@ -1046,8 +1046,8 @@ void Sequencer::writeCV(int trkn, float cvVal, int multiStepsCount, float sample
 		}
 	}
 }
-void Sequencer::autostep(bool autoseq) {
-	moveStepIndexEdit(1);
+void Sequencer::autostep(bool autoseq, bool autostepLen) {
+	moveStepIndexEdit(1, autostepLen);
 	if (stepIndexEdit == 0 && autoseq)
 		seqIndexEdit = moveIndex(seqIndexEdit, seqIndexEdit + 1, SequencerKernel::MAX_SEQS);	
 }	
@@ -1070,7 +1070,7 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 	bool ret = false;
 	if (sek[trackIndexEdit].getTied(seqIndexEdit, stepIndexEdit)) {
 		if (autostepClick)
-			moveStepIndexEdit(1);
+			moveStepIndexEdit(1, false);
 		else
 			ret = true;
 	}
@@ -1085,7 +1085,7 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 			}
 		}
 		if (autostepClick) {// if right-click then move to next step
-			moveStepIndexEdit(1);
+			moveStepIndexEdit(1, false);
 			if (windowIsModPressed() && multiSteps < 2)
 				writeCV(trackIndexEdit, editingGateCV[trackIndexEdit], 1, sampleRate, multiTracks);
 			editingGateKeyLight = keyn;
@@ -1095,7 +1095,7 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 }
 
 void Sequencer::moveStepIndexEditWithEditingGate(int delta, bool writeTrig, float sampleRate) {
-	moveStepIndexEdit(delta);
+	moveStepIndexEdit(delta, false);
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
 		if (!sek[trkn].getTied(seqIndexEdit, stepIndexEdit)) {// play if non-tied step
 			if (!writeTrig) {// in case autostep when simultaneous writeCV and stepCV (keep what was done in Write Input block above)
