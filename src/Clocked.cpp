@@ -13,8 +13,6 @@
 
 #include "ImpromptuModular.hpp"
 
-static const bool resetClockOutputsHigh = true;
-
 
 class Clock {
 	// The -1.0 step is used as a reset state every double-period so that 
@@ -29,6 +27,7 @@ class Clock {
 	int iterations;// run this many double periods before going into sync if sub-clock
 	Clock* syncSrc = nullptr; // only subclocks will have this set to master clock
 	static constexpr double guard = 0.0005;// in seconds, region for sync to occur right before end of length of last iteration; sub clocks must be low during this period
+	bool *resetClockOutputsHigh;
 	
 	public:
 	
@@ -45,8 +44,9 @@ class Clock {
 	inline double getStep() {
 		return step;
 	}
-	void setSync(Clock* clkGiven) {
+	void setup(Clock* clkGiven, bool *resetClockOutputsHighPtr) {
 		syncSrc = clkGiven;
+		resetClockOutputsHigh = resetClockOutputsHighPtr;
 	}
 	inline void start() {
 		step = 0.0;
@@ -110,7 +110,7 @@ class Clock {
 			else if ((step >= p3) && (step < p4))
 				high = 2;
 		}
-		else if (resetClockOutputsHigh)
+		else if (*resetClockOutputsHigh)
 			high = 1;
 		return high;
 	}	
@@ -132,10 +132,13 @@ class ClockDelay {
 	public:
 	
 	ClockDelay() {
-		reset();
+		reset(true);
 	}
 	
-	void reset() {
+	void setup() {
+	}
+	
+	void reset(bool resetClockOutputsHigh) {
 		stepCounter = 0l;
 		lastWriteValue = 0;
 		readState = resetClockOutputsHigh;
@@ -240,6 +243,8 @@ struct Clocked : Module {
 	bool emitResetOnStopRun = false;
 	int ppqn = 4;
 	bool running;
+	bool resetClockOutputsHigh = true;
+
 	
 	// No need to save
 	Clock clk[4];
@@ -331,8 +336,9 @@ struct Clocked : Module {
 	
 	// called from the main thread (step() can not be called until all modules created)
 	Clocked() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
-		for (int i = 1; i < 4; i++)
-			clk[i].setSync(&clk[0]);		
+		for (int i = 1; i < 4; i++) {
+			clk[i].setup(&clk[0], &resetClockOutputsHigh);		
+		}
 		onReset();
 	}
 	
@@ -355,7 +361,7 @@ struct Clocked : Module {
 		for (int i = 0; i < 4; i++) {
 			clk[i].reset();
 			if (i < 3) 
-				delay[i].reset();
+				delay[i].reset(resetClockOutputsHigh);
 			syncRatios[i] = false;
 			ratiosDoubled[i] = getRatioDoubled(i);
 			updatePulseSwingDelay();
@@ -404,6 +410,9 @@ struct Clocked : Module {
 		// ppqn
 		json_object_set_new(rootJ, "ppqn", json_integer(ppqn));
 		
+		// resetClockOutputsHigh
+		json_object_set_new(rootJ, "resetClockOutputsHigh", json_boolean(resetClockOutputsHigh));
+		
 		return rootJ;
 	}
 
@@ -443,6 +452,11 @@ struct Clocked : Module {
 		json_t *ppqnJ = json_object_get(rootJ, "ppqn");
 		if (ppqnJ)
 			ppqn = clamp(json_integer_value(ppqnJ), 4, 24);
+
+		// resetClockOutputsHigh
+		json_t *resetClockOutputsHighJ = json_object_get(rootJ, "resetClockOutputsHigh");
+		if (resetClockOutputsHighJ)
+			resetClockOutputsHigh = json_is_true(resetClockOutputsHighJ);
 
 		scheduledReset = true;
 	}
@@ -781,6 +795,13 @@ struct ClockedWidget : ModuleWidget {
 			module->emitResetOnStopRun = !module->emitResetOnStopRun;
 		}
 	};	
+	struct ResetHighItem : MenuItem {
+		Clocked *module;
+		void onAction(EventAction &e) override {
+			module->resetClockOutputsHigh = !module->resetClockOutputsHigh;
+			module->resetClocked(true);
+		}
+	};	
 	Menu *createContextMenu() override {
 		Menu *menu = ModuleWidget::createContextMenu();
 
@@ -819,6 +840,10 @@ struct ClockedWidget : ModuleWidget {
 		EmitResetItem *erItem = MenuItem::create<EmitResetItem>("Reset when Run is Turned Off", CHECKMARK(module->emitResetOnStopRun));
 		erItem->module = module;
 		menu->addChild(erItem);
+
+		ResetHighItem *rhItem = MenuItem::create<ResetHighItem>("Outputs reset high when not running", CHECKMARK(module->resetClockOutputsHigh));
+		rhItem->module = module;
+		menu->addChild(rhItem);
 
 		menu->addChild(new MenuLabel());// empty line
 		
@@ -1012,6 +1037,9 @@ struct ClockedWidget : ModuleWidget {
 Model *modelClocked = Model::create<Clocked, ClockedWidget>("Impromptu Modular", "Clocked", "CLK - Clocked", CLOCK_TAG);
 
 /*CHANGE LOG
+
+0.6.15:
+add right click menu option for outputs reset higg/low when not running
 
 0.6.14:
 optimize swing, pw and delay knobs (those with CV inputs have the CV input effect now visible in value when move knob)
