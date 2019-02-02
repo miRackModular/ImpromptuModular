@@ -11,7 +11,7 @@
 
 #include <algorithm>
 #include "ImpromptuModular.hpp"
-#include "FoundryUtil.hpp"
+#include "FoundrySequencer.hpp"
 
 
 struct Foundry : Module {	
@@ -1916,6 +1916,7 @@ Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular",
 /*CHANGE LOG
 
 0.6.15:
+fix TKA song runmode slaving
 add right-click menu option to bound AutoStep writes by sequence lengths
 
 0.6.14: 
