@@ -38,6 +38,7 @@ class Sequencer {
 	// No need to save	
 	unsigned long editingGate[NUM_TRACKS];// 0 when no edit gate, downward step counter timer when edit gate
 	float editingGateCV[NUM_TRACKS];// no need to initialize, this goes with editingGate (output this only when editingGate > 0)
+	int editingGateCV2[NUM_TRACKS];// no need to initialize, this goes with editingGate (output this only when editingGate > 0)
 	int editingGateKeyLight;// no need to initialize, this goes with editingGate (use this only when editingGate > 0)
 	SeqCPbuffer seqCPbuf;
 	SongCPbuffer songCPbuf;
@@ -78,6 +79,7 @@ class Sequencer {
 		if (!sek[trackIndexEdit].getTied(seqIndexEdit,stepIndexEdit)) {// play if non-tied step
 			editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 			editingGateCV[trackIndexEdit] = sek[trackIndexEdit].getCV(seqIndexEdit, stepIndexEdit);
+			editingGateCV2[trackIndexEdit] = sek[trackIndexEdit].getVelocityVal(seqIndexEdit, stepIndexEdit);
 			editingGateKeyLight = -1;
 		}
 	}
@@ -175,7 +177,7 @@ class Sequencer {
 	inline float calcVelOutput(int trkn, bool running) {
 		if (running)
 			return calcVelocityVoltage(sek[trkn].getVelocityValRun());
-		return calcVelocityVoltage(sek[trkn].getVelocityVal(seqIndexEdit, stepIndexEdit));
+		return calcVelocityVoltage( (editingGate[trkn] > 0ul) ? editingGateCV2[trkn] : sek[trkn].getVelocityVal(seqIndexEdit, stepIndexEdit) );
 	}
 	inline float calcVelocityVoltage(int vVal) {// internal use only, used by: calcVelOutput()
 		float velRet = (float)vVal;

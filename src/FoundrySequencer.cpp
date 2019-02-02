@@ -195,6 +195,8 @@ void Sequencer::pasteSong(bool multiTracks) {
 void Sequencer::writeCV(int trkn, float cvVal, int multiStepsCount, float sampleRate, bool multiTracks) {
 	sek[trkn].writeCV(seqIndexEdit, stepIndexEdit, cvVal, multiStepsCount);
 	editingGateCV[trkn] = cvVal;
+	editingGateCV2[trkn] = sek[trkn].getVelocityVal(seqIndexEdit, stepIndexEdit);
+	//info("writeCV() got %i as editingGateCV2",editingGateCV2[trkn]);
 	editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
@@ -213,6 +215,7 @@ bool Sequencer::applyNewOctave(int octn, int multiSteps, float sampleRate, bool 
 	if (sek[trackIndexEdit].getTied(seqIndexEdit, stepIndexEdit))
 		return true;
 	editingGateCV[trackIndexEdit] = sek[trackIndexEdit].applyNewOctave(seqIndexEdit, stepIndexEdit, octn, multiSteps);
+	editingGateCV2[trackIndexEdit] = sek[trackIndexEdit].getVelocityVal(seqIndexEdit, stepIndexEdit);
 	editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 	editingGateKeyLight = -1;
 	if (multiTracks) {
@@ -233,6 +236,7 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 	}
 	else {
 		editingGateCV[trackIndexEdit] = sek[trackIndexEdit].applyNewKey(seqIndexEdit, stepIndexEdit, keyn, multiSteps);
+		editingGateCV2[trackIndexEdit] = sek[trackIndexEdit].getVelocityVal(seqIndexEdit, stepIndexEdit);
 		editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 		editingGateKeyLight = -1;
 		if (multiTracks) {
@@ -243,8 +247,8 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 		}
 		if (autostepClick) {// if right-click then move to next step
 			moveStepIndexEdit(1, false);
-			if (windowIsModPressed() && multiSteps < 2)
-				writeCV(trackIndexEdit, editingGateCV[trackIndexEdit], 1, sampleRate, multiTracks);
+			if (windowIsModPressed() && multiSteps < 2) // if ctrl-right-click and SEL is off
+				writeCV(trackIndexEdit, editingGateCV[trackIndexEdit], 1, sampleRate, multiTracks);// copy CV only to next step
 			editingGateKeyLight = keyn;
 		}
 	}
@@ -258,6 +262,7 @@ void Sequencer::moveStepIndexEditWithEditingGate(int delta, bool writeTrig, floa
 			if (!writeTrig) {// in case autostep when simultaneous writeCV and stepCV (keep what was done in Write Input block above)
 				editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 				editingGateCV[trkn] = sek[trkn].getCV(seqIndexEdit, stepIndexEdit);
+				editingGateCV2[trkn] = sek[trkn].getVelocityVal(seqIndexEdit, stepIndexEdit);
 				editingGateKeyLight = -1;
 			}
 		}

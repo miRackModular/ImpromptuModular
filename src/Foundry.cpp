@@ -443,14 +443,15 @@ struct Foundry : Module {
 					int multiStepsCount = multiSteps ? cpMode : 1;
 					for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 						if (trkn == seq.getTrackIndexEdit() || multiTracks) {
-							if (inputs[CV_INPUTS + trkn].active && ((writeMode & 0x2) == 0)) {
-								seq.writeCV(trkn, clamp(inputs[CV_INPUTS + trkn].value, -10.0f, 10.0f), multiStepsCount, sampleRate, multiTracks);
-							}
-							if (inputs[VEL_INPUTS + trkn].active && ((writeMode & 0x1) == 0)) {	
+							if (inputs[VEL_INPUTS + trkn].active && ((writeMode & 0x1) == 0)) {	// must be before seq.writeCV() below, so that editing CV2 can be grabbed
 								float maxVel = (velocityMode > 0 ? 127.0f : 200.0f);
 								float capturedCV = inputs[VEL_INPUTS + trkn].value + (velocityBipol ? 5.0f : 0.0f);
 								int intVel = (int)(capturedCV * maxVel / 10.0f + 0.5f);
 								seq.setVelocityVal(trkn, clamp(intVel, 0, 200), multiStepsCount, multiTracks);
+								//info("writeTrig in main saw %i as velocity",clamp(intVel, 0, 200));
+							}
+							if (inputs[CV_INPUTS + trkn].active && ((writeMode & 0x2) == 0)) {
+								seq.writeCV(trkn, clamp(inputs[CV_INPUTS + trkn].value, -10.0f, 10.0f), multiStepsCount, sampleRate, multiTracks);
 							}
 						}
 					}
@@ -1916,6 +1917,7 @@ Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular",
 /*CHANGE LOG
 
 0.6.15:
+add proper CV2 monitoring when not running and editing sequences
 fix TKA song runmode slaving
 add right-click menu option to bound AutoStep writes by sequence lengths
 
