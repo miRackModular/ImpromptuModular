@@ -809,12 +809,13 @@ void SequencerKernel::movePhraseIndexRun(bool init) {
 		break;
 		
 		case MODE_TKA:// use track A's phraseIndexRun; base is 0x7000
-			if (masterKernel != nullptr) {// nothing to do here, handled elsewhere
-				// phraseIndexRunHistory = 0x7000;
-				// phraseIndexRun = masterKernel->getPhraseIndexRun();
+			if (masterKernel != nullptr) {
+				phraseIndexRunHistory = 0x7000;
+				if (init)// only init to be done in here, rest is handled in Sequencer::clockStep()
+					phraseIndexRun = masterKernel->getPhraseIndexRun();
 				break;
 			}
-			[[fallthrough]];
+			[[fallthrough]];// TKA defaults to FWD for track A
 		default :// MODE_FWD  forward; history base is 0x1000
 			phraseIndexRunHistory = 0x1000;
 			moveSongIndexForeward(init, true);

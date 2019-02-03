@@ -377,8 +377,6 @@ class SequencerKernel {
 	void clockStep(bool realClockEdgeToHandle);
 	inline void step() {
 		clockPeriod++;
-		//if (masterKernel != nullptr && runModeSong == MODE_TKA)
-			//phraseIndexRun = masterKernel->getPhraseIndexRun();
 	}
 	int keyIndexToGateTypeEx(int keyIndex);
 	void transposeSeq(int seqn, int delta);

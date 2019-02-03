@@ -448,7 +448,6 @@ struct Foundry : Module {
 								float capturedCV = inputs[VEL_INPUTS + trkn].value + (velocityBipol ? 5.0f : 0.0f);
 								int intVel = (int)(capturedCV * maxVel / 10.0f + 0.5f);
 								seq.setVelocityVal(trkn, clamp(intVel, 0, 200), multiStepsCount, multiTracks);
-								//info("writeTrig in main saw %i as velocity",clamp(intVel, 0, 200));
 							}
 							if (inputs[CV_INPUTS + trkn].active && ((writeMode & 0x2) == 0)) {
 								seq.writeCV(trkn, clamp(inputs[CV_INPUTS + trkn].value, -10.0f, 10.0f), multiStepsCount, sampleRate, multiTracks);
@@ -820,12 +819,6 @@ struct Foundry : Module {
 				clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].value);
 				if (clockTrigged[clkInSources[trkn]]) {
 					seq.clockStep(trkn, true);
-					if (trkn == 0) {
-						for (int tkbcd = 1; tkbcd < Sequencer::NUM_TRACKS; tkbcd++) {
-							if (seq.getRunModeSong(tkbcd) == SequencerKernel::MODE_TKA)
-								seq.setPhraseIndexRun(tkbcd, seq.getPhraseIndexRun(0));
-						}
-					}
 				}
 			}
 			seq.step();

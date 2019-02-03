@@ -56,7 +56,6 @@ class Sequencer {
 	inline int getPhraseIndexEdit() {return phraseIndexEdit;}
 	inline int getTrackIndexEdit() {return trackIndexEdit;}
 	inline int getStepIndexRun(int trkn) {return sek[trkn].getStepIndexRun();}
-	inline int getPhraseIndexRun(int trkn) {return sek[trkn].getPhraseIndexRun();}
 	inline int getLength() {return sek[trackIndexEdit].getLength(seqIndexEdit);}
 	inline StepAttributes getAttribute() {return sek[trackIndexEdit].getAttribute(seqIndexEdit, stepIndexEdit);}
 	inline float getCV() {return sek[trackIndexEdit].getCV(seqIndexEdit, stepIndexEdit);}
@@ -65,7 +64,6 @@ class Sequencer {
 	inline int getPulsesPerStep() {return sek[trackIndexEdit].getPulsesPerStep();}
 	inline int getDelay() {return sek[trackIndexEdit].getDelay();}
 	inline int getRunModeSong() {return sek[trackIndexEdit].getRunModeSong();}
-	inline int getRunModeSong(int trkn) {return sek[trkn].getRunModeSong();}
 	inline int getRunModeSeq() {return sek[trackIndexEdit].getRunModeSeq(seqIndexEdit);}
 	inline int getPhraseReps() {return sek[trackIndexEdit].getPhraseReps(phraseIndexEdit);}
 	inline int getBegin() {return sek[trackIndexEdit].getBegin();}
@@ -88,7 +86,6 @@ class Sequencer {
 	inline void setSeqIndexEdit(int _seqIndexEdit) {seqIndexEdit = _seqIndexEdit;}
 	inline void setPhraseIndexEdit(int _phraseIndexEdit) {phraseIndexEdit = _phraseIndexEdit;}
 	inline void setTrackIndexEdit(int _trackIndexEdit) {trackIndexEdit = _trackIndexEdit;}
-	inline void setPhraseIndexRun(int trkn, int _phraseIndexRun) {sek[trkn].setPhraseIndexRun(_phraseIndexRun);}
 	void setVelocityVal(int trkn, int intVel, int multiStepsCount, bool multiTracks);
 	void setLength(int length, bool multiTracks);
 	void setBegin(bool multiTracks);
@@ -232,9 +229,7 @@ class Sequencer {
 	void toJson(json_t *rootJ);
 	void fromJson(json_t *rootJ);
 
-	inline void clockStep(int trkn, bool realClockEdgeToHandle) {
-		sek[trkn].clockStep(realClockEdgeToHandle);
-	}
+	void clockStep(int trkn, bool realClockEdgeToHandle);
 	inline void step() {
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++) 
 			sek[trkn].step();

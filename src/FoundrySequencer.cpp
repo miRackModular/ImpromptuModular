@@ -196,7 +196,6 @@ void Sequencer::writeCV(int trkn, float cvVal, int multiStepsCount, float sample
 	sek[trkn].writeCV(seqIndexEdit, stepIndexEdit, cvVal, multiStepsCount);
 	editingGateCV[trkn] = cvVal;
 	editingGateCV2[trkn] = sek[trkn].getVelocityVal(seqIndexEdit, stepIndexEdit);
-	//info("writeCV() got %i as editingGateCV2",editingGateCV2[trkn]);
 	editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
@@ -497,6 +496,17 @@ void Sequencer::fromJson(json_t *rootJ) {
 	
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
 		sek[trkn].fromJson(rootJ);
+}
+
+
+void Sequencer::clockStep(int trkn, bool realClockEdgeToHandle) {
+	sek[trkn].clockStep(realClockEdgeToHandle);
+	if (trkn == 0) {
+		for (int tkbcd = 1; tkbcd < NUM_TRACKS; tkbcd++) {// check for song run mode slaving
+			if (sek[tkbcd].getRunModeSong() == SequencerKernel::MODE_TKA)
+				sek[tkbcd].setPhraseIndexRun(sek[0].getPhraseIndexRun());
+		}
+	}
 }
 
 
