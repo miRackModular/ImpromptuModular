@@ -818,8 +818,15 @@ struct Foundry : Module {
 			bool clockTrigged[Sequencer::NUM_TRACKS];
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 				clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].value);
-				if (clockTrigged[clkInSources[trkn]])
+				if (clockTrigged[clkInSources[trkn]]) {
 					seq.clockStep(trkn, true);
+					if (trkn == 0) {
+						for (int tkbcd = 1; tkbcd < Sequencer::NUM_TRACKS; tkbcd++) {
+							if (seq.getRunModeSong(tkbcd) == SequencerKernel::MODE_TKA)
+								seq.setPhraseIndexRun(tkbcd, seq.getPhraseIndexRun(0));
+						}
+					}
+				}
 			}
 			seq.step();
 		}

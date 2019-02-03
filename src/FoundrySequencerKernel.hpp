@@ -238,6 +238,7 @@ class SequencerKernel {
 	inline int getVelocityValRun() {return getAttributeRun().getVelocityVal();}
 	inline int getGateType(int seqn, int stepn) {return attributes[seqn][stepn].getGateType();}	
 	
+	inline void setPhraseIndexRun(int _phraseIndexRun) {phraseIndexRun = _phraseIndexRun;}
 	inline void setPulsesPerStep(int _pps) {pulsesPerStep = _pps;}
 	inline void setDelay(int _delay) {delay = _delay;}
 	inline void setLength(int seqn, int _length) {sequences[seqn].setLength(_length);}
@@ -376,8 +377,8 @@ class SequencerKernel {
 	void clockStep(bool realClockEdgeToHandle);
 	inline void step() {
 		clockPeriod++;
-		if (masterKernel != nullptr && runModeSong == MODE_TKA)
-			phraseIndexRun = masterKernel->getPhraseIndexRun();
+		//if (masterKernel != nullptr && runModeSong == MODE_TKA)
+			//phraseIndexRun = masterKernel->getPhraseIndexRun();
 	}
 	int keyIndexToGateTypeEx(int keyIndex);
 	void transposeSeq(int seqn, int delta);
