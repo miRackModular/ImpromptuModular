@@ -399,8 +399,8 @@ class SequencerKernel {
 	}
 	void activateTiedStep(int seqn, int stepn);
 	void deactivateTiedStep(int seqn, int stepn);
-	void calcGateCodeEx(int seqn);
-	bool moveStepIndexRun();
+	void calcGateCodeEx();
+	bool moveStepIndexRun(bool init);
 	void moveSongIndexBackward(bool init, bool rollover);
 	void moveSongIndexForeward(bool init, bool rollover);
 	int tempPhraseIndexes[MAX_PHRASES];// used only in next method	

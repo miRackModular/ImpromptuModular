@@ -207,14 +207,11 @@ void SequencerKernel::randomize() {
 
 void SequencerKernel::initRun() {
 	movePhraseIndexRun(true);// true means init 
-
-	int seqn = phrases[phraseIndexRun].getSeqNum();
-	stepIndexRun = (sequences[seqn].getRunMode() == MODE_REV ? sequences[seqn].getLength() - 1 : 0);
-	stepIndexRunHistory = 0;
+	moveStepIndexRun(true);// true means init 
 
 	ppqnCount = 0;
 	ppqnLeftToSkip = delay;
-	calcGateCodeEx(seqn);// uses stepIndexRun as the step
+	calcGateCodeEx();// uses stepIndexRun as the step and phraseIndexRun to determine the seq
 	slideStepsRemain = 0ul;
 }
 
@@ -374,7 +371,7 @@ void SequencerKernel::clockStep(bool realClockEdgeToHandle) {
 				ppqnCount = 0;
 			if (ppqnCount == 0) {
 				float slideFromCV = getCVRun();
-				if (moveStepIndexRun()) {
+				if (moveStepIndexRun(false)) {// false means normal (not init)
 					movePhraseIndexRun(false);// false means normal (not init)
 					SeqAttributes newSeq = sequences[phrases[phraseIndexRun].getSeqNum()];
 					stepIndexRun = (newSeq.getRunMode() == MODE_REV ? newSeq.getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
@@ -392,7 +389,7 @@ void SequencerKernel::clockStep(bool realClockEdgeToHandle) {
 				else
 					slideStepsRemain = 0ul;
 			}
-			calcGateCodeEx(phrases[phraseIndexRun].getSeqNum());// uses stepIndexRun as the step		
+			calcGateCodeEx();// uses stepIndexRun as the step and phraseIndexRun to determine the seq
 		}
 	}
 	clockPeriod = 0ul;
@@ -522,7 +519,8 @@ void SequencerKernel::deactivateTiedStep(int seqn, int stepn) {
 }
 
 
-void SequencerKernel::calcGateCodeEx(int seqn) {// uses stepIndexRun as the step
+void SequencerKernel::calcGateCodeEx() {// uses stepIndexRun as the step and phraseIndexRun to determine the seq
+	int seqn = phrases[phraseIndexRun].getSeqNum();
 	StepAttributes attribute = attributes[seqn][stepIndexRun];
 	int ppsFiltered = getPulsesPerStep();// must use method
 	int gateType;
@@ -556,13 +554,17 @@ void SequencerKernel::calcGateCodeEx(int seqn) {// uses stepIndexRun as the step
 }
 	
 
-bool SequencerKernel::moveStepIndexRun() {	
+bool SequencerKernel::moveStepIndexRun(bool init) {	
 	int reps = phrases[phraseIndexRun].getReps();// 0-rep seqs should be filtered elsewhere and should never happen here. If they do, they will be played (this can be the case when all of the song has 0-rep seqs, or the song is started (reset) into a first phrase that has 0 reps)
 	// assert((reps * MAX_STEPS) <= 0xFFF); // for BRN and RND run modes, history is not a span count but a step count
-	int runMode = sequences[phrases[phraseIndexRun].getSeqNum()].getRunMode();
-	int endStep = sequences[phrases[phraseIndexRun].getSeqNum()].getLength() - 1;
+	int seqn = phrases[phraseIndexRun].getSeqNum();
+	int runMode = sequences[seqn].getRunMode();
+	int endStep = sequences[seqn].getLength() - 1;
 	
 	bool crossBoundary = false;
+	
+	if (init)
+		stepIndexRunHistory = 0;
 	
 	switch (runMode) {
 	
@@ -571,32 +573,40 @@ bool SequencerKernel::moveStepIndexRun() {
 		case MODE_REV :// reverse; history base is 0x2000
 			if (stepIndexRunHistory < 0x2001 || stepIndexRunHistory > 0x2FFF)
 				stepIndexRunHistory = 0x2000 + reps;
-			stepIndexRun--;
-			if (stepIndexRun < 0) {
+			if (init)
 				stepIndexRun = endStep;
-				stepIndexRunHistory--;
-				if (stepIndexRunHistory <= 0x2000)
-					crossBoundary = true;
+			else {
+				stepIndexRun--;
+				if (stepIndexRun < 0) {
+					stepIndexRun = endStep;
+					stepIndexRunHistory--;
+					if (stepIndexRunHistory <= 0x2000)
+						crossBoundary = true;
+				}
 			}
 		break;
 		
 		case MODE_PPG :// forward-reverse; history base is 0x3000
 			if (stepIndexRunHistory < 0x3001 || stepIndexRunHistory > 0x3FFF) // even means going forward, odd means going reverse
 				stepIndexRunHistory = 0x3000 + reps * 2;
-			if ((stepIndexRunHistory & 0x1) == 0) {// even so forward phase
-				stepIndexRun++;
-				if (stepIndexRun > endStep) {
-					stepIndexRun = endStep;
-					stepIndexRunHistory--;
+			if (init)
+				stepIndexRun = 0;
+			else {
+				if ((stepIndexRunHistory & 0x1) == 0) {// even so forward phase
+					stepIndexRun++;
+					if (stepIndexRun > endStep) {
+						stepIndexRun = endStep;
+						stepIndexRunHistory--;
+					}
 				}
-			}
-			else {// odd so reverse phase
-				stepIndexRun--;
-				if (stepIndexRun < 0) {
-					stepIndexRun = 0;
-					stepIndexRunHistory--;
-					if (stepIndexRunHistory <= 0x3000)
-						crossBoundary = true;
+				else {// odd so reverse phase
+					stepIndexRun--;
+					if (stepIndexRun < 0) {
+						stepIndexRun = 0;
+						stepIndexRunHistory--;
+						if (stepIndexRunHistory <= 0x3000)
+							crossBoundary = true;
+					}
 				}
 			}
 		break;
@@ -604,12 +614,27 @@ bool SequencerKernel::moveStepIndexRun() {
 		case MODE_PEN :// forward-reverse; history base is 0x4000
 			if (stepIndexRunHistory < 0x4001 || stepIndexRunHistory > 0x4FFF) // even means going forward, odd means going reverse
 				stepIndexRunHistory = 0x4000 + reps * 2;
-			if ((stepIndexRunHistory & 0x1) == 0) {// even so forward phase
-				stepIndexRun++;
-				if (stepIndexRun > endStep) {
-					stepIndexRun = endStep - 1;
-					stepIndexRunHistory--;
-					if (stepIndexRun <= 0) {// if back at start after turnaround, then no reverse phase needed
+			if (init)
+				stepIndexRun = 0;
+			else {			
+				if ((stepIndexRunHistory & 0x1) == 0) {// even so forward phase
+					stepIndexRun++;
+					if (stepIndexRun > endStep) {
+						stepIndexRun = endStep - 1;
+						stepIndexRunHistory--;
+						if (stepIndexRun <= 0) {// if back at start after turnaround, then no reverse phase needed
+							stepIndexRun = 0;
+							stepIndexRunHistory--;
+							if (stepIndexRunHistory <= 0x4000)
+								crossBoundary = true;
+						}
+					}
+				}
+				else {// odd so reverse phase
+					stepIndexRun--;
+					if (stepIndexRun > endStep)// handle song jumped
+						stepIndexRun = endStep;
+					if (stepIndexRun <= 0) {
 						stepIndexRun = 0;
 						stepIndexRunHistory--;
 						if (stepIndexRunHistory <= 0x4000)
@@ -617,39 +642,36 @@ bool SequencerKernel::moveStepIndexRun() {
 					}
 				}
 			}
-			else {// odd so reverse phase
-				stepIndexRun--;
-				if (stepIndexRun > endStep)// handle song jumped
-					stepIndexRun = endStep;
-				if (stepIndexRun <= 0) {
-					stepIndexRun = 0;
-					stepIndexRunHistory--;
-					if (stepIndexRunHistory <= 0x4000)
-						crossBoundary = true;
-				}
-			}
 		break;
 		
 		case MODE_BRN :// brownian random; history base is 0x5000
 			if (stepIndexRunHistory < 0x5001 || stepIndexRunHistory > 0x5FFF) 
 				stepIndexRunHistory = 0x5000 + (endStep + 1) * reps;			
-			stepIndexRun += (randomu32() % 3) - 1;
-			if (stepIndexRun > endStep)
+			if (init)
 				stepIndexRun = 0;
-			if (stepIndexRun < 0)
-				stepIndexRun = endStep;
-			stepIndexRunHistory--;
-			if (stepIndexRunHistory <= 0x5000)
-				crossBoundary = true;
+			else {
+				stepIndexRun += (randomu32() % 3) - 1;
+				if (stepIndexRun > endStep)
+					stepIndexRun = 0;
+				if (stepIndexRun < 0)
+					stepIndexRun = endStep;
+				stepIndexRunHistory--;
+				if (stepIndexRunHistory <= 0x5000)
+					crossBoundary = true;
+			}
 		break;
 		
 		case MODE_RND :// random; history base is 0x6000
 			if (stepIndexRunHistory < 0x6001 || stepIndexRunHistory > 0x6FFF)
 				stepIndexRunHistory = 0x6000 + (endStep + 1) * reps;
-			stepIndexRun = (randomu32() % (endStep + 1));
-			stepIndexRunHistory--;
-			if (stepIndexRunHistory <= 0x6000)
-				crossBoundary = true;
+			if (init)
+				stepIndexRun = 0;
+			else {
+				stepIndexRun = (randomu32() % (endStep + 1));
+				stepIndexRunHistory--;
+				if (stepIndexRunHistory <= 0x6000)
+					crossBoundary = true;
+			}
 		break;
 		
 		case MODE_TKA :// use track A's stepIndexRun; base is 0x7000
@@ -662,12 +684,16 @@ bool SequencerKernel::moveStepIndexRun() {
 		default :// MODE_FWD  forward; history base is 0x1000
 			if (stepIndexRunHistory < 0x1001 || stepIndexRunHistory > 0x1FFF)
 				stepIndexRunHistory = 0x1000 + reps;
-			stepIndexRun++;
-			if (stepIndexRun > endStep) {
+			if (init)
 				stepIndexRun = 0;
-				stepIndexRunHistory--;
-				if (stepIndexRunHistory <= 0x1000)
-					crossBoundary = true;
+			else {			
+				stepIndexRun++;
+				if (stepIndexRun > endStep) {
+					stepIndexRun = 0;
+					stepIndexRunHistory--;
+					if (stepIndexRunHistory <= 0x1000)
+						crossBoundary = true;
+				}
 			}
 	}
 
