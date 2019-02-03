@@ -359,7 +359,9 @@ void SequencerKernel::fromJson(json_t *rootJ) {
 }
 
 
-void SequencerKernel::clockStep(bool realClockEdgeToHandle) {
+bool SequencerKernel::clockStep(bool realClockEdgeToHandle) {
+	bool phraseChange = false;
+	
 	if (realClockEdgeToHandle) {
 		if (ppqnLeftToSkip > 0) {
 			ppqnLeftToSkip--;
@@ -373,8 +375,10 @@ void SequencerKernel::clockStep(bool realClockEdgeToHandle) {
 				float slideFromCV = getCVRun();
 				if (moveStepIndexRun(false)) {// false means normal (not init)
 					movePhraseIndexRun(false);// false means normal (not init)
-					SeqAttributes newSeq = sequences[phrases[phraseIndexRun].getSeqNum()];
-					stepIndexRun = (newSeq.getRunMode() == MODE_REV ? newSeq.getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
+					phraseChange = true;
+					// SeqAttributes newSeq = sequences[phrases[phraseIndexRun].getSeqNum()];
+					// stepIndexRun = (newSeq.getRunMode() == MODE_REV ? newSeq.getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
+					moveStepIndexRun(true);// true means init; must always refresh after phraseIndexRun has changed
 				}
 
 				// Slide
@@ -393,6 +397,8 @@ void SequencerKernel::clockStep(bool realClockEdgeToHandle) {
 		}
 	}
 	clockPeriod = 0ul;
+	
+	return phraseChange;
 }
 
 

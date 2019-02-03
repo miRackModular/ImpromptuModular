@@ -500,11 +500,13 @@ void Sequencer::fromJson(json_t *rootJ) {
 
 
 void Sequencer::clockStep(int trkn, bool realClockEdgeToHandle) {
-	sek[trkn].clockStep(realClockEdgeToHandle);
-	if (trkn == 0) {
+	bool phraseChange = sek[trkn].clockStep(realClockEdgeToHandle);
+	if (trkn == 0 && phraseChange) {
 		for (int tkbcd = 1; tkbcd < NUM_TRACKS; tkbcd++) {// check for song run mode slaving
-			if (sek[tkbcd].getRunModeSong() == SequencerKernel::MODE_TKA)
+			if (sek[tkbcd].getRunModeSong() == SequencerKernel::MODE_TKA) {
 				sek[tkbcd].setPhraseIndexRun(sek[0].getPhraseIndexRun());
+				//sek[tkbcd].moveStepIndexRun(true); HERE doesn't work, will double move stepIndexRun since clock will move it also
+			}
 		}
 	}
 }
