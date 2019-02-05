@@ -95,7 +95,7 @@ class Clock {
 			float period = (float)length / 2.0f;
 			float swing = (period - 2.0f * onems) * swParam;
 			float p2min = onems;
-			float p2max = period - onems - fabs(swing);
+			float p2max = period - onems - fabsf(swing);
 			if (p2max < p2min) {
 				p2max = p2min;
 			}

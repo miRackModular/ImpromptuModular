@@ -518,7 +518,7 @@ struct WriteSeq64Widget : ModuleWidget {
 					printNote(cvVal, &text[1], module->params[WriteSeq64::SHARP_PARAM].value < 1.5f);
 				}
 				else  {// show volts
-					float cvValPrint = fabs(cvVal);
+					float cvValPrint = fabsf(cvVal);
 					cvValPrint = (cvValPrint > 9.999f) ? 9.999f : cvValPrint;
 					snprintf(text, 7, " %4.3f", cvValPrint);// Four-wide, three positions after the decimal, left-justified
 					text[0] = (cvVal<0.0f) ? '-' : ' ';

@@ -1175,7 +1175,7 @@ struct FoundryWidget : ModuleWidget {
 						if (module->velocityBipol) {						
 							if (cvValPrint < 5.0f)
 								ret = 1;
-							cvValPrint = fabs(cvValPrint - 5.0f);
+							cvValPrint = fabsf(cvValPrint - 5.0f);
 						}
 						if (cvValPrint > 9.975f)
 							snprintf(displayStr, 5, "  10");

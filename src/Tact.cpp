@@ -240,7 +240,7 @@ struct Tact : Module {
 						cv[i] = (float)newCV;
 				}
 				else {// too close to target or rate too fast, thus no slide
-					if (fabs(cv[i] - newParamValue) > 1e-6)
+					if (fabsf(cv[i] - newParamValue) > 1e-6)
 						eocPulses[i].trigger(0.001f);
 					cv[i] = newParamValue;	
 				}
