@@ -17,7 +17,7 @@ ScrewCircle::ScrewCircle(float _angle) {
 	static const float highRadius = 1.4f;// radius for 0 degrees (screw looks like a +)
 	static const float lowRadius = 1.1f;// radius for 45 degrees (screw looks like an x)
 	angle = _angle;
-	_angle = fabsf(angle - M_PI/4.0f);
+	_angle = fabsf(angle - ((float)M_PI)/4.0f);
 	radius = ((highRadius - lowRadius)/(M_PI/4.0f)) * _angle + lowRadius;
 }
 
