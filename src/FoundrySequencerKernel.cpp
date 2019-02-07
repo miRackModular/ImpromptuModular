@@ -205,17 +205,6 @@ void SequencerKernel::randomize() {
 }
 	
 
-void SequencerKernel::initRun() {
-	movePhraseIndexRun(true);// true means init 
-	moveStepIndexRun(true);// true means init 
-
-	ppqnCount = 0;
-	ppqnLeftToSkip = delay;
-	calcGateCodeEx();// uses stepIndexRun as the step and phraseIndexRun to determine the seq
-	slideStepsRemain = 0ul;
-}
-
-
 void SequencerKernel::toJson(json_t *rootJ) {
 	// pulsesPerStep
 	json_object_set_new(rootJ, (ids + "pulsesPerStep").c_str(), json_integer(pulsesPerStep));
@@ -359,6 +348,17 @@ void SequencerKernel::fromJson(json_t *rootJ) {
 }
 
 
+void SequencerKernel::initRun() {
+	movePhraseIndexRun(true);// true means init 
+	moveStepIndexRun(true);// true means init 
+
+	ppqnCount = 0;
+	ppqnLeftToSkip = delay;
+	calcGateCodeEx();// uses stepIndexRun as the step and phraseIndexRun to determine the seq
+	slideStepsRemain = 0ul;
+}
+
+
 bool SequencerKernel::clockStep(bool realClockEdgeToHandle) {
 	bool phraseChange = false;
 	
@@ -375,10 +375,8 @@ bool SequencerKernel::clockStep(bool realClockEdgeToHandle) {
 				float slideFromCV = getCVRun();
 				if (moveStepIndexRun(false)) {// false means normal (not init)
 					movePhraseIndexRun(false);// false means normal (not init)
-					phraseChange = true;
-					// SeqAttributes newSeq = sequences[phrases[phraseIndexRun].getSeqNum()];
-					// stepIndexRun = (newSeq.getRunMode() == MODE_REV ? newSeq.getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
 					moveStepIndexRun(true);// true means init; must always refresh after phraseIndexRun has changed
+					phraseChange = true;
 				}
 
 				// Slide

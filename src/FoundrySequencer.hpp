@@ -214,6 +214,9 @@ class Sequencer {
 	// Main methods
 	// ----------------
 
+	void toJson(json_t *rootJ);
+	void fromJson(json_t *rootJ);
+	
 	void reset();
 	
 	inline void randomize() {
@@ -225,11 +228,9 @@ class Sequencer {
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
 			sek[trkn].initRun();
 	}
-	
-	void toJson(json_t *rootJ);
-	void fromJson(json_t *rootJ);
 
 	void clockStep(int trkn, bool realClockEdgeToHandle);
+	
 	inline void step() {
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++) 
 			sek[trkn].step();

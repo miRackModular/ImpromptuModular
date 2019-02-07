@@ -441,21 +441,6 @@ void Sequencer::toggleTied(int multiSteps, bool multiTracks) {
 }
 
 
-
-void Sequencer::reset() {
-	stepIndexEdit = 0;
-	phraseIndexEdit = 0;
-	seqIndexEdit = 0;
-	trackIndexEdit = 0;
-	seqCPbuf.reset();
-	songCPbuf.reset();
-
-	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
-		editingGate[trkn] = 0ul;
-		sek[trkn].reset();
-	}
-}
-
 void Sequencer::toJson(json_t *rootJ) {
 	// stepIndexEdit
 	json_object_set_new(rootJ, "stepIndexEdit", json_integer(stepIndexEdit));
@@ -472,6 +457,7 @@ void Sequencer::toJson(json_t *rootJ) {
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
 		sek[trkn].toJson(rootJ);
 }
+
 
 void Sequencer::fromJson(json_t *rootJ) {
 	// stepIndexEdit
@@ -499,12 +485,29 @@ void Sequencer::fromJson(json_t *rootJ) {
 }
 
 
+void Sequencer::reset() {
+	stepIndexEdit = 0;
+	phraseIndexEdit = 0;
+	seqIndexEdit = 0;
+	trackIndexEdit = 0;
+	seqCPbuf.reset();
+	songCPbuf.reset();
+
+	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
+		editingGate[trkn] = 0ul;
+		sek[trkn].reset();
+	}
+}
+
+
 void Sequencer::clockStep(int trkn, bool realClockEdgeToHandle) {
 	bool phraseChange = sek[trkn].clockStep(realClockEdgeToHandle);
 	if (trkn == 0 && phraseChange) {
 		for (int tkbcd = 1; tkbcd < NUM_TRACKS; tkbcd++) {// check for song run mode slaving
 			if (sek[tkbcd].getRunModeSong() == SequencerKernel::MODE_TKA) {
 				sek[tkbcd].setPhraseIndexRun(sek[0].getPhraseIndexRun());
+				// OMRI bug signaled after Denis Tercier bug fix was done: OMRI says stepIndexRun should re-init upon phraseChange
+				// next line was an attempt to implement this, but not working.
 				//sek[tkbcd].moveStepIndexRun(true); HERE doesn't work, will double move stepIndexRun since clock will move it also
 			}
 		}
