@@ -417,6 +417,7 @@ struct Foundry : Module {
 			// Copy 
 			if (copyTrigger.process(params[COPY_PARAM].value)) {
 				if (!attached) {
+					multiTracks = false;
 					if (editingSequence) {
 						seq.copySequence(cpSeqLength);					
 						displayState = DISP_COPY_SEQ;
@@ -1341,8 +1342,7 @@ struct FoundryWidget : ModuleWidget {
 						displayStr[0] = '_';
 					if (module->displayState == Foundry::DISP_COPY_SONG_CUST) {
 						overlayChar = 0;
-						
-							displayStr[0] = (time(0) & 0x1) ? 'C' : ' ';
+						displayStr[0] = (time(0) & 0x1) ? 'C' : ' ';
 					}
 				}
 			}

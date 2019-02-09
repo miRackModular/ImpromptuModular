@@ -198,7 +198,9 @@ struct Clocked : Module {
 		RUN_PARAM,
 		ENUMS(DELAY_PARAMS, 4),// index 0 is unused
 		// -- 0.6.9 ^^
-		BPMMODE_PARAM,
+		BPMMODE_DOWN_PARAM,
+		// -- 0.6.14 ^^
+		BPMMODE_UP_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -239,9 +241,9 @@ struct Clocked : Module {
 	int panelTheme = 0;
 	int expansion = 0;
 	bool displayDelayNoteMode = true;
-	bool bpmDetectionMode = false;
+	bool bpmDetectionMode;
 	bool emitResetOnStopRun = false;
-	int ppqn = 4;
+	int ppqn;
 	bool running;
 	bool resetClockOutputsHigh = true;
 
@@ -272,7 +274,8 @@ struct Clocked : Module {
 	SchmittTrigger resetTrigger;
 	SchmittTrigger runTrigger;
 	SchmittTrigger bpmDetectTrigger;
-	SchmittTrigger bpmModeTrigger;
+	SchmittTrigger bpmModeUpTrigger;
+	SchmittTrigger bpmModeDownTrigger;
 	PulseGenerator resetPulse;
 	PulseGenerator runPulse;
 
@@ -346,6 +349,8 @@ struct Clocked : Module {
 	void onReset() override {
 		sampleRate = (double)engineGetSampleRate();
 		sampleTime = 1.0 / sampleRate;
+		bpmDetectionMode = false;
+		ppqn = 4;
 		running = true;
 		editingBpmMode = 0l;
 		resetClocked(true);		
@@ -504,21 +509,31 @@ struct Clocked : Module {
 			updatePulseSwingDelay();
 		
 			// BPM mode
-			if (bpmModeTrigger.process(params[BPMMODE_PARAM].value)) {// no input refresh here, not worth it just for one button (this is the only potential button to input-refresh optimize)
+			bool trigUp = bpmModeUpTrigger.process(params[BPMMODE_UP_PARAM].value);
+			bool trigDown = bpmModeDownTrigger.process(params[BPMMODE_DOWN_PARAM].value);
+			if (trigUp || trigDown) {
 				if (editingBpmMode != 0ul) {// force active before allow change
 					if (bpmDetectionMode == false) {
 						bpmDetectionMode = true;
-						ppqn = 4;
+						ppqn = (trigUp ? 2 : 24);
 					}
 					else {
-						if (ppqn == 4)
-							ppqn = 8;
+						if (ppqn == 2) {
+							if (trigUp) ppqn = 4;
+							else bpmDetectionMode = false;
+						}
+						else if (ppqn == 4)
+							ppqn = (trigUp ? 8 : 2);
 						else if (ppqn == 8)
-							ppqn = 12;
+							ppqn = (trigUp ? 12 : 4);
 						else if (ppqn == 12)
-							ppqn = 24;
-						else 
-							bpmDetectionMode = false;
+							ppqn = (trigUp ? 16 : 8);
+						else if (ppqn == 16)
+							ppqn = (trigUp ? 24 : 12);
+						else {// 24
+							if (trigUp) bpmDetectionMode = false;
+							else ppqn = 16;
+						}
 					}
 				}
 				editingBpmMode = (long) (3.0 * sampleRate / displayRefreshStepSkips);
@@ -658,7 +673,7 @@ struct Clocked : Module {
 			if (cantRunWarning > 0l) 
 				warningFlashState = calcWarningFlash(cantRunWarning, (long) (0.7 * sampleRate / displayRefreshStepSkips));
 			lights[BPMSYNC_LIGHT + 0].value = (bpmDetectionMode && warningFlashState) ? 1.0f : 0.0f;
-			lights[BPMSYNC_LIGHT + 1].value = (bpmDetectionMode && warningFlashState) ? (float)((ppqn - 4)*(ppqn - 4))/400.0f : 0.0f;			
+			lights[BPMSYNC_LIGHT + 1].value = (bpmDetectionMode && warningFlashState) ? (float)((ppqn - 2)*(ppqn - 2))/440.0f : 0.0f;			
 			
 			// ratios synched lights
 			for (int i = 1; i < 4; i++)
@@ -977,9 +992,11 @@ struct ClockedWidget : ModuleWidget {
 		// Run LED bezel and light
 		addParam(createParam<LEDBezel>(Vec(colRulerT1 + offsetLEDbezel, rowRuler1 + offsetLEDbezel), module, Clocked::RUN_PARAM, 0.0f, 1.0f, 0.0f));
 		addChild(createLight<MuteLight<GreenLight>>(Vec(colRulerT1 + offsetLEDbezel + offsetLEDbezelLight, rowRuler1 + offsetLEDbezel + offsetLEDbezelLight), module, Clocked::RUN_LIGHT));
-		// BPM mode and light
-		addParam(createDynamicParam<IMPushButton>(Vec(colRulerT2 + offsetTL1105, rowRuler1 + offsetTL1105), module, Clocked::BPMMODE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
-		addChild(createLight<SmallLight<GreenRedLight>>(Vec(colRulerM1 + 62, rowRuler1 + offsetMediumLight), module, Clocked::BPMSYNC_LIGHT));		
+		// BPM mode buttons
+		addParam(createDynamicParam<IMPushButton>(Vec(colRulerT2 + offsetTL1105 - 12, rowRuler1 + offsetTL1105), module, Clocked::BPMMODE_DOWN_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParam<IMPushButton>(Vec(colRulerT2 + offsetTL1105 + 12, rowRuler1 + offsetTL1105), module, Clocked::BPMMODE_UP_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		// BPM mode light
+		addChild(createLight<SmallLight<GreenRedLight>>(Vec(colRulerT2 + offsetMediumLight, rowRuler1 + 22), module, Clocked::BPMSYNC_LIGHT));		
 		// Swing master knob
 		addParam(createDynamicParam<IMSmallKnobNotify>(Vec(colRulerT3 + offsetIMSmallKnob, rowRuler1 + offsetIMSmallKnob), module, Clocked::SWING_PARAMS + 0, -1.0f, 1.0f, 0.0f, &module->panelTheme));
 		// PW master knob
@@ -1040,6 +1057,7 @@ Model *modelClocked = Model::create<Clocked, ClockedWidget>("Impromptu Modular",
 
 0.6.15:
 add right click menu option for outputs reset high/low when not running
+add P2 and P16 pulses per step modes
 
 0.6.14:
 optimize swing, pw and delay knobs (those with CV inputs have the CV input effect now visible in value when move knob)
