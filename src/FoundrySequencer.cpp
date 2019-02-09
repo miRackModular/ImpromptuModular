@@ -500,8 +500,8 @@ void Sequencer::reset() {
 }
 
 
-void Sequencer::clockStep(int trkn, bool realClockEdgeToHandle) {
-	bool phraseChange = sek[trkn].clockStep(realClockEdgeToHandle);
+void Sequencer::clockStep(int trkn) {
+	bool phraseChange = sek[trkn].clockStep();
 	if (trkn == 0 && phraseChange) {
 		for (int tkbcd = 1; tkbcd < NUM_TRACKS; tkbcd++) {// check for song run mode slaving
 			if (sek[tkbcd].getRunModeSong() == SequencerKernel::MODE_TKA) {

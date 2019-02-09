@@ -1179,11 +1179,11 @@ struct SemiModularSynth : Module {
 				}
 				if (gate1Code != -1 || ppqnCount == 0)
 					gate1Code = calcGate1Code(attributes[newSeq][stepIndexRun], ppqnCount, pulsesPerStep, params[GATE1_KNOB_PARAM].value);
-				gate2Code = calcGate2Code(attributes[newSeq][stepIndexRun], ppqnCount, pulsesPerStep);						 
+				gate2Code = calcGate2Code(attributes[newSeq][stepIndexRun], ppqnCount, pulsesPerStep);
+				clockPeriod = 0ul;				
 			}
-			clockPeriod = 0ul;
+			clockPeriod++;
 		}	
-		clockPeriod++;
 		
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].value + params[RESET_PARAM].value)) {

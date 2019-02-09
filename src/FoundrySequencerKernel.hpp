@@ -374,7 +374,7 @@ class SequencerKernel {
 	void toJson(json_t *rootJ);
 	void fromJson(json_t *rootJ);
 	void initRun();
-	bool clockStep(bool realClockEdgeToHandle);
+	bool clockStep();
 	inline void step() {
 		clockPeriod++;
 	}

@@ -1171,10 +1171,10 @@ struct PhraseSeq32 : Module {
 						gate1Code[i] = calcGate1Code(attributes[newSeq][(i * 16) + stepIndexRun[i]], ppqnCount, pulsesPerStep, params[GATE1_KNOB_PARAM].value);
 					gate2Code[i] = calcGate2Code(attributes[newSeq][(i * 16) + stepIndexRun[i]], ppqnCount, pulsesPerStep);	
 				}
+				clockPeriod = 0ul;
 			}
-			clockPeriod = 0ul;
+			clockPeriod++;
 		}
-		clockPeriod++;
 		
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].value + params[RESET_PARAM].value)) {

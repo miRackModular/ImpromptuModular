@@ -359,40 +359,38 @@ void SequencerKernel::initRun() {
 }
 
 
-bool SequencerKernel::clockStep(bool realClockEdgeToHandle) {
+bool SequencerKernel::clockStep() {
 	bool phraseChange = false;
 	
-	if (realClockEdgeToHandle) {
-		if (ppqnLeftToSkip > 0) {
-			ppqnLeftToSkip--;
-		}
-		else {
-			ppqnCount++;
-			int ppsFiltered = getPulsesPerStep();// must use method
-			if (ppqnCount >= ppsFiltered)
-				ppqnCount = 0;
-			if (ppqnCount == 0) {
-				float slideFromCV = getCVRun();
-				if (moveStepIndexRun(false)) {// false means normal (not init)
-					movePhraseIndexRun(false);// false means normal (not init)
-					moveStepIndexRun(true);// true means init; must always refresh after phraseIndexRun has changed
-					phraseChange = true;
-				}
-
-				// Slide
-				StepAttributes attribRun = getAttributeRun();
-				if (attribRun.getSlide()) {
-					slideStepsRemain = (unsigned long) (((float)clockPeriod * ppsFiltered) * ((float)attribRun.getSlideVal() / 100.0f));
-					if (slideStepsRemain != 0ul) {
-						float slideToCV = getCVRun();
-						slideCVdelta = (slideToCV - slideFromCV)/(float)slideStepsRemain;
-					}
-				}
-				else
-					slideStepsRemain = 0ul;
+	if (ppqnLeftToSkip > 0) {
+		ppqnLeftToSkip--;
+	}
+	else {
+		ppqnCount++;
+		int ppsFiltered = getPulsesPerStep();// must use method
+		if (ppqnCount >= ppsFiltered)
+			ppqnCount = 0;
+		if (ppqnCount == 0) {
+			float slideFromCV = getCVRun();
+			if (moveStepIndexRun(false)) {// false means normal (not init)
+				movePhraseIndexRun(false);// false means normal (not init)
+				moveStepIndexRun(true);// true means init; must always refresh after phraseIndexRun has changed
+				phraseChange = true;
 			}
-			calcGateCodeEx();// uses stepIndexRun as the step and phraseIndexRun to determine the seq
+
+			// Slide
+			StepAttributes attribRun = getAttributeRun();
+			if (attribRun.getSlide()) {
+				slideStepsRemain = (unsigned long) (((float)clockPeriod * ppsFiltered) * ((float)attribRun.getSlideVal() / 100.0f));
+				if (slideStepsRemain != 0ul) {
+					float slideToCV = getCVRun();
+					slideCVdelta = (slideToCV - slideFromCV)/(float)slideStepsRemain;
+				}
+			}
+			else
+				slideStepsRemain = 0ul;
 		}
+		calcGateCodeEx();// uses stepIndexRun as the step and phraseIndexRun to determine the seq
 	}
 	clockPeriod = 0ul;
 	

@@ -818,7 +818,7 @@ struct Foundry : Module {
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 				clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].value);
 				if (clockTrigged[clkInSources[trkn]]) {
-					seq.clockStep(trkn, true);
+					seq.clockStep(trkn);
 				}
 			}
 			seq.step();

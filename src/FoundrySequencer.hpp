@@ -229,7 +229,7 @@ class Sequencer {
 			sek[trkn].initRun();
 	}
 
-	void clockStep(int trkn, bool realClockEdgeToHandle);
+	void clockStep(int trkn);
 	
 	inline void step() {
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++) 
