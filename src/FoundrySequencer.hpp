@@ -118,7 +118,7 @@ class Sequencer {
 	int getLengthSeqCPbug() {return seqCPbuf.storedLength;}
 	void copySequence(int countCP);
 	void pasteSequence(bool multiTracks);
-	void copySong(int countCP);
+	void copySong(int startCP, int countCP);
 	void pasteSong(bool multiTracks);
 	
 	

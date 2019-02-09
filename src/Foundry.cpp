@@ -422,29 +422,24 @@ struct Foundry : Module {
 						displayState = DISP_COPY_SEQ;
 					}
 					else {
-						/*int cpMode = getCPMode();
+						int cpMode = getCPMode();
 						if (cpMode == 2000) {
 							if (displayState != DISP_COPY_SONG_CUST) {// first click to set cpSongStart
 								cpSongStart = seq.getPhraseIndexEdit();
-								info("cpSongStart = %i", cpSongStart);
 								displayState = DISP_COPY_SONG_CUST;
 							}
 							else {// second click do the copy 
-								seq.copySong(max(1, seq.getPhraseIndexEdit() - cpSongStart + 1));
-								info("copySong with len = %i", seq.getPhraseIndexEdit() - cpSongStart + 1);
+								seq.copySong(cpSongStart, max(1, seq.getPhraseIndexEdit() - cpSongStart + 1));
 								displayState = DISP_COPY_SONG;
 							}
 						}
 						else {
-							seq.copySong(cpMode);
+							seq.copySong(seq.getPhraseIndexEdit(), cpMode);
 							displayState = DISP_COPY_SONG;
-						}*/
-						
-						// OLD VERSION
-						seq.copySong(cpSeqLength);
-						displayState = DISP_COPY_SONG;
+						}
 					}
-					revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
+					if (displayState != DISP_COPY_SONG_CUST)
+						revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
 				}
 				else
 					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
@@ -462,7 +457,8 @@ struct Foundry : Module {
 							displayState = DISP_PASTE_SONG;
 						}
 					}
-					revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
+					if (displayState != DISP_COPY_SONG_CUST)
+						revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
 				}
 				else
 					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
@@ -1343,9 +1339,10 @@ struct FoundryWidget : ModuleWidget {
 					}
 					else if (phrn < phrEnd && phrn > phrBeg)
 						displayStr[0] = '_';
-					if (module->displayState == Foundry::DISP_COPY_SONG_CUST && (time(0) & 0x1)) {
+					if (module->displayState == Foundry::DISP_COPY_SONG_CUST) {
 						overlayChar = 0;
-						displayStr[0] = 0;
+						
+							displayStr[0] = (time(0) & 0x1) ? 'C' : ' ';
 					}
 				}
 			}
@@ -1562,8 +1559,11 @@ struct FoundryWidget : ModuleWidget {
 	struct CPModeSwitch : CKSSThreeInv {
 		CPModeSwitch() {};
 		void onChange(EventChange &e) override {
-			SVGSwitch::onChange(e);		
-			((Foundry*)(module))->cpSeqLength = ((Foundry*)(module))->getCPMode();
+			SVGSwitch::onChange(e);	
+			Foundry* module = dynamic_cast<Foundry*>(this->module);			
+			module->cpSeqLength = module->getCPMode();
+			if (module->displayState == Foundry::DISP_COPY_SONG_CUST)
+				module->displayState = Foundry::DISP_NORMAL;
 		}
 	};
 	struct VelocityKnob : IMMediumKnobInf {
@@ -1680,7 +1680,7 @@ struct FoundryWidget : ModuleWidget {
 		static const int rowRulerT0 = 56;
 		static const int columnRulerT0 = 25;// Step/Phase LED buttons
 		static const int columnRulerT1 = 373;// Select (multi-steps) 
-		static const int columnRulerT2 = 424;// Copy-paste-select mode switch
+		static const int columnRulerT2 = 426;// Copy-paste-select mode switch
 		//static const int columnRulerT3 = 463;// Copy paste buttons (not needed when align to track display)
 		static const int columnRulerT5 = 538;// Edit mode switch (and overview switch also)
 		static const int stepsOffsetY = 10;
@@ -1972,6 +1972,7 @@ Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular",
 /*CHANGE LOG
 
 0.6.15:
+save ALL state and don't init ALL nor SEL on run or reset 
 allow END in seq mode to choose custom seq lengths
 add proper CV2 monitoring when not running and editing sequences
 fix TKA song runmode slaving

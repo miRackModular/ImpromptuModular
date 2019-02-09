@@ -178,8 +178,8 @@ void Sequencer::pasteSequence(bool multiTracks) {
 		}
 	}
 }
-void Sequencer::copySong(int countCP) {
-	sek[trackIndexEdit].copySong(&songCPbuf, phraseIndexEdit, countCP);
+void Sequencer::copySong(int startCP, int countCP) {
+	sek[trackIndexEdit].copySong(&songCPbuf, startCP, countCP);
 }
 void Sequencer::pasteSong(bool multiTracks) {
 	sek[trackIndexEdit].pasteSong(&songCPbuf, phraseIndexEdit);
