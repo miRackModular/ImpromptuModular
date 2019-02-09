@@ -506,9 +506,11 @@ void Sequencer::clockStep(int trkn) {
 		for (int tkbcd = 1; tkbcd < NUM_TRACKS; tkbcd++) {// check for song run mode slaving
 			if (sek[tkbcd].getRunModeSong() == SequencerKernel::MODE_TKA) {
 				sek[tkbcd].setPhraseIndexRun(sek[0].getPhraseIndexRun());
-				// OMRI bug signaled after Denis Tercier bug fix was done: OMRI says stepIndexRun should re-init upon phraseChange
-				// next line was an attempt to implement this, but not working.
-				//sek[tkbcd].moveStepIndexRun(true); HERE doesn't work, will double move stepIndexRun since clock will move it also
+				// The code below is to make it such that stepIndexRun should re-init upon phraseChange
+				// next line will not work, it will result in a double move of stepIndexRun since clock will move it also
+				//sek[tkbcd].moveStepIndexRun(true); 
+				// this next mechanism works, the chain of events will make moveStepIndexRun(true) happen automatically and no double move will occur
+				sek[tkbcd].setMoveStepIndexRunIgnore();// 
 			}
 		}
 	}

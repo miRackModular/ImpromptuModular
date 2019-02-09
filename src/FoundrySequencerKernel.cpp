@@ -350,8 +350,9 @@ void SequencerKernel::fromJson(json_t *rootJ) {
 
 void SequencerKernel::initRun() {
 	movePhraseIndexRun(true);// true means init 
+	moveStepIndexRunIgnore = false;
 	moveStepIndexRun(true);// true means init 
-
+	
 	ppqnCount = 0;
 	ppqnLeftToSkip = delay;
 	calcGateCodeEx();// uses stepIndexRun as the step and phraseIndexRun to determine the seq
@@ -375,7 +376,7 @@ bool SequencerKernel::clockStep() {
 			if (moveStepIndexRun(false)) {// false means normal (not init)
 				movePhraseIndexRun(false);// false means normal (not init)
 				moveStepIndexRun(true);// true means init; must always refresh after phraseIndexRun has changed
-				phraseChange = true;
+				phraseChange = true;// only used by first track
 			}
 
 			// Slide
@@ -557,6 +558,11 @@ void SequencerKernel::calcGateCodeEx() {// uses stepIndexRun as the step and phr
 	
 
 bool SequencerKernel::moveStepIndexRun(bool init) {	
+	if (moveStepIndexRunIgnore) {
+		moveStepIndexRunIgnore = false;
+		return true;
+	}
+	
 	int reps = phrases[phraseIndexRun].getReps();// 0-rep seqs should be filtered elsewhere and should never happen here. If they do, they will be played (this can be the case when all of the song has 0-rep seqs, or the song is started (reset) into a first phrase that has 0 reps)
 	// assert((reps * MAX_STEPS) <= 0xFFF); // for BRN and RND run modes, history is not a span count but a step count
 	int seqn = phrases[phraseIndexRun].getSeqNum();

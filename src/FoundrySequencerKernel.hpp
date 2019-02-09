@@ -203,7 +203,7 @@ class SequencerKernel {
 	SequencerKernel *masterKernel;// nullprt for track 0, used for grouped run modes (tracks B,C,D follow A when random, for example)
 	bool* holdTiedNotesPtr;
 	unsigned long clockPeriod;// counts number of step() calls upward from last clock (reset after clock processed)
-	
+	bool moveStepIndexRunIgnore;
 	
 	public: 
 	
@@ -256,6 +256,7 @@ class SequencerKernel {
 	void setSlideVal(int seqn, int stepn, int slideVal, int count);
 	void setVelocityVal(int seqn, int stepn, int velocity, int count);
 	void setGateType(int seqn, int stepn, int gateType, int count);
+	void setMoveStepIndexRunIgnore() {moveStepIndexRunIgnore = true;}
 	
 	
 	inline int modRunModeSong(int delta) {
