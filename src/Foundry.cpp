@@ -120,6 +120,7 @@ struct Foundry : Module {
 	bool multiSteps;
 	bool multiTracks;
 	int clkInSources[Sequencer::NUM_TRACKS];// first index is always 0 and will never change
+	int cpLength;
 	
 
 	unsigned int lightRefreshCounter = 0;
@@ -191,6 +192,7 @@ struct Foundry : Module {
 		attached = false;
 		multiSteps = false;
 		multiTracks = false;
+		cpLength = getCPMode();
 		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 			clkInSources[trkn] = 0;
 		}
@@ -202,6 +204,7 @@ struct Foundry : Module {
 	
 	
 	void onRandomize() override {
+		cpLength = getCPMode();
 		seq.randomize();
 	}
 	
@@ -331,6 +334,7 @@ struct Foundry : Module {
 		seq.fromJson(rootJ);
 		
 		// Initialize dependants after everything loaded
+		cpLength = getCPMode();
 		seq.initRun();
 	}
 
@@ -345,7 +349,6 @@ struct Foundry : Module {
 		//********** Buttons, knobs, switches and inputs **********
 		
 		bool editingSequence = isEditingSequence();
-		int cpMode = getCPMode();
 		
 		// Run button
 		if (runningTrigger.process(params[RUN_PARAM].value + inputs[RUNCV_INPUT].value)) {// no input refresh here, don't want to introduce startup skew
@@ -405,11 +408,11 @@ struct Foundry : Module {
 			if (copyTrigger.process(params[COPY_PARAM].value)) {
 				if (!attached) {
 					if (editingSequence) {
-						seq.copySequence(cpMode);					
+						seq.copySequence(cpLength);					
 						displayState = DISP_COPY_SEQ;
 					}
 					else {
-						seq.copySong(cpMode);
+						seq.copySong(cpLength);
 						displayState = DISP_COPY_SONG;
 					}
 					revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
@@ -440,7 +443,7 @@ struct Foundry : Module {
 			bool writeTrig = writeTrigger.process(inputs[WRITE_INPUT].value);
 			if (writeTrig) {
 				if (editingSequence && !attached) {
-					int multiStepsCount = multiSteps ? cpMode : 1;
+					int multiStepsCount = multiSteps ? cpLength : 1;
 					for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 						if (trkn == seq.getTrackIndexEdit() || multiTracks) {
 							if (inputs[VEL_INPUTS + trkn].active && ((writeMode & 0x1) == 0)) {	// must be before seq.writeCV() below, so that editing CV2 can be grabbed
@@ -492,9 +495,18 @@ struct Foundry : Module {
 						revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
 					}
 					else {
-						showLenInSteps = (long) (showLenInStepsTime * sampleRate / displayRefreshStepSkips);
-						seq.setStepIndexEdit(stepPressed, sampleRate);
-						displayState = DISP_NORMAL; // leave this here, the if has it also, but through the revert mechanism
+						if (multiSteps && (getCPMode() == 2000) && (stepPressed >= seq.getStepIndexEdit())) {
+							cpLength = stepPressed - seq.getStepIndexEdit() + 1;
+						}
+						else {
+							showLenInSteps = (long) (showLenInStepsTime * sampleRate / displayRefreshStepSkips);
+							seq.setStepIndexEdit(stepPressed, sampleRate);
+							displayState = DISP_NORMAL; // leave this here, the if has it also, but through the revert mechanism
+							if (multiSteps && (getCPMode() == 2000)) {
+								multiSteps = false;
+								cpLength = 2000;
+							}
+						}
 					}
 				}
 				else if (attached)
@@ -636,7 +648,7 @@ struct Foundry : Module {
 				if (abs(deltaVelKnob) <= 3) {// avoid discontinuous step (initialize for example)
 					// any changes in here should may also require right click behavior to be updated in the knob's onMouseDown()
 					if (editingSequence && !attached) {
-						int mutliStepsCount = multiSteps ? cpMode : 1;
+						int mutliStepsCount = multiSteps ? cpLength : 1;
 						if (velEditMode == 2) {
 							seq.modSlideVal(deltaVelKnob, mutliStepsCount, multiTracks);
 						}
@@ -735,7 +747,7 @@ struct Foundry : Module {
 			for (int octn = 0; octn < 7; octn++) {
 				if (octTriggers[octn].process(params[OCTAVE_PARAM + octn].value)) {
 					if (editingSequence && !attached && displayState != DISP_PPQN) {
-						if (seq.applyNewOctave(6 - octn, multiSteps ? cpMode : 1, sampleRate, multiTracks))
+						if (seq.applyNewOctave(6 - octn, multiSteps ? cpLength : 1, sampleRate, multiTracks))
 							tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 					}
 					else if (attached)
@@ -751,11 +763,11 @@ struct Foundry : Module {
 					if (editingSequence && !attached && displayState != DISP_PPQN) {
 						bool autostepClick = params[KEY_PARAMS + keyn].value > 1.5f;
 						if (isEditingGates()) {
-							if (!seq.setGateType(keyn, multiSteps ? cpMode : 1, autostepClick, multiTracks))
+							if (!seq.setGateType(keyn, multiSteps ? cpLength : 1, autostepClick, multiTracks))
 								displayState = DISP_PPQN;
 						}
 						else {
-							if (seq.applyNewKey(keyn, multiSteps ? cpMode : 1, sampleRate, autostepClick, multiTracks))
+							if (seq.applyNewKey(keyn, multiSteps ? cpLength : 1, sampleRate, autostepClick, multiTracks))
 								tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 						}							
 					}
@@ -767,7 +779,7 @@ struct Foundry : Module {
 			// Gate, GateProb, Slide and Tied buttons
 			if (gate1Trigger.process(params[GATE_PARAM].value + inputs[GATECV_INPUT].value)) {
 				if (editingSequence && !attached ) {
-					seq.toggleGate(multiSteps ? cpMode : 1, multiTracks);
+					seq.toggleGate(multiSteps ? cpLength : 1, multiTracks);
 				}
 				else if (attached)
 					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
@@ -775,7 +787,7 @@ struct Foundry : Module {
 			}		
 			if (gateProbTrigger.process(params[GATE_PROB_PARAM].value + inputs[GATEPCV_INPUT].value)) {
 				if (editingSequence && !attached ) {
-					if (seq.toggleGateP(multiSteps ? cpMode : 1, multiTracks)) 
+					if (seq.toggleGateP(multiSteps ? cpLength : 1, multiTracks)) 
 						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 					else if (seq.getAttribute().getGateP())
 						velEditMode = 1;
@@ -786,7 +798,7 @@ struct Foundry : Module {
 			}		
 			if (slideTrigger.process(params[SLIDE_BTN_PARAM].value + inputs[SLIDECV_INPUT].value)) {
 				if (editingSequence && !attached ) {
-					if (seq.toggleSlide(multiSteps ? cpMode : 1, multiTracks))
+					if (seq.toggleSlide(multiSteps ? cpLength : 1, multiTracks))
 						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 					else if (seq.getAttribute().getSlide())
 						velEditMode = 2;
@@ -797,7 +809,7 @@ struct Foundry : Module {
 			}		
 			if (tiedTrigger.process(params[TIE_PARAM].value + inputs[TIEDCV_INPUT].value)) {
 				if (editingSequence && !attached ) {
-					seq.toggleTied(multiSteps ? cpMode : 1, multiTracks);// will clear other attribs if new state is on
+					seq.toggleTied(multiSteps ? cpLength : 1, multiTracks);// will clear other attribs if new state is on
 				}
 				else if (attached)
 					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
@@ -874,14 +886,15 @@ struct Foundry : Module {
 				}				
 				else if (editingSequence && !attached) {
 					if (multiSteps) {
-						if (stepn >= seq.getStepIndexEdit() && stepn < (seq.getStepIndexEdit() + cpMode))
-							red = 1.0f;
+						if (stepn >= seq.getStepIndexEdit() && stepn < (seq.getStepIndexEdit() + cpLength))
+							red = 0.2f;
 					}
 					else if (!running && showLenInSteps > 0l && stepn < seq.getLength()) {
 						green = 0.01f;
 					}
 					if (stepn == seq.getStepIndexEdit()) {
-						red = 1.0f;
+						if (red == 0.0f) // don't overwrite light multistep with full red
+							red = 1.0f;
 						green = 0.0f;
 					}
 					if (running && red == 0.0f && stepn == seq.getStepIndexRun(seq.getTrackIndexEdit())) {
@@ -1511,6 +1524,13 @@ struct FoundryWidget : ModuleWidget {
 			SVGSwitch::onChange(e);		
 		}
 	};
+	struct CPModeSwitch : CKSSThreeInv {
+		CPModeSwitch() {};
+		void onChange(EventChange &e) override {
+			SVGSwitch::onChange(e);		
+			((Foundry*)(module))->cpLength = ((Foundry*)(module))->getCPMode();
+		}
+	};
 	struct VelocityKnob : IMMediumKnobInf {
 		VelocityKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
@@ -1652,7 +1672,7 @@ struct FoundryWidget : ModuleWidget {
 		addParam(createDynamicParamCentered<IMPushButton>(Vec(columnRulerT1, rowRulerT0), module, Foundry::SEL_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		
 		// Copy-paste and select mode switch (3 position)
-		addParam(createParamCentered<CKSSThreeInv>(Vec(columnRulerT2, rowRulerT0), module, Foundry::CPMODE_PARAM, 0.0f, 2.0f, 2.0f));	// 0.0f is top position
+		addParam(createParamCentered<CPModeSwitch>(Vec(columnRulerT2, rowRulerT0), module, Foundry::CPMODE_PARAM, 0.0f, 2.0f, 2.0f));	// 0.0f is top position
 		
 		// Copy/paste buttons
 		// see under Track display
@@ -1917,6 +1937,7 @@ Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular",
 /*CHANGE LOG
 
 0.6.15:
+allow END in seq mode to choose custom seq lengths
 add proper CV2 monitoring when not running and editing sequences
 fix TKA song runmode slaving
 add right-click menu option to bound AutoStep writes by sequence lengths
