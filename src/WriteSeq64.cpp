@@ -146,7 +146,6 @@ struct WriteSeq64 : Module {
 		stepsCPbuffer = 64;
 		//infoCopyPaste = 0l;
 		pendingPaste = 0;
-		//resetOnRun = false;
 	}
 
 	
@@ -662,7 +661,7 @@ struct WriteSeq64Widget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on Run", CHECKMARK(module->resetOnRun));
+		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
 		

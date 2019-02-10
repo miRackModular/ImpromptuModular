@@ -78,7 +78,7 @@ struct GateSeq64 : Module {
 	int panelTheme = 0;
 	int expansion = 0;
 	bool autoseq;
-	int seqCVmethod = 0;// 0 is 0-10V, 1 is C4-D5#, 2 is TrigIncr
+	int seqCVmethod;// 0 is 0-10V, 1 is C4-D5#, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
 	int runModeSeq[16];
@@ -222,6 +222,7 @@ struct GateSeq64 : Module {
 	void onReset() override {
 		stepConfig = getStepConfig(CONFIG_PARAM_INIT_VALUE);
 		autoseq = false;
+		seqCVmethod = 0;
 		pulsesPerStep = 1;
 		running = true;
 		runModeSong = MODE_FWD;
@@ -1274,7 +1275,7 @@ struct GateSeq64Widget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on Run", CHECKMARK(module->resetOnRun));
+		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
 		

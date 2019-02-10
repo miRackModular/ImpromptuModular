@@ -185,7 +185,7 @@ struct SemiModularSynth : Module {
 	int panelTheme = 2;
 	bool autoseq;
 	bool autostepLen;
-	bool holdTiedNotes = true;
+	bool holdTiedNotes;
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
 	SeqAttributes sequences[16];
@@ -306,6 +306,7 @@ struct SemiModularSynth : Module {
 		// SEQUENCER
 		autoseq = false;
 		autostepLen = false;
+		holdTiedNotes = true;
 		pulsesPerStep = 1;
 		running = true;
 		runModeSong = MODE_FWD;
@@ -1801,7 +1802,7 @@ struct SemiModularSynthWidget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on Run", CHECKMARK(module->resetOnRun));
+		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
 		
@@ -1866,6 +1867,18 @@ struct SemiModularSynthWidget : ModuleWidget {
 			ParamWidget::onMouseDown(e);
 		}
 	};		
+	
+	// void onHoverKey(EventHoverKey &e) override {// https://www.glfw.org/docs/latest/group__keys.html
+		// SemiModularSynth* module = dynamic_cast<SemiModularSynth*>(this->module);
+		// if (e.key == GLFW_KEY_SPACE) {
+			// if (module->isEditingSequence()) {
+				// module->attributes[module->sequence][module->stepIndexEdit].toggleGate1();
+			// }			
+			// e.consumed = true;
+		// }
+		// else
+			// ModuleWidget::onHoverKey(e);
+	// }
 	
 	SemiModularSynthWidget(SemiModularSynth *module) : ModuleWidget(module) {
 		this->module = module;

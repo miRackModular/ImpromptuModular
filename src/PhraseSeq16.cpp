@@ -108,8 +108,8 @@ struct PhraseSeq16 : Module {
 	int expansion = 0;
 	bool autoseq;
 	bool autostepLen;
-	bool holdTiedNotes = true;
-	int seqCVmethod = 0;// 0 is 0-10V, 1 is C4-D5#, 2 is TrigIncr
+	bool holdTiedNotes;
+	int seqCVmethod;// 0 is 0-10V, 1 is C4-D5#, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
 	SeqAttributes sequences[16];
@@ -197,6 +197,8 @@ struct PhraseSeq16 : Module {
 	void onReset() override {
 		autoseq = false;
 		autostepLen = false;
+		holdTiedNotes = true;
+		seqCVmethod = 0;
 		pulsesPerStep = 1;
 		running = true;
 		runModeSong = MODE_FWD;
@@ -1671,7 +1673,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on Run", CHECKMARK(module->resetOnRun));
+		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
 		
@@ -1753,7 +1755,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 				else {// DISP_NORMAL
 					if (module->isEditingSequence()) {
 						if (!module->inputs[PhraseSeq16::SEQCV_INPUT].active) {
-							module->sequence = 0;;
+							module->sequence = 0;
 						}
 					}
 					else {
@@ -1764,6 +1766,18 @@ struct PhraseSeq16Widget : ModuleWidget {
 			ParamWidget::onMouseDown(e);
 		}
 	};	
+	
+	// void onHoverKey(EventHoverKey &e) override {// https://www.glfw.org/docs/latest/group__keys.html
+		// PhraseSeq16* module = dynamic_cast<PhraseSeq16*>(this->module);
+		// if (e.key == GLFW_KEY_SPACE) {
+			// if (module->isEditingSequence()) {
+				// module->attributes[module->sequence][module->stepIndexEdit].toggleGate1();
+			// }			
+			// e.consumed = true;
+		// }
+		// else
+			// ModuleWidget::onHoverKey(e);
+	// }
 	
 	PhraseSeq16Widget(PhraseSeq16 *module) : ModuleWidget(module) {
 		this->module = module;

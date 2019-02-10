@@ -98,12 +98,12 @@ struct Foundry : Module {
 	int expansion = 0;
 	int velocityMode;
 	bool velocityBipol;
-	bool holdTiedNotes = true;
+	bool holdTiedNotes;
 	bool autoseq;
 	bool autostepLen;
-	bool showSharp = true;
+	bool showSharp;
 	bool multiTracks;
-	int seqCVmethod = 0;// 0 is 0-10V, 1 is C2-D7#, 2 is TrigIncr
+	int seqCVmethod;// 0 is 0-10V, 1 is C2-D7#, 2 is TrigIncr
 	bool running;
 	bool resetOnRun;
 	bool attached;
@@ -182,9 +182,11 @@ struct Foundry : Module {
 	void onReset() override {
 		autoseq = false;
 		autostepLen = false;
+		showSharp = true;
 		running = true;
 		velocityMode = 0;
 		velocityBipol = false;
+		holdTiedNotes = true;
 		displayState = DISP_NORMAL;
 		tiedWarning = 0l;
 		attachedWarning = 0l;
@@ -194,6 +196,7 @@ struct Foundry : Module {
 		attached = false;
 		multiSteps = false;
 		multiTracks = false;
+		seqCVmethod = 0;
 		cpSeqLength = getCPMode();
 		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 			clkInSources[trkn] = 0;
@@ -1489,7 +1492,7 @@ struct FoundryWidget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on Run", CHECKMARK(module->resetOnRun));
+		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
 

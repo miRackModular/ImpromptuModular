@@ -100,8 +100,8 @@ struct PhraseSeq32 : Module {
 	int expansion = 0;
 	bool autoseq;
 	bool autostepLen;
-	bool holdTiedNotes = true;
-	int seqCVmethod = 0;// 0 is 0-10V, 1 is C4-G6, 2 is TrigIncr
+	bool holdTiedNotes;
+	int seqCVmethod;// 0 is 0-10V, 1 is C4-G6, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
 	SeqAttributes sequences[32];
@@ -223,6 +223,8 @@ struct PhraseSeq32 : Module {
 		stepConfig = getStepConfig(CONFIG_PARAM_INIT_VALUE);
 		autoseq = false;
 		autostepLen = false;
+		holdTiedNotes = true;
+		seqCVmethod = 0;// 0 is 0-10V, 1 is C4-G6, 2 is TrigIncr
 		pulsesPerStep = 1;
 		running = true;
 		runModeSong = MODE_FWD;
@@ -1744,7 +1746,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on Run", CHECKMARK(module->resetOnRun));
+		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
 
@@ -1845,6 +1847,18 @@ struct PhraseSeq32Widget : ModuleWidget {
 			ParamWidget::onMouseDown(e);
 		}
 	};		
+	
+	// void onHoverKey(EventHoverKey &e) override {// https://www.glfw.org/docs/latest/group__keys.html
+		// PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(this->module);
+		// if (e.key == GLFW_KEY_SPACE) {
+			// if (module->isEditingSequence()) {
+				// module->attributes[module->sequence][module->stepIndexEdit].toggleGate1();
+			// }			
+			// e.consumed = true;
+		// }
+		// else
+			// ModuleWidget::onHoverKey(e);
+	// }
 	
 	PhraseSeq32Widget(PhraseSeq32 *module) : ModuleWidget(module) {
 		this->module = module;

@@ -240,12 +240,12 @@ struct Clocked : Module {
 	// Need to save
 	int panelTheme = 0;
 	int expansion = 0;
-	bool displayDelayNoteMode = true;
+	bool displayDelayNoteMode;
 	bool bpmDetectionMode;
-	bool emitResetOnStopRun = false;
+	bool emitResetOnStopRun;
 	int ppqn;
 	bool running;
-	bool resetClockOutputsHigh = true;
+	bool resetClockOutputsHigh;
 
 	
 	// No need to save
@@ -349,9 +349,12 @@ struct Clocked : Module {
 	void onReset() override {
 		sampleRate = (double)engineGetSampleRate();
 		sampleTime = 1.0 / sampleRate;
+		displayDelayNoteMode = true;
 		bpmDetectionMode = false;
+		emitResetOnStopRun = false;
 		ppqn = 4;
 		running = true;
+		resetClockOutputsHigh = true;
 		editingBpmMode = 0l;
 		resetClocked(true);		
 	}
@@ -848,11 +851,11 @@ struct ClockedWidget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		DelayDisplayNoteItem *ddnItem = MenuItem::create<DelayDisplayNoteItem>("Display Delay Values in Notes", CHECKMARK(module->displayDelayNoteMode));
+		DelayDisplayNoteItem *ddnItem = MenuItem::create<DelayDisplayNoteItem>("Display delay values in notes", CHECKMARK(module->displayDelayNoteMode));
 		ddnItem->module = module;
 		menu->addChild(ddnItem);
 
-		EmitResetItem *erItem = MenuItem::create<EmitResetItem>("Reset when Run is Turned Off", CHECKMARK(module->emitResetOnStopRun));
+		EmitResetItem *erItem = MenuItem::create<EmitResetItem>("Reset when run is turned off", CHECKMARK(module->emitResetOnStopRun));
 		erItem->module = module;
 		menu->addChild(erItem);
 
