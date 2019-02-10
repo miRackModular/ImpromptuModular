@@ -381,6 +381,8 @@ void Sequencer::unTransposeSeq(bool multiTracks) {
 }
 void Sequencer::rotateSeq(int deltaSeqKnob, bool multiTracks) {
 	sek[trackIndexEdit].rotateSeq(seqIndexEdit, deltaSeqKnob);
+	if (stepIndexEdit < getLength())
+		moveStepIndexEdit(deltaSeqKnob, true);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
@@ -507,6 +509,9 @@ void Sequencer::clockStep(int trkn) {
 			if (sek[tkbcd].getRunModeSong() == SequencerKernel::MODE_TKA) {
 				sek[tkbcd].setPhraseIndexRun(sek[0].getPhraseIndexRun());
 				// The code below is to make it such that stepIndexRun should re-init upon phraseChange
+				//   example for phrase jump does not reset stepIndexRun in B
+					//A (FWD): 1 = 1x10, 2 = 1x10
+					//B (TKA): 1 = 1x20, 2 = 1x20
 				// next line will not work, it will result in a double move of stepIndexRun since clock will move it also
 				//sek[tkbcd].moveStepIndexRun(true); 
 				// this next mechanism works, the chain of events will make moveStepIndexRun(true) happen automatically and no double move will occur

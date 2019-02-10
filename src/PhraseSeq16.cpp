@@ -970,14 +970,21 @@ struct PhraseSeq16 : Module {
 					}
 					else if (displayState == DISP_ROTATE) {
 						if (editingSequence) {
+							int slength = sequences[sequence].getLength();
 							sequences[sequence].setRotate(clamp(sequences[sequence].getRotate() + deltaKnob, -99, 99));
 							if (deltaKnob > 0 && deltaKnob < 201) {// Rotate right, 201 is safety
-								for (int i = deltaKnob; i > 0; i--)
-									rotateSeq(sequence, true, sequences[sequence].getLength());
+								for (int i = deltaKnob; i > 0; i--) {
+									rotateSeq(sequence, true, slength);
+									if (stepIndexEdit < slength)
+										stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, slength);
+								}
 							}
 							if (deltaKnob < 0 && deltaKnob > -201) {// Rotate left, 201 is safety
-								for (int i = deltaKnob; i < 0; i++)
-									rotateSeq(sequence, false, sequences[sequence].getLength());
+								for (int i = deltaKnob; i < 0; i++) {
+									rotateSeq(sequence, false, slength);
+									if (stepIndexEdit < slength)
+										stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit - 1, slength);
+								}
 							}
 						}						
 					}
@@ -1234,6 +1241,12 @@ struct PhraseSeq16 : Module {
 							else
 								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, (i == phrases - 1) ? 1.0f : 0.0f, 0.0f);
 						}					
+					}
+					else if (displayState == DISP_TRANSPOSE) {
+						setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.0f, 0.5f);
+					}
+					else if (displayState == DISP_ROTATE) {
+						setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.0f, (i == stepIndexEdit ? 1.0f : (i < sequences[sequence].getLength() ? 0.2f : 0.0f)) );
 					}
 					else {// normal led display (i.e. not length)
 						float red = 0.0f;

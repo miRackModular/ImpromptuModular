@@ -196,6 +196,19 @@ struct PhraseSeq32 : Module {
 			stepIndexRun[1] = randomu32() % len;
 	}
 	
+	inline void moveStepIndexEdit(int delta, bool _autostepLen) {// 2nd param is for rotate that uses this method also
+		if (stepConfig == 2 || !_autostepLen) // 32
+			stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + delta, _autostepLen ? sequences[sequence].getLength() : 32);
+		else {// here 1x16 and _autostepLen limit wanted
+			if (stepIndexEdit < 16) {
+				stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + delta, sequences[sequence].getLength());
+				if (stepIndexEdit == 0) stepIndexEdit = 16;
+			}
+			else
+				stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + delta, sequences[sequence].getLength() + 16);
+		}
+	}
+	
 		
 	PhraseSeq32() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 		for (int i = 0; i < 32; i++)
@@ -784,16 +797,7 @@ struct PhraseSeq32 : Module {
 					editingChannel = (stepIndexEdit >= 16 * stepConfig) ? 1 : 0;
 					// Autostep (after grab all active inputs)
 					if (params[AUTOSTEP_PARAM].value > 0.5f) {
-						if (stepConfig == 2 || !autostepLen) // 32
-							stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, autostepLen ? sequences[sequence].getLength() : 32);
-						else {// here 1x16 and autostepLen limit wanted
-							if (stepIndexEdit < 16) {
-								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, sequences[sequence].getLength());
-								if (stepIndexEdit == 0) stepIndexEdit = 16;
-							}
-							else
-								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, sequences[sequence].getLength() + 16);
-						}
+						moveStepIndexEdit(1, autostepLen);
 						if (stepIndexEdit == 0 && autoseq && !inputs[SEQCV_INPUT].active)
 							sequence = moveIndex(sequence, sequence + 1, 32);
 					}
@@ -964,14 +968,26 @@ struct PhraseSeq32 : Module {
 					}
 					else if (displayState == DISP_ROTATE) {
 						if (editingSequence) {
+							int slength = sequences[sequence].getLength();
+							bool rotChanB = (stepConfig == 1 && stepIndexEdit >= 16);
 							sequences[sequence].setRotate(clamp(sequences[sequence].getRotate() + deltaKnob, -99, 99));
 							if (deltaKnob > 0 && deltaKnob < 201) {// Rotate right, 201 is safety
-								for (int i = deltaKnob; i > 0; i--)
-									rotateSeq(sequence, true, sequences[sequence].getLength(), stepConfig == 1 && stepIndexEdit >= 16);
+								for (int i = deltaKnob; i > 0; i--) {
+									rotateSeq(sequence, true, slength, rotChanB);
+									if ((stepConfig == 2 || !rotChanB ) && (stepIndexEdit < slength))
+										stepIndexEdit = (stepIndexEdit + 1) % slength;
+									if (rotChanB && (stepIndexEdit < (slength + 16)) && (stepIndexEdit >= 16))
+										stepIndexEdit = ((stepIndexEdit - 16 + 1) % slength) + 16;
+								}
 							}
 							if (deltaKnob < 0 && deltaKnob > -201) {// Rotate left, 201 is safety
-								for (int i = deltaKnob; i < 0; i++)
-									rotateSeq(sequence, false, sequences[sequence].getLength(), stepConfig == 1 && stepIndexEdit >= 16);
+								for (int i = deltaKnob; i < 0; i++) {
+									rotateSeq(sequence, false, slength, rotChanB);
+									if ((stepConfig == 2 || !rotChanB ) && (stepIndexEdit < slength))
+										stepIndexEdit = (stepIndexEdit + (stepConfig * 16 - 1) ) % slength;
+									if (rotChanB && (stepIndexEdit < (slength + 16)) && (stepIndexEdit >= 16))
+										stepIndexEdit = ((stepIndexEdit - 1 ) % slength) + 16;
+								}
 							}
 						}						
 					}
@@ -1295,6 +1311,12 @@ struct PhraseSeq32 : Module {
 							else
 								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, (i == phrases - 1) ? 1.0f : 0.0f, 0.0f);
 						}
+					}
+					else if (displayState == DISP_TRANSPOSE) {
+						setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.0f, 0.5f);
+					}
+					else if (displayState == DISP_ROTATE) {
+						setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.0f, (i == stepIndexEdit ? 1.0f : (col < sequences[sequence].getLength() ? 0.2f : 0.0f)) );
 					}
 					else {// normal led display (i.e. not length)
 						float red = 0.0f;

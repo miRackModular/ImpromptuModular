@@ -905,6 +905,12 @@ struct Foundry : Module {
 					if (stepn >= startCP && stepn < (startCP + seq.getLengthSeqCPbug()))
 						green = 0.5f;// Green when copy interval
 				}
+				else if (displayState == DISP_TRANSPOSE) {
+					red = 0.5f;
+				}
+				else if (displayState == DISP_ROTATE) {
+					red = (stepn == seq.getStepIndexEdit() ? 1.0f : (stepn < seq.getLength() ? 0.2f : 0.0f));
+				}
 				else if (displayState == DISP_LEN) {
 					int seqEnd = seq.getLength() - 1;
 					if (stepn < seqEnd)
