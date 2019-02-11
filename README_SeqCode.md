@@ -1,4 +1,4 @@
-This is the code structure used in an Impromptu sequencer. The code excerpt shows how resets, clocks and run states are implemented. Notably, the following concepts should be visible in the code below:
+This is the code structure used in an Impromptu sequencer. The code excerpt shows how resets, clocks and run states are implemented. The following concepts should be visible in the code below:
 * 1ms-clock-ignore-on-reset
 * Clock muting when run is off
 * Gate retriggering on reset
@@ -10,7 +10,7 @@ void initRun() {
 }
 
 
-void Module::onReset() override {
+void MyModule::onReset() override {
 	// initialize sequencer variables
 	// ...
 	running = true;
@@ -19,14 +19,14 @@ void Module::onReset() override {
 }
 
 
-void Module::fromJson(json_t *rootJ) override {
+void MyModule::fromJson(json_t *rootJ) override {
 	// load saved sequencer variables
 	// ...
 	initRun();
 }
 
 
-void Module::step() override {
+void MyModule::step() override {
 	// Run button
 	if (runningTrigger.process(params[RUN_PARAM].value + inputs[RUNCV_INPUT].value)) {
 		running = !running;
@@ -43,7 +43,7 @@ void Module::step() override {
 	// ...
 	
 	// Clock
-	if (running && clockIgnoreOnReset == 0l) {// clock muting and 1ms-clock-ignore-on-reset
+	if (running && clockIgnoreOnReset == 0) {// clock muting and 1ms-clock-ignore-on-reset
 		if (clockTrigger.process(inputs[CLOCK_INPUT].value)) {
 			// advance the sequencer
 			// ...
@@ -59,7 +59,7 @@ void Module::step() override {
 	
 	// Outputs
 	outputs[CV_OUTPUT].value = cv;
-	outputs[GATE1_OUTPUT].value = (gate && (clockIgnoreOnReset == 0)) ? 10.f : 0.f;// gate retriggering on reset
+	outputs[GATE_OUTPUT].value = (gate && (clockIgnoreOnReset == 0)) ? 10.f : 0.f;// gate retriggering on reset
 			
 	// Set the lights of the sequencer 
 	// ...

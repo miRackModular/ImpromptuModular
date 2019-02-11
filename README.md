@@ -93,29 +93,29 @@ The following recommendations should also be followed in order to ensure proper 
 
 * No run cables are used.
 
-	1. (**GOOD**) Clocked and sequencers are set to their default settings. In this configuration, the sequencer's run state is not controlled by Clocked. When the clock is stopped, the gates may remain active causing adsr-vca chains to remain active, thereby continually playing a tone. In these cases, the sequencer's run state can be manually turned off (and manually back on again when the clock has been restarted).
+	1. (**GOOD**) Clocked and sequencers are set to their default settings. In this configuration, the sequencer's run state is not controlled by Clocked. When the clock is stopped, the gates may remain active causing adsr-vca chains to remain active, thereby continually playing a tone. In these cases, the sequencer's run state can be manually turned off; it should then be manually turned back on again *before* the clock is to be restarted. In patches with mutliple clock rates, restarting the sequencer *after* the clock may cause the different parts to become unsynchronized.
 	
-	1. (**GOOD**) Default settings, but with "*Reset when run is turned off*" activated in Clocked. This causes both the clock generator and the sequencer to restart, and is equivalent to stopping the clock in the first configuration and manually pressing reset. 
+	1. (**GOOD**) Default settings, but with the option "*Reset when run is turned off*" activated in Clocked. This causes both the clock generator and the sequencer to restart when stopping the clock, and is equivalent to stopping the clock and manually pressing reset in case (i.). 
 	
-	1. (**BAD**) Default settings, but with "*Outputs reset high when not running*" deactivated in Clocked. In this setup, the following operations will result in a missed first step: stop the clock, press reset, start the clock again.
+	1. (**BAD**) Default settings, but with the option "*Outputs reset high when not running*" deactivated in Clocked. In this setup, the following operations will result in a missed first step: stop the clock, press reset, start the clock again.
 
 * Run cables are used.
 
-	1. (**BEST**) Clocked and sequencers are set to their default settings. In this configuration, stopping the clock using its run button pauses the playback of both the clock and the sequencer, and restarts it from the same point when the clock is started again. When stopped (paused), no gates remain active; in certain Impromptu sequencers, the monitoring of entered notes can be provided by the sequencer when stopped. 
+	4. (**BEST**) Clocked and sequencers are set to their default settings. In this configuration, stopping the clock using its run button pauses the playback of both the clock and the sequencer, and restarts it from the same point when the clock is started again. When stopped (paused), no gates remain active, and in certain Impromptu sequencers the monitoring of entered notes can even be provided. 
 
-	1. (**GOOD**) Default settings, but with "*Reset when run is turned off*" activated in Clocked. This serves as a shortcut to automatically reset the clock and sequencer before run is turned on again. 
+	1. (**GOOD**) Default settings, but with the option "*Reset when run is turned off*" activated in Clocked. This causes both the clock generator and the sequencer to restart when stopping the clock, and is equivalent to stopping the clock and manually pressing reset in case (iv.). 
 
-	1. (**BAD**) Default settings, but with "*Reset on Run*" activated in the sequencer. Although this may seem ok at first glance, the following operations may result in a shortened first step: stop the clock, then start it again. The reason for this is because the clock has paused, while the sequencer has not paused.
+	1. (**BAD**) Default settings, but with the option "*Reset on Run*" activated in the sequencer. Although this may seem ok at first glance, the following operations may result in a shortened first step: stop the clock, then start it again. The reason for this inconsistent behavior is because the clock has paused while the sequencer has not paused, thus when the sequencer restarts on its first step, it may not play for the expected duration.
 	
-	1. **Note**: The option "*Outputs reset high when not running*" in Clocked has no effect when run cables are used, and should be set as best as is needed for the other modules in the patch.
+	1. **Note**: The option "*Outputs reset high when not running*" in Clocked can also be deactivated without consequence when run cables are used, and should be set for best use of the other modules in the patch.
 
 When Clocked is used with sequential switches or other non-Impromptu sequencers, and first steps are not playing correctly upon reset, the following guidelines may be of help:
 
-1. The option "*Outputs reset high when not running*" should be in its defaut state in Clocked (i.e. checked).
+1. The option "*Outputs reset high when not running*" should ideally be in its defaut state in Clocked (i.e. checked), but ultimately the user should experiment with both settings to see which one works best for the setup and modules being used.
 
-1. Ideally, the reset and clock signals coming from Clocked should not pass through any other module and should be connected directly to the sequencer.
+1. The reset and clock signals coming from Clocked should not pass through any other module and should be connected directly to the sequencer or sequential switch.
 
-1. If a clock (or reset) signal must be routed through another module (for example, a separate clock divider module, a switch, etc), both the reset and clock signals should be similarly delayed (possibly by using utility modules), such that a reset does not arrive at the sequencer or switch *before* any clock edges that are produced as a result of that same reset event.
+1. If a clock (or reset) signal must be routed through another module (for example, a separate clock divider module, a switch, etc.), both the reset and clock signals should be similarly delayed (possibly by using utility modules), such that a reset does not arrive at the sequencer or switch *before* any clock edges that are produced as a result of that same reset event.
 
 Further information for developpers is available in a short summary of the [code structure used in Impromptu sequencers](README_SeqCode.md), relating to clocks, resets and run states.
 
@@ -177,9 +177,9 @@ For a brief tutorial on setting up the controller, please see [this segment](htt
 
 A chainable master clock module with swing, clock delay and pulse width controls, with master BPM from 30 to 300 and all mult/div ratios up to 16, including 1.5 and 2.5, and with additional ratios spanning prime numbers and powers of two up to 64. The clock can produce waveforms with adjustable pulse widths for use with envelope generators or sequencers that use the clock pulse to produce their gate signals. The clock can also be synchronized to an external clock source.
 
-For a tutorial on Clocked regarding chaining, clock multiplications and divisions, swing and clock delay features, please see Nigel Sixsmith's [Talking Rackheads episode 12](https://www.youtube.com/watch?v=ymfOh1yCzU4). 
+For a tutorial on Clocked regarding chaining, clock multiplications and divisions, swing and clock delay features, please see Nigel Sixsmith's [Talking Rackheads episode 12](https://www.youtube.com/watch?v=ymfOh1yCzU4). It is also recommended to see the section above on [resets, clocks and run states](#clk_rst_run).
 
-* **RESET**: Restart all channels' time keeping. The clock outputs are held high when a stopped clock is reset (instead of low). This is required so that when controlling sequential switches (which are assumed to also be reset on the same event) will not get triggered and moved to step 2 when the clock is started again. A right-click menu option will be added to allow the outputs to be held low when resetting a stopped clock.
+* **RESET**: Restart all channels' time keeping. The clock outputs are held high when a stopped clock is reset (instead of low). This is required so that when controlling sequential switches (which are assumed to also be reset on the same event) will not get triggered and moved to step 2 when the clock is started again. The right-click menu option "*Outputs reset high when not running*" can be turned off, to allow the outputs to be held low when resetting a stopped clock.
 
 * **RUN**: The run button functions as a pause/play button. When turned off, the clock outputs are held in their current states. When run is turned on again, the clock engine resumes where it left off, such that when using multiple outputs with different clock ratios, a large patch with multiple sequencers playing at different speeds will not be out of sync. This effectively makes for proper pausing behavior in multi-track and multi-clock patches. For sequencers with RUN inputs, it may be beneficial to connect the RUN output of Clocked to the RUN input of the sequencers. In the case of the Phrase Sequencers (see below), this will ensure gates are not kept high while stopped, and will also allow feedback of the notes that are entered when programming a stopped sequencer.
 
@@ -232,7 +232,7 @@ The following block diagram shows how the different sequencer elements are hiera
  
 ![IM](res/img/FoundryBlockDiag.jpg)
 
-Here are some further details on the different functions of the sequencer. For an overview of the sequencer's functionality, please see Omri Cohen's [Foundry tutorial](https://www.youtube.com/watch?v=56w_mlNlKE4).
+Here are some further details on the different functions of the sequencer. For an overview of the sequencer's functionality, please see Omri Cohen's [Foundry tutorial](https://www.youtube.com/watch?v=56w_mlNlKE4). It is also recommended to see the section above on [resets, clocks and run states](#clk_rst_run).
 
 * **CLK**: The clock inputs for each track. When the input is unconnected in a track, the track automatically uses the clock source of the preceding track (indicated by arrows above each clock input). It is good practice that the clock for track A be connected as directly as possible to the main clock source, and when a chained series of clock modules are used, the clock input of track A should be connected to a clock output from the *first* clock module of the chain.
 
@@ -291,7 +291,7 @@ The following block diagram shows how sequences and phrases relate to each other
 
 ![IM](res/img/PhraseSeq16BlockDiag.jpg)
 
-Familiarity with the Fundamental SEQ-3 sequencer is recommended, as some operating principles are similar in both sequencers. For an in depth review of the sequencer's capabilities, please see Nigel Sixsmith's [Talking Rackheads episode 8](https://www.youtube.com/watch?v=KOpo2oUPTjg) or Omri Cohen's [PhraseSeq tutorial](https://www.youtube.com/watch?v=N8_rMNzsS7w).
+Familiarity with the Fundamental SEQ-3 sequencer is recommended, as some operating principles are similar in both sequencers. It is also recommended to see the section above on [resets, clocks and run states](#clk_rst_run). For an in depth review of the sequencer's capabilities, please see Nigel Sixsmith's [Talking Rackheads episode 8](https://www.youtube.com/watch?v=KOpo2oUPTjg) or Omri Cohen's [PhraseSeq tutorial](https://www.youtube.com/watch?v=N8_rMNzsS7w).
 
 * **SEQ / SONG**: This is the main switch that controls the two major modes of the sequencer. Seq mode allows the currently selected sequence to be played/edited. In this mode, all controls are available (run mode, transpose, rotate, copy-paste, gates, slide, octave, notes) and the content of a sequence can be modified even when the sequencer is running. Song mode allows the creation of a series of sequence numbers (called phrases). In this mode, the run mode and length of the song and the sequence index numbers themselves can be modified (whether the sequence is running or not); some of the other aforementioned controls are unavailable and the actual contents of the sequences cannot be modified.
 
@@ -406,7 +406,7 @@ Other than these characteristics, the rest of PhraseSeq32's functionality is ide
 
 ![IM](res/img/GateSeq64.jpg)
 
-A 64 step gate sequencer with the ability to define **probabilities** for each step. A configuration switch allows the sequencer to output quad 16 step sequences, dual 32 step sequences or single 64 step sequences. To see the sequencer in action and for a tutorial on how it works, please see [this segment](https://www.youtube.com/watch?v=bjqWwTKqERQ&t=6111s) of Nigel Sixsmith's Talking Rackheads episode 10. 
+A 64 step gate sequencer with the ability to define **probabilities** for each step. A configuration switch allows the sequencer to output quad 16 step sequences, dual 32 step sequences or single 64 step sequences. To see the sequencer in action and for a tutorial on how it works, please see [this segment](https://www.youtube.com/watch?v=bjqWwTKqERQ&t=6111s) of Nigel Sixsmith's Talking Rackheads episode 10. It is also recommended to see the section above on [resets, clocks and run states](#clk_rst_run). 
 
 When running in the 4x16 configuration, each of the four rows is sent to the four **GATE** output jacks (jacks 1 to 4, with jack 1 being the top-most jack). In the 2x32 configuration, jacks 1 and 3 are used, and in the 1x64 configuration, only jack 1 is used (top-most jack). When activating a given step by clicking it once, it will turn green showing that the step is on. Clicking the _"p"_ button turns it yellow, and the main display shows the probability associated with this step. While the probability remains shown, the probability can be adjusted with the main knob, in 0.02 increments, between 0 and 1. When a yellow step is selected, clicking the _"p"_ button again will turn it off. Clicking steps with the **right mouse button** can also be used to more quiclkly turn steps off.
 
