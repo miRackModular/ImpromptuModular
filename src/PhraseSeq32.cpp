@@ -1199,7 +1199,7 @@ struct PhraseSeq32 : Module {
 			initRun();// must be before SEQCV_INPUT below
 			resetLight = 1.0f;
 			displayState = DISP_NORMAL;
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			clockTrigger.reset();
 			if (inputs[SEQCV_INPUT].active && seqCVmethod == 2)
 				sequence = 0;

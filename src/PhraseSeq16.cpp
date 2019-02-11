@@ -1183,7 +1183,7 @@ struct PhraseSeq16 : Module {
 			initRun();// must be after sequence reset
 			resetLight = 1.0f;
 			displayState = DISP_NORMAL;
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			clockTrigger.reset();
 			if (inputs[SEQCV_INPUT].active && seqCVmethod == 2)
 				sequence = 0;

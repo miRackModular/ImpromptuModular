@@ -49,7 +49,7 @@ struct Tact : Module {
 	double cv[2];// actual Tact CV since Tactknob can be different than these when transitioning
 	float storeCV[2];
 	float rateMultiplier;
-	bool levelSensitiveTopBot = false;
+	bool levelSensitiveTopBot;
 
 	// No need to save
 	long infoStore;// 0 when no info, positive downward step counter when store left channel, negative upward for right
@@ -82,6 +82,7 @@ struct Tact : Module {
 			storeCV[i] = 0.0f;
 		}
 		rateMultiplier = 1.0f;
+		levelSensitiveTopBot = false;
 		infoStore = 0l;
 	}
 
