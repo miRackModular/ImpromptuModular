@@ -1,5 +1,5 @@
 This is the code structure used in an Impromptu sequencer. The code excerpt shows how resets, clocks and run states are implemented. The following concepts should be visible in the code below:
-* 1ms-clock-ignore-on-reset
+* 1ms-clock-ignore-on-reset (and initialize / power-up)
 * Clock muting when run is off
 * Gate retriggering on reset
 
@@ -15,12 +15,12 @@ void MyModule::onReset() override {
 	// ...
 	running = true;
 	initRun();
-	clockIgnoreOnReset = (long) (0.001f * engineGetSampleRate());
+	clockIgnoreOnReset = (long) (0.001f * engineGetSampleRate());// useful when Rack starts
 }
 
 
 void MyModule::fromJson(json_t *rootJ) override {
-	// load saved sequencer variables
+	// load sequencer variables
 	// ...
 	initRun();
 }

@@ -85,7 +85,7 @@ All edge sensitive inputs have a threshold of 1V. In all sequencers, the duratio
 
 Impromptu sequencers implement two particular mechanisms related to resets and clocks in order to ensure proper reset behavior. 
 
-* **1ms-clock-ignore-on-reset**: A rising edge on the reset inputs repositions all play heads to the start of their respective sequences or songs. However, when such a reset also resets the clock module, a rising edge can sometimes be produced on the sequencer's clock input. Because of routing delays though other modules (ex.: separate clock dividers), this clock edge can sometimes arrive at the sequencer *after* the reset signal. In order to not count this clock as a true clock event, which would effectively skip the first step in the sequencer, all incoming [clock edges are ignored during 1ms after the reset](https://vcvrack.com/manual/VoltageStandards.html#timing) was received.
+* **1ms-clock-ignore-on-reset**: A rising edge on the reset input repositions all play heads to the start of their respective sequences or songs. However, when such a reset also resets the clock module, a rising edge can sometimes be produced on the sequencer's clock input. Because of routing delays though other modules (ex.: separate clock dividers), this clock edge can sometimes arrive at the sequencer *after* the reset signal. In order to not count this clock as a true clock event, which would effectively skip the first step in the sequencer, all incoming [clock edges are ignored during 1ms after the reset](https://vcvrack.com/manual/VoltageStandards.html#timing) was received. The clock is also ignored during 1ms when the module is initialized or powered up (which is treated as an implicit reset).
 
 * **Gate retriggering on reset**: When resetting a running clock that is driving a sequencer, particularly when the pulse width of the clock is non-negligible in length, pressing the reset while the gate and clock are high can lead to a continuous gate, thereby not triggering a sound module (drum module for example). Therefore, all gate outputs are forced low during 1ms after reset, to ensure any trigger-sensitive targets are effectively triggered. In order for this to function properly, the incoming clock pulses should be at least 2ms in duration.
 
@@ -93,29 +93,29 @@ The following recommendations should also be followed in order to ensure proper 
 
 * No run cables are used.
 
-	1. (**GOOD**) Clocked and sequencers are set to their default settings. In this configuration, the sequencer's run state is not controlled by Clocked. When the clock is stopped, the gates may remain active causing adsr-vca chains to remain active, thereby continually playing a tone. In these cases, the sequencer's run state can be manually turned off; it should then be manually turned back on again *before* the clock is to be restarted. In patches with mutliple clock rates, restarting the sequencer *after* the clock may cause the different parts to become unsynchronized.
+	1. (**GOOD**) Clocked and sequencers are set to their default settings. In this configuration, the sequencer's run state is not controlled by Clocked. When the clock is stopped, the gates may remain active causing ADSR-VCA chains to remain active, thereby continually playing a tone. In these cases, the sequencer's run state can be manually turned off; it should then be manually turned back on again *before* the clock is to be restarted. In patches with mutliple clock rates, restarting the sequencer *after* the clock may cause the different parts to become unsynchronized.
 	
-	1. (**GOOD**) Default settings, but with the option "*Reset when run is turned off*" activated in Clocked. This causes both the clock generator and the sequencer to restart when stopping the clock, and is equivalent to stopping the clock and manually pressing reset in case (i.). 
+	1. (**GOOD**) Default settings, but with the option "*Reset when run is turned off*" activated in Clocked. This causes both the clock generator and the sequencer to restart when stopping the clock, and is equivalent to stopping the clock and manually pressing reset in case (i). 
 	
 	1. (**BAD**) Default settings, but with the option "*Outputs reset high when not running*" deactivated in Clocked. In this setup, the following operations will result in a missed first step: stop the clock, press reset, start the clock again.
 
 * Run cables are used.
 
-	4. (**BEST**) Clocked and sequencers are set to their default settings. In this configuration, stopping the clock using its run button pauses the playback of both the clock and the sequencer, and restarts it from the same point when the clock is started again. When stopped (paused), no gates remain active, and in certain Impromptu sequencers the monitoring of entered notes can even be provided. 
+	4. (**BEST**) Clocked and sequencers are set to their default settings. In this configuration, stopping the clock using its run button pauses the playback of both the clock and the sequencer, and restarts it from the same point when the clock is started again. When stopped (paused), no gates remain active, and in certain sequencers the monitoring of entered notes can even be provided. 
 
-	1. (**GOOD**) Default settings, but with the option "*Reset when run is turned off*" activated in Clocked. This causes both the clock generator and the sequencer to restart when stopping the clock, and is equivalent to stopping the clock and manually pressing reset in case (iv.). 
+	1. (**GOOD**) Default settings, but with the option "*Reset when run is turned off*" activated in Clocked. This causes both the clock generator and the sequencer to restart when stopping the clock, and is equivalent to stopping the clock and manually pressing reset in case (iv). 
 
 	1. (**BAD**) Default settings, but with the option "*Reset on Run*" activated in the sequencer. Although this may seem ok at first glance, the following operations may result in a shortened first step: stop the clock, then start it again. The reason for this inconsistent behavior is because the clock has paused while the sequencer has not paused, thus when the sequencer restarts on its first step, it may not play for the expected duration.
 	
-	1. **Note**: The option "*Outputs reset high when not running*" in Clocked can also be deactivated without consequence when run cables are used, and should be set for best use of the other modules in the patch.
+	1. **Note**: The option "*Outputs reset high when not running*" in Clocked can also be deactivated without consequence when run cables are used, and should be set for optimal use of the other modules in the patch.
 
 When Clocked is used with sequential switches or other non-Impromptu sequencers, and first steps are not playing correctly upon reset, the following guidelines may be of help:
 
 1. The option "*Outputs reset high when not running*" should ideally be in its defaut state in Clocked (i.e. checked), but ultimately the user should experiment with both settings to see which one works best for the setup and modules being used.
 
-1. The reset and clock signals coming from Clocked should not pass through any other module and should be connected directly to the sequencer or sequential switch.
+1. The reset and clock signals coming from Clocked should preferrably not pass through any other module and should be connected directly to the sequencer or sequential switch.
 
-1. If a clock (or reset) signal must be routed through another module (for example, a separate clock divider module, a switch, etc.), both the reset and clock signals should be similarly delayed (possibly by using utility modules), such that a reset does not arrive at the sequencer or switch *before* any clock edges that are produced as a result of that same reset event.
+1. If a clock (or reset) signal must be routed through another module (for example, a separate clock divider, a switch, etc.), both the reset and clock signals should be similarly delayed (possibly by using utility modules), such that a reset does not arrive at the sequencer or switch *before* any clock edges that are produced as a result of that reset event.
 
 Further information for developpers is available in a short summary of the [code structure used in Impromptu sequencers](README_SeqCode.md), relating to clocks, resets and run states.
 
