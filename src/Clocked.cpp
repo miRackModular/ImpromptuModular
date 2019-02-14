@@ -459,7 +459,7 @@ struct Clocked : Module {
 		// ppqn
 		json_t *ppqnJ = json_object_get(rootJ, "ppqn");
 		if (ppqnJ)
-			ppqn = clamp(json_integer_value(ppqnJ), 4, 24);
+			ppqn = json_integer_value(ppqnJ);
 
 		// resetClockOutputsHigh
 		json_t *resetClockOutputsHighJ = json_object_get(rootJ, "resetClockOutputsHigh");
