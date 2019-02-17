@@ -37,6 +37,15 @@ Each module is available in light (Classic) or dark (Dark-valor) panels, selecta
 
 Details about each module are given below. Feedback and bug reports (and [donations!](https://www.paypal.me/marcboule)) are always appreciated!
 
+| Feature      				| WriteSeq32/64 	| PhraseSeq16	| PhraseSeq32	| GateSeq64			| Foundry		| BigButton1/2 	|
+| ----------- 				| ----------- 		| ----------- 	| ----------- 	| ----------- 		| -----------	| -----------  	|
+| Configuration\*			| 3x32 / 4x64		| 1x16 			| 1x32, 2x16 	| 4x16, 2x32, 1x64  | 4x32 			| 6x64 / 6x128	|
+| Clock inputs				| 1 / 2				| 1				| 1				| 1					| 4				| 1				|
+| Patterns per track/chan	| 1        			| 16 			| 32			| 16				| 64			| 2 (banks)		|
+| Song length				| - 				| 16			| 32 			| 64 				| 99			| - 			|
+| Outputs					| CV+gate			| CV+2gates		| CV+2gates		| Gate				| CV+gate+CV2	| Gate / CV+Gate|
+
+\* Configuration is noted as follows: Channels/Tracks x Sequence-Length. The distinction between channels and tracks relates to clock inputs: when channles are separately clockable they are referred to as tracks.
 
 ## Known issues <a id="known-issues"></a>
 For sequencers and clock modules, it is advisable to have a core audio module added to your patch and assigned to a sound device in order for the timing and response delays in the user interface to be of the proper duration. This is a [known artifact](https://github.com/VCVRack/Rack/issues/919) in VCV Rack.
@@ -196,7 +205,7 @@ PW and Swing CV inputs are aso avaialable in the **expansion panel** (see right-
 
 ### External synchronization <a id="clocked-sync"></a>
 
-By default, the clock's BPM input is level sensitive and follows [Rack standards for BPM CVs](https://vcvrack.com/manual/VoltageStandards.html#pitch-and-frequencies). Synchronizing Clocked to an external clock signal can be done by selecting a mode other than "CV" with the MODE buttons located below the BPM input jack. The possible synchronization settings are: P2, P4, P8, P12, P16, P24, where the number indicates the number of pulses per step of the external clock source. 
+By default, the clock's BPM input is level sensitive and follows [Rack standards for BPM CVs](https://vcvrack.com/manual/VoltageStandards.html#pitch-and-frequencies). Synchronizing Clocked to an external clock signal can be done by selecting a mode other than "CV" with the MODE buttons located below the BPM input jack. The possible synchronization settings are: P2, P4, P8, P12, P16, P24, where the number indicates the number of pulses per step of the external clock source. **A current bug** in which the P2 setting is loaded as P4 when re-opening a patch will be fixed in the upcoming version 0.6.16.
 
 When using a chain of Clocked modules, all modules must have the same mode setting. The LED next to the mode buttons will light up when the sync mode is enabled; however, when no cable is connected to the BPM input jack, a regular clock is produced according to the BPM knob's value.
 
@@ -207,6 +216,7 @@ When using external clock synchronization, Clocked syncs itself to the incoming 
 1. The external clock must be capable of sending clocks at a minimum of 2 pulses per quarter note (PPQN) and should not have any swing.
 1. Clocked does not perform any interval averaging and tries to sync to the incomming pulses as rapidly as possible. This may sometimes cause the BPM setting to fluctuate widely before reaching a perfect lock.
 1. For low clock BPMs, synchronization may take some time if the external clock changes markedly from the last BPM it was synchronized to. Making gradual tempo changes is always recommended, and increasing the PPQN setting may also help. An other method consists in priming Clocked with is correct BPM first, to let it learn the new BPM, so that all further runs at that BPM will sync perfectly.
+1. When sending a clock from a DAW or other source external to Clocked in Rack, best results are obtained when sending this clock through an audio channel as opposed to midi clocks.
 
 ([Back to module list](#modules))
 
@@ -538,7 +548,7 @@ WriteSeq32 is a three-channel 32-step writable sequencer module. Although the di
 
 * **Main display**: Shows the note names for the 8 steps corresponding to the active window. When a stored pitch CV has not been quantized, the display shows the closest such note name. For example, 0.03 Volts is shown as C4, whereas 0.05 Volts is shown as C4 sharp or D4 flat. Octaves above 9 or below 0 are shown with a top bar and an underscore respectively.
 
-* **GATES**: LED buttons to show/modify the gates for the 8 steps in the current window. Gates can be toggled whether the sequencer is running or not.
+* **GATES**: LED buttons to show/modify the gates for the 8 steps in the current window. Gates can be toggled whether the sequencer is running or not. **New in upcoming version 0.6.16**: Two gate modes are available: standard gates (that use the clock pulse) and full gates (that hold the note across the whole step and ties it to the next one). Clicking a gate alternates between the following three states: normal, held (full), off. Right-clicking the gate can also be used to turn it off without having to cycling through the choices.
 
 * **CHAN**: Selects the channel that is to be displayed/edited in the top part of the module. Even though this is a three-channel sequencer, a fourth channel is available for staging a sequence while the sequencer is running (or not).
 
