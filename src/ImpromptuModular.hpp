@@ -138,6 +138,11 @@ struct IMBigPushButton : DynamicSVGSwitch, MomentarySwitch {
 	}
 };
 
+struct IMBigPushButtonWithRClick : IMBigPushButton {// with right click that sets value to 2.0 instead of 1.0
+	void onMouseDown(EventMouseDown &e) override;
+	void onMouseUp(EventMouseUp &e) override;
+};
+
 struct IMPushButton : DynamicSVGSwitch, MomentarySwitch {
 	IMPushButton() {
 		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/TL1105_0.svg")));

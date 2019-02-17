@@ -51,7 +51,7 @@ struct WriteSeq32 : Module {
 	enum LightIds {
 		ENUMS(WINDOW_LIGHTS, 4),
 		ENUMS(STEP_LIGHTS, 8),
-		ENUMS(GATE_LIGHTS, 8),
+		ENUMS(GATE_LIGHTS, 8 * 2),// room for GreenRed
 		ENUMS(CHANNEL_LIGHTS, 4),
 		RUN_LIGHT,
 		ENUMS(WRITE_LIGHT, 2),// room for GreenRed
@@ -66,13 +66,13 @@ struct WriteSeq32 : Module {
 	int indexStepStage;
 	int indexChannel;
 	float cv[4][32];
-	bool gates[4][32];
+	int gates[4][32];
 	bool resetOnRun;
 
 	// No need to save
 	int notesPos[8]; // used for rendering notes in LCD_24, 8 gate and 8 step LEDs 
 	float cvCPbuffer[32];// copy paste buffer for CVs
-	bool gateCPbuffer[32];// copy paste buffer for gates
+	int gateCPbuffer[32];// copy paste buffer for gates
 	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
 	int pendingPaste;// 0 = nothing to paste, 1 = paste on clk, 2 = paste on seq, destination channel in next msbits
 	long clockIgnoreOnReset;
@@ -110,10 +110,10 @@ struct WriteSeq32 : Module {
 		for (int s = 0; s < 32; s++) {
 			for (int c = 0; c < 4; c++) {
 				cv[c][s] = 0.0f;
-				gates[c][s] = true;
+				gates[c][s] = 1;
 			}
 			cvCPbuffer[s] = 0.0f;
-			gateCPbuffer[s] = true;
+			gateCPbuffer[s] = 1;
 		}
 		infoCopyPaste = 0l;
 		pendingPaste = 0;
@@ -129,10 +129,10 @@ struct WriteSeq32 : Module {
 		for (int s = 0; s < 32; s++) {
 			for (int c = 0; c < 4; c++) {
 				cv[c][s] = quantize((randomUniform() *10.0f) - 4.0f, params[QUANTIZE_PARAM].value > 0.5f);
-				gates[c][s] = (randomUniform() > 0.5f);
+				gates[c][s] = (randomUniform() > 0.5f) ? 1 : 0;
 			}
 			cvCPbuffer[s] = 0.0f;
-			gateCPbuffer[s] = true;
+			gateCPbuffer[s] = 1;
 		}
 		//infoCopyPaste = 0l;
 		pendingPaste = 0;
@@ -169,7 +169,7 @@ struct WriteSeq32 : Module {
 		json_t *gatesJ = json_array();
 		for (int c = 0; c < 4; c++)
 			for (int s = 0; s < 32; s++) {
-				json_array_insert_new(gatesJ, s + (c<<5), json_integer((int) gates[c][s]));// json_boolean wil break patches
+				json_array_insert_new(gatesJ, s + (c<<5), json_integer(gates[c][s]));
 			}
 		json_object_set_new(rootJ, "gates", gatesJ);
 
@@ -223,7 +223,7 @@ struct WriteSeq32 : Module {
 				for (int s = 0; s < 32; s++) {
 					json_t *gateJ = json_array_get(gatesJ, s + (c<<5));
 					if (gateJ)
-						gates[c][s] = !!json_integer_value(gateJ);// json_is_true() will break patches
+						gates[c][s] = json_integer_value(gateJ);
 				}
 		}
 		
@@ -296,8 +296,16 @@ struct WriteSeq32 : Module {
 			for (int index8 = 0, iGate = 0; index8 < 8; index8++) {
 				if (gateTriggers[index8].process(params[GATE_PARAM + index8].value)) {
 					iGate = ( (indexChannel == 3 ? indexStepStage : indexStep) & 0x18) | index8;
-					if (iGate < numSteps)// don't toggle gates beyond steps
-						gates[indexChannel][iGate] = !gates[indexChannel][iGate];
+					if (iGate < numSteps) {// don't toggle gates beyond steps
+						if (params[GATE_PARAM + index8].value > 1.5f) {// right button click
+							gates[indexChannel][iGate] = 0;
+						}
+						else {
+							gates[indexChannel][iGate]++;
+							if (gates[indexChannel][iGate] > 2)
+								gates[indexChannel][iGate] = 0;
+						}
+					}
 				}
 			}
 				
@@ -316,7 +324,7 @@ struct WriteSeq32 : Module {
 					cv[indexChannel][index] = quantize(inputs[CV_INPUT].value, params[QUANTIZE_PARAM].value > 0.5f);
 					// Gate
 					if (inputs[GATE_INPUT].active)
-						gates[indexChannel][index] = (inputs[GATE_INPUT].value >= 1.0f) ? true : false;
+						gates[indexChannel][index] = (inputs[GATE_INPUT].value >= 1.0f) ? 1 : 0;
 					// Autostep
 					if (params[AUTOSTEP_PARAM].value > 0.5f) {
 						if (indexChannel == 3)
@@ -398,7 +406,7 @@ struct WriteSeq32 : Module {
 			bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
 			for (int i = 0; i < 3; i++) {
 				outputs[CV_OUTPUTS + i].value = cv[i][indexStep];
-				outputs[GATE_OUTPUTS + i].value = (clockTrigger.isHigh() && gates[i][indexStep] && !retriggingOnReset) ? 10.0f : 0.0f;
+				outputs[GATE_OUTPUTS + i].value = ( (((gates[i][indexStep] == 1) && clockTrigger.isHigh()) || gates[i][indexStep] == 2) && !retriggingOnReset ) ? 10.0f : 0.0f;
 			}
 		}
 		else {			
@@ -428,7 +436,9 @@ struct WriteSeq32 : Module {
 			for (int index8 = 0, iGate = 0; index8 < 8; index8++) {
 				lights[STEP_LIGHTS + index8].value = (index8 == (index&0x7)) ? 1.0f : 0.0f;
 				iGate = (index&0x18) | index8;
-				lights[GATE_LIGHTS + index8].value = (gates[indexChannel][iGate] && iGate < numSteps) ? 1.0f : 0.0f;
+				float green = ((gates[indexChannel][iGate] != 0) && iGate < numSteps) ? 1.0f : 0.0f;
+				float red = ((gates[indexChannel][iGate] == 2) && iGate < numSteps) ? 0.2f : 0.0f;
+				setGreenRed(GATE_LIGHTS + index8 * 2, green, red);
 			}
 				
 			// Channel lights		
@@ -458,6 +468,12 @@ struct WriteSeq32 : Module {
 		if (clockIgnoreOnReset > 0l)
 			clockIgnoreOnReset--;
 	}
+	
+	inline void setGreenRed(int id, float green, float red) {
+		lights[id + 0].value = green;
+		lights[id + 1].value = red;
+	}
+
 };
 
 
@@ -647,7 +663,7 @@ struct WriteSeq32Widget : ModuleWidget {
 		static const float wLightsPosX = 140.0f;
 		static const float wLightsIntX = 35.0f;
 		for (int i = 0; i < 4; i++) {
-			addParam(createParam<LEDButton>(Vec(wLightsPosX + i * wLightsIntX, yRulerTopLEDs - 4.4f), module, WriteSeq32::WINDOW_PARAM + i, 0.0f, 1.0f, 0.0f));
+			addParam(createParam<LEDButtonWithRClick>(Vec(wLightsPosX + i * wLightsIntX, yRulerTopLEDs - 4.4f), module, WriteSeq32::WINDOW_PARAM + i, 0.0f, 1.0f, 0.0f));
 			addChild(createLight<MediumLight<GreenLight>>(Vec(wLightsPosX + 4.4f + i * wLightsIntX, yRulerTopLEDs), module, WriteSeq32::WINDOW_LIGHTS + i));
 		}
 		
@@ -673,8 +689,8 @@ struct WriteSeq32Widget : ModuleWidget {
 		// Gates LED buttons
 		static const int yRulerT2 = 119.0f;
 		for (int i = 0; i < 8; i++) {
-			addParam(createParam<LEDButton>(Vec(module->notesPos[i]+25.0f-4.4f, yRulerT2-4.4f), module, WriteSeq32::GATE_PARAM + i, 0.0f, 1.0f, 0.0f));
-			addChild(createLight<MediumLight<GreenLight>>(Vec(module->notesPos[i]+25.0f, yRulerT2), module, WriteSeq32::GATE_LIGHTS + i));
+			addParam(createParam<LEDButtonWithRClick>(Vec(module->notesPos[i]+25.0f-4.4f, yRulerT2-4.4f), module, WriteSeq32::GATE_PARAM + i, 0.0f, 1.0f, 0.0f));
+			addChild(createLight<MediumLight<GreenRedLight>>(Vec(module->notesPos[i]+25.0f, yRulerT2), module, WriteSeq32::GATE_LIGHTS + i * 2));
 		}
 		
 		
@@ -761,6 +777,9 @@ struct WriteSeq32Widget : ModuleWidget {
 Model *modelWriteSeq32 = Model::create<WriteSeq32, WriteSeq32Widget>("Impromptu Modular", "Write-Seq-32", "SEQ - Write-Seq-32", SEQUENCER_TAG);
 
 /*CHANGE LOG
+
+0.6.16:
+add 2nd gate mode for held gates (with right click to turn off)
 
 0.6.12:
 input refresh optimization

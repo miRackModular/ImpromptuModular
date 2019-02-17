@@ -36,6 +36,29 @@ void init(rack::Plugin *p) {
 }
 
 
+void IMBigPushButtonWithRClick::onMouseDown(EventMouseDown &e)  {
+	if (e.button == 1) {// if right button (see events.hpp)
+		maxValue = 2.0f;
+		// Simulate MomentarySwitch::onDragStart() since not called for right clicks:
+		setValue(maxValue);
+		EventAction eAction;
+		onAction(eAction);
+	}
+	else 
+		maxValue = 1.0f;
+	//ParamWidget::onMouseDown(e);// don't want the reset() that is called in ParamWidget::onMouseDown(), so implement rest of that function here:
+	e.consumed = true;
+	e.target = this;
+}
+void IMBigPushButtonWithRClick::onMouseUp(EventMouseUp &e) {
+	if (e.button == 1) {// if right button (see events.hpp)
+		// Simulate MomentarySwitch::onDragEnd() since not called for right clicks:
+		setValue(minValue);
+	}
+	ParamWidget::onMouseUp(e);
+}		
+
+
 LEDBezelBig::LEDBezelBig() {
 	float ratio = 2.13f;
 	addFrame(SVG::load(assetGlobal("res/ComponentLibrary/LEDBezel.svg")));

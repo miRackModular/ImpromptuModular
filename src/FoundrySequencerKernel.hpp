@@ -149,10 +149,6 @@ struct SongCPbuffer;
 
 class SequencerKernel {
 	public: 
-	
-	
-	// General constants
-	// ----------------
 
 	// Sequencer kernel dimensions
 	static const int MAX_STEPS = 32;// must be a power of two (some multi select loops have bitwise "& (MAX_STEPS - 1)")
@@ -163,6 +159,9 @@ class SequencerKernel {
 	enum RunModeIds {MODE_FWD, MODE_REV, MODE_PPG, MODE_PEN, MODE_BRN, MODE_RND, MODE_TKA, NUM_MODES};
 	static const std::string modeLabels[NUM_MODES];
 	
+	
+	private:
+	
 	// Gate types
 	static const int NUM_GATES = 12;	
 	static const uint64_t advGateHitMaskLow[NUM_GATES];		
@@ -170,12 +169,6 @@ class SequencerKernel {
 
 	static constexpr float INIT_CV = 0.0f;
 
-
-	private:
-	
-
-	// Member data
-	// ----------------	
 	int id;
 	std::string ids;
 	
@@ -205,11 +198,10 @@ class SequencerKernel {
 	unsigned long clockPeriod;// counts number of step() calls upward from last clock (reset after clock processed)
 	bool moveStepIndexRunIgnore;
 	
+	
 	public: 
 	
-	
 	void construct(int _id, SequencerKernel *_masterKernel, bool* _holdTiedNotesPtr); // don't want regaular constructor mechanism
-	
 	
 	inline int getRunModeSong() {return runModeSong;}
 	inline int getRunModeSeq(int seqn) {return sequences[seqn].getRunMode();}
@@ -257,7 +249,6 @@ class SequencerKernel {
 	void setVelocityVal(int seqn, int stepn, int velocity, int count);
 	void setGateType(int seqn, int stepn, int gateType, int count);
 	void setMoveStepIndexRunIgnore() {moveStepIndexRunIgnore = true;}
-	
 	
 	inline int modRunModeSong(int delta) {
 		runModeSong = clamp(runModeSong += delta, 0, NUM_MODES - 1);
@@ -340,7 +331,6 @@ class SequencerKernel {
 	float applyNewKey(int seqn, int stepn, int newKeyIndex, int count);
 	void writeCV(int seqn, int stepn, float newCV, int count);
 	
-	
 	inline float calcSlideOffset() {return (slideStepsRemain > 0ul ? (slideCVdelta * (float)slideStepsRemain) : 0.0f);}
 	inline bool calcGate(SchmittTrigger clockTrigger, float sampleRate) {
 		if (ppqnLeftToSkip != 0)
@@ -365,11 +355,6 @@ class SequencerKernel {
 	void copySong(SongCPbuffer* songCPbuf, int startCP, int countCP);
 	void pasteSong(SongCPbuffer* songCPbuf, int startCP);
 	
-	
-	// Main methods
-	// ----------------
-		
-	
 	void reset();
 	void randomize();
 	void toJson(json_t *rootJ);
@@ -391,7 +376,6 @@ class SequencerKernel {
 
 	
 	private:
-	
 	
 	void rotateSeqByOne(int seqn, bool directionRight);
 	inline void propagateCVtoTied(int seqn, int stepn) {

@@ -51,7 +51,7 @@ struct WriteSeq64 : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		GATE_LIGHT,
+		ENUMS(GATE_LIGHT, 2),// room for GreenRed
 		RUN_LIGHT,
 		RESET_LIGHT,
 		ENUMS(WRITE_LIGHT, 2),// room for GreenRed
@@ -66,12 +66,12 @@ struct WriteSeq64 : Module {
 	int indexStep[5];// [0;63] each
 	int indexSteps[5];// [1;64] each
 	float cv[5][64];
-	bool gates[5][64];
+	int gates[5][64];
 	bool resetOnRun;
 
 	// No need to save
 	float cvCPbuffer[64];// copy paste buffer for CVs
-	float gateCPbuffer[64];// copy paste buffer for gates
+	int gateCPbuffer[64];// copy paste buffer for gates
 	int stepsCPbuffer;
 	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
 	int pendingPaste;// 0 = nothing to paste, 1 = paste on clk, 2 = paste on seq, destination channel in next msbits
@@ -113,12 +113,12 @@ struct WriteSeq64 : Module {
 			indexSteps[c] = 64;
 			for (int s = 0; s < 64; s++) {
 				cv[c][s] = 0.0f;
-				gates[c][s] = true;
+				gates[c][s] = 1;
 			}
 		}
 		for (int s = 0; s < 64; s++) {
 			cvCPbuffer[s] = 0.0f;
-			gateCPbuffer[s] = true;
+			gateCPbuffer[s] = 1;
 		}
 		stepsCPbuffer = 64;
 		infoCopyPaste = 0l;
@@ -136,12 +136,12 @@ struct WriteSeq64 : Module {
 			indexSteps[c] = 64;
 			for (int s = 0; s < 64; s++) {
 				cv[c][s] = quantize((randomUniform() *10.0f) - 4.0f, params[QUANTIZE_PARAM].value > 0.5f);
-				gates[c][s] = (randomUniform() > 0.5f);
+				gates[c][s] = (randomUniform() > 0.5f) ? 1 : 0;
 			}
 		}
 		for (int s = 0; s < 64; s++) {
 			cvCPbuffer[s] = 0.0f;
-			gateCPbuffer[s] = true;
+			gateCPbuffer[s] = 1;
 		}
 		stepsCPbuffer = 64;
 		//infoCopyPaste = 0l;
@@ -185,7 +185,7 @@ struct WriteSeq64 : Module {
 		json_t *gatesJ = json_array();
 		for (int c = 0; c < 5; c++)
 			for (int s = 0; s < 64; s++) {
-				json_array_insert_new(gatesJ, s + (c<<6), json_integer((int) gates[c][s]));// json_boolean wil break patches
+				json_array_insert_new(gatesJ, s + (c<<6), json_integer(gates[c][s]));
 			}
 		json_object_set_new(rootJ, "gates", gatesJ);
 
@@ -250,7 +250,7 @@ struct WriteSeq64 : Module {
 				for (int i = 0; i < 64; i++) {
 					json_t *gateJ = json_array_get(gatesJ, i + (c<<6));
 					if (gateJ)
-						gates[c][i] = !!json_integer_value(gateJ);// json_is_true() will break patches
+						gates[c][i] = json_integer_value(gateJ);
 				}
 		}
 		
@@ -324,7 +324,14 @@ struct WriteSeq64 : Module {
 			
 			// Gate button
 			if (gateTrigger.process(params[GATE_PARAM].value)) {
-				gates[indexChannel][indexStep[indexChannel]] = !gates[indexChannel][indexStep[indexChannel]];
+				if (params[GATE_PARAM].value > 1.5f) {// right button click
+					gates[indexChannel][indexStep[indexChannel]] = 0;
+				}
+				else {
+					gates[indexChannel][indexStep[indexChannel]]++;
+					if (gates[indexChannel][indexStep[indexChannel]] > 2)
+						gates[indexChannel][indexStep[indexChannel]] = 0;
+				}
 			}
 			
 			// Steps knob
@@ -360,7 +367,7 @@ struct WriteSeq64 : Module {
 					cv[indexChannel][indexStep[indexChannel]] = quantize(inputs[CV_INPUT].value, params[QUANTIZE_PARAM].value > 0.5f);
 					// Gate
 					if (inputs[GATE_INPUT].active)
-						gates[indexChannel][indexStep[indexChannel]] = (inputs[GATE_INPUT].value >= 1.0f) ? true : false;
+						gates[indexChannel][indexStep[indexChannel]] = (inputs[GATE_INPUT].value >= 1.0f) ? 1 : 0;
 					// Autostep
 					if (params[AUTOSTEP_PARAM].value > 0.5f)
 						indexStep[indexChannel] = moveIndex(indexStep[indexChannel], indexStep[indexChannel] + 1, indexSteps[indexChannel]);
@@ -438,7 +445,7 @@ struct WriteSeq64 : Module {
 			for (int i = 0; i < 4; i++) {
 				outputs[CV_OUTPUTS + i].value = cv[i][indexStep[i]];
 				clockHigh = i < 2 ? clock12Trigger.isHigh() : clock34Trigger.isHigh();
-				outputs[GATE_OUTPUTS + i].value = (clockHigh && gates[i][indexStep[i]] && !retriggingOnReset) ? 10.0f : 0.0f;
+				outputs[GATE_OUTPUTS + i].value = ( (((gates[i][indexStep[i]] == 1) && clockHigh) || gates[i][indexStep[i]] == 2) && !retriggingOnReset ) ? 10.0f : 0.0f;
 			}
 		}
 		else {
@@ -460,7 +467,8 @@ struct WriteSeq64 : Module {
 			lightRefreshCounter = 0;
 
 			// Gate light
-			lights[GATE_LIGHT].value = gates[indexChannel][indexStep[indexChannel]] ? 1.0f : 0.0f;			
+			lights[GATE_LIGHT + 0].value = (gates[indexChannel][indexStep[indexChannel]] != 0) ? 1.0f : 0.0f;			
+			lights[GATE_LIGHT + 1].value = (gates[indexChannel][indexStep[indexChannel]] == 2) ? 0.2f : 0.0f;			
 			
 			// Reset light
 			lights[RESET_LIGHT].value =	resetLight;	
@@ -707,7 +715,7 @@ struct WriteSeq64Widget : ModuleWidget {
 		displayStep->module = module;
 		addChild(displayStep);
 		// Gate LED
-		addChild(createLight<MediumLight<GreenLight>>(Vec(columnRulerT2+offsetLEDbutton+offsetLEDbuttonLight, rowRulerT0+offsetLEDbutton+offsetLEDbuttonLight), module, WriteSeq64::GATE_LIGHT));
+		addChild(createLight<MediumLight<GreenRedLight>>(Vec(columnRulerT2+offsetLEDbutton+offsetLEDbuttonLight, rowRulerT0+offsetLEDbutton+offsetLEDbuttonLight), module, WriteSeq64::GATE_LIGHT));
 		// Note display
 		NoteDisplayWidget *displayNote = new NoteDisplayWidget();
 		displayNote->box.pos = Vec(columnRulerT3, rowRulerT0+vOffsetDisplay);
@@ -730,7 +738,7 @@ struct WriteSeq64Widget : ModuleWidget {
 		// Step knob
 		addParam(createDynamicParam<IMBigKnobInf>(Vec(columnRulerT1+offsetIMBigKnob, rowRulerT1+offsetIMBigKnob), module, WriteSeq64::STEP_PARAM, -INFINITY, INFINITY, 0.0f, &module->panelTheme));		
 		// Gate button
-		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRulerT2-1+offsetCKD6b, rowRulerT1+offsetCKD6b), module, WriteSeq64::GATE_PARAM , 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParam<IMBigPushButtonWithRClick>(Vec(columnRulerT2-1+offsetCKD6b, rowRulerT1+offsetCKD6b), module, WriteSeq64::GATE_PARAM , 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		// Autostep	
 		addParam(createParam<CKSS>(Vec(columnRulerT2+53+hOffsetCKSS, rowRulerT1+6+vOffsetCKSS), module, WriteSeq64::AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f));
 		// Quantize switch
@@ -827,6 +835,9 @@ struct WriteSeq64Widget : ModuleWidget {
 Model *modelWriteSeq64 = Model::create<WriteSeq64, WriteSeq64Widget>("Impromptu Modular", "Write-Seq-64", "SEQ - Write-Seq-64", SEQUENCER_TAG);
 
 /*CHANGE LOG
+
+0.6.16:
+add 2nd gate mode for held gates (with right click to turn off)
 
 0.6.12:
 input refresh optimization
