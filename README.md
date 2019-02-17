@@ -41,14 +41,14 @@ Details about each module are given in the links above, and a feature comparison
 | ----------- 				| ----------- 		| ----------- 	| ----------- 	| ----------- 		| -----------	| -----------  	|
 | Configuration\*			| 3x32 / 4x64		| 1x16 			| 1x32, 2x16 	| 4x16, 2x32, 1x64  | 4x32 			| 6x64 / 6x128	|
 | Clock inputs				| 1 / 2				| 1				| 1				| 1					| 4				| 1				|
-| Outputs					| CV+gate			| CV+2gates		| CV+2gates		| Gate				| CV+gate+CV2	| Gate / Gate+CV|
-| Patterns per track/channel| 1        			| 16 			| 32			| 16				| 64			| 2 (banks)		|
+| Outputs					| CV+gate			| CV+2gates		| CV+2gates		| Gate				| CV+gate+ CV2	| Gate / Gate+CV|
+| Patterns per track/ channel| 1        			| 16 			| 32			| 16				| 64			| 2 (banks)		|
 | Song length				| - 				| 16			| 32 			| 64 				| 99			| - 			|
 | Gate types				| 2 				| 12			| 12			| 8					| 12			| 1				|
 | Probability				| No 				| Global		| Global		| Per step			| Per step		| No			|
 | Slide						| No 				| Global		| Global		| -					| Per step		| - / No		|
 | Sequence play				| - 				| Yes			| Yes			| Yes				| No			| -				|
-| Sequence repetitions		| - 				| FWD 2,3,4		| FWD 2,3,4		| FWD 2,3,4			| 0 to 99		| -				|
+| Seq. repetitions			| - 				| FWD 2,3,4		| FWD 2,3,4		| FWD 2,3,4			| 0 to 99		| -				|
 
 \* Configuration is noted as follows: Channels/Tracks x Sequence-Length. The distinction between channels and tracks relates to clock inputs: when channles are separately clockable they are referred to as tracks.
 
@@ -111,7 +111,7 @@ The following recommendations should also be followed in order to ensure proper 
 	
 	1. (**GOOD**) Default settings, but activating the option "*Reset when run is turned off*" in Clocked. This causes both the clock generator and the sequencer to restart when stopping the clock, and is equivalent to stopping the clock and manually pressing reset in case (i). 
 	
-	1. (**BAD**) Default settings, but deactivating the option "*Outputs reset high when not running*" in Clocked. In this setup, the following operations will result in a missed first step: stop the clock, press reset, start the clock again.
+	1. (**BAD**) Default settings, but deactivating the option "*Outputs reset high when not running*" in Clocked. In this setup, with both the clock and sequencer running, the following operations will result in a missed first step: stop the clock, press reset, start the clock again.
 
 * Run cables are used.
 
@@ -119,7 +119,7 @@ The following recommendations should also be followed in order to ensure proper 
 
 	1. (**GOOD**) Default settings, but activating the option "*Reset when run is turned off*" in Clocked. This causes both the clock generator and the sequencer to restart when stopping the clock, and is equivalent to stopping the clock and manually pressing reset in case (iv). 
 
-	1. (**BAD**) Default settings, but activating the option "*Reset on Run*" in the sequencer. Although this may seem ok at first glance, the following operations may result in a shortened first step: stop the clock, then start it again. The reason for this inconsistent behavior is because the clock has paused while the sequencer has not paused, thus when the sequencer restarts on its first step, it may not play for the expected duration.
+	1. (**BAD**) Default settings, but activating the option "*Reset on Run*" in the sequencer. Although this may seem ok at first glance, the following operations may result in a shortened first step: with everything running, stop the clock, then start it again. The reason for this inconsistent behavior is because the clock has paused while the sequencer has not paused, thus when the sequencer restarts on its first step, it may not play for the expected duration.
 	
 	1. **Note**: The option "*Outputs reset high when not running*" in Clocked can also be deactivated without consequence when run cables are used, and should be set for optimal use of the other modules in the patch.
 

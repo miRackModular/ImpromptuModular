@@ -31,10 +31,10 @@ void MyModule::step() override {
 	if (runningTrigger.process(params[RUN_PARAM].value + inputs[RUNCV_INPUT].value)) {
 		running = !running;
 		if (running) {
-			if (resetOnRun)// this is an option offered in the right-click menu of the sequencer
+			if (resetOnRun) {// this is an option offered in the right-click menu of the sequencer
 				initRun();
-			if (resetOnRun || clockIgnoreOnRun)
 				clockIgnoreOnReset = (long) (0.001f * engineGetSampleRate());
+			}
 		}
 		// ...
 	}
