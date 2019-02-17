@@ -3,7 +3,7 @@ This is the code structure used in an Impromptu sequencer. The code excerpt show
 * Clock muting when run is off
 * Gate retriggering on reset
 
-```
+```c++
 void initRun() {
 	// reposition run head to first step
 	// ...
