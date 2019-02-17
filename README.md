@@ -35,15 +35,20 @@ Each module is available in light (Classic) or dark (Dark-valor) panels, selecta
 
 * Four-View: Small chord viewer module that shows the note names of up to 4 CVs. Sharp or flat notation is selectable in the right-click menu.
 
-Details about each module are given below. Feedback and bug reports (and [donations!](https://www.paypal.me/marcboule)) are always appreciated!
+Details about each module are given in the links above, and a feature comparison table is given below for the sequencers. Feedback and bug reports (and [donations!](https://www.paypal.me/marcboule)) are always appreciated!
 
-| Feature      				| WriteSeq32/64 	| PhraseSeq16	| PhraseSeq32	| GateSeq64			| Foundry		| BigButton1/2 	|
+| \-		      			| WriteSeq32/64 	| PhraseSeq16	| PhraseSeq32	| GateSeq64			| Foundry		| BigButton1/2 	|
 | ----------- 				| ----------- 		| ----------- 	| ----------- 	| ----------- 		| -----------	| -----------  	|
 | Configuration\*			| 3x32 / 4x64		| 1x16 			| 1x32, 2x16 	| 4x16, 2x32, 1x64  | 4x32 			| 6x64 / 6x128	|
 | Clock inputs				| 1 / 2				| 1				| 1				| 1					| 4				| 1				|
-| Patterns per track/chan	| 1        			| 16 			| 32			| 16				| 64			| 2 (banks)		|
+| Outputs					| CV+gate			| CV+2gates		| CV+2gates		| Gate				| CV+gate+CV2	| Gate / Gate+CV|
+| Patterns per track/channel| 1        			| 16 			| 32			| 16				| 64			| 2 (banks)		|
 | Song length				| - 				| 16			| 32 			| 64 				| 99			| - 			|
-| Outputs					| CV+gate			| CV+2gates		| CV+2gates		| Gate				| CV+gate+CV2	| Gate / CV+Gate|
+| Gate types				| 2 				| 12			| 12			| 8					| 12			| 1				|
+| Probability				| No 				| Global		| Global		| Per step			| Per step		| No			|
+| Slide						| No 				| Global		| Global		| -					| Per step		| - / No		|
+| Sequence play				| - 				| Yes			| Yes			| Yes				| No			| -				|
+| Sequence repetitions		| - 				| FWD 2,3,4		| FWD 2,3,4		| FWD 2,3,4			| 0 to 99		| -				|
 
 \* Configuration is noted as follows: Channels/Tracks x Sequence-Length. The distinction between channels and tracks relates to clock inputs: when channles are separately clockable they are referred to as tracks.
 
@@ -236,7 +241,10 @@ Although this sequencer has many similarities to [PhraseSeq32](#phrase-seq-32), 
 * Song phrases are now in a separate display/knob instead of in the steps at the top left.
 * The Copy/Paste ALL setting was replaced with an CUST setting (more details are given below).
 * The sequence repetitions are no longer in the run modes (formerly FW2, FW3, FW4), but are instead specified in the phrases. This allows the repetition of any run mode up to 99 times.
-* Only the song can be run. For example, when attached is turned off and the main switch is in SEQ mode, changing the sequence number will have no effect on the running sequencer; instead, it allows the selected sequence to be edited while the song is playing, a feature not offered in PhraseSeqs. Thus, the SEQ CV input (now located in the expansion panel) is only used for editing sequences (in other PhraseSeqs, the SEQ CV input can be used to actually control the playing of the phrases).	
+* Only the song can be run. For example, when attached is turned off and the main switch is in SEQ mode, changing the sequence number will have no effect on the running sequencer; instead, it allows the selected sequence to be edited while the song is playing, a feature not offered in PhraseSeqs. Thus, the SEQ CV input (now located in the expansion panel) is only used for editing sequences (in other PhraseSeqs, the SEQ CV input can be used to actually control the playing of the phrases). The song BEG and END positions can be easily moved around in order to play only the part of the song being working on (even a single sequence if desired).
+
+
+the inability to directly play a sequence, it was a design choice given the multitrack nature of Foundry. If we were to have the previous behavior of the PhraseSeq, when we would move to a give sequence in one track, the same sequence number may not even be defined in another track, so those would play garbage. There is only one edit head that controls editing on all trakcs. I tried it with four editing heads, and it was hell! Also, , but agree that it might take some getting used to. It was also a personal design criteria of mine that this sequencer allow the editing of individual sequences while the song is playing, something not possible in the PS series.
 
 The following block diagram shows how the different sequencer elements are hierarchically related.
  
