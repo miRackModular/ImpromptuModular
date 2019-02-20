@@ -1,5 +1,5 @@
 //***********************************************************************************************
-//Impromptu Modular: Modules for VCV Rack by Marc BoulÃ©
+//Impromptu Modular: Modules for VCV Rack by Marc Boulé
 //***********************************************************************************************
 
 #include "dsp/digital.hpp"
@@ -140,7 +140,7 @@ inline float applyNewOct(float cvVal, int newOct) {
 	return newCV - floor(newCV) + (float) (newOct - 3);
 }
 
-inline bool calcGate(int gateCode, SchmittTrigger clockTrigger, unsigned long clockStep, float sampleRate) {
+inline bool calcGate(int gateCode, Trigger clockTrigger, unsigned long clockStep, float sampleRate) {
 	if (gateCode < 2) 
 		return gateCode == 1;
 	if (gateCode == 2)

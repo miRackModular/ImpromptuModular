@@ -55,10 +55,10 @@ struct TwelveKey : Module {
 	
 	unsigned int lightRefreshCounter = 0;
 	//float gateLight = 0.0f;
-	SchmittTrigger keyTriggers[12];
-	SchmittTrigger gateInputTrigger;
-	SchmittTrigger octIncTrigger;
-	SchmittTrigger octDecTrigger;
+	Trigger keyTriggers[12];
+	Trigger gateInputTrigger;
+	Trigger octIncTrigger;
+	Trigger octDecTrigger;
 	
 
 	TwelveKey() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {

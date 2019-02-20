@@ -120,20 +120,20 @@ struct GateSeq64 : Module {
 	unsigned int lightRefreshCounter = 0;
 	float resetLight = 0.0f;
 	int sequenceKnob = 0;
-	SchmittTrigger modesTrigger;
-	SchmittTrigger stepTriggers[64];
-	SchmittTrigger copyTrigger;
-	SchmittTrigger pasteTrigger;
-	SchmittTrigger runningTrigger;
-	SchmittTrigger clockTrigger;
-	SchmittTrigger resetTrigger;
-	SchmittTrigger writeTrigger;
-	SchmittTrigger write0Trigger;
-	SchmittTrigger write1Trigger;
-	SchmittTrigger stepLTrigger;
-	SchmittTrigger gModeTriggers[8];
-	SchmittTrigger probTrigger;
-	SchmittTrigger seqCVTrigger;
+	Trigger modesTrigger;
+	Trigger stepTriggers[64];
+	Trigger copyTrigger;
+	Trigger pasteTrigger;
+	Trigger runningTrigger;
+	Trigger clockTrigger;
+	Trigger resetTrigger;
+	Trigger writeTrigger;
+	Trigger write0Trigger;
+	Trigger write1Trigger;
+	Trigger stepLTrigger;
+	Trigger gModeTriggers[8];
+	Trigger probTrigger;
+	Trigger seqCVTrigger;
 	BooleanTrigger editingSequenceTrigger;
 	HoldDetect modeHoldDetect;
 	int lengthsBuffer[16];// buffer from Json for thread safety
@@ -176,7 +176,7 @@ struct GateSeq64 : Module {
 			return 2;// clock high
 		return getAdvGateGS(ppqnCount, pulsesPerStep, getGateAMode(attribute));
 	}		
-	inline bool calcGate(int gateCode, SchmittTrigger clockTrigger) {
+	inline bool calcGate(int gateCode, Trigger clockTrigger) {
 		if (gateCode < 2) 
 			return gateCode == 1;
 		return clockTrigger.isHigh();

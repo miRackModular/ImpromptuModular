@@ -332,7 +332,7 @@ class SequencerKernel {
 	void writeCV(int seqn, int stepn, float newCV, int count);
 	
 	inline float calcSlideOffset() {return (slideStepsRemain > 0ul ? (slideCVdelta * (float)slideStepsRemain) : 0.0f);}
-	inline bool calcGate(SchmittTrigger clockTrigger, float sampleRate) {
+	inline bool calcGate(Trigger clockTrigger, float sampleRate) {
 		if (ppqnLeftToSkip != 0)
 			return false;
 		if (gateCode < 2) 

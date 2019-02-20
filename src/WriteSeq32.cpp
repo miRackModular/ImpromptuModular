@@ -79,17 +79,17 @@ struct WriteSeq32 : Module {
 
 
 	unsigned int lightRefreshCounter = 0;	
-	SchmittTrigger clockTrigger;
-	SchmittTrigger resetTrigger;
-	SchmittTrigger runningTrigger;
-	SchmittTrigger channelTrigger;
-	SchmittTrigger stepLTrigger;
-	SchmittTrigger stepRTrigger;
-	SchmittTrigger copyTrigger;
-	SchmittTrigger pasteTrigger;
-	SchmittTrigger writeTrigger;
-	SchmittTrigger gateTriggers[8];
-	SchmittTrigger windowTriggers[4];
+	Trigger clockTrigger;
+	Trigger resetTrigger;
+	Trigger runningTrigger;
+	Trigger channelTrigger;
+	Trigger stepLTrigger;
+	Trigger stepRTrigger;
+	Trigger copyTrigger;
+	Trigger pasteTrigger;
+	Trigger writeTrigger;
+	Trigger gateTriggers[8];
+	Trigger windowTriggers[4];
 
 	
 	inline float quantize(float cv, bool enable) {

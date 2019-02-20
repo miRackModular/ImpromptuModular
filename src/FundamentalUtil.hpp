@@ -104,7 +104,7 @@ struct LowFrequencyOscillator {
 	float freq = 1.0f;
 	bool offset = false;
 	bool invert = false;
-	SchmittTrigger resetTrigger;
+	Trigger resetTrigger;
 
 	LowFrequencyOscillator() {}
 	void setPitch(float pitch) {

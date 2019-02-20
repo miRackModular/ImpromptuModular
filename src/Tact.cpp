@@ -58,12 +58,12 @@ struct Tact : Module {
 	float infoCVinLight[2] = {0.0f, 0.0f};
 	float paramReadRequest[2] = {-10.0f, -10.0f}; 
 	unsigned int lightRefreshCounter = 0;
-	SchmittTrigger topTriggers[2];
-	SchmittTrigger botTriggers[2];
-	SchmittTrigger topInvTriggers[2];
-	SchmittTrigger botInvTriggers[2];
-	SchmittTrigger storeTriggers[2];
-	SchmittTrigger recallTriggers[2];
+	Trigger topTriggers[2];
+	Trigger botTriggers[2];
+	Trigger topInvTriggers[2];
+	Trigger botInvTriggers[2];
+	Trigger storeTriggers[2];
+	Trigger recallTriggers[2];
 	PulseGenerator eocPulses[2];
 	
 	

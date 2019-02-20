@@ -169,7 +169,7 @@ class Sequencer {
 		sek[trkn].decSlideStepsRemain();
 		return cvout;
 	}
-	inline float calcGateOutput(int trkn, bool running, SchmittTrigger clockTrigger, float sampleRate) {
+	inline float calcGateOutput(int trkn, bool running, Trigger clockTrigger, float sampleRate) {
 		if (running) 
 			return (sek[trkn].calcGate(clockTrigger, sampleRate) ? 10.0f : 0.0f);
 		return (editingGate[trkn] > 0ul) ? 10.0f : 0.0f;

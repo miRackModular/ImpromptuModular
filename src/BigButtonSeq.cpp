@@ -83,12 +83,12 @@ struct BigButtonSeq : Module {
 	float metronomeLightDiv = 0.0f;
 	int chan = 0;
 	int len = 0; 
-	SchmittTrigger clockTrigger;
-	SchmittTrigger resetTrigger;
-	SchmittTrigger bankTrigger;
-	SchmittTrigger bigTrigger;
-	SchmittTrigger writeFillTrigger;
-	SchmittTrigger quantizeBigTrigger;
+	Trigger clockTrigger;
+	Trigger resetTrigger;
+	Trigger bankTrigger;
+	Trigger bigTrigger;
+	Trigger writeFillTrigger;
+	Trigger quantizeBigTrigger;
 	PulseGenerator outPulse;
 	PulseGenerator outLightPulse;
 	PulseGenerator bigPulse;

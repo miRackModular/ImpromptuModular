@@ -271,11 +271,11 @@ struct Clocked : Module {
 	long cantRunWarning = 0l;// 0 when no warning, positive downward step counter timer when warning
 	unsigned int lightRefreshCounter = 0;
 	float resetLight = 0.0f;
-	SchmittTrigger resetTrigger;
-	SchmittTrigger runTrigger;
-	SchmittTrigger bpmDetectTrigger;
-	SchmittTrigger bpmModeUpTrigger;
-	SchmittTrigger bpmModeDownTrigger;
+	Trigger resetTrigger;
+	Trigger runTrigger;
+	Trigger bpmDetectTrigger;
+	Trigger bpmModeUpTrigger;
+	Trigger bpmModeDownTrigger;
 	PulseGenerator resetPulse;
 	PulseGenerator runPulse;
 

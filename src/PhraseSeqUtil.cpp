@@ -1,8 +1,9 @@
 //***********************************************************************************************
-//Impromptu Modular: Modules for VCV Rack by Marc BoulÃ©
+//Impromptu Modular: Modules for VCV Rack by Marc Boulé
 //***********************************************************************************************
 
 
+#include "ImpromptuModular.hpp"
 #include "PhraseSeqUtil.hpp"
 
 static const uint32_t advGateHitMask[NUM_GATES] = 

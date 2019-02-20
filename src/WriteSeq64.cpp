@@ -82,17 +82,17 @@ struct WriteSeq64 : Module {
 	int stepKnob = 0;
 	int stepsKnob = 0;
 	float resetLight = 0.0f;
-	SchmittTrigger clock12Trigger;
-	SchmittTrigger clock34Trigger;
-	SchmittTrigger resetTrigger;
-	SchmittTrigger runningTrigger;
-	SchmittTrigger channelTrigger;
-	SchmittTrigger stepLTrigger;
-	SchmittTrigger stepRTrigger;
-	SchmittTrigger copyTrigger;
-	SchmittTrigger pasteTrigger;
-	SchmittTrigger writeTrigger;
-	SchmittTrigger gateTrigger;
+	Trigger clock12Trigger;
+	Trigger clock34Trigger;
+	Trigger resetTrigger;
+	Trigger runningTrigger;
+	Trigger channelTrigger;
+	Trigger stepLTrigger;
+	Trigger stepRTrigger;
+	Trigger copyTrigger;
+	Trigger pasteTrigger;
+	Trigger writeTrigger;
+	Trigger gateTrigger;
 
 	
 	inline float quantize(float cv, bool enable) {
