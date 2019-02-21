@@ -3,10 +3,6 @@
 //***********************************************************************************************
 
 #include "ImpromptuModular.hpp"
-#include "dsp/digital.hpp"
-
-using namespace rack;
-
 
 
 class StepAttributes {

@@ -2,11 +2,7 @@
 //Impromptu Modular: Modules for VCV Rack by Marc Boulé
 //***********************************************************************************************
 
-#include "dsp/digital.hpp"
 #include "FoundrySequencer.hpp"
-
-using namespace rack;
-
 
 
 void Sequencer::construct(bool* _holdTiedNotesPtr, int* _velocityModePtr) {// don't want regaular constructor mechanism

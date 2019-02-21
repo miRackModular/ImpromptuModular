@@ -2,10 +2,6 @@
 //Impromptu Modular: Modules for VCV Rack by Marc Boulé
 //***********************************************************************************************
 
-#include "dsp/digital.hpp"
-
-using namespace rack;
-
 
 // General constants
 
@@ -67,7 +63,7 @@ class StepAttributes {
 	inline void toggleGate2() {attributes ^= ATT_MSK_GATE2;}
 	inline void toggleSlide() {attributes ^= ATT_MSK_SLIDE;}
 };// class StepAttributes
-		
+
 
 
 //*****************************************************************************

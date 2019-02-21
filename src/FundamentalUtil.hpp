@@ -10,10 +10,7 @@
 #include "dsp/resampler.hpp"
 #include "dsp/ode.hpp"
 #include "dsp/filter.hpp"
-#include "dsp/digital.hpp"
 
-
-using namespace rack;
 
 extern float sawTable[2048];// see end of file
 extern float triTable[2048];// see end of file

@@ -79,10 +79,9 @@ struct GateSeq64 : Module {
 	int seqCVmethod;// 0 is 0-10V, 1 is C4-D5#, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
-	int runModeSeq[16];
+	SeqAttributesGS sequences[16];
 	int runModeSong;
 	int sequence;
-	int lengths[16];// values are 1 to 16
 	int phrase[64];// This is the song (series of phases; a phrase is a patten number)
 	int phrases;// 1 to 64
 	StepAttributesGS attributes[16][64];
@@ -97,9 +96,9 @@ struct GateSeq64 : Module {
 	unsigned long stepIndexRunHistory;
 	unsigned long phraseIndexRunHistory;
 	StepAttributesGS attribCPbuffer[64];
+	SeqAttributesGS seqAttribCPbuffer;
+	bool seqCopied;
 	int phraseCPbuffer[64];
-	int lengthCPbuffer;
-	int modeCPbuffer;
 	int countCP;// number of steps to paste (in case CPMODE_PARAM changes between copy and paste)
 	int startCP;
 	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
@@ -135,7 +134,7 @@ struct GateSeq64 : Module {
 	Trigger seqCVTrigger;
 	BooleanTrigger editingSequenceTrigger;
 	HoldDetect modeHoldDetect;
-	int lengthsBuffer[16];// buffer from Json for thread safety
+	SeqAttributesGS seqAttribBuffer[16];// buffer from Json for thread safety
 
 	
 	inline bool isEditingSequence(void) {return params[EDIT_PARAM].value > 0.5f;}
@@ -159,11 +158,6 @@ struct GateSeq64 : Module {
 			return 2;// clock high
 		return getAdvGateGS(ppqnCount, pulsesPerStep, attribute.getGateMode());
 	}		
-	inline bool calcGate(int gateCode, Trigger clockTrigger) {
-		if (gateCode < 2) 
-			return gateCode == 1;
-		return clockTrigger.isHigh();
-	}		
 	inline void fillStepIndexRunVector(int runMode, int len) {
 		if (runMode != MODE_RN2) {
 			stepIndexRun[1] = stepIndexRun[0];
@@ -176,28 +170,13 @@ struct GateSeq64 : Module {
 			stepIndexRun[3] = randomu32() % len;
 		}
 	}
-	inline int ppsToIndexGS(int pulsesPerStep) {// map 1,4,6,12,24, to 0,1,2,3,4
-		if (pulsesPerStep == 1) return 0;
-		if (pulsesPerStep == 4) return 1; 
-		if (pulsesPerStep == 6) return 2;
-		if (pulsesPerStep == 12) return 3; 
-		return 4; 
-	}
-	inline int indexToPpsGS(int index) {// inverse map of ppsToIndex()
-		index = clamp(index, 0, 4); 
-		if (index == 0) return 1;
-		if (index == 1) return 4; 
-		if (index == 2) return 6;
-		if (index == 3) return 12; 
-		return 24; 
-	}
 	inline bool ppsRequirementMet(int gateButtonIndex) {
 		return !( (pulsesPerStep < 2) || (pulsesPerStep == 4 && gateButtonIndex > 2) || (pulsesPerStep == 6 && gateButtonIndex <= 2) ); 
 	}
 		
 	GateSeq64() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 		for (int i = 0; i < 16; i++)
-			lengthsBuffer[i] = 16;
+			seqAttribBuffer[i].init(16, MODE_FWD);
 		onReset();
 	}
 
@@ -217,8 +196,7 @@ struct GateSeq64 : Module {
 			for (int s = 0; s < 64; s++) {
 				attributes[i][s].init();
 			}
-			runModeSeq[i] = MODE_FWD;
-			lengths[i] = 16 * stepConfig;
+			sequences[i].init(16 * stepConfig, MODE_FWD);
 		}
 		for (int i = 0; i < 64; i++) {
 			phrase[i] = 0;
@@ -226,8 +204,8 @@ struct GateSeq64 : Module {
 			phraseCPbuffer[i] = 0;
 		}
 		initRun();
-		lengthCPbuffer = 64;
-		modeCPbuffer = MODE_FWD;
+		seqAttribCPbuffer.init(16, MODE_FWD);
+		seqCopied = true;
 		countCP = 64;
 		startCP = 0;
 		displayState = DISP_GATE;
@@ -254,8 +232,7 @@ struct GateSeq64 : Module {
 			for (int s = 0; s < 64; s++) {
 				attributes[i][s].randomize();
 			}
-			runModeSeq[i] = randomu32() % NUM_MODES;
-			lengths[i] = 1 + (randomu32() % (16 * stepConfig));
+			sequences[i].randomize(16 * stepConfig, NUM_MODES);
 		}
 		for (int i = 0; i < 64; i++)
 			phrase[i] = randomu32() % 16;
@@ -268,8 +245,8 @@ struct GateSeq64 : Module {
 		phraseIndexRunHistory = 0;
 
 		int seq = (isEditingSequence() ? sequence : phrase[phraseIndexRun]);
-		stepIndexRun[0] = (runModeSeq[seq] == MODE_REV ? lengths[seq] - 1 : 0);
-		fillStepIndexRunVector(runModeSeq[seq], lengths[seq]);
+		stepIndexRun[0] = (sequences[seq].getRunMode() == MODE_REV ? sequences[seq].getLength() - 1 : 0);
+		fillStepIndexRunVector(sequences[seq].getRunMode(), sequences[seq].getLength());
 		stepIndexRunHistory = 0;
 
 		ppqnCount = 0;
@@ -299,24 +276,12 @@ struct GateSeq64 : Module {
 		// running
 		json_object_set_new(rootJ, "running", json_boolean(running));
 		
-		// runModeSeq
-		json_t *runModeSeqJ = json_array();
-		for (int i = 0; i < 16; i++)
-			json_array_insert_new(runModeSeqJ, i, json_integer(runModeSeq[i]));
-		json_object_set_new(rootJ, "runModeSeq3", runModeSeqJ);
-
 		// runModeSong
 		json_object_set_new(rootJ, "runModeSong3", json_integer(runModeSong));
 
 		// sequence
 		json_object_set_new(rootJ, "sequence", json_integer(sequence));
 
-		// lengths
-		json_t *lengthsJ = json_array();
-		for (int i = 0; i < 16; i++)
-			json_array_insert_new(lengthsJ, i, json_integer(lengths[i]));
-		json_object_set_new(rootJ, "lengths", lengthsJ);
-	
 		// phrase 
 		json_t *phraseJ = json_array();
 		for (int i = 0; i < 64; i++)
@@ -342,6 +307,12 @@ struct GateSeq64 : Module {
 	
 		// phraseIndexEdit
 		json_object_set_new(rootJ, "phraseIndexEdit", json_integer(phraseIndexEdit));
+		
+		// sequences
+		json_t *sequencesJ = json_array();
+		for (int i = 0; i < 16; i++)
+			json_array_insert_new(sequencesJ, i, json_integer(sequences[i].getSeqAttrib()));
+		json_object_set_new(rootJ, "sequences", sequencesJ);
 
 		return rootJ;
 	}
@@ -378,30 +349,62 @@ struct GateSeq64 : Module {
 		if (runningJ)
 			running = json_is_true(runningJ);
 		
-		// runModeSeq
-		json_t *runModeSeqJ = json_object_get(rootJ, "runModeSeq3");
-		if (runModeSeqJ) {
+		
+		// sequences
+		json_t *sequencesJ = json_object_get(rootJ, "sequences");
+		if (sequencesJ) {
 			for (int i = 0; i < 16; i++)
 			{
-				json_t *runModeSeqArrayJ = json_array_get(runModeSeqJ, i);
-				if (runModeSeqArrayJ)
-					runModeSeq[i] = json_integer_value(runModeSeqArrayJ);
+				json_t *sequencesArrayJ = json_array_get(sequencesJ, i);
+				if (sequencesArrayJ)
+					seqAttribBuffer[i].setSeqAttrib(json_integer_value(sequencesArrayJ));
 			}			
-		}		
+		}
 		else {// legacy
-			runModeSeqJ = json_object_get(rootJ, "runModeSeq2");
+			int lengths[16];//1 to 16
+			int runModeSeq[16]; 
+		
+			// runModeSeq
+			json_t *runModeSeqJ = json_object_get(rootJ, "runModeSeq3");
 			if (runModeSeqJ) {
 				for (int i = 0; i < 16; i++)
 				{
 					json_t *runModeSeqArrayJ = json_array_get(runModeSeqJ, i);
-					if (runModeSeqArrayJ) {
+					if (runModeSeqArrayJ)
 						runModeSeq[i] = json_integer_value(runModeSeqArrayJ);
-						if (runModeSeq[i] >= MODE_PEN)// this mode was not present in version runModeSeq2
-							runModeSeq[i]++;
-					}
 				}			
 			}		
+			else {// legacy
+				runModeSeqJ = json_object_get(rootJ, "runModeSeq2");
+				if (runModeSeqJ) {
+					for (int i = 0; i < 16; i++)
+					{
+						json_t *runModeSeqArrayJ = json_array_get(runModeSeqJ, i);
+						if (runModeSeqArrayJ) {
+							runModeSeq[i] = json_integer_value(runModeSeqArrayJ);
+							if (runModeSeq[i] >= MODE_PEN)// this mode was not present in version runModeSeq2
+								runModeSeq[i]++;
+						}
+					}			
+				}		
+			}
+			// lengths
+			json_t *lengthsJ = json_object_get(rootJ, "lengths");
+			if (lengthsJ) {
+				for (int i = 0; i < 16; i++)
+				{
+					json_t *lengthsArrayJ = json_array_get(lengthsJ, i);
+					if (lengthsArrayJ)
+						lengths[i] = json_integer_value(lengthsArrayJ);
+				}			
+			}
+			
+			// now write into new object
+			for (int i = 0; i < 16; i++) {
+				seqAttribBuffer[i].init(lengths[i], runModeSeq[i]);
+			}
 		}
+		
 		
 		// runModeSong
 		json_t *runModeSongJ = json_object_get(rootJ, "runModeSong3");
@@ -420,17 +423,6 @@ struct GateSeq64 : Module {
 		json_t *sequenceJ = json_object_get(rootJ, "sequence");
 		if (sequenceJ)
 			sequence = json_integer_value(sequenceJ);
-		
-		// lengths
-		json_t *lengthsJ = json_object_get(rootJ, "lengths");
-		if (lengthsJ) {
-			for (int i = 0; i < 16; i++)
-			{
-				json_t *lengthsArrayJ = json_array_get(lengthsJ, i);
-				if (lengthsArrayJ)
-					lengthsBuffer[i] = json_integer_value(lengthsArrayJ);
-			}			
-		}
 		
 		// phrase
 		json_t *phraseJ = json_object_get(rootJ, "phrase2");// "2" appended so no break patches
@@ -487,7 +479,7 @@ struct GateSeq64 : Module {
 		if (phraseIndexEditJ)
 			phraseIndexEdit = json_integer_value(phraseIndexEditJ);
 		
-		stepConfigSync = 1;// signal a sync from fromJson so that step will get lengths from lengthsBuffer
+		stepConfigSync = 1;// signal a sync from fromJson so that step will get lengths from seqAttribBuffer
 	}
 
 	
@@ -530,13 +522,13 @@ struct GateSeq64 : Module {
 			// Config switch
 			if (stepConfigSync != 0) {
 				stepConfig = getStepConfig(params[CONFIG_PARAM].value);
-				if (stepConfigSync == 1) {// sync from fromJson, so read lengths from lengthsBuffer
+				if (stepConfigSync == 1) {// sync from fromJson, so read lengths from seqAttribBuffer
 					for (int i = 0; i < 16; i++)
-						lengths[i] = lengthsBuffer[i];
+						sequences[i].setSeqAttrib(seqAttribBuffer[i].getSeqAttrib());
 				}
 				else if (stepConfigSync == 2) {// sync from a real mouse drag event on the switch itself, so init lengths
 					for (int i = 0; i < 16; i++)
-						lengths[i] = 16 * stepConfig;
+						sequences[i].setLength(16 * stepConfig);
 				}
 				initRun();	
 				stepConfigSync = 0;
@@ -571,13 +563,13 @@ struct GateSeq64 : Module {
 				if (editingSequence) {	
 					for (int i = 0, s = startCP; i < countCP; i++, s++)
 						attribCPbuffer[i] = attributes[sequence][s];
-					lengthCPbuffer = lengths[sequence];
-					modeCPbuffer = runModeSeq[sequence];		
+					seqAttribCPbuffer.setSeqAttrib(sequences[sequence].getSeqAttrib());
+					seqCopied = true;
 				}
 				else {
 					for (int i = 0, p = startCP; i < countCP; i++, p++)
 						phraseCPbuffer[i] = phrase[p];
-					lengthCPbuffer = -1;// so that a cross paste can be detected
+					seqCopied = false;// so that a cross paste can be detected
 				}
 				infoCopyPaste = (long) (copyPasteInfoTime * sampleRate / displayRefreshStepSkips);
 				displayState = DISP_GATE;
@@ -594,14 +586,13 @@ struct GateSeq64 : Module {
 				// else nothing to do for ALL
 					
 				if (editingSequence) {
-					if (lengthCPbuffer >= 0) {// non-crossed paste (seq vs song)
+					if (seqCopied) {// non-crossed paste (seq vs song)
 						for (int i = 0, s = startCP; i < countCP; i++, s++)
 							attributes[sequence][s] = attribCPbuffer[i];
 						if (params[CPMODE_PARAM].value > 1.5f) {// all
-							lengths[sequence] = lengthCPbuffer;
-							if (lengths[sequence] > 16 * stepConfig)
-								lengths[sequence] = 16 * stepConfig;
-							runModeSeq[sequence] = modeCPbuffer;
+							sequences[sequence].setSeqAttrib(seqAttribCPbuffer.getSeqAttrib());
+							if (sequences[sequence].getLength() > 16 * stepConfig)
+								sequences[sequence].setLength(16 * stepConfig);
 						}
 					}
 					else {// crossed paste to seq (seq vs song)
@@ -626,7 +617,7 @@ struct GateSeq64 : Module {
 					}
 				}
 				else {// song
-					if (lengthCPbuffer < 0) {// non-crossed paste (seq vs song)
+					if (!seqCopied) {// non-crossed paste (seq vs song)
 						for (int i = 0, p = startCP; i < countCP; i++, p++)
 							phrase[p] = phraseCPbuffer[i] & 0xF;
 					}
@@ -697,7 +688,7 @@ struct GateSeq64 : Module {
 			if (stepPressed != -1) {
 				if (editingSequence) {
 					if (displayState == DISP_LENGTH) {
-						lengths[sequence] = stepPressed % (16 * stepConfig) + 1;
+						sequences[sequence].setLength(stepPressed % (16 * stepConfig) + 1);
 						revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
 					}
 					else if (displayState == DISP_MODES) {
@@ -820,27 +811,18 @@ struct GateSeq64 : Module {
 					}
 					else if (displayState == DISP_MODES) {
 						if (editingSequence) {
-							runModeSeq[sequence] += deltaKnob;
-							if (runModeSeq[sequence] < 0) runModeSeq[sequence] = 0;
-							if (runModeSeq[sequence] >= NUM_MODES) runModeSeq[sequence] = NUM_MODES - 1;
+							sequences[sequence].setRunMode(clamp(sequences[sequence].getRunMode() + deltaKnob, 0, NUM_MODES - 1));
 						}
 						else {
-							runModeSong += deltaKnob;
-							if (runModeSong < 0) runModeSong = 0;
-							if (runModeSong >= 6) runModeSong = 6 - 1;
+							runModeSong = clamp(runModeSong + deltaKnob, 0, 6 - 1);
 						}
 					}
 					else if (displayState == DISP_LENGTH) {
 						if (editingSequence) {
-							lengths[sequence] += deltaKnob;
-							if (lengths[sequence] > (16 * stepConfig)) 
-								lengths[sequence] = (16 * stepConfig);
-							if (lengths[sequence] < 1 ) lengths[sequence] = 1;
+							sequences[sequence].setLength(clamp(sequences[sequence].getLength() + deltaKnob, 1, (16 * stepConfig)));
 						}
 						else {
-							phrases += deltaKnob;
-							if (phrases > 64) phrases = 64;
-							if (phrases < 1 ) phrases = 1;
+							phrases = clamp(phrases + deltaKnob, 1, 64);
 						}
 					}
 					else {
@@ -882,16 +864,16 @@ struct GateSeq64 : Module {
 				int newSeq = sequence;// good value when editingSequence, overwrite if not editingSequence
 				if (ppqnCount == 0) {
 					if (editingSequence) {
-						moveIndexRunMode(&stepIndexRun[0], lengths[sequence], runModeSeq[sequence], &stepIndexRunHistory);
+						moveIndexRunMode(&stepIndexRun[0], sequences[sequence].getLength(), sequences[sequence].getRunMode(), &stepIndexRunHistory);
 					}
 					else {
-						if (moveIndexRunMode(&stepIndexRun[0], lengths[phrase[phraseIndexRun]], runModeSeq[phrase[phraseIndexRun]], &stepIndexRunHistory)) {
+						if (moveIndexRunMode(&stepIndexRun[0], sequences[phrase[phraseIndexRun]].getLength(), sequences[phrase[phraseIndexRun]].getRunMode(), &stepIndexRunHistory)) {
 							moveIndexRunMode(&phraseIndexRun, phrases, runModeSong, &phraseIndexRunHistory);
-							stepIndexRun[0] = (runModeSeq[phrase[phraseIndexRun]] == MODE_REV ? lengths[phrase[phraseIndexRun]] - 1 : 0);// must always refresh after phraseIndexRun has changed
+							stepIndexRun[0] = (sequences[phrase[phraseIndexRun]].getRunMode() == MODE_REV ? sequences[phrase[phraseIndexRun]].getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
 						}
 						newSeq = phrase[phraseIndexRun];
 					}
-					fillStepIndexRunVector(runModeSeq[newSeq], lengths[newSeq]);
+					fillStepIndexRunVector(sequences[newSeq].getRunMode(), sequences[newSeq].getLength());
 				}
 				else {
 					if (!editingSequence)
@@ -952,9 +934,9 @@ struct GateSeq64 : Module {
 					col = (((stepConfig - 1) << 4) | 0xF) & i;//i % (16 * stepConfig);// optimized			
 					if (editingSequence) {
 						if (displayState == DISP_LENGTH) {
-							if (col < (lengths[sequence] - 1))
+							if (col < (sequences[sequence].getLength() - 1))
 								setGreenRed(STEP_LIGHTS + i * 2, 0.1f, 0.0f);
-							else if (col == (lengths[sequence] - 1))
+							else if (col == (sequences[sequence].getLength() - 1))
 								setGreenRed(STEP_LIGHTS + i * 2, 1.0f, 0.0f);
 							else 
 								setGreenRed(STEP_LIGHTS + i * 2, 0.0f, 0.0f);
@@ -1117,9 +1099,8 @@ struct GateSeq64Widget : ModuleWidget {
 				if (module->infoCopyPaste > 0l)// if copy display "CPY"
 					snprintf(displayStr, 4, "CPY");
 				else {
-					int lenCP = module->lengthCPbuffer;
 					float cpMode = module->params[GateSeq64::CPMODE_PARAM].value;
-					if (editingSequence && lenCP == -1) {// cross paste to seq
+					if (editingSequence && !module->seqCopied) {// cross paste to seq
 						if (cpMode > 1.5f)// All = init
 							snprintf(displayStr, 4, "CLR");
 						else if (cpMode < 0.5f)// 4 = random gate
@@ -1127,7 +1108,7 @@ struct GateSeq64Widget : ModuleWidget {
 						else// 8 = random probs
 							snprintf(displayStr, 4, "RPR");
 					}
-					else if (!editingSequence && lenCP != -1) {// cross paste to song
+					else if (!editingSequence && module->seqCopied) {// cross paste to song
 						if (cpMode > 1.5f)// All = init
 							snprintf(displayStr, 4, "CLR");
 						else if (cpMode < 0.5f)// 4 = increase by 1
@@ -1153,13 +1134,13 @@ struct GateSeq64Widget : ModuleWidget {
 			}
 			else if (module->displayState == GateSeq64::DISP_LENGTH) {
 				if (editingSequence)
-					snprintf(displayStr, 4, "L%2u", (unsigned) module->lengths[module->sequence]);
+					snprintf(displayStr, 4, "L%2u", (unsigned) module->sequences[module->sequence].getLength());
 				else
 					snprintf(displayStr, 4, "L%2u", (unsigned) module->phrases);
 			}
 			else if (module->displayState == GateSeq64::DISP_MODES) {
 				if (editingSequence)
-					runModeToStr(module->runModeSeq[module->sequence]);
+					runModeToStr(module->sequences[module->sequence].getRunMode());
 				else
 					runModeToStr(module->runModeSong);
 			}

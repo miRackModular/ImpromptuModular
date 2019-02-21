@@ -245,6 +245,7 @@ struct PhraseSeq32 : Module {
 		}
 		initRun();
 		seqAttribCPbuffer.init(32, MODE_FWD);
+		seqCopied = true;
 		countCP = 32;
 		startCP = 0;
 		editingGate = 0ul;
@@ -274,7 +275,7 @@ struct PhraseSeq32 : Module {
 		sequence = randomu32() % 32;
 		phrases = 1 + (randomu32() % 32);
 		for (int i = 0; i < 32; i++) {
-			sequences[i].init(16 * stepConfig, NUM_MODES);
+			sequences[i].randomize(16 * stepConfig, NUM_MODES);
 			phrase[i] = randomu32() % 32;
 			for (int s = 0; s < 32; s++) {
 				cv[i][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
@@ -730,6 +731,8 @@ struct PhraseSeq32 : Module {
 						}
 						if (params[CPMODE_PARAM].value > 1.5f) {// all
 							sequences[sequence].setSeqAttrib(seqAttribCPbuffer.getSeqAttrib());
+							if (sequences[sequence].getLength() > 16 * stepConfig)
+								sequences[sequence].setLength(16 * stepConfig);
 						}
 					}
 					else {// crossed paste to seq (seq vs song)

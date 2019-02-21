@@ -3,11 +3,7 @@
 //***********************************************************************************************
 
 #include "ImpromptuModular.hpp"
-#include "dsp/digital.hpp"
 #include "FoundrySequencerKernel.hpp"
-
-using namespace rack;
-
 
 
 class Sequencer {

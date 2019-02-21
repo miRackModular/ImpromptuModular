@@ -2,11 +2,7 @@
 //Impromptu Modular: Modules for VCV Rack by Marc Boulé
 //***********************************************************************************************
 
-#include "dsp/digital.hpp"
 #include "FoundrySequencerKernel.hpp"
-
-using namespace rack;
-
 
 
 const std::string SequencerKernel::modeLabels[NUM_MODES] = {"FWD", "REV", "PPG", "PEN", "BRN", "RND", "TKA"};
