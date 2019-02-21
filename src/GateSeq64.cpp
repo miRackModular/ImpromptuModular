@@ -14,6 +14,7 @@
 
 #include "ImpromptuModular.hpp"
 #include "PhraseSeqUtil.hpp"
+#include "GateSeq64Util.hpp"
 
 
 struct GateSeq64 : Module {
@@ -66,12 +67,9 @@ struct GateSeq64 : Module {
 	
 	// Constants
 	enum DisplayStateIds {DISP_GATE, DISP_LENGTH, DISP_MODES};
-	enum AttributeBitMasksGS {ATT_MSK_PROB = 0xFF, ATT_MSK_GATEP = 0x100, ATT_MSK_GATE = 0x200};
-	static const int ATT_MSK_GATEMODE = 0x1C00;// 3 bits
-	static const int gateModeShift = 10;
 	//										1/4		DUO			D2			TR1		TR2		TR3 		TR23	   TRI
 	const uint32_t advGateHitMaskGS[8] = {0x00003F, 0x03F03F, 0x03F000, 0x00000F, 0x000F00, 0x0F0000, 0x0F0F00, 0x0F0F0F};
-	static const int blinkNumInit = 15;
+	static const int blinkNumInit = 15;// init number of blink cycles for cursor
 	static constexpr float CONFIG_PARAM_INIT_VALUE = 0.0f;// so that module constructor is coherent with widget initialization, since module created before widget
 
 	// Need to save
@@ -86,8 +84,8 @@ struct GateSeq64 : Module {
 	int sequence;
 	int lengths[16];// values are 1 to 16
 	int phrase[64];// This is the song (series of phases; a phrase is a patten number)
-	int phrases;//1 to 64
-	int attributes[16][64];
+	int phrases;// 1 to 64
+	StepAttributesGS attributes[16][64];
 	bool resetOnRun;
 
 	// No need to save
@@ -98,7 +96,8 @@ struct GateSeq64 : Module {
 	int phraseIndexRun;
 	unsigned long stepIndexRunHistory;
 	unsigned long phraseIndexRunHistory;
-	int attribOrPhraseCPbuffer[64];
+	StepAttributesGS attribCPbuffer[64];
+	int phraseCPbuffer[64];
 	int lengthCPbuffer;
 	int modeCPbuffer;
 	int countCP;// number of steps to paste (in case CPMODE_PARAM changes between copy and paste)
@@ -146,35 +145,19 @@ struct GateSeq64 : Module {
 		return 4;
 	}
 	
-	inline void initAttrib(int seq, int step) {attributes[seq][step] = 50;}
-	inline bool getGateA(int attribute) {return (attribute & ATT_MSK_GATE) != 0;}
-	inline bool getGate(int seq, int step) {return getGateA(attributes[seq][step]);}
-	inline bool getGatePa(int attribute) {return (attribute & ATT_MSK_GATEP) != 0;}
-	inline bool getGateP(int seq, int step) {return getGatePa(attributes[seq][step]);}
-	inline int getGatePValA(int attribute) {return attribute & ATT_MSK_PROB;}
-	inline int getGatePVal(int seq, int step) {return getGatePValA(attributes[seq][step]);}
-	inline int getGateAMode(int attribute) {return (attribute & ATT_MSK_GATEMODE) >> gateModeShift;}
-	inline int getGateMode(int seq, int step) {return getGateAMode(attributes[seq][step]);}
-
-	inline void setGate(int seq, int step, bool gateState) {attributes[seq][step] &= ~ATT_MSK_GATE; if (gateState) attributes[seq][step] |= ATT_MSK_GATE;}
-	inline void setGateP(int seq, int step, bool gatePState) {attributes[seq][step] &= ~ATT_MSK_GATEP; if (gatePState) attributes[seq][step] |= ATT_MSK_GATEP;}
-	inline void setGatePVal(int seq, int step, int pVal) {attributes[seq][step] &= ~ATT_MSK_PROB; attributes[seq][step] |= (pVal & ATT_MSK_PROB);}
-	inline void setGateMode(int seq, int step, int gateMode) {attributes[seq][step] &= ~ATT_MSK_GATEMODE; attributes[seq][step] |= (gateMode << gateModeShift);}
-	inline void toggleGate(int seq, int step) {attributes[seq][step] ^= ATT_MSK_GATE;}
-
 	inline int getAdvGateGS(int ppqnCount, int pulsesPerStep, int gateMode) { 
 		uint32_t shiftAmt = ppqnCount * (24 / pulsesPerStep);
 		return (int)((advGateHitMaskGS[gateMode] >> shiftAmt) & (uint32_t)0x1);
 	}	
-	inline int calcGateCode(int attribute, int ppqnCount, int pulsesPerStep) {
+	inline int calcGateCode(StepAttributesGS attribute, int ppqnCount, int pulsesPerStep) {
 		// -1 = gate off for whole step, 0 = gate off for current ppqn, 1 = gate on, 2 = clock high
-		if (ppqnCount == 0 && getGatePa(attribute) && !(randomUniform() < ((float)(getGatePValA(attribute))/100.0f)))// randomUniform is [0.0, 1.0), see include/util/common.hpp
+		if (ppqnCount == 0 && attribute.getGateP() && !(randomUniform() < ((float)(attribute.getGatePVal())/100.0f)))// randomUniform is [0.0, 1.0), see include/util/common.hpp
 			return -1;
-		if (!getGateA(attribute))
+		if (!attribute.getGate())
 			return 0;
 		if (pulsesPerStep == 1)
 			return 2;// clock high
-		return getAdvGateGS(ppqnCount, pulsesPerStep, getGateAMode(attribute));
+		return getAdvGateGS(ppqnCount, pulsesPerStep, attribute.getGateMode());
 	}		
 	inline bool calcGate(int gateCode, Trigger clockTrigger) {
 		if (gateCode < 2) 
@@ -232,14 +215,15 @@ struct GateSeq64 : Module {
 		phrases = 4;
 		for (int i = 0; i < 16; i++) {
 			for (int s = 0; s < 64; s++) {
-				initAttrib(i, s);
+				attributes[i][s].init();
 			}
 			runModeSeq[i] = MODE_FWD;
 			lengths[i] = 16 * stepConfig;
 		}
 		for (int i = 0; i < 64; i++) {
 			phrase[i] = 0;
-			attribOrPhraseCPbuffer[i] = 50;
+			attribCPbuffer[i].init();
+			phraseCPbuffer[i] = 0;
 		}
 		initRun();
 		lengthCPbuffer = 64;
@@ -268,7 +252,7 @@ struct GateSeq64 : Module {
 		phrases = 1 + (randomu32() % 64);
 		for (int i = 0; i < 16; i++) {
 			for (int s = 0; s < 64; s++) {
-				attributes[i][s] = (randomu32() % 101) | (randomu32() & (ATT_MSK_GATEP | ATT_MSK_GATE | ATT_MSK_GATEMODE));
+				attributes[i][s].randomize();
 			}
 			runModeSeq[i] = randomu32() % NUM_MODES;
 			lengths[i] = 1 + (randomu32() % (16 * stepConfig));
@@ -346,7 +330,7 @@ struct GateSeq64 : Module {
 		json_t *attributesJ = json_array();
 		for (int i = 0; i < 16; i++)
 			for (int s = 0; s < 64; s++) {
-				json_array_insert_new(attributesJ, s + (i * 64), json_integer(attributes[i][s]));
+				json_array_insert_new(attributesJ, s + (i * 64), json_integer(attributes[i][s].getAttribute()));
 			}
 		json_object_set_new(rootJ, "attributes", attributesJ);
 		
@@ -484,7 +468,7 @@ struct GateSeq64 : Module {
 				for (int s = 0; s < 64; s++) {
 					json_t *attributesArrayJ = json_array_get(attributesJ, s + (i * 64));
 					if (attributesArrayJ)
-						attributes[i][s] = json_integer_value(attributesArrayJ);
+						attributes[i][s].setAttribute((unsigned short)json_integer_value(attributesArrayJ));
 				}
 		}
 		
@@ -586,13 +570,13 @@ struct GateSeq64 : Module {
 					countCP = min(8, 64 - startCP);
 				if (editingSequence) {	
 					for (int i = 0, s = startCP; i < countCP; i++, s++)
-						attribOrPhraseCPbuffer[i] = attributes[sequence][s];
+						attribCPbuffer[i] = attributes[sequence][s];
 					lengthCPbuffer = lengths[sequence];
 					modeCPbuffer = runModeSeq[sequence];		
 				}
 				else {
 					for (int i = 0, p = startCP; i < countCP; i++, p++)
-						attribOrPhraseCPbuffer[i] = phrase[p];
+						phraseCPbuffer[i] = phrase[p];
 					lengthCPbuffer = -1;// so that a cross paste can be detected
 				}
 				infoCopyPaste = (long) (copyPasteInfoTime * sampleRate / displayRefreshStepSkips);
@@ -612,7 +596,7 @@ struct GateSeq64 : Module {
 				if (editingSequence) {
 					if (lengthCPbuffer >= 0) {// non-crossed paste (seq vs song)
 						for (int i = 0, s = startCP; i < countCP; i++, s++)
-							attributes[sequence][s] = attribOrPhraseCPbuffer[i];
+							attributes[sequence][s] = attribCPbuffer[i];
 						if (params[CPMODE_PARAM].value > 1.5f) {// all
 							lengths[sequence] = lengthCPbuffer;
 							if (lengths[sequence] > 16 * stepConfig)
@@ -623,17 +607,17 @@ struct GateSeq64 : Module {
 					else {// crossed paste to seq (seq vs song)
 						if (params[CPMODE_PARAM].value > 1.5f) { // ALL (init steps)
 							for (int s = 0; s < 64; s++)
-								initAttrib(sequence, s);
+								attributes[sequence][s].init();
 						}
 						else if (params[CPMODE_PARAM].value < 0.5f) {// 4 (randomize gates)
 							for (int s = 0; s < 64; s++)
 								if ( (randomu32() & 0x1) != 0)
-									toggleGate(sequence, s);
+									attributes[sequence][s].toggleGate();
 						}
 						else {// 8 (randomize probs)
 							for (int s = 0; s < 64; s++) {
-								setGateP(sequence, s, (randomu32() & 0x1) != 0);
-								setGatePVal(sequence, s, randomu32() % 101);
+								attributes[sequence][s].setGateP((randomu32() & 0x1) != 0);
+								attributes[sequence][s].setGatePVal(randomu32() % 101);
 							}
 						}
 						startCP = 0;
@@ -644,7 +628,7 @@ struct GateSeq64 : Module {
 				else {// song
 					if (lengthCPbuffer < 0) {// non-crossed paste (seq vs song)
 						for (int i = 0, p = startCP; i < countCP; i++, p++)
-							phrase[p] = attribOrPhraseCPbuffer[i] & 0xF;
+							phrase[p] = phraseCPbuffer[i] & 0xF;
 					}
 					else {// crossed paste to song (seq vs song)
 						if (params[CPMODE_PARAM].value > 1.5f) { // ALL (init phrases)
@@ -677,18 +661,17 @@ struct GateSeq64 : Module {
 					blinkNum = blinkNumInit;
 					if (writeTrig) {// higher priority than write0 and write1
 						if (inputs[PROB_INPUT].active) {
-							setGatePVal(sequence, stepIndexEdit, clamp( (int)round(inputs[PROB_INPUT].value * 10.0f), 0, 100) );
-							setGateP(sequence, stepIndexEdit, true);
+							attributes[sequence][stepIndexEdit].setGatePVal(clamp( (int)round(inputs[PROB_INPUT].value * 10.0f), 0, 100) );
+							attributes[sequence][stepIndexEdit].setGateP(true);
 						}
 						else{
-							//setGatePVal(sequence, stepIndexEdit, 50);
-							setGateP(sequence, stepIndexEdit, false);
+							attributes[sequence][stepIndexEdit].setGateP(false);
 						}
 						if (inputs[GATE_INPUT].active)
-							setGate(sequence, stepIndexEdit, inputs[GATE_INPUT].value >= 1.0f);
+							attributes[sequence][stepIndexEdit].setGate(inputs[GATE_INPUT].value >= 1.0f);
 					}
 					else {// write1 or write0			
-						setGate(sequence, stepIndexEdit, write1Trig);
+						attributes[sequence][stepIndexEdit].setGate(write1Trig);
 					}
 					// Autostep (after grab all active inputs)
 					stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 64);
@@ -721,23 +704,23 @@ struct GateSeq64 : Module {
 					}
 					else {
 						if (params[STEP_PARAMS + stepPressed].value > 1.5f) {// right button click
-							setGate(sequence, stepPressed, false);
+							attributes[sequence][stepPressed].setGate(false);
 							displayProbInfo = 0l;
 						}
-						else if (!getGate(sequence, stepPressed)) {// clicked inactive, so turn gate on
-							setGate(sequence, stepPressed, true);
-							if (getGateP(sequence, stepPressed))
+						else if (!attributes[sequence][stepPressed].getGate()) {// clicked inactive, so turn gate on
+							attributes[sequence][stepPressed].setGate(true);
+							if (attributes[sequence][stepPressed].getGateP())
 								displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
 							else
 								displayProbInfo = 0l;
 						}
 						else {// clicked active
 							if (stepIndexEdit == stepPressed && blinkNum != 0) {// only if coming from current step, turn off
-								setGate(sequence, stepPressed, false);
+								attributes[sequence][stepPressed].setGate(false);
 								displayProbInfo = 0l;
 							}
 							else {
-								if (getGateP(sequence, stepPressed))
+								if (attributes[sequence][stepPressed].getGateP())
 									displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
 								else
 									displayProbInfo = 0l;
@@ -783,14 +766,14 @@ struct GateSeq64 : Module {
 			// Prob button
 			if (probTrigger.process(params[PROB_PARAM].value)) {
 				blinkNum = blinkNumInit;
-				if (editingSequence && getGate(sequence, stepIndexEdit)) {
-					if (getGateP(sequence, stepIndexEdit)) {
+				if (editingSequence && attributes[sequence][stepIndexEdit].getGate()) {
+					if (attributes[sequence][stepIndexEdit].getGateP()) {
 						displayProbInfo = 0l;
-						setGateP(sequence, stepIndexEdit, false);
+						attributes[sequence][stepIndexEdit].setGateP(false);
 					}
 					else {
 						displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
-						setGateP(sequence, stepIndexEdit, true);
+						attributes[sequence][stepIndexEdit].setGateP(true);
 					}
 				}
 			}
@@ -799,10 +782,10 @@ struct GateSeq64 : Module {
 			for (int i = 0; i < 8; i++) {
 				if (gModeTriggers[i].process(params[GMODE_PARAMS + i].value)) {
 					blinkNum = blinkNumInit;
-					if (editingSequence && getGate(sequence, stepIndexEdit)) {
+					if (editingSequence && attributes[sequence][stepIndexEdit].getGate()) {
 						if (ppsRequirementMet(i)) {
 							editingPpqn = 0l;
-							setGateMode(sequence, stepIndexEdit, i);
+							attributes[sequence][stepIndexEdit].setGateMode(i);
 						}
 						else {
 							editingPpqn = (long) (editingPpqnTime * sampleRate / displayRefreshStepSkips);
@@ -822,13 +805,13 @@ struct GateSeq64 : Module {
 				if (abs(deltaKnob) <= 3) {// avoid discontinuous step (initialize for example)
 					if (displayProbInfo != 0l && editingSequence) {
 						blinkNum = blinkNumInit;
-						int pval = getGatePVal(sequence, stepIndexEdit);
+						int pval = attributes[sequence][stepIndexEdit].getGatePVal();
 						pval += deltaKnob * 2;
 						if (pval > 100)
 							pval = 100;
 						if (pval < 0)
 							pval = 0;
-						setGatePVal(sequence, stepIndexEdit, pval);
+						attributes[sequence][stepIndexEdit].setGatePVal(pval);
 						displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
 					}
 					else if (editingPpqn != 0) {
@@ -979,9 +962,9 @@ struct GateSeq64 : Module {
 						else {
 							float stepHereOffset = ((stepIndexRun[row] == col) && running) ? 0.5f : 1.0f;
 							long blinkCountMarker = (long) (0.67f * sampleRate / displayRefreshStepSkips);							
-							if (getGate(sequence, i)) {
+							if (attributes[sequence][i].getGate()) {
 								bool blinkEnableOn = (displayState != DISP_MODES) && (blinkCount < blinkCountMarker);
-								if (getGateP(sequence, i)) {
+								if (attributes[sequence][i].getGateP()) {
 									if (i == stepIndexEdit)// more orange than yellow
 										setGreenRed(STEP_LIGHTS + i * 2, blinkEnableOn ? 1.0f : 0.0f, blinkEnableOn ? 1.0f : 0.0f);
 									else// more yellow
@@ -1023,7 +1006,7 @@ struct GateSeq64 : Module {
 			}
 			
 			// GateType lights
-			if (pulsesPerStep != 1 && editingSequence && getGate(sequence, stepIndexEdit)) {
+			if (pulsesPerStep != 1 && editingSequence && attributes[sequence][stepIndexEdit].getGate()) {
 				if (editingPpqn != 0) {
 					for (int i = 0; i < 8; i++) {
 						if (ppsRequirementMet(i))
@@ -1033,7 +1016,7 @@ struct GateSeq64 : Module {
 					}
 				}
 				else {		
-					int gmode = getGateMode(sequence, stepIndexEdit);
+					int gmode = attributes[sequence][stepIndexEdit].getGateMode();
 					for (int i = 0; i < 8; i++) {
 						if (i == gmode) {
 							if ( (pulsesPerStep == 4 && i > 2) || (pulsesPerStep == 6 && i <= 2) ) // pps requirement not met
@@ -1157,7 +1140,7 @@ struct GateSeq64Widget : ModuleWidget {
 				}
 			}
 			else if (module->displayProbInfo != 0l) {
-				int prob = module->getGatePVal(module->sequence, module->stepIndexEdit);
+				int prob = module->attributes[module->sequence][module->stepIndexEdit].getGatePVal();
 				if ( prob>= 100)
 					snprintf(displayStr, 4, "1,0");
 				else if (prob >= 1)
@@ -1462,6 +1445,9 @@ struct GateSeq64Widget : ModuleWidget {
 Model *modelGateSeq64 = Model::create<GateSeq64, GateSeq64Widget>("Impromptu Modular", "Gate-Seq-64", "SEQ - Gate-Seq-64", SEQUENCER_TAG);
 
 /*CHANGE LOG
+
+0.6.16:
+support for 32 sequences instead of 16
 
 0.6.14:
 allow right click to turn steps off
