@@ -264,6 +264,13 @@ struct OrangeLight : GrayModuleLightWidget {
 		addBaseColor(COLOR_ORANGE);
 	}
 };
+struct GreenRedWhiteLight : GrayModuleLightWidget {
+	GreenRedWhiteLight() {
+		addBaseColor(COLOR_GREEN);
+		addBaseColor(COLOR_RED);
+		addBaseColor(COLOR_WHITE);
+	}
+};
 
 template <typename BASE>
 struct MuteLight : BASE {

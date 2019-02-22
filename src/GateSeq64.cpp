@@ -57,7 +57,7 @@ struct GateSeq64 : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		ENUMS(STEP_LIGHTS, 64 * 2),// room for GreenRed
+		ENUMS(STEP_LIGHTS, 64 * 3),// room for GreenRedWhite
 		P_LIGHT,
 		RUN_LIGHT,
 		RESET_LIGHT,
@@ -943,9 +943,9 @@ struct GateSeq64 : Module {
 			if (infoCopyPaste != 0l) {
 				for (int i = 0; i < 64; i++) {
 					if (i >= startCP && i < (startCP + countCP))
-						setGreenRed(STEP_LIGHTS + i * 2, 0.5f, 0.0f);
+						setGreenRed3(STEP_LIGHTS + i * 3, 0.5f, 0.0f);
 					else
-						setGreenRed(STEP_LIGHTS + i * 2, 0.0f, 0.0f);
+						setGreenRed3(STEP_LIGHTS + i * 3, 0.0f, 0.0f);
 				}
 			}
 			else {
@@ -959,11 +959,11 @@ struct GateSeq64 : Module {
 					if (editingSequence) {
 						if (displayState == DISP_LENGTH) {
 							if (col < (sequences[sequence].getLength() - 1))
-								setGreenRed(STEP_LIGHTS + i * 2, 0.1f, 0.0f);
+								setGreenRed3(STEP_LIGHTS + i * 3, 0.1f, 0.0f);
 							else if (col == (sequences[sequence].getLength() - 1))
-								setGreenRed(STEP_LIGHTS + i * 2, 1.0f, 0.0f);
+								setGreenRed3(STEP_LIGHTS + i * 3, 1.0f, 0.0f);
 							else 
-								setGreenRed(STEP_LIGHTS + i * 2, 0.0f, 0.0f);
+								setGreenRed3(STEP_LIGHTS + i * 3, 0.0f, 0.0f);
 						}
 						else {
 							float stepHereOffset = ((stepIndexRun[row] == col) && running) ? 0.5f : 1.0f;
@@ -972,22 +972,22 @@ struct GateSeq64 : Module {
 								bool blinkEnableOn = (displayState != DISP_MODES) && (blinkCount < blinkCountMarker);
 								if (attributes[sequence][i].getGateP()) {
 									if (i == stepIndexEdit)// more orange than yellow
-										setGreenRed(STEP_LIGHTS + i * 2, blinkEnableOn ? 1.0f : 0.0f, blinkEnableOn ? 1.0f : 0.0f);
+										setGreenRed3(STEP_LIGHTS + i * 3, blinkEnableOn ? 1.0f : 0.0f, blinkEnableOn ? 1.0f : 0.0f);
 									else// more yellow
-										setGreenRed(STEP_LIGHTS + i * 2, stepHereOffset, stepHereOffset);
+										setGreenRed3(STEP_LIGHTS + i * 3, stepHereOffset, stepHereOffset);
 								}
 								else {
 									if (i == stepIndexEdit)
-										setGreenRed(STEP_LIGHTS + i * 2, blinkEnableOn ? 1.0f : 0.0f, 0.0f);
+										setGreenRed3(STEP_LIGHTS + i * 3, blinkEnableOn ? 1.0f : 0.0f, 0.0f);
 									else
-										setGreenRed(STEP_LIGHTS + i * 2, stepHereOffset, 0.0f);
+										setGreenRed3(STEP_LIGHTS + i * 3, stepHereOffset, 0.0f);
 								}
 							}
 							else {
 								if (i == stepIndexEdit && blinkCount > blinkCountMarker && displayState != DISP_MODES)
-									setGreenRed(STEP_LIGHTS + i * 2, 0.05f, 0.0f);
+									setGreenRed3(STEP_LIGHTS + i * 3, 0.05f, 0.0f);
 								else
-									setGreenRed(STEP_LIGHTS + i * 2, ((stepIndexRun[row] == col) && running) ? 0.1f : 0.0f, 0.0f);
+									setGreenRed3(STEP_LIGHTS + i * 3, ((stepIndexRun[row] == col) && running) ? 0.1f : 0.0f, 0.0f);
 							}
 						}
 					}
@@ -995,17 +995,21 @@ struct GateSeq64 : Module {
 						if (displayState == DISP_LENGTH) {
 							col = i & 0xF;//i % 16;// optimized
 							if (i < (phrases - 1))
-								setGreenRed(STEP_LIGHTS + i * 2, 0.1f, 0.0f);
+								setGreenRed3(STEP_LIGHTS + i * 3, 0.1f, 0.0f);
 							else if (i == (phrases - 1))
-								setGreenRed(STEP_LIGHTS + i * 2, 1.0f, 0.0f);
+								setGreenRed3(STEP_LIGHTS + i * 3, 1.0f, 0.0f);
 							else 
-								setGreenRed(STEP_LIGHTS + i * 2, 0.0f, 0.0f);
+								setGreenRed3(STEP_LIGHTS + i * 3, 0.0f, 0.0f);
 						}
 						else {
 							float green = (i == (phraseIndexRun) && running) ? 1.0f : 0.0f;
 							float red = (i == (phraseIndexEdit) && ((editingPhraseSongRunning > 0l) || !running)) ? 1.0f : 0.0f;
 							green += ((running && (col == stepIndexRun[row]) && i != (phraseIndexEdit)) ? 0.1f : 0.0f);
-							setGreenRed(STEP_LIGHTS + i * 2, clamp(green, 0.0f, 1.0f), red);
+							setGreenRed3(STEP_LIGHTS + i * 3, clamp(green, 0.0f, 1.0f), red);
+							if (green == 0.0f && red == 0.0f){
+								lights[STEP_LIGHTS + i * 3 + 2].value = (attributes[phrase[phraseIndexRun]][i].getGate() ? 0.2f : 0.0f);
+								lights[STEP_LIGHTS + i * 3 + 2].value -= (attributes[phrase[phraseIndexRun]][i].getGateP() ? 0.18f : 0.0f);
+							}
 						}				
 					}
 				}
@@ -1085,6 +1089,10 @@ struct GateSeq64 : Module {
 	inline void setGreenRed(int id, float green, float red) {
 		lights[id + 0].value = green;
 		lights[id + 1].value = red;
+	}
+	inline void setGreenRed3(int id, float green, float red) {
+		setGreenRed(id, green, red);
+		lights[id + 2].value = 0.0f;
 	}
 
 };// GateSeq64 : module
@@ -1307,6 +1315,58 @@ struct GateSeq64Widget : ModuleWidget {
 			((GateSeq64*)(module))->stepConfigSync = 2;// signal a sync from switch so that steps get initialized
 		}	
 	};
+	
+	struct SequenceKnob : IMBigKnobInf {
+		SequenceKnob() {};		
+		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
+			GateSeq64* module = dynamic_cast<GateSeq64*>(this->module);
+			if (e.button == 1) {
+				// same code structure below as in sequence knob in main step()
+				bool editingSequence = module->isEditingSequence();
+				if (module->displayProbInfo != 0l && editingSequence) {
+					//blinkNum = blinkNumInit;
+					module->attributes[module->sequence][module->stepIndexEdit].setGatePVal(50);
+					//displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+				}
+				else if (module->editingPpqn != 0) {
+					module->pulsesPerStep = 1;
+					//editingPpqn = (long) (editingPpqnTime * sampleRate / displayRefreshStepSkips);
+				}
+				else if (module->displayState == GateSeq64::DISP_MODES) {
+					if (editingSequence) {
+						module->sequences[module->sequence].setRunMode(MODE_FWD);
+					}
+					else {
+						module->runModeSong = MODE_FWD;
+					}
+				}
+				else if (module->displayState == GateSeq64::DISP_LENGTH) {
+					if (editingSequence) {
+						module->sequences[module->sequence].setLength(16 * module->stepConfig);
+					}
+					else {
+						module->phrases = 4;
+					}
+				}
+				else {
+					if (editingSequence) {
+						//blinkNum = blinkNumInit;
+						if (!module->inputs[GateSeq64::SEQCV_INPUT].active) {
+							module->sequence = 0;
+						}
+					}
+					else {
+						if (module->editingPhraseSongRunning > 0l || !module->running) {
+							module->phrase[module->phraseIndexEdit] = 0;
+							// if (running)
+								// editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / displayRefreshStepSkips);
+						}
+					}	
+				}			
+			}
+			ParamWidget::onMouseDown(e);
+		}
+	};			
 
 	GateSeq64Widget(GateSeq64 *module) : ModuleWidget(module) {		
 		this->module = module;
@@ -1345,7 +1405,7 @@ struct GateSeq64Widget : ModuleWidget {
 			int posX = colRulerSteps;
 			for (int x = 0; x < 16; x++) {
 				addParam(createParam<LEDButtonWithRClick>(Vec(posX, rowRuler0 + 8 + y * spacingRows - 4.4f), module, GateSeq64::STEP_PARAMS + y * 16 + x, 0.0f, 1.0f, 0.0f));
-				addChild(createLight<MediumLight<GreenRedLight>>(Vec(posX + 4.4f, rowRuler0 + 8 + y * spacingRows), module, GateSeq64::STEP_LIGHTS + (y * 16 + x) * 2));
+				addChild(createLight<MediumLight<GreenRedWhiteLight>>(Vec(posX + 4.4f, rowRuler0 + 8 + y * spacingRows), module, GateSeq64::STEP_LIGHTS + (y * 16 + x) * 3));
 				posX += spacingSteps;
 				if ((x + 1) % 4 == 0)
 					posX += spacingSteps4;
@@ -1400,7 +1460,7 @@ struct GateSeq64Widget : ModuleWidget {
 		addInput(createDynamicPort<IMPort>(Vec(colRulerC1, rowRulerC2), Port::INPUT, module, GateSeq64::SEQCV_INPUT, &module->panelTheme));
 		
 		// Sequence knob
-		addParam(createDynamicParam<IMBigKnobInf>(Vec(colRulerC2 + 1 + offsetIMBigKnob, rowRulerC0 + offsetIMBigKnob), module, GateSeq64::SEQUENCE_PARAM, -INFINITY, INFINITY, 0.0f, &module->panelTheme));		
+		addParam(createDynamicParam<SequenceKnob>(Vec(colRulerC2 + 1 + offsetIMBigKnob, rowRulerC0 + offsetIMBigKnob), module, GateSeq64::SEQUENCE_PARAM, -INFINITY, INFINITY, 0.0f, &module->panelTheme));		
 		// Run LED bezel and light
 		addParam(createParam<LEDBezel>(Vec(colRulerC2 + offsetLEDbezel, rowRulerC1 + offsetLEDbezel), module, GateSeq64::RUN_PARAM, 0.0f, 1.0f, 0.0f));
 		addChild(createLight<MuteLight<GreenLight>>(Vec(colRulerC2 + offsetLEDbezel + offsetLEDbezelLight, rowRulerC1 + offsetLEDbezel + offsetLEDbezelLight), module, GateSeq64::RUN_LIGHT));
@@ -1453,6 +1513,7 @@ Model *modelGateSeq64 = Model::create<GateSeq64, GateSeq64Widget>("Impromptu Mod
 
 0.6.16:
 support for 32 sequences instead of 16
+add step indication in song mode (white lights), and add right-click initialization on main knob
 
 0.6.14:
 allow right click to turn steps off

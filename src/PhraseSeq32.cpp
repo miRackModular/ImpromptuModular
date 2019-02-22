@@ -1850,7 +1850,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 				else {// DISP_NORMAL
 					if (module->isEditingSequence()) {
 						if (!module->inputs[PhraseSeq32::SEQCV_INPUT].active) {
-							module->sequence = 0;;
+							module->sequence = 0;
 						}
 					}
 					else {
