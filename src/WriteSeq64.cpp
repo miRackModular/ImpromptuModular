@@ -62,7 +62,7 @@ struct WriteSeq64 : Module {
 	// Need to save
 	int panelTheme = 0;
 	bool running;
-	int indexChannel;
+	//int indexChannel;
 	int indexStep[5];// [0;63] each
 	int indexSteps[5];// [1;64] each
 	float cv[5][64];
@@ -86,7 +86,6 @@ struct WriteSeq64 : Module {
 	Trigger clock34Trigger;
 	Trigger resetTrigger;
 	Trigger runningTrigger;
-	Trigger channelTrigger;
 	Trigger stepLTrigger;
 	Trigger stepRTrigger;
 	Trigger copyTrigger;
@@ -98,6 +97,9 @@ struct WriteSeq64 : Module {
 	inline float quantize(float cv, bool enable) {
 		return enable ? (roundf(cv * 12.0f) / 12.0f) : cv;
 	}
+	inline int calcChan() {
+		return clamp((int)(params[CHANNEL_PARAM].value + 0.5f), 0, 4);
+	}
 
 
 	WriteSeq64() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
@@ -107,7 +109,7 @@ struct WriteSeq64 : Module {
 	
 	void onReset() override {
 		running = true;
-		indexChannel = 0;
+		//indexChannel = 0;
 		for (int c = 0; c < 5; c++) {
 			indexStep[c] = 0;
 			indexSteps[c] = 64;
@@ -129,7 +131,7 @@ struct WriteSeq64 : Module {
 
 	
 	void onRandomize() override {
-		// indexChannel = 0;
+		int indexChannel = calcChan();
 		// for (int c = 0; c < 5; c++) {
 			// indexStep[c] = 0;
 			// indexSteps[c] = 64;
@@ -161,7 +163,7 @@ struct WriteSeq64 : Module {
 		json_object_set_new(rootJ, "running", json_boolean(running));
 
 		// indexChannel
-		json_object_set_new(rootJ, "indexChannel", json_integer(indexChannel));
+		//json_object_set_new(rootJ, "indexChannel", json_integer(indexChannel));
 		
 		// indexStep
 		json_t *indexStepJ = json_array();
@@ -210,9 +212,9 @@ struct WriteSeq64 : Module {
 			running = json_is_true(runningJ);
 		
 		// indexChannel
-		json_t *indexChannelJ = json_object_get(rootJ, "indexChannel");
-		if (indexChannelJ)
-			indexChannel = json_integer_value(indexChannelJ);
+		// json_t *indexChannelJ = json_object_get(rootJ, "indexChannel");
+		// if (indexChannelJ)
+			// indexChannel = json_integer_value(indexChannelJ);
 		
 		// indexStep
 		json_t *indexStepJ = json_object_get(rootJ, "indexStep");
@@ -268,7 +270,7 @@ struct WriteSeq64 : Module {
 		
 		
 		//********** Buttons, knobs, switches and inputs **********
-
+		int indexChannel = calcChan();
 		bool canEdit = !running || (indexChannel == 4);
 		
 		// Run state button
@@ -317,13 +319,6 @@ struct WriteSeq64 : Module {
 				}
 			}
 				
-			// Channel selection button
-			if (channelTrigger.process(params[CHANNEL_PARAM].value)) {
-				indexChannel++;
-				if (indexChannel >= 5)
-					indexChannel = 0;
-			}
-			
 			// Gate button
 			if (gateTrigger.process(params[GATE_PARAM].value)) {
 				if (params[GATE_PARAM].value > 1.5f) {// right button click
@@ -512,7 +507,8 @@ struct WriteSeq64Widget : ModuleWidget {
 		}
 		
 		void cvToStr(void) {
-			float cvVal = module->cv[module->indexChannel][module->indexStep[module->indexChannel]];
+			int indexChannel = module->calcChan();
+			float cvVal = module->cv[indexChannel][module->indexStep[indexChannel]];
 			if (module->infoCopyPaste != 0l) {
 				if (module->infoCopyPaste > 0l) {// if copy then display "Copy"
 					snprintf(text, 7, "COPY");
@@ -569,7 +565,7 @@ struct WriteSeq64Widget : ModuleWidget {
 			nvgText(vg, textPos.x, textPos.y, "~~", NULL);
 			nvgFillColor(vg, textColor);
 			char displayStr[3];
-			snprintf(displayStr, 3, "%2u", (unsigned) module->indexSteps[module->indexChannel]);
+			snprintf(displayStr, 3, "%2u", (unsigned) module->indexSteps[module->calcChan()]);
 			nvgText(vg, textPos.x, textPos.y, displayStr, NULL);
 		}
 	};	
@@ -593,14 +589,15 @@ struct WriteSeq64Widget : ModuleWidget {
 			nvgText(vg, textPos.x, textPos.y, "~~", NULL);
 			nvgFillColor(vg, textColor);
 			char displayStr[3];
-			snprintf(displayStr, 3, "%2u", (unsigned) module->indexStep[module->indexChannel] + 1);
+			snprintf(displayStr, 3, "%2u", (unsigned) module->indexStep[module->calcChan()] + 1);
 			nvgText(vg, textPos.x, textPos.y, displayStr, NULL);
 		}
 	};
 	
 	
 	struct ChannelDisplayWidget : TransparentWidget {
-		int *indexTrack;
+		WriteSeq64 *module;
+		//int *indexTrack;
 		std::shared_ptr<Font> font;
 		
 		ChannelDisplayWidget() {
@@ -617,7 +614,7 @@ struct WriteSeq64Widget : ModuleWidget {
 			nvgText(vg, textPos.x, textPos.y, "~", NULL);
 			nvgFillColor(vg, textColor);
 			char displayStr[2];
-			displayStr[0] = 0x30 + (char) (*indexTrack + 1);
+			displayStr[0] = 0x30 + (char) (module->calcChan() + 1);
 			displayStr[1] = 0;
 			nvgText(vg, textPos.x, textPos.y, displayStr, NULL);
 		}
@@ -708,7 +705,7 @@ struct WriteSeq64Widget : ModuleWidget {
 		ChannelDisplayWidget *channelTrack = new ChannelDisplayWidget();
 		channelTrack->box.pos = Vec(columnRulerT0+1, rowRulerT0+vOffsetDisplay);
 		channelTrack->box.size = Vec(24, 30);// 1 character
-		channelTrack->indexTrack = &module->indexChannel;
+		channelTrack->module = module;
 		addChild(channelTrack);
 		// Step display
 		StepDisplayWidget *displayStep = new StepDisplayWidget();
@@ -735,8 +732,8 @@ struct WriteSeq64Widget : ModuleWidget {
 
 		static const int rowRulerT1 = 105;
 		
-		// Channel button
-		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRulerT0+offsetCKD6b, rowRulerT1+offsetCKD6b), module, WriteSeq64::CHANNEL_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		// Channel knob
+		addParam(createDynamicParam<IMFivePosSmallKnob>(Vec(columnRulerT0+offsetCKD6b+1, rowRulerT1+offsetCKD6b+1), module, WriteSeq64::CHANNEL_PARAM, 0.0f, 4.0f, 0.0f, &module->panelTheme));
 		// Step knob
 		addParam(createDynamicParam<IMBigKnobInf>(Vec(columnRulerT1+offsetIMBigKnob, rowRulerT1+offsetIMBigKnob), module, WriteSeq64::STEP_PARAM, -INFINITY, INFINITY, 0.0f, &module->panelTheme));		
 		// Gate button
