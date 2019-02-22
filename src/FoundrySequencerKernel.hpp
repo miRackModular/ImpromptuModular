@@ -178,6 +178,7 @@ class SequencerKernel {
 	SeqAttributes sequences[MAX_SEQS];
 	float cv[MAX_SEQS][MAX_STEPS];// [-3.0 : 3.917].
 	StepAttributes attributes[MAX_SEQS][MAX_STEPS];
+	char dirty[MAX_SEQS];
 	
 	// No need to save
 	int stepIndexRun;

@@ -33,16 +33,19 @@ void SequencerKernel::setGate(int seqn, int stepn, bool newGate, int count) {
 	int endi = min(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqn][i].setGate(newGate);
+	dirty[seqn] = 1;
 }
 void SequencerKernel::setGateP(int seqn, int stepn, bool newGateP, int count) {
 	int endi = min(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqn][i].setGateP(newGateP);
+	dirty[seqn] = 1;
 }
 void SequencerKernel::setSlide(int seqn, int stepn, bool newSlide, int count) {
 	int endi = min(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqn][i].setSlide(newSlide);
+	dirty[seqn] = 1;
 }
 void SequencerKernel::setTied(int seqn, int stepn, bool newTied, int count) {
 	int endi = min(MAX_STEPS, stepn + count);
@@ -54,27 +57,32 @@ void SequencerKernel::setTied(int seqn, int stepn, bool newTied, int count) {
 		for (int i = stepn; i < endi; i++)
 			activateTiedStep(seqn, i);
 	}
+	dirty[seqn] = 1;
 }
 
 void SequencerKernel::setGatePVal(int seqn, int stepn, int gatePval, int count) {
 	int endi = min(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqn][i].setGatePVal(gatePval);
+	dirty[seqn] = 1;
 }
 void SequencerKernel::setSlideVal(int seqn, int stepn, int slideVal, int count) {
 	int endi = min(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqn][i].setSlideVal(slideVal);
+	dirty[seqn] = 1;
 }
 void SequencerKernel::setVelocityVal(int seqn, int stepn, int velocity, int count) {
 	int endi = min(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqn][i].setVelocityVal(velocity);
+	dirty[seqn] = 1;
 }
 void SequencerKernel::setGateType(int seqn, int stepn, int gateType, int count) {
 	int endi = min(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqn][i].setGateType(gateType);
+	dirty[seqn] = 1;
 }
 
 
@@ -82,13 +90,13 @@ float SequencerKernel::applyNewOctave(int seqn, int stepn, int newOct, int count
 	float newCV = cv[seqn][stepn] + 10.0f;//to properly handle negative note voltages
 	newCV = newCV - floor(newCV) + (float) (newOct - 3);
 	
-	writeCV(seqn, stepn, newCV, count);
+	writeCV(seqn, stepn, newCV, count);// also sets dirty[] to 1
 	return newCV;
 }
 float SequencerKernel::applyNewKey(int seqn, int stepn, int newKeyIndex, int count) {// does not overwrite tied steps
 	float newCV = floor(cv[seqn][stepn]) + ((float) newKeyIndex) / 12.0f;
 	
-	writeCV(seqn, stepn, newCV, count);
+	writeCV(seqn, stepn, newCV, count);// also sets dirty[] to 1
 	return newCV;
 }
 void SequencerKernel::writeCV(int seqn, int stepn, float newCV, int count) {// does not overwrite tied steps
@@ -99,6 +107,7 @@ void SequencerKernel::writeCV(int seqn, int stepn, float newCV, int count) {// d
 			propagateCVtoTied(seqn, i);
 		}
 	}
+	dirty[seqn] = 1;
 }
 
 
@@ -108,6 +117,7 @@ void SequencerKernel::initSequence(int seqn) {
 		cv[seqn][stepn] = INIT_CV;
 		attributes[seqn][stepn].init();
 	}
+	dirty[seqn] = 0;
 }
 void SequencerKernel::initSong() {
 	runModeSong = MODE_FWD;
@@ -128,8 +138,9 @@ void SequencerKernel::randomizeSequence(int seqn) {
 			activateTiedStep(seqn, stepn);
 		}	
 	}
+	dirty[seqn] = 1;
 }
-DEPRECATED void SequencerKernel::randomizeSong() {
+DEPRECATED void SequencerKernel::randomizeSong() {// no longer used
 	runModeSong = randomu32() % NUM_MODES;
 	songBeginIndex = 0;
 	songEndIndex = (randomu32() % MAX_PHRASES);
@@ -156,6 +167,7 @@ void SequencerKernel::pasteSequence(SeqCPbuffer* seqCPbuf, int seqn, int startCP
 	}
 	if (startCP == 0 && countCP == MAX_STEPS)
 		sequences[seqn] = seqCPbuf->seqAttribCPbuffer;
+	dirty[seqn] = 1;
 }
 void SequencerKernel::copySong(SongCPbuffer* songCPbuf, int startCP, int countCP) {	
 	countCP = min(countCP, MAX_PHRASES - startCP);
@@ -229,14 +241,7 @@ void SequencerKernel::toJson(json_t *rootJ) {
 	json_t *cvJ = json_array();
 	json_t *attributesJ = json_array();
 	for (int seqnRead = 0, seqnWrite = 0; seqnRead < MAX_SEQS; seqnRead++) {
-		bool compress = true;
-		for (int stepn = 0; stepn < 5; stepn++) {
-			if (cv[seqnRead][stepn] != INIT_CV || attributes[seqnRead][stepn].getAttribute() != StepAttributes::ATT_MSK_INITSTATE) {
-				compress = false;
-				break;
-			}
-		}
-		if (compress) {
+		if (dirty[seqnRead] == 0) {
 			json_array_insert_new(seqSavedJ, seqnRead, json_integer(0));
 		}
 		else {
@@ -316,18 +321,25 @@ void SequencerKernel::fromJson(json_t *rootJ) {
 			json_t *attributesJ = json_object_get(rootJ, (ids + "attributes").c_str());
 			if (cvJ && attributesJ) {
 				for (int seqnFull = 0, seqnComp = 0; seqnFull < MAX_SEQS; seqnFull++) {
-					if (!seqSaved[seqnFull]) {
-						continue;
+					if (seqSaved[seqnFull]) {
+						for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
+							json_t *cvArrayJ = json_array_get(cvJ, stepn + (seqnComp * MAX_STEPS));
+							if (cvArrayJ)
+								cv[seqnFull][stepn] = json_number_value(cvArrayJ);
+							json_t *attributesArrayJ = json_array_get(attributesJ, stepn + (seqnComp * MAX_STEPS));
+							if (attributesArrayJ)
+								attributes[seqnFull][stepn].setAttribute(json_integer_value(attributesArrayJ));
+						}
+						dirty[seqnFull] = 1;
+						seqnComp++;
 					}
-					for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
-						json_t *cvArrayJ = json_array_get(cvJ, stepn + (seqnComp * MAX_STEPS));
-						if (cvArrayJ)
-							cv[seqnFull][stepn] = json_number_value(cvArrayJ);
-						json_t *attributesArrayJ = json_array_get(attributesJ, stepn + (seqnComp * MAX_STEPS));
-						if (attributesArrayJ)
-							attributes[seqnFull][stepn].setAttribute(json_integer_value(attributesArrayJ));
-					}
-					seqnComp++;
+					else {
+						for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
+							cv[seqnFull][stepn] = INIT_CV;
+							attributes[seqnFull][stepn].init();
+						}
+						dirty[seqnFull] = 0;
+					}	
 				}
 			}
 		}
@@ -434,6 +446,7 @@ void SequencerKernel::transposeSeq(int seqn, int delta) {
 		for (int stepn = 0; stepn < MAX_STEPS; stepn++) 
 			cv[seqn][stepn] += offsetCV;
 	}
+	dirty[seqn] = 1;
 }
 
 
@@ -457,10 +470,11 @@ void SequencerKernel::rotateSeq(int seqn, int delta) {
 			rotateSeqByOne(seqn, false);
 		}
 	}
+	dirty[seqn] = 1;
 }	
 
 
-void SequencerKernel::rotateSeqByOne(int seqn, bool directionRight) {
+void SequencerKernel::rotateSeqByOne(int seqn, bool directionRight) {// caller sets dirty[] to 1
 	float rotCV;
 	StepAttributes rotAttributes;
 	int iStart = 0;
@@ -484,7 +498,7 @@ void SequencerKernel::rotateSeqByOne(int seqn, bool directionRight) {
 }
 
 
-void SequencerKernel::activateTiedStep(int seqn, int stepn) {
+void SequencerKernel::activateTiedStep(int seqn, int stepn) {// caller sets dirty[] to 1
 	attributes[seqn][stepn].setTied(true);
 	if (stepn > 0) 
 		propagateCVtoTied(seqn, stepn - 1);
@@ -506,7 +520,7 @@ void SequencerKernel::activateTiedStep(int seqn, int stepn) {
 }
 
 
-void SequencerKernel::deactivateTiedStep(int seqn, int stepn) {
+void SequencerKernel::deactivateTiedStep(int seqn, int stepn) {// caller sets dirty[] to 1
 	attributes[seqn][stepn].setTied(false);
 	if (*holdTiedNotesPtr) {// new method
 		int lastGateType = attributes[seqn][stepn].getGateType();
