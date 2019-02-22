@@ -352,7 +352,7 @@ class SequencerKernel {
 	void pasteSong(SongCPbuffer* songCPbuf, int startCP);
 	
 	void reset();
-	void randomize();
+	void randomize(int seqn);
 	void toJson(json_t *rootJ);
 	void fromJson(json_t *rootJ);
 	void initRun();

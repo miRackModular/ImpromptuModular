@@ -215,10 +215,7 @@ class Sequencer {
 	
 	void reset();
 	
-	inline void randomize() {
-		for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
-			sek[trkn].randomize();	
-	}
+	inline void randomize() {sek[trackIndexEdit].randomize(seqIndexEdit);}
 	
 	inline void initRun() {
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++)

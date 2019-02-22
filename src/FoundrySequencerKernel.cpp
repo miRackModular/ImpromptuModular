@@ -129,7 +129,7 @@ void SequencerKernel::randomizeSequence(int seqn) {
 		}	
 	}
 }
-void SequencerKernel::randomizeSong() {
+DEPRECATED void SequencerKernel::randomizeSong() {
 	runModeSong = randomu32() % NUM_MODES;
 	songBeginIndex = 0;
 	songEndIndex = (randomu32() % MAX_PHRASES);
@@ -192,11 +192,12 @@ void SequencerKernel::reset() {
 }
 
 
-void SequencerKernel::randomize() {
-	randomizeSong();
-	for (int seqn = 0; seqn < MAX_SEQS; seqn++) {
-		randomizeSequence(seqn);
-	}
+void SequencerKernel::randomize(int seqn) {
+	//randomizeSong();
+	// for (int seqn = 0; seqn < MAX_SEQS; seqn++) {
+		// randomizeSequence(seqn);
+	// }
+	randomizeSequence(seqn);
 	initRun();
 }
 	

@@ -67,6 +67,7 @@ struct GateSeq64 : Module {
 	
 	// Constants
 	enum DisplayStateIds {DISP_GATE, DISP_LENGTH, DISP_MODES};
+	static const int MAX_SEQS = 32;
 	//										1/4		DUO			D2			TR1		TR2		TR3 		TR23	   TRI
 	const uint32_t advGateHitMaskGS[8] = {0x00003F, 0x03F03F, 0x03F000, 0x00000F, 0x000F00, 0x0F0000, 0x0F0F00, 0x0F0F0F};
 	static const int blinkNumInit = 15;// init number of blink cycles for cursor
@@ -79,12 +80,12 @@ struct GateSeq64 : Module {
 	int seqCVmethod;// 0 is 0-10V, 1 is C4-D5#, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
-	SeqAttributesGS sequences[16];
+	SeqAttributesGS sequences[MAX_SEQS];
 	int runModeSong;
 	int sequence;
 	int phrase[64];// This is the song (series of phases; a phrase is a patten number)
 	int phrases;// 1 to 64
-	StepAttributesGS attributes[16][64];
+	StepAttributesGS attributes[MAX_SEQS][64];
 	bool resetOnRun;
 
 	// No need to save
@@ -134,7 +135,7 @@ struct GateSeq64 : Module {
 	Trigger seqCVTrigger;
 	BooleanTrigger editingSequenceTrigger;
 	HoldDetect modeHoldDetect;
-	SeqAttributesGS seqAttribBuffer[16];// buffer from Json for thread safety
+	SeqAttributesGS seqAttribBuffer[MAX_SEQS];// buffer from Json for thread safety
 
 	
 	inline bool isEditingSequence(void) {return params[EDIT_PARAM].value > 0.5f;}
@@ -175,7 +176,7 @@ struct GateSeq64 : Module {
 	}
 		
 	GateSeq64() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
-		for (int i = 0; i < 16; i++)
+		for (int i = 0; i < MAX_SEQS; i++)
 			seqAttribBuffer[i].init(16, MODE_FWD);
 		onReset();
 	}
@@ -192,7 +193,7 @@ struct GateSeq64 : Module {
 		phraseIndexEdit = 0;
 		sequence = 0;
 		phrases = 4;
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < MAX_SEQS; i++) {
 			for (int s = 0; s < 64; s++) {
 				attributes[i][s].init();
 			}
@@ -222,21 +223,27 @@ struct GateSeq64 : Module {
 
 	
 	void onRandomize() override {
-		stepConfig = getStepConfig(params[CONFIG_PARAM].value);
-		runModeSong = randomu32() % 5;
-		stepIndexEdit = 0;
-		phraseIndexEdit = 0;
-		sequence = randomu32() % 16;
-		phrases = 1 + (randomu32() % 64);
-		for (int i = 0; i < 16; i++) {
+		// stepConfig = getStepConfig(params[CONFIG_PARAM].value);
+		// runModeSong = randomu32() % 5;
+		// stepIndexEdit = 0;
+		// phraseIndexEdit = 0;
+		// sequence = randomu32() % MAX_SEQS;
+		// phrases = 1 + (randomu32() % 64);
+		// for (int i = 0; i < MAX_SEQS; i++) {
+			// for (int s = 0; s < 64; s++) {
+				// attributes[i][s].randomize();
+			// }
+			// sequences[i].randomize(16 * stepConfig, NUM_MODES);
+		// }
+		// for (int i = 0; i < 64; i++)
+			// phrase[i] = randomu32() % MAX_SEQS;
+		// initRun();
+		if (isEditingSequence()) {
 			for (int s = 0; s < 64; s++) {
-				attributes[i][s].randomize();
+				attributes[sequence][s].randomize();
 			}
-			sequences[i].randomize(16 * stepConfig, NUM_MODES);
+			sequences[sequence].randomize(16 * stepConfig, NUM_MODES);// ok to use stepConfig since CONFIG_PARAM is not randomizable		
 		}
-		for (int i = 0; i < 64; i++)
-			phrase[i] = randomu32() % 16;
-		initRun();
 	}
 
 
@@ -293,11 +300,11 @@ struct GateSeq64 : Module {
 
 		// attributes
 		json_t *attributesJ = json_array();
-		for (int i = 0; i < 16; i++)
+		for (int i = 0; i < MAX_SEQS; i++)
 			for (int s = 0; s < 64; s++) {
 				json_array_insert_new(attributesJ, s + (i * 64), json_integer(attributes[i][s].getAttribute()));
 			}
-		json_object_set_new(rootJ, "attributes", attributesJ);
+		json_object_set_new(rootJ, "attributes2", attributesJ);// "2" appended so no break patches
 		
 		// resetOnRun
 		json_object_set_new(rootJ, "resetOnRun", json_boolean(resetOnRun));
@@ -310,7 +317,7 @@ struct GateSeq64 : Module {
 		
 		// sequences
 		json_t *sequencesJ = json_array();
-		for (int i = 0; i < 16; i++)
+		for (int i = 0; i < MAX_SEQS; i++)
 			json_array_insert_new(sequencesJ, i, json_integer(sequences[i].getSeqAttrib()));
 		json_object_set_new(rootJ, "sequences", sequencesJ);
 
@@ -353,7 +360,7 @@ struct GateSeq64 : Module {
 		// sequences
 		json_t *sequencesJ = json_object_get(rootJ, "sequences");
 		if (sequencesJ) {
-			for (int i = 0; i < 16; i++)
+			for (int i = 0; i < MAX_SEQS; i++)
 			{
 				json_t *sequencesArrayJ = json_array_get(sequencesJ, i);
 				if (sequencesArrayJ)
@@ -361,7 +368,7 @@ struct GateSeq64 : Module {
 			}			
 		}
 		else {// legacy
-			int lengths[16];//1 to 16
+			int lengths[16];// 1 to 16
 			int runModeSeq[16]; 
 		
 			// runModeSeq
@@ -400,9 +407,10 @@ struct GateSeq64 : Module {
 			}
 			
 			// now write into new object
-			for (int i = 0; i < 16; i++) {
-				seqAttribBuffer[i].init(lengths[i], runModeSeq[i]);
-			}
+			for (int i = 0; i < 16; i++) 
+					seqAttribBuffer[i].init(lengths[i], runModeSeq[i]);
+			for (int i = 16; i < MAX_SEQS; i++)
+					seqAttribBuffer[i].init(16, MODE_FWD);
 		}
 		
 		
@@ -454,14 +462,30 @@ struct GateSeq64 : Module {
 			phrases = json_integer_value(phrasesJ);
 	
 		// attributes
-		json_t *attributesJ = json_object_get(rootJ, "attributes");
+		json_t *attributesJ = json_object_get(rootJ, "attributes2");
 		if (attributesJ) {
-			for (int i = 0; i < 16; i++)
+			for (int i = 0; i < MAX_SEQS; i++)
 				for (int s = 0; s < 64; s++) {
 					json_t *attributesArrayJ = json_array_get(attributesJ, s + (i * 64));
 					if (attributesArrayJ)
 						attributes[i][s].setAttribute((unsigned short)json_integer_value(attributesArrayJ));
 				}
+		}
+		else {
+			attributesJ = json_object_get(rootJ, "attributes");
+			if (attributesJ) {
+				for (int i = 0; i < 16; i++) {
+					for (int s = 0; s < 64; s++) {
+						json_t *attributesArrayJ = json_array_get(attributesJ, s + (i * 64));
+						if (attributesArrayJ)
+							attributes[i][s].setAttribute((unsigned short)json_integer_value(attributesArrayJ));
+					}
+				}
+				for (int i = 16; i < MAX_SEQS; i++) {
+					for (int s = 0; s < 64; s++)
+						attributes[i][s].init();
+				}
+			}
 		}
 		
 		// resetOnRun
@@ -523,11 +547,11 @@ struct GateSeq64 : Module {
 			if (stepConfigSync != 0) {
 				stepConfig = getStepConfig(params[CONFIG_PARAM].value);
 				if (stepConfigSync == 1) {// sync from fromJson, so read lengths from seqAttribBuffer
-					for (int i = 0; i < 16; i++)
+					for (int i = 0; i < MAX_SEQS; i++)
 						sequences[i].setSeqAttrib(seqAttribBuffer[i].getSeqAttrib());
 				}
 				else if (stepConfigSync == 2) {// sync from a real mouse drag event on the switch itself, so init lengths
-					for (int i = 0; i < 16; i++)
+					for (int i = 0; i < MAX_SEQS; i++)
 						sequences[i].setLength(16 * stepConfig);
 				}
 				initRun();	
@@ -537,16 +561,16 @@ struct GateSeq64 : Module {
 			// Seq CV input
 			if (inputs[SEQCV_INPUT].active) {
 				if (seqCVmethod == 0) {// 0-10 V
-					int newSeq = (int)( inputs[SEQCV_INPUT].value * (16.0f - 1.0f) / 10.0f + 0.5f );
-					sequence = clamp(newSeq, 0, 16 - 1);
+					int newSeq = (int)( inputs[SEQCV_INPUT].value * (((float)MAX_SEQS) - 1.0f) / 10.0f + 0.5f );
+					sequence = clamp(newSeq, 0, MAX_SEQS - 1);
 				}
-				else if (seqCVmethod == 1) {// C4-D5#
+				else if (seqCVmethod == 1) {// C4-G6
 					int newSeq = (int)( (inputs[SEQCV_INPUT].value) * 12.0f + 0.5f );
-					sequence = clamp(newSeq, 0, 16 - 1);
+					sequence = clamp(newSeq, 0, MAX_SEQS - 1);
 				}
 				else {// TrigIncr
 					if (seqCVTrigger.process(inputs[SEQCV_INPUT].value))
-						sequence = clamp(sequence + 1, 0, 16 - 1);
+						sequence = clamp(sequence + 1, 0, MAX_SEQS - 1);
 				}	
 			}
 			
@@ -667,7 +691,7 @@ struct GateSeq64 : Module {
 					// Autostep (after grab all active inputs)
 					stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 64);
 					if (stepIndexEdit == 0 && autoseq && !inputs[SEQCV_INPUT].active)
-						sequence = moveIndex(sequence, sequence + 1, 16);			
+						sequence = moveIndex(sequence, sequence + 1, MAX_SEQS);			
 				}
 			}
 
@@ -829,16 +853,16 @@ struct GateSeq64 : Module {
 						if (editingSequence) {
 							blinkNum = blinkNumInit;
 							if (!inputs[SEQCV_INPUT].active) {
-								sequence += deltaKnob;
-								if (sequence < 0) sequence = 0;
-								if (sequence >= 16) sequence = (16 - 1);
+								sequence = clamp(sequence + deltaKnob, 0, MAX_SEQS - 1);
 							}
 						}
 						else {
 							if (editingPhraseSongRunning > 0l || !running) {
-								phrase[phraseIndexEdit] += deltaKnob;
-								if (phrase[phraseIndexEdit] < 0) phrase[phraseIndexEdit] = 0;
-								if (phrase[phraseIndexEdit] >= 16) phrase[phraseIndexEdit] = (16 - 1);
+								int newPhrase = phrase[phraseIndexEdit] + deltaKnob;
+								if (newPhrase < 0)
+									newPhrase += (1 - newPhrase / MAX_SEQS) * MAX_SEQS;// newPhrase now positive
+								newPhrase = newPhrase % MAX_SEQS;
+								phrase[phraseIndexEdit] = newPhrase;
 								if (running)
 									editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / displayRefreshStepSkips);
 							}
@@ -1201,11 +1225,11 @@ struct GateSeq64Widget : ModuleWidget {
 		}
 		void step() override {
 			if (module->seqCVmethod == 0)
-				text = "Seq CV in: <0-10V>,  C4-D5#,  Trig-Incr";
+				text = "Seq CV in: <0-10V>,  C4-G6,  Trig-Incr";
 			else if (module->seqCVmethod == 1)
-				text = "Seq CV in: 0-10V,  <C4-D5#>,  Trig-Incr";
+				text = "Seq CV in: 0-10V,  <C4-G6>,  Trig-Incr";
 			else
-				text = "Seq CV in: 0-10V,  C4-D5#,  <Trig-Incr>";
+				text = "Seq CV in: 0-10V,  C4-G6,  <Trig-Incr>";
 		}	
 	};
 	Menu *createContextMenu() override {
@@ -1276,8 +1300,8 @@ struct GateSeq64Widget : ModuleWidget {
 		Widget::step();
 	}
 
-	struct CKSSThreeInvNotify : CKSSThreeInv {
-		CKSSThreeInvNotify() {};
+	struct CKSSThreeInvNotify : CKSSThreeInvNoRandom {// Not randomizable
+		CKSSThreeInvNotify() {}
 		void onDragStart(EventDragStart &e) override {
 			ToggleSwitch::onDragStart(e);
 			((GateSeq64*)(module))->stepConfigSync = 2;// signal a sync from switch so that steps get initialized
@@ -1398,11 +1422,11 @@ struct GateSeq64Widget : ModuleWidget {
 		
 
 		// Seq/Song selector
-		addParam(createParam<CKSS>(Vec(colRulerC4 + 2 + hOffsetCKSS, rowRulerC0 + vOffsetCKSS), module, GateSeq64::EDIT_PARAM, 0.0f, 1.0f, 1.0f));
+		addParam(createParam<CKSSNoRandom>(Vec(colRulerC4 + 2 + hOffsetCKSS, rowRulerC0 + vOffsetCKSS), module, GateSeq64::EDIT_PARAM, 0.0f, 1.0f, 1.0f));
 		// Config switch (3 position)
 		addParam(createParam<CKSSThreeInvNotify>(Vec(colRulerC4 + 2 + hOffsetCKSS, rowRulerC1 - 2 + vOffsetCKSSThree), module, GateSeq64::CONFIG_PARAM, 0.0f, 2.0f, GateSeq64::CONFIG_PARAM_INIT_VALUE));// 0.0f is top position
 		// Copy paste mode
-		addParam(createParam<CKSSThreeInv>(Vec(colRulerC4 + 2 + hOffsetCKSS, rowRulerC2 + vOffsetCKSSThree), module, GateSeq64::CPMODE_PARAM, 0.0f, 2.0f, 2.0f));
+		addParam(createParam<CKSSThreeInvNoRandom>(Vec(colRulerC4 + 2 + hOffsetCKSS, rowRulerC2 + vOffsetCKSSThree), module, GateSeq64::CPMODE_PARAM, 0.0f, 2.0f, 2.0f));
 
 		// Outputs
 		for (int iSides = 0; iSides < 4; iSides++)

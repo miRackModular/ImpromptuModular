@@ -92,6 +92,7 @@ struct Foundry : Module {
 	
 	// Constants
 	enum EditPSDisplayStateIds {DISP_NORMAL, DISP_MODE_SEQ, DISP_MODE_SONG, DISP_LEN, DISP_REPS, DISP_TRANSPOSE, DISP_ROTATE, DISP_PPQN, DISP_DELAY, DISP_COPY_SEQ, DISP_PASTE_SEQ, DISP_COPY_SONG, DISP_PASTE_SONG, DISP_COPY_SONG_CUST};
+	static constexpr float warningTime = 0.7f;// seconds
 
 	// Need to save
 	int panelTheme = 0;
@@ -210,7 +211,10 @@ struct Foundry : Module {
 	
 	void onRandomize() override {
 		cpSeqLength = getCPMode();
-		seq.randomize();
+		if (isEditingSequence() && !attached)
+			seq.randomize();
+		else if (attached)
+			attachedWarning = (long) (warningTime * engineGetSampleRate() / displayRefreshStepSkips);
 	}
 	
 	
@@ -355,7 +359,6 @@ struct Foundry : Module {
 	void step() override {
 		const float sampleRate = engineGetSampleRate();
 		static const float revertDisplayTime = 0.7f;// seconds
-		static const float warningTime = 0.7f;// seconds
 		static const float showLenInStepsTime = 2.0f;// seconds
 		
 		
@@ -809,7 +812,7 @@ struct Foundry : Module {
 			
 			// Gate, GateProb, Slide and Tied buttons
 			if (gate1Trigger.process(params[GATE_PARAM].value + inputs[GATECV_INPUT].value)) {
-				if (editingSequence && !attached ) {
+				if (editingSequence && !attached) {
 					seq.toggleGate(multiSteps ? cpSeqLength : 1, multiTracks);
 				}
 				else if (attached)
@@ -817,7 +820,7 @@ struct Foundry : Module {
 				displayState = DISP_NORMAL;
 			}		
 			if (gateProbTrigger.process(params[GATE_PROB_PARAM].value + inputs[GATEPCV_INPUT].value)) {
-				if (editingSequence && !attached ) {
+				if (editingSequence && !attached) {
 					if (seq.toggleGateP(multiSteps ? cpSeqLength : 1, multiTracks)) 
 						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 					else if (seq.getAttribute().getGateP())
@@ -828,7 +831,7 @@ struct Foundry : Module {
 				displayState = DISP_NORMAL;
 			}		
 			if (slideTrigger.process(params[SLIDE_BTN_PARAM].value + inputs[SLIDECV_INPUT].value)) {
-				if (editingSequence && !attached ) {
+				if (editingSequence && !attached) {
 					if (seq.toggleSlide(multiSteps ? cpSeqLength : 1, multiTracks))
 						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 					else if (seq.getAttribute().getSlide())
@@ -839,7 +842,7 @@ struct Foundry : Module {
 				displayState = DISP_NORMAL;
 			}		
 			if (tiedTrigger.process(params[TIE_PARAM].value + inputs[TIEDCV_INPUT].value)) {
-				if (editingSequence && !attached ) {
+				if (editingSequence && !attached) {
 					seq.toggleTied(multiSteps ? cpSeqLength : 1, multiTracks);// will clear other attribs if new state is on
 				}
 				else if (attached)
@@ -1548,8 +1551,9 @@ struct FoundryWidget : ModuleWidget {
 		Widget::step();
 	}
 	
-	struct CKSSNotify : CKSS {
-		CKSSNotify() {};
+	struct CKSSNotify : CKSS {// Not randomizable
+		CKSSNotify() {}
+		void randomize() override {}
 		void onChange(EventChange &e) override {
 			((Foundry*)(module))->displayState = Foundry::DISP_NORMAL;
 			if (paramId != Foundry::KEY_GATE_PARAM) {
@@ -1565,7 +1569,7 @@ struct FoundryWidget : ModuleWidget {
 			SVGSwitch::onChange(e);		
 		}
 	};
-	struct CPModeSwitch : CKSSThreeInv {
+	struct CPModeSwitch : CKSSThreeInvNoRandom {// Not randomizable
 		CPModeSwitch() {};
 		void onChange(EventChange &e) override {
 			SVGSwitch::onChange(e);	
@@ -1894,7 +1898,7 @@ struct FoundryWidget : ModuleWidget {
 		
 
 		// Autostep and write
-		addParam(createParamCentered<CKSS>(Vec(columnRulerB0, rowRulerBHigh), module, Foundry::AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f));		
+		addParam(createParamCentered<CKSSNoRandom>(Vec(columnRulerB0, rowRulerBHigh), module, Foundry::AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f));		
 		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB0, rowRulerBLow), Port::INPUT, module, Foundry::WRITE_INPUT, &module->panelTheme));
 	
 		// CV IN inputs

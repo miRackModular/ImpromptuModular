@@ -123,18 +123,21 @@ struct WriteSeq32 : Module {
 
 	
 	void onRandomize() override {
-		indexStep = 0;
-		indexStepStage = 0;
-		indexChannel = 0;
+		// indexStep = 0;
+		// indexStepStage = 0;
+		// indexChannel = 0;
+		// for (int s = 0; s < 32; s++) {
+			// for (int c = 0; c < 4; c++) {
+				// cv[c][s] = quantize((randomUniform() *10.0f) - 4.0f, params[QUANTIZE_PARAM].value > 0.5f);
+				// gates[c][s] = (randomUniform() > 0.5f) ? 1 : 0;
+			// }
+			// cvCPbuffer[s] = 0.0f;
+			// gateCPbuffer[s] = 1;
+		// }
 		for (int s = 0; s < 32; s++) {
-			for (int c = 0; c < 4; c++) {
-				cv[c][s] = quantize((randomUniform() *10.0f) - 4.0f, params[QUANTIZE_PARAM].value > 0.5f);
-				gates[c][s] = (randomUniform() > 0.5f) ? 1 : 0;
-			}
-			cvCPbuffer[s] = 0.0f;
-			gateCPbuffer[s] = 1;
+			cv[indexChannel][s] = quantize((randomUniform() *10.0f) - 4.0f, params[QUANTIZE_PARAM].value > 0.5f);
+			gates[indexChannel][s] = (randomUniform() > 0.5f) ? 1 : 0;
 		}
-		//infoCopyPaste = 0l;
 		pendingPaste = 0;
 	}
 
@@ -653,11 +656,11 @@ struct WriteSeq32Widget : ModuleWidget {
 		
 		// Autostep, sharp/flat and quantize switches
 		// Autostep	
-		addParam(createParam<CKSS>(Vec(columnRuler0+3+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f));
+		addParam(createParam<CKSSNoRandom>(Vec(columnRuler0+3+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f));
 		// Sharp/flat
-		addParam(createParam<CKSS>(Vec(columnRuler4+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::SHARP_PARAM, 0.0f, 1.0f, 1.0f));
+		addParam(createParam<CKSSNoRandom>(Vec(columnRuler4+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::SHARP_PARAM, 0.0f, 1.0f, 1.0f));
 		// Quantize
-		addParam(createParam<CKSS>(Vec(columnRuler5+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::QUANTIZE_PARAM, 0.0f, 1.0f, 1.0f));
+		addParam(createParam<CKSSNoRandom>(Vec(columnRuler5+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::QUANTIZE_PARAM, 0.0f, 1.0f, 1.0f));
 
 		// Window LED buttons
 		static const float wLightsPosX = 140.0f;
@@ -710,7 +713,7 @@ struct WriteSeq32Widget : ModuleWidget {
 		addParam(createDynamicParam<IMPushButton>(Vec(columnRuler0-10, rowRuler1+offsetTL1105), module, WriteSeq32::COPY_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		addParam(createDynamicParam<IMPushButton>(Vec(columnRuler0+20, rowRuler1+offsetTL1105), module, WriteSeq32::PASTE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		// Paste sync (and light)
-		addParam(createParam<CKSSThreeInv>(Vec(columnRuler0+hOffsetCKSS, rowRuler2+vOffsetCKSSThree), module, WriteSeq32::PASTESYNC_PARAM, 0.0f, 2.0f, 0.0f));	
+		addParam(createParam<CKSSThreeInvNoRandom>(Vec(columnRuler0+hOffsetCKSS, rowRuler2+vOffsetCKSSThree), module, WriteSeq32::PASTESYNC_PARAM, 0.0f, 2.0f, 0.0f));	
 		addChild(createLight<SmallLight<RedLight>>(Vec(columnRuler0 + 41, rowRuler2 + 14), module, WriteSeq32::PENDING_LIGHT));		
 		// Run CV input
 		addInput(createDynamicPort<IMPort>(Vec(columnRuler0, rowRuler3), Port::INPUT, module, WriteSeq32::RUNCV_INPUT, &module->panelTheme));
@@ -750,7 +753,7 @@ struct WriteSeq32Widget : ModuleWidget {
 		// Steps knob
 		addParam(createDynamicParam<IMBigSnapKnob>(Vec(columnRuler3+offsetIMBigKnob, rowRuler1+offsetIMBigKnob), module, WriteSeq32::STEPS_PARAM, 1.0f, 32.0f, 32.0f, &module->panelTheme));		
 		// Monitor
-		addParam(createParam<CKSSH>(Vec(columnRuler3+hOffsetCKSSH, rowRuler2+vOffsetCKSSH), module, WriteSeq32::MONITOR_PARAM, 0.0f, 1.0f, 0.0f));		
+		addParam(createParam<CKSSHNoRandom>(Vec(columnRuler3+hOffsetCKSSH, rowRuler2+vOffsetCKSSH), module, WriteSeq32::MONITOR_PARAM, 0.0f, 1.0f, 0.0f));		
 		// Write input
 		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler3), Port::INPUT, module, WriteSeq32::WRITE_INPUT, &module->panelTheme));
 		

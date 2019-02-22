@@ -268,24 +268,34 @@ struct PhraseSeq32 : Module {
 	
 	
 	void onRandomize() override {
-		stepConfig = getStepConfig(params[CONFIG_PARAM].value);
-		runModeSong = randomu32() % 5;
-		stepIndexEdit = 0;
-		phraseIndexEdit = 0;
-		sequence = randomu32() % 32;
-		phrases = 1 + (randomu32() % 32);
-		for (int i = 0; i < 32; i++) {
-			sequences[i].randomize(16 * stepConfig, NUM_MODES);
-			phrase[i] = randomu32() % 32;
+		// stepConfig = getStepConfig(params[CONFIG_PARAM].value);
+		// runModeSong = randomu32() % 5;
+		// stepIndexEdit = 0;
+		// phraseIndexEdit = 0;
+		// sequence = randomu32() % 32;
+		// phrases = 1 + (randomu32() % 32);
+		// for (int i = 0; i < 32; i++) {
+			// sequences[i].randomize(16 * stepConfig, NUM_MODES);
+			// phrase[i] = randomu32() % 32;
+			// for (int s = 0; s < 32; s++) {
+				// cv[i][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
+				// attributes[i][s].randomize();
+				// if (attributes[i][s].getTied()) {
+					// activateTiedStep(i, s);
+				// }
+			// }
+		// }
+		// initRun();
+		if (isEditingSequence()) {
 			for (int s = 0; s < 32; s++) {
-				cv[i][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
-				attributes[i][s].randomize();
-				if (attributes[i][s].getTied()) {
-					activateTiedStep(i, s);
+				cv[sequence][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
+				attributes[sequence][s].randomize();
+				if (attributes[sequence][s].getTied()) {
+					activateTiedStep(sequence, s);
 				}
 			}
+			sequences[sequence].randomize(16 * stepConfig, NUM_MODES);// ok to use stepConfig since CONFIG_PARAM is not randomizable		
 		}
-		initRun();
 	}
 	
 	
@@ -1794,8 +1804,9 @@ struct PhraseSeq32Widget : ModuleWidget {
 		Widget::step();
 	}
 	
-	struct CKSSNotify : CKSS {
-		CKSSNotify() {};
+	struct CKSSNotify : CKSS {// Not randomizable
+		CKSSNotify() {}
+		void randomize() override {}
 		void onDragStart(EventDragStart &e) override {
 			ToggleSwitch::onDragStart(e);
 			((PhraseSeq32*)(module))->stepConfigSync = 2;// signal a sync from switch so that steps get initialized
@@ -1978,7 +1989,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 		static const int columnRulerMK1 = 366;// Display column 
 		
 		// Edit mode switch
-		addParam(createParam<CKSS>(Vec(columnRulerMK0 + 2 + hOffsetCKSS, rowRulerMK0 + vOffsetCKSS), module, PhraseSeq32::EDIT_PARAM, 0.0f, 1.0f, 1.0f));
+		addParam(createParam<CKSSNoRandom>(Vec(columnRulerMK0 + 2 + hOffsetCKSS, rowRulerMK0 + vOffsetCKSS), module, PhraseSeq32::EDIT_PARAM, 0.0f, 1.0f, 1.0f));
 		// Sequence display
 		SequenceDisplayWidget *displaySequence = new SequenceDisplayWidget();
 		displaySequence->box.pos = Vec(columnRulerMK1-15, rowRulerMK0 + 3 + vOffsetDisplay);
@@ -1989,7 +2000,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRulerMK2 + offsetCKD6b, rowRulerMK0 + 0 + offsetCKD6b), module, PhraseSeq32::RUNMODE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 
 		// Autostep
-		addParam(createParam<CKSS>(Vec(columnRulerMK0 + 2 + hOffsetCKSS, rowRulerMK1 + 7 + vOffsetCKSS), module, PhraseSeq32::AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f));		
+		addParam(createParam<CKSSNoRandom>(Vec(columnRulerMK0 + 2 + hOffsetCKSS, rowRulerMK1 + 7 + vOffsetCKSS), module, PhraseSeq32::AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f));		
 		// Sequence knob
 		addParam(createDynamicParam<SequenceKnob>(Vec(columnRulerMK1 + 1 + offsetIMBigKnob, rowRulerMK0 + 55 + offsetIMBigKnob), module, PhraseSeq32::SEQUENCE_PARAM, -INFINITY, INFINITY, 0.0f, &module->panelTheme));		
 		// Transpose/rotate button
@@ -2005,7 +2016,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 		addParam(createDynamicParam<IMPushButton>(Vec(columnRulerMK1 - 10, rowRulerMK2 + 5 + offsetTL1105), module, PhraseSeq32::COPY_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		addParam(createDynamicParam<IMPushButton>(Vec(columnRulerMK1 + 20, rowRulerMK2 + 5 + offsetTL1105), module, PhraseSeq32::PASTE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		// Copy-paste mode switch (3 position)
-		addParam(createParam<CKSSThreeInv>(Vec(columnRulerMK2 + hOffsetCKSS + 1, rowRulerMK2 - 3 + vOffsetCKSSThree), module, PhraseSeq32::CPMODE_PARAM, 0.0f, 2.0f, 2.0f));	// 0.0f is top position
+		addParam(createParam<CKSSThreeInvNoRandom>(Vec(columnRulerMK2 + hOffsetCKSS + 1, rowRulerMK2 - 3 + vOffsetCKSSThree), module, PhraseSeq32::CPMODE_PARAM, 0.0f, 2.0f, 2.0f));	// 0.0f is top position
 
 		
 		

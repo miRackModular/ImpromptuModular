@@ -240,23 +240,33 @@ struct PhraseSeq16 : Module {
 
 	
 	void onRandomize() override {
-		runModeSong = randomu32() % 5;
-		stepIndexEdit = 0;
-		phraseIndexEdit = 0;
-		sequence = randomu32() % 16;
-		phrases = 1 + (randomu32() % 16);
-		for (int i = 0; i < 16; i++) {
-			sequences[i].randomize(16, NUM_MODES - 1);
-			phrase[i] = randomu32() % 16;
+		// runModeSong = randomu32() % 5;
+		// stepIndexEdit = 0;
+		// phraseIndexEdit = 0;
+		// sequence = randomu32() % 16;
+		// phrases = 1 + (randomu32() % 16);
+		// for (int i = 0; i < 16; i++) {
+			// sequences[i].randomize(16, NUM_MODES - 1);
+			// phrase[i] = randomu32() % 16;
+			// for (int s = 0; s < 16; s++) {
+				// cv[i][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
+				// attributes[i][s].randomize();
+				// if (attributes[i][s].getTied()) {
+					// activateTiedStep(i, s);
+				// }
+			// }
+		// }
+		// initRun();
+		if (isEditingSequence()) {
 			for (int s = 0; s < 16; s++) {
-				cv[i][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
-				attributes[i][s].randomize();
-				if (attributes[i][s].getTied()) {
-					activateTiedStep(i, s);
+				cv[sequence][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
+				attributes[sequence][s].randomize();
+				if (attributes[sequence][s].getTied()) {
+					activateTiedStep(sequence, s);
 				}
 			}
+			sequences[sequence].randomize(16, NUM_MODES - 1);
 		}
-		initRun();
 	}
 	
 	
@@ -1890,7 +1900,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 		static const int columnRulerMK2 = columnRulerT3;// Run mode column
 		
 		// Edit mode switch
-		addParam(createParam<CKSS>(Vec(columnRulerMK0 + hOffsetCKSS, rowRulerMK0 + vOffsetCKSS), module, PhraseSeq16::EDIT_PARAM, 0.0f, 1.0f, 1.0f));
+		addParam(createParam<CKSSNoRandom>(Vec(columnRulerMK0 + hOffsetCKSS, rowRulerMK0 + vOffsetCKSS), module, PhraseSeq16::EDIT_PARAM, 0.0f, 1.0f, 1.0f));
 		// Sequence display
 		SequenceDisplayWidget *displaySequence = new SequenceDisplayWidget();
 		displaySequence->box.pos = Vec(columnRulerMK1-15, rowRulerMK0 + 3 + vOffsetDisplay);
@@ -1915,7 +1925,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 		addParam(createDynamicParam<IMPushButton>(Vec(columnRulerMK1 - 10, rowRulerMK2 + 5 + offsetTL1105), module, PhraseSeq16::COPY_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		addParam(createDynamicParam<IMPushButton>(Vec(columnRulerMK1 + 20, rowRulerMK2 + 5 + offsetTL1105), module, PhraseSeq16::PASTE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		// Copy-paste mode switch (3 position)
-		addParam(createParam<CKSSThreeInv>(Vec(columnRulerMK2 + hOffsetCKSS + 1, rowRulerMK2 - 3 + vOffsetCKSSThree), module, PhraseSeq16::CPMODE_PARAM, 0.0f, 2.0f, 2.0f));	// 0.0f is top position
+		addParam(createParam<CKSSThreeInvNoRandom>(Vec(columnRulerMK2 + hOffsetCKSS + 1, rowRulerMK2 - 3 + vOffsetCKSSThree), module, PhraseSeq16::CPMODE_PARAM, 0.0f, 2.0f, 2.0f));	// 0.0f is top position
 
 		
 		
@@ -1966,7 +1976,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 		// Slide knob
 		addParam(createDynamicParam<IMSmallKnob>(Vec(columnRulerB3 + offsetIMSmallKnob, rowRulerB1 + offsetIMSmallKnob), module, PhraseSeq16::SLIDE_KNOB_PARAM, 0.0f, 2.0f, 0.2f, &module->panelTheme));
 		// Autostep
-		addParam(createParam<CKSS>(Vec(columnRulerB4 + hOffsetCKSS, rowRulerB1 + vOffsetCKSS), module, PhraseSeq16::AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f));		
+		addParam(createParam<CKSSNoRandom>(Vec(columnRulerB4 + hOffsetCKSS, rowRulerB1 + vOffsetCKSS), module, PhraseSeq16::AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f));		
 		// CV in
 		addInput(createDynamicPort<IMPort>(Vec(columnRulerB5, rowRulerB1), Port::INPUT, module, PhraseSeq16::CV_INPUT, &module->panelTheme));
 		// Clock

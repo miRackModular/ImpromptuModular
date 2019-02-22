@@ -911,12 +911,14 @@ struct ClockedWidget : ModuleWidget {
 		}
 	};
 	struct IMBigSnapKnobNotify : IMBigSnapKnob {
-		IMBigSnapKnobNotify() {};
+		IMBigSnapKnobNotify() {}
+		void randomize() override {ParamWidget::randomize();}
 		void onChange(EventChange &e) override {
 			int dispIndex = 0;
-			if ( (paramId >= Clocked::RATIO_PARAMS + 1) && (paramId <= Clocked::RATIO_PARAMS + 3) )
+			if ( (paramId >= Clocked::RATIO_PARAMS + 1) && (paramId <= Clocked::RATIO_PARAMS + 3) ) {
 				dispIndex = paramId - Clocked::RATIO_PARAMS;
-			((Clocked*)(module))->syncRatios[dispIndex] = true;
+				((Clocked*)(module))->syncRatios[dispIndex] = true;
+			}
 			((Clocked*)(module))->notifyInfo[dispIndex] = 0l;
 			SVGKnob::onChange(e);		
 		}
@@ -979,7 +981,7 @@ struct ClockedWidget : ModuleWidget {
 		// In input
 		addInput(createDynamicPort<IMPort>(Vec(colRulerT2, rowRuler0), Port::INPUT, module, Clocked::BPM_INPUT, &module->panelTheme));
 		// Master BPM knob
-		addParam(createDynamicParam<IMBigSnapKnob>(Vec(colRulerT3 + 1 + offsetIMBigKnob, rowRuler0 + offsetIMBigKnob), module, Clocked::RATIO_PARAMS + 0, (float)(module->bpmMin), (float)(module->bpmMax), 120.0f, &module->panelTheme));// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
+		addParam(createDynamicParam<IMBigSnapKnobNotify>(Vec(colRulerT3 + 1 + offsetIMBigKnob, rowRuler0 + offsetIMBigKnob), module, Clocked::RATIO_PARAMS + 0, (float)(module->bpmMin), (float)(module->bpmMax), 120.0f, &module->panelTheme));// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		// BPM display
 		displayRatios[0] = new RatioDisplayWidget();
 		displayRatios[0]->box.pos = Vec(colRulerT4 + 11, rowRuler0 + vOffsetDisplay);

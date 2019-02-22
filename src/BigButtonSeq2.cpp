@@ -114,7 +114,10 @@ struct BigButtonSeq2 : Module {
 	inline void writeCV(int chan, float cvValue) {cv[chan][bank[chan]][indexStep] = cvValue;}
 	inline void writeCV(int chan, int bnk, int step, float cvValue) {cv[chan][bnk][step] = cvValue;}
 	inline void sampleOutput(int chan) {sampleHoldBuf[chan] = cv[chan][bank[chan]][indexStep];}
-
+	inline int calcChan() {
+		float chanInputValue = inputs[CHAN_INPUT].value / 10.0f * (6.0f - 1.0f);
+		return (int) clamp(roundf(params[CHAN_PARAM].value + chanInputValue), 0.0f, (6.0f - 1.0f));		
+	}
 
 	
 	BigButtonSeq2() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {		
@@ -145,15 +148,19 @@ struct BigButtonSeq2 : Module {
 
 
 	void onRandomize() override {
-		indexStep = randomu32() % 128;
-		for (int c = 0; c < 6; c++) {
-			bank[c] = randomu32() % 2;
-			for (int b = 0; b < 2; b++) {
-				randomizeGates(c, b);
-				for (int s = 0; s < 128; s++)
-					writeCV(c, b, s, ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f);
-			}
-		}
+		// indexStep = randomu32() % 128;
+		// for (int c = 0; c < 6; c++) {
+			// bank[c] = randomu32() % 2;
+			// for (int b = 0; b < 2; b++) {
+				// randomizeGates(c, b);
+				// for (int s = 0; s < 128; s++)
+					// writeCV(c, b, s, ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f);
+			// }
+		// }
+		int chanRnd = calcChan();
+		randomizeGates(chanRnd, bank[chanRnd]);
+		for (int s = 0; s < 128; s++)
+			writeCV(chanRnd, bank[chanRnd], s, ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f);
 	}
 
 	
@@ -330,8 +337,7 @@ struct BigButtonSeq2 : Module {
 		length = (int) clamp(roundf( params[LEN_PARAM].value + ( inputs[LEN_INPUT].active ? (inputs[LEN_INPUT].value / 10.0f * (128.0f - 1.0f)) : 0.0f ) ), 0.0f, (128.0f - 1.0f)) + 1;	
 
 		// Channel
-		float chanInputValue = inputs[CHAN_INPUT].value / 10.0f * (6.0f - 1.0f);
-		channel = (int) clamp(roundf(params[CHAN_PARAM].value + chanInputValue), 0.0f, (6.0f - 1.0f));		
+		channel = calcChan();		
 		
 		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {		
 		
@@ -712,7 +718,7 @@ struct BigButtonSeq2Widget : ModuleWidget {
 		// Length jack
 		addInput(createDynamicPortCentered<IMPort>(Vec(colRulerCenter + clearAndDelButtonOffsetX, rowRuler1), Port::INPUT, module, BigButtonSeq2::LEN_INPUT, &module->panelTheme));
 		// Display switch
-		addParam(createParamCentered<CKSSH>(Vec(colRulerT5 + lengthDisplayOffsetX, rowRuler1 - 12), module, BigButtonSeq2::DISPMODE_PARAM, 0.0f, 1.0f, 0.0f));		
+		addParam(createParamCentered<CKSSHNoRandom>(Vec(colRulerT5 + lengthDisplayOffsetX, rowRuler1 - 12), module, BigButtonSeq2::DISPMODE_PARAM, 0.0f, 1.0f, 0.0f));		
 
 
 		// Metronome light

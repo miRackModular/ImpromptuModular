@@ -100,6 +100,11 @@ struct IMPort : DynamicSVGPort {
 
 // Buttons and switches
 
+struct CKSSNoRandom : CKSS {
+	CKSSNoRandom() {}
+	void randomize() override {}
+};
+
 struct CKSSH : SVGSwitch, ToggleSwitch {
 	CKSSH() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/comp/CKSSH_0.svg")));
@@ -107,6 +112,11 @@ struct CKSSH : SVGSwitch, ToggleSwitch {
 		sw->wrap();
 		box.size = sw->box.size;
 	}
+};
+
+struct CKSSHNoRandom : CKSSH {
+	CKSSHNoRandom() {}
+	void randomize() override {}
 };
 
 struct CKSSHThree : SVGSwitch, ToggleSwitch {
@@ -125,6 +135,11 @@ struct CKSSThreeInv : SVGSwitch, ToggleSwitch {
 		addFrame(SVG::load(assetGlobal("res/ComponentLibrary/CKSSThree_1.svg")));
 		addFrame(SVG::load(assetGlobal("res/ComponentLibrary/CKSSThree_0.svg")));
 	}
+};
+
+struct CKSSThreeInvNoRandom : CKSSThreeInv {
+	CKSSThreeInvNoRandom() {}
+	void randomize() override {}
 };
 
 struct IMBigPushButton : DynamicSVGSwitch, MomentarySwitch {
@@ -179,6 +194,7 @@ struct IMBigSnapKnob : IMBigKnob {
 		snap = true;
 		smooth = false;
 	}
+	void randomize() override {}
 };
 
 struct IMBigKnobInf : IMKnob {
@@ -230,6 +246,7 @@ struct IMSixPosBigKnob : IMBigSnapKnob {
 		minAngle = -0.4*M_PI;
 		maxAngle = 0.4*M_PI;
 	}
+	void randomize() override {}
 };
 
 struct IMTactile : DynamicIMTactile {

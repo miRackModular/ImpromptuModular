@@ -99,7 +99,10 @@ struct BigButtonSeq : Module {
 	inline void setGate(int chan) {gates[chan][bank[chan]] |= (((uint64_t)1) << (uint64_t)indexStep);}
 	inline void clearGate(int chan) {gates[chan][bank[chan]] &= ~(((uint64_t)1) << (uint64_t)indexStep);}
 	inline bool getGate(int chan) {return !((gates[chan][bank[chan]] & (((uint64_t)1) << (uint64_t)indexStep)) == 0);}
-
+	inline int calcChan() {
+		float chanInputValue = inputs[CHAN_INPUT].value / 10.0f * (6.0f - 1.0f);
+		return (int) clamp(roundf(params[CHAN_PARAM].value + chanInputValue), 0.0f, (6.0f - 1.0f));		
+	}
 	
 	BigButtonSeq() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {		
 		onReset();
@@ -124,12 +127,14 @@ struct BigButtonSeq : Module {
 
 
 	void onRandomize() override {
-		indexStep = randomu32() % 64;
-		for (int c = 0; c < 6; c++) {
-			bank[c] = randomu32() % 2;
-			gates[c][0] = randomu64();
-			gates[c][1] = randomu64();
-		}
+		// indexStep = randomu32() % 64;
+		// for (int c = 0; c < 6; c++) {
+			// bank[c] = randomu32() % 2;
+			// gates[c][0] = randomu64();
+			// gates[c][1] = randomu64();
+		// }
+		int chanRnd = calcChan();
+		gates[chanRnd][bank[chanRnd]] = randomu64();
 	}
 
 	
@@ -236,8 +241,7 @@ struct BigButtonSeq : Module {
 		len = (int) clamp(roundf( params[LEN_PARAM].value + ( inputs[LEN_INPUT].active ? (inputs[LEN_INPUT].value / 10.0f * (64.0f - 1.0f)) : 0.0f ) ), 0.0f, (64.0f - 1.0f)) + 1;	
 
 		// Chan
-		float chanInputValue = inputs[CHAN_INPUT].value / 10.0f * (6.0f - 1.0f);
-		chan = (int) clamp(roundf(params[CHAN_PARAM].value + chanInputValue), 0.0f, (6.0f - 1.0f));		
+		chan = calcChan();	
 		
 		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
 
