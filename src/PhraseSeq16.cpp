@@ -93,7 +93,7 @@ struct PhraseSeq16 : Module {
 		SLIDE_LIGHT,
 		ATTACH_LIGHT,
 		PENDING_LIGHT,// no longer used
-		GATE1_PROB_LIGHT,
+		ENUMS(GATE1_PROB_LIGHT, 2),// room for GreenRed
 		TIE_LIGHT,
 		KEYNOTE_LIGHT,
 		ENUMS(KEYGATE_LIGHT, 2),// room for GreenRed
@@ -1385,7 +1385,7 @@ struct PhraseSeq16 : Module {
 											// [2] CV is set to 0V when not running and in song mode, so cv[][] makes no sense to display
 				setGateLight(false, GATE1_LIGHT);
 				setGateLight(false, GATE2_LIGHT);
-				lights[GATE1_PROB_LIGHT].value = 0.0f;
+				setGreenRed(GATE1_PROB_LIGHT, 0.0f, 0.0f);
 				lights[SLIDE_LIGHT].value = 0.0f;
 				lights[TIE_LIGHT].value = 0.0f;
 			}
@@ -1396,7 +1396,7 @@ struct PhraseSeq16 : Module {
 				//
 				setGateLight(attributesVal.getGate1(), GATE1_LIGHT);
 				setGateLight(attributesVal.getGate2(), GATE2_LIGHT);
-				lights[GATE1_PROB_LIGHT].value = attributesVal.getGate1P() ? 1.0f : 0.0f;
+				setGreenRed(GATE1_PROB_LIGHT, attributesVal.getGate1P() ? 1.0f : 0.0f, attributesVal.getGate1P() ? 1.0f : 0.0f);
 				lights[SLIDE_LIGHT].value = attributesVal.getSlide() ? 1.0f : 0.0f;
 				if (tiedWarning > 0l) {
 					bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
@@ -1505,10 +1505,10 @@ struct PhraseSeq16 : Module {
 			lights[lightIndex + 0].value = 0.0f;
 			lights[lightIndex + 1].value = 0.0f;
 		}
-		else if (pulsesPerStep == 1) {
+		/*else if (pulsesPerStep == 1) {
 			lights[lightIndex + 0].value = 0.0f;
 			lights[lightIndex + 1].value = 1.0f;
-		}
+		}*/
 		else {
 			lights[lightIndex + 0].value = lightIndex == GATE1_LIGHT ? 1.0f : 0.2f;
 			lights[lightIndex + 1].value = lightIndex == GATE1_LIGHT ? 0.2f : 1.0f;
@@ -1977,7 +1977,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 
 		
 		// Gate 1 probability light and button
-		addChild(createLight<MediumLight<RedLight>>(Vec(columnRulerB0 + posLEDvsButton + offsetMediumLight, rowRulerB1 + offsetMediumLight), module, PhraseSeq16::GATE1_PROB_LIGHT));		
+		addChild(createLight<MediumLight<GreenRedLight>>(Vec(columnRulerB0 + posLEDvsButton + offsetMediumLight, rowRulerB1 + offsetMediumLight), module, PhraseSeq16::GATE1_PROB_LIGHT));		
 		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRulerB0 + offsetCKD6b, rowRulerB1 + offsetCKD6b), module, PhraseSeq16::GATE1_PROB_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		// Gate 1 probability knob
 		addParam(createDynamicParam<IMSmallKnob>(Vec(columnRulerB1 + offsetIMSmallKnob, rowRulerB1 + offsetIMSmallKnob), module, PhraseSeq16::GATE1_KNOB_PARAM, 0.0f, 1.0f, 1.0f, &module->panelTheme));

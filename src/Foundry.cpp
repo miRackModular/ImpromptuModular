@@ -78,7 +78,7 @@ struct Foundry : Module {
 		ENUMS(KEY_LIGHTS, 12 * 2),// room for GreenRed
 		RUN_LIGHT,
 		RESET_LIGHT,
-		GATE_LIGHT,
+		ENUMS(GATE_LIGHT, 2),// room for GreenRed
 		SLIDE_LIGHT,
 		ENUMS(GATE_PROB_LIGHT, 2),// room for GreenRed
 		TIE_LIGHT,
@@ -1040,7 +1040,10 @@ struct Foundry : Module {
 			}
 
 			// Gate, Tied, GateProb, and Slide lights 
-			lights[GATE_LIGHT].value = attributesVisual.getGate() ? 1.0f : 0.0f;
+			if (!attributesVisual.getGate())
+				setGreenRed(GATE_LIGHT, 0.0f, 0.0f);
+			else 
+				setGreenRed(GATE_LIGHT, /*seq.getPulsesPerStep() == 1 ? 0.0f :*/ 1.0f, /*seq.getPulsesPerStep() == 1 ? 1.0f :*/ 0.2f);
 			if (tiedWarning > 0l) {
 				bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
 				lights[TIE_LIGHT].value = (warningFlashState) ? 1.0f : 0.0f;
@@ -1859,7 +1862,7 @@ struct FoundryWidget : ModuleWidget {
 		addParam(createParamCentered<CKSSNotify>(Vec(colRulerKM, rowRulerMB0), module, Foundry::KEY_GATE_PARAM, 0.0f, 1.0f, 1.0f));
 		
 		// Gate 1 light and button
-		addChild(createLightCentered<MediumLight<RedLight>>(Vec(columnRulerMB1 + posLEDvsButton, rowRulerMB0), module, Foundry::GATE_LIGHT));		
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(Vec(columnRulerMB1 + posLEDvsButton, rowRulerMB0), module, Foundry::GATE_LIGHT));		
 		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerMB1, rowRulerMB0), module, Foundry::GATE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		// Tie light and button
 		addChild(createLightCentered<MediumLight<RedLight>>(Vec(columnRulerMB2 + posLEDvsButton, rowRulerMB0), module, Foundry::TIE_LIGHT));		
