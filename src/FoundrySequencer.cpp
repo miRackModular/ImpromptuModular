@@ -49,7 +49,7 @@ void Sequencer::setEnd(bool multiTracks) {
 		}
 	}
 }
-bool Sequencer::setGateType(int keyn, int multiSteps, bool autostepClick, bool multiTracks) {// Third param is for right-click autostep. Returns success
+bool Sequencer::setGateType(int keyn, int multiSteps, float sampleRate, bool autostepClick, bool multiTracks) {// Third param is for right-click autostep. Returns success
 	int newMode = keyIndexToGateTypeEx(keyn);
 	if (newMode == -1) 
 		return false;
@@ -62,8 +62,10 @@ bool Sequencer::setGateType(int keyn, int multiSteps, bool autostepClick, bool m
 	}
 	if (autostepClick){ // if right-click then move to next step
 		moveStepIndexEdit(1, false);
+		editingGateKeyLight = keyn;
+		editingType = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 		if (windowIsModPressed() && multiSteps < 2)
-			setGateType(keyn, 1, false, multiTracks);
+			setGateType(keyn, 1, sampleRate, false, multiTracks);
 	}
 	return true;
 }
@@ -495,6 +497,7 @@ void Sequencer::reset() {
 		editingGate[trkn] = 0ul;
 		sek[trkn].reset();
 	}
+	editingType = 0ul;
 }
 
 

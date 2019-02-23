@@ -797,7 +797,7 @@ struct Foundry : Module {
 					if (editingSequence && !attached && displayState != DISP_PPQN) {
 						bool autostepClick = params[KEY_PARAMS + keyn].value > 1.5f;// if right-click
 						if (isEditingGates()) {
-							if (!seq.setGateType(keyn, multiSteps ? cpSeqLength : 1, autostepClick, multiTracks))
+							if (!seq.setGateType(keyn, multiSteps ? cpSeqLength : 1, sampleRate, autostepClick, multiTracks))
 								displayState = DISP_PPQN;
 						}
 						else {
@@ -994,23 +994,37 @@ struct Foundry : Module {
 			float keyCV = cvVisual + 10.0f;// to properly handle negative note voltages
 			int keyLightIndex = clamp( (int)((keyCV - floor(keyCV)) * 12.0f + 0.5f),  0,  11);
 			for (int i = 0; i < 12; i++) {
-				float red = 0.0f;
 				float green = 0.0f;
+				float red = 0.0f;
 				if (displayState == DISP_PPQN) {
 					if (seq.keyIndexToGateTypeEx(i) != -1) {
-						red = 1.0f;
 						green =	1.0f;
+						red = 0.2f;
 					}
 				}
 				else if (editingSequence || attached) {			
 					if (isEditingGates()) {
-						int modeLightIndex = seq.getGateType();
-						if (i == modeLightIndex) {
-							red = 1.0f;
-							green =	1.0f;
+						green = 1.0f;
+						red = 0.2f;
+						unsigned long editingType = seq.getEditingType();
+						if (editingType > 0ul) {
+							if (i == seq.getEditingGateKeyLight()) {
+								float dimMult = ((float) editingType / (float)(Sequencer::gateTime * sampleRate / displayRefreshStepSkips));
+								green *= dimMult;
+								red *= dimMult;
+							}
+							else {
+								green = 0.0f; 
+								red = 0.0f;
+							}
 						}
-						else
-							red = (i == keyLightIndex ? 0.1f : 0.0f);
+						else {
+							int modeLightIndex = seq.getGateType();
+							if (i != modeLightIndex) {// show dim note if gatetype is different than note
+								green = 0.0f;
+								red = (i == keyLightIndex ? 0.1f : 0.0f);
+							}
+						}
 					}
 					else {
 						if (tiedWarning > 0l) {
@@ -1076,7 +1090,7 @@ struct Foundry : Module {
 				}
 			}				
 				
-			seq.stepEditingGate();
+			seq.stepEditingGate();// also steps editingType
 			if (tiedWarning > 0l)
 				tiedWarning--;
 			if (attachedWarning > 0l)

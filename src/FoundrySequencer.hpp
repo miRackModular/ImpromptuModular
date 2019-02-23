@@ -32,6 +32,7 @@ class Sequencer {
 	SequencerKernel sek[NUM_TRACKS];
 	
 	// No need to save	
+	unsigned long editingType;// similar to editingGate, but just for showing remanent gate type (nothing played); uses editingGateKeyLight
 	unsigned long editingGate[NUM_TRACKS];// 0 when no edit gate, downward step counter timer when edit gate
 	float editingGateCV[NUM_TRACKS];// no need to initialize, this goes with editingGate (output this only when editingGate > 0)
 	int editingGateCV2[NUM_TRACKS];// no need to initialize, this goes with editingGate (output this only when editingGate > 0)
@@ -67,6 +68,8 @@ class Sequencer {
 	inline int getTransposeOffset() {return sek[trackIndexEdit].getTransposeOffset(seqIndexEdit);}
 	inline int getRotateOffset() {return sek[trackIndexEdit].getRotateOffset(seqIndexEdit);}
 	inline int getPhraseSeq() {return sek[trackIndexEdit].getPhraseSeq(phraseIndexEdit);}
+	inline int getEditingGateKeyLight() {return editingGateKeyLight;}
+	inline unsigned long getEditingType() {return editingType;}
 	
 	
 	inline void setEditingGateKeyLight(int _editingGateKeyLight) {editingGateKeyLight = _editingGateKeyLight;}
@@ -86,7 +89,7 @@ class Sequencer {
 	void setLength(int length, bool multiTracks);
 	void setBegin(bool multiTracks);
 	void setEnd(bool multiTracks);
-	bool setGateType(int keyn, int multiSteps, bool autostepClick, bool multiTracks); // Third param is for right-click autostep. Returns success
+	bool setGateType(int keyn, int multiSteps, float sampleRate, bool autostepClick, bool multiTracks); // Third param is for right-click autostep. Returns success
 	
 	
 	void initSlideVal(int multiStepsCount, bool multiTracks);
@@ -199,11 +202,13 @@ class Sequencer {
 	}
 	
 	
-	inline void stepEditingGate() {
+	inline void stepEditingGate() {// also steps editingType 
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
 			if (editingGate[trkn] > 0ul)
 				editingGate[trkn]--;
 		}
+		if (editingType > 0ul)
+			editingType--;
 	}
 	
 	

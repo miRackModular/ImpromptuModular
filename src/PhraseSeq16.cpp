@@ -131,6 +131,7 @@ struct PhraseSeq16 : Module {
 	unsigned long editingGate;// 0 when no edit gate, downward step counter timer when edit gate
 	float editingGateCV;// no need to initialize, this is a companion to editingGate (output this only when editingGate > 0)
 	int editingGateKeyLight;// no need to initialize, this is a companion to editingGate (use this only when editingGate > 0)
+	unsigned long editingType;// similar to editingGate, but just for showing remanent gate type (nothing played); uses editingGateKeyLight
 	unsigned long stepIndexRunHistory;
 	unsigned long phraseIndexRunHistory;
 	int displayState;
@@ -223,6 +224,7 @@ struct PhraseSeq16 : Module {
 		countCP = 16;
 		startCP = 0;
 		editingGate = 0ul;
+		editingType = 0ul;
 		infoCopyPaste = 0l;
 		displayState = DISP_NORMAL;
 		slideStepsRemain = 0ul;
@@ -1047,6 +1049,8 @@ struct PhraseSeq16 : Module {
 								attributes[sequence][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
 								if (params[KEY_PARAMS + i].value > 1.5f) {// if right-click
 									stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
+									editingType = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+									editingGateKeyLight = i;
 									if (windowIsModPressed())
 										attributes[sequence][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
 								}
@@ -1324,11 +1328,23 @@ struct PhraseSeq16 : Module {
 			else if (editingGateLength != 0l && editingSequence) {
 				int modeLightIndex = gateModeToKeyLightIndex(attributes[sequence][stepIndexEdit], editingGateLength > 0l);
 				for (int i = 0; i < 12; i++) {
-					if (i == modeLightIndex) {
-						setGreenRed(KEY_LIGHTS + i * 2, editingGateLength > 0l ? 1.0f : 0.2f, editingGateLength > 0l ? 0.2f : 1.0f);
+					float green = editingGateLength > 0l ? 1.0f : 0.2f;
+					float red = editingGateLength > 0l ? 0.2f : 1.0f;
+					if (editingType > 0ul) {
+						if (i == editingGateKeyLight) {
+							float dimMult = ((float) editingType / (float)(gateTime * sampleRate / displayRefreshStepSkips));
+							setGreenRed(KEY_LIGHTS + i * 2, green * dimMult, red * dimMult);
+						}
+						else
+							setGreenRed(KEY_LIGHTS + i * 2, 0.0f, 0.0f);
 					}
-					else { 
-						setGreenRed(KEY_LIGHTS + i * 2, 0.0f, (i == keyLightIndex ? 0.1f : 0.0f));
+					else {
+						if (i == modeLightIndex) {
+							setGreenRed(KEY_LIGHTS + i * 2, green, red);
+						}
+						else { // show dim note if gatetype is different than note
+							setGreenRed(KEY_LIGHTS + i * 2, 0.0f, (i == keyLightIndex ? 0.1f : 0.0f));
+						}
 					}
 				}
 			}
@@ -1407,6 +1423,8 @@ struct PhraseSeq16 : Module {
 			
 			if (editingGate > 0ul)
 				editingGate--;
+			if (editingType > 0ul)
+				editingType--;
 			if (infoCopyPaste != 0l) {
 				if (infoCopyPaste > 0l)
 					infoCopyPaste --;
