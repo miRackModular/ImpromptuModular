@@ -1056,7 +1056,7 @@ struct PhraseSeq32 : Module {
 							if (newMode != -1) {
 								editingPpqn = 0l;
 								attributes[sequence][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
-								if (params[KEY_PARAMS + i].value > 1.5f) {
+								if (params[KEY_PARAMS + i].value > 1.5f) {// if right-click
 									stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
 									if (windowIsModPressed())
 										attributes[sequence][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
@@ -1066,7 +1066,7 @@ struct PhraseSeq32 : Module {
 								editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
 						}
 						else if (attributes[sequence][stepIndexEdit].getTied()) {
-							if (params[KEY_PARAMS + i].value > 1.5f)
+							if (params[KEY_PARAMS + i].value > 1.5f)// if right-click
 								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
 							else
 								tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
@@ -1389,12 +1389,10 @@ struct PhraseSeq32 : Module {
 			if (editingPpqn != 0) {
 				for (int i = 0; i < 12; i++) {
 					if (keyIndexToGateMode(i, pulsesPerStep) != -1) {
-						lights[KEY_LIGHTS + i * 2 + 0].value = 1.0f;
-						lights[KEY_LIGHTS + i * 2 + 1].value = 1.0f;
+						setGreenRed(KEY_LIGHTS + i * 2, 1.0f, 1.0f);
 					}
 					else {
-						lights[KEY_LIGHTS + i * 2 + 0].value = 0.0f;
-						lights[KEY_LIGHTS + i * 2 + 1].value = 0.0f;
+						setGreenRed(KEY_LIGHTS + i * 2, 0.0f, 0.0f);
 					}
 				}
 			} 
@@ -1402,15 +1400,10 @@ struct PhraseSeq32 : Module {
 				int modeLightIndex = gateModeToKeyLightIndex(attributes[sequence][stepIndexEdit], editingGateLength > 0l);
 				for (int i = 0; i < 12; i++) {
 					if (i == modeLightIndex) {
-						lights[KEY_LIGHTS + i * 2 + 0].value = editingGateLength > 0l ? 1.0f : 0.2f;
-						lights[KEY_LIGHTS + i * 2 + 1].value = editingGateLength > 0l ? 0.2f : 1.0f;
+						setGreenRed(KEY_LIGHTS + i * 2, editingGateLength > 0l ? 1.0f : 0.2f, editingGateLength > 0l ? 0.2f : 1.0f);
 					}
 					else { 
-						lights[KEY_LIGHTS + i * 2 + 0].value = 0.0f;
-						if (i == keyLightIndex) 
-							lights[KEY_LIGHTS + i * 2 + 1].value = 0.1f;	
-						else 
-							lights[KEY_LIGHTS + i * 2 + 1].value = 0.0f;
+						setGreenRed(KEY_LIGHTS + i * 2, 0.0f, (i == keyLightIndex ? 0.1f : 0.0f));
 					}
 				}
 			}

@@ -795,7 +795,7 @@ struct Foundry : Module {
 				if (keyTriggers[keyn].process(params[KEY_PARAMS + keyn].value)) {
 					displayState = DISP_NORMAL;
 					if (editingSequence && !attached && displayState != DISP_PPQN) {
-						bool autostepClick = params[KEY_PARAMS + keyn].value > 1.5f;
+						bool autostepClick = params[KEY_PARAMS + keyn].value > 1.5f;// if right-click
 						if (isEditingGates()) {
 							if (!seq.setGateType(keyn, multiSteps ? cpSeqLength : 1, autostepClick, multiTracks))
 								displayState = DISP_PPQN;
