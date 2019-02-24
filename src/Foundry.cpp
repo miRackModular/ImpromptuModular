@@ -999,7 +999,7 @@ struct Foundry : Module {
 				if (displayState == DISP_PPQN) {
 					if (seq.keyIndexToGateTypeEx(i) != -1) {
 						green =	1.0f;
-						red = 0.2f;
+						red = 1.0f;
 					}
 				}
 				else if (editingSequence || attached) {			

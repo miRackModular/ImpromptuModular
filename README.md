@@ -42,7 +42,7 @@ Details about each module are given in the links above, and a feature comparison
 | Configuration\*			| 3x32 / 4x64		| 1x16 			| 1x32, 2x16 	| 4x16, 2x32, 1x64  | 4x32 			| 6x64 / 6x128	|
 | Clock inputs				| 1 / 2				| 1				| 1				| 1					| 4				| 1				|
 | Outputs					| CV+gate			| CV+2gates		| CV+2gates		| Gate				| CV+gate+ CV2	| Gate / Gate+CV|
-| Patterns per track/ channel| 1        			| 16 			| 32			| 16				| 64			| 2 (banks)		|
+| Patterns per track/ channel| 1        		| 16 			| 32			| 16				| 64			| 2 (banks)		|
 | Song length				| - 				| 16			| 32 			| 64 				| 99			| - 			|
 | Gate types				| 2 				| 12			| 12			| 8					| 12			| 1				|
 | Probability				| No 				| Global		| Global		| Per step			| Per step		| No			|
@@ -107,7 +107,7 @@ The following recommendations should also be followed in order to ensure proper 
 
 * No run cables are used.
 
-	1. (**GOOD**) Clocked and sequencers are set to their default settings. In this configuration, the sequencer's run state is not controlled by Clocked. When the clock is stopped, the gates may remain active causing ADSR-VCA chains to remain active, thereby continually playing a tone. In these cases, the sequencer's run state can be manually turned off; it should then be manually turned back on again *before* the clock is to be restarted (in patches with mutliple clock rates, restarting the sequencer *after* the clock may cause the different parts to become unsynchronized).
+	1. (**GOOD**) Clocked and sequencers are set to their default settings. In this configuration, the sequencer's run state is not controlled by Clocked. When the clock is stopped, the gates may remain active causing ADSR-VCA chains to remain active, thereby continually playing a tone. In these cases, the sequencer's run state can be manually turned off; it should then be manually turned back on again *before* the clock is to be restarted. In patches with mutliple clock rates, restarting the sequencer *after* the clock may cause the different parts to become unsynchronized.
 	
 	1. (**GOOD**) Default settings, but activating the option "*Reset when run is turned off*" in Clocked. This causes both the clock generator and the sequencer to restart when stopping the clock, and is equivalent to stopping the clock and manually pressing reset in case (i). 
 	

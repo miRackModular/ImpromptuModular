@@ -439,8 +439,12 @@ struct WriteSeq32 : Module {
 			for (int index8 = 0, iGate = 0; index8 < 8; index8++) {
 				lights[STEP_LIGHTS + index8].value = (index8 == (index&0x7)) ? 1.0f : 0.0f;
 				iGate = (index&0x18) | index8;
-				float green = ((gates[indexChannel][iGate] != 0) && iGate < numSteps) ? 1.0f : 0.0f;
-				float red = ((gates[indexChannel][iGate] == 2) && iGate < numSteps) ? 0.2f : 0.0f;
+				float green = 0.0f;
+				float red = 0.0f;
+				if ( (iGate < numSteps) && (gates[indexChannel][iGate] != 0) ) {
+					if (gates[indexChannel][iGate] == 1) 	green = 1.0f;
+					else {									green = 0.2f; red = 1.0f;}
+				}	
 				setGreenRed(GATE_LIGHTS + index8 * 2, green, red);
 			}
 				

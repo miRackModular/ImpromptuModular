@@ -464,8 +464,14 @@ struct WriteSeq64 : Module {
 			lightRefreshCounter = 0;
 
 			// Gate light
-			lights[GATE_LIGHT + 0].value = (gates[indexChannel][indexStep[indexChannel]] != 0) ? 1.0f : 0.0f;			
-			lights[GATE_LIGHT + 1].value = (gates[indexChannel][indexStep[indexChannel]] == 2) ? 0.2f : 0.0f;			
+			float green = 0.0f;
+			float red = 0.0f;
+			if (gates[indexChannel][indexStep[indexChannel]] != 0) {
+				if (gates[indexChannel][indexStep[indexChannel]] == 1) 	green = 1.0f;
+				else {													green = 0.2f; red = 1.0f;}
+			}	
+			lights[GATE_LIGHT + 0].value = green;			
+			lights[GATE_LIGHT + 1].value = red;
 			
 			// Reset light
 			lights[RESET_LIGHT].value =	resetLight;	
