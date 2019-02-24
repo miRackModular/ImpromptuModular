@@ -238,7 +238,7 @@ struct WriteSeq32 : Module {
 
 	
 	void step() override {
-		static const float copyPasteInfoTime = 0.5f;// seconds
+		static const float copyPasteInfoTime = 0.7f;// seconds
 		
 		
 		//********** Buttons, knobs, switches and inputs **********

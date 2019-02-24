@@ -75,7 +75,7 @@ struct PhraseSeq32 : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		ENUMS(STEP_PHRASE_LIGHTS, 32 * 2),// room for GreenRed
+		ENUMS(STEP_PHRASE_LIGHTS, 32 * 3),// room for GreenRedWhite
 		ENUMS(OCTAVE_LIGHTS, 7),// octaves 1 to 7
 		ENUMS(KEY_LIGHTS, 12 * 2),// room for GreenRed
 		RUN_LIGHT,
@@ -616,7 +616,6 @@ struct PhraseSeq32 : Module {
 	void step() override {
 		float sampleRate = engineGetSampleRate();
 		static const float gateTime = 0.4f;// seconds
-		static const float copyPasteInfoTime = 0.5f;// seconds
 		static const float revertDisplayTime = 0.7f;// seconds
 		static const float warningTime = 0.7f;// seconds
 		static const float holdDetectTime = 2.0f;// seconds
@@ -722,12 +721,12 @@ struct PhraseSeq32 : Module {
 						phraseCPbuffer[i] = phrase[p];
 					seqCopied = false;// so that a cross paste can be detected
 				}
-				infoCopyPaste = (long) (copyPasteInfoTime * sampleRate / displayRefreshStepSkips);
+				infoCopyPaste = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
 				displayState = DISP_NORMAL;
 			}
 			// Paste button
 			if (pasteTrigger.process(params[PASTE_PARAM].value)) {
-				infoCopyPaste = (long) (-1 * copyPasteInfoTime * sampleRate / displayRefreshStepSkips);
+				infoCopyPaste = (long) (-1 * revertDisplayTime * sampleRate / displayRefreshStepSkips);
 				startCP = 0;
 				if (countCP <= 8) {
 					startCP = editingSequence ? stepIndexEdit : phraseIndexEdit;
@@ -1303,61 +1302,55 @@ struct PhraseSeq32 : Module {
 			lightRefreshCounter = 0;
 		
 			// Step/phrase lights
-			if (infoCopyPaste != 0l) {
-				for (int i = 0; i < 32; i++) {
+			for (int i = 0; i < 32; i++) {
+				int col = (stepConfig == 1 ? (i & 0xF) : i);//i % (16 * stepConfig);// optimized
+				float red = 0.0f;
+				float green = 0.0f;
+				float white = 0.0f;
+				if (infoCopyPaste != 0l) {
 					if (i >= startCP && i < (startCP + countCP))
-						lights[STEP_PHRASE_LIGHTS + (i<<1)].value = 0.5f;// Green when copy interval
-					else
-						lights[STEP_PHRASE_LIGHTS + (i<<1)].value = 0.0f; // Green (nothing)
-					lights[STEP_PHRASE_LIGHTS + (i<<1) + 1].value = 0.0f;// Red (nothing)
+						green = 0.5f;
 				}
-			}
-			else {
-				for (int i = 0; i < 32; i++) {
-					int col = (stepConfig == 1 ? (i & 0xF) : i);//i % (16 * stepConfig);// optimized
-					if (displayState == DISP_LENGTH) {
-						if (editingSequence) {
-							if (col < (sequences[sequence].getLength() - 1))
-								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.1f, 0.0f);
-							else if (col == (sequences[sequence].getLength() - 1))
-								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 1.0f, 0.0f);
-							else 
-								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.0f, 0.0f);
-						}
-						else {
-							if (i < phrases - 1)
-								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.1f, 0.0f);
-							else
-								setGreenRed(STEP_PHRASE_LIGHTS + i * 2, (i == phrases - 1) ? 1.0f : 0.0f, 0.0f);
-						}
+				else if (displayState == DISP_LENGTH) {
+					if (editingSequence) {
+						if (col < (sequences[sequence].getLength() - 1))
+							green = 0.1f;
+						else if (col == (sequences[sequence].getLength() - 1))
+							green = 1.0f;
 					}
-					else if (displayState == DISP_TRANSPOSE) {
-						setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.0f, 0.5f);
-					}
-					else if (displayState == DISP_ROTATE) {
-						setGreenRed(STEP_PHRASE_LIGHTS + i * 2, 0.0f, (i == stepIndexEdit ? 1.0f : (col < sequences[sequence].getLength() ? 0.2f : 0.0f)) );
-					}
-					else {// normal led display (i.e. not length)
-						float red = 0.0f;
-						float green = 0.0f;
-						int row = i >> (3 + stepConfig);//i / (16 * stepConfig);// optimized (not equivalent code, but in this case has same effect)
-						// Run cursor (green)
-						if (editingSequence)
-							green = ((running && (col == stepIndexRun[row])) ? 1.0f : 0.0f);
-						else {
-							green = ((running && (i == phraseIndexRun)) ? 1.0f : 0.0f);
-							green += ((running && (col == stepIndexRun[row]) && i != phraseIndexEdit) ? 0.1f : 0.0f);
-							green = clamp(green, 0.0f, 1.0f);
-						}
-						// Edit cursor (red)
-						if (editingSequence)
-							red = (i == stepIndexEdit ? 1.0f : 0.0f);
+					else {
+						if (i < phrases - 1)
+							green = 0.1f;
 						else
-							red = (i == phraseIndexEdit ? 1.0f : 0.0f);
-						
-						setGreenRed(STEP_PHRASE_LIGHTS + i * 2, green, red);
+							green = (i == phrases - 1) ? 1.0f : 0.0f;
 					}
 				}
+				else if (displayState == DISP_TRANSPOSE) {
+					red = 0.5f;
+				}
+				else if (displayState == DISP_ROTATE) {
+					red = (i == stepIndexEdit ? 1.0f : (col < sequences[sequence].getLength() ? 0.2f : 0.0f));
+				}
+				else {// normal led display (i.e. not length)
+					int row = i >> (3 + stepConfig);//i / (16 * stepConfig);// optimized (not equivalent code, but in this case has same effect)
+					// Run cursor (green)
+					if (editingSequence)
+						green = ((running && (col == stepIndexRun[row])) ? 1.0f : 0.0f);
+					else {
+						green = ((running && (i == phraseIndexRun)) ? 1.0f : 0.0f);
+						green += ((running && (col == stepIndexRun[row]) && i != phraseIndexEdit) ? 0.1f : 0.0f);
+						green = clamp(green, 0.0f, 1.0f);
+					}
+					// Edit cursor (red)
+					if (editingSequence)
+						red = (i == stepIndexEdit ? 1.0f : 0.0f);
+					else
+						red = (i == phraseIndexEdit ? 1.0f : 0.0f);
+					white = ((green == 0.0f && red == 0.0f && editingSequence && attributes[sequence][i].getGate1() && displayState != DISP_MODE) ? 0.05f : 0.0f);
+					//if (white != 0.0f && attributes[sequence][i].getGate1P()) white = 0.01f;
+				}
+				setGreenRed(STEP_PHRASE_LIGHTS + i * 3, green, red);
+				lights[STEP_PHRASE_LIGHTS + i * 3 + 2].value = white;
 			}
 		
 			// Octave lights
@@ -1581,10 +1574,10 @@ struct PhraseSeq32 : Module {
 			lights[lightIndex + 0].value = 0.0f;
 			lights[lightIndex + 1].value = 0.0f;
 		}
-		/*else if (pulsesPerStep == 1) {
+		else if (editingGateLength == 0l) {
 			lights[lightIndex + 0].value = 0.0f;
 			lights[lightIndex + 1].value = 1.0f;
-		}*/
+		}
 		else {
 			lights[lightIndex + 0].value = lightIndex == GATE1_LIGHT ? 1.0f : 0.2f;
 			lights[lightIndex + 1].value = lightIndex == GATE1_LIGHT ? 0.2f : 1.0f;
@@ -1923,10 +1916,10 @@ struct PhraseSeq32Widget : ModuleWidget {
 		for (int x = 0; x < 16; x++) {
 			// First row
 			addParam(createParam<LEDButton>(Vec(posX, rowRulerT0 - 10 + 3 - 4.4f), module, PhraseSeq32::STEP_PHRASE_PARAMS + x, 0.0f, 1.0f, 0.0f));
-			addChild(createLight<MediumLight<GreenRedLight>>(Vec(posX + 4.4f, rowRulerT0 - 10 + 3), module, PhraseSeq32::STEP_PHRASE_LIGHTS + (x * 2)));
+			addChild(createLight<MediumLight<GreenRedWhiteLight>>(Vec(posX + 4.4f, rowRulerT0 - 10 + 3), module, PhraseSeq32::STEP_PHRASE_LIGHTS + (x * 3)));
 			// Second row
 			addParam(createParam<LEDButton>(Vec(posX, rowRulerT0 + 10 + 3 - 4.4f), module, PhraseSeq32::STEP_PHRASE_PARAMS + x + 16, 0.0f, 1.0f, 0.0f));
-			addChild(createLight<MediumLight<GreenRedLight>>(Vec(posX + 4.4f, rowRulerT0 + 10 + 3), module, PhraseSeq32::STEP_PHRASE_LIGHTS + ((x + 16) * 2)));
+			addChild(createLight<MediumLight<GreenRedWhiteLight>>(Vec(posX + 4.4f, rowRulerT0 + 10 + 3), module, PhraseSeq32::STEP_PHRASE_LIGHTS + ((x + 16) * 3)));
 			// step position to next location and handle groups of four
 			posX += spacingSteps;
 			if ((x + 1) % 4 == 0)
@@ -2118,6 +2111,9 @@ struct PhraseSeq32Widget : ModuleWidget {
 Model *modelPhraseSeq32 = Model::create<PhraseSeq32, PhraseSeq32Widget>("Impromptu Modular", "Phrase-Seq-32", "SEQ - Phrase-Seq-32", SEQUENCER_TAG);
 
 /*CHANGE LOG
+
+0.6.16:
+add gate status feedback in steps (white lights)
 
 0.6.15:
 add right-click menu option to bound AutoStep writes by sequence lengths

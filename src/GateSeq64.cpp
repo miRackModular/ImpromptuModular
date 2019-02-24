@@ -508,9 +508,8 @@ struct GateSeq64 : Module {
 
 	
 	void step() override {
-		static const float copyPasteInfoTime = 0.5f;// seconds
 		static const float displayProbInfoTime = 3.0f;// seconds
-		static const float revertDisplayTime = 0.5f;// seconds
+		static const float revertDisplayTime = 0.7f;// seconds
 		static const float holdDetectTime = 2.0f;// seconds
 		static const float editingPhraseSongRunningTime = 4.0f;// seconds
 		static const float editingPpqnTime = 3.5f;// seconds
@@ -595,13 +594,13 @@ struct GateSeq64 : Module {
 						phraseCPbuffer[i] = phrase[p];
 					seqCopied = false;// so that a cross paste can be detected
 				}
-				infoCopyPaste = (long) (copyPasteInfoTime * sampleRate / displayRefreshStepSkips);
+				infoCopyPaste = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
 				displayState = DISP_GATE;
 				blinkNum = blinkNumInit;
 			}
 			// Paste button
 			if (pasteTrigger.process(params[PASTE_PARAM].value)) {
-				infoCopyPaste = (long) (-1 * copyPasteInfoTime * sampleRate / displayRefreshStepSkips);
+				infoCopyPaste = (long) (-1 * revertDisplayTime * sampleRate / displayRefreshStepSkips);
 				startCP = 0;
 				if (countCP <= 8) {
 					startCP = editingSequence ? stepIndexEdit : phraseIndexEdit;

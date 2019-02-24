@@ -73,7 +73,7 @@ struct Foundry : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		ENUMS(STEP_PHRASE_LIGHTS, SequencerKernel::MAX_STEPS * 2),// room for GreenRed
+		ENUMS(STEP_PHRASE_LIGHTS, SequencerKernel::MAX_STEPS * 3),// room for GreenRedWhite
 		ENUMS(OCTAVE_LIGHTS, 7),// octaves 1 to 7
 		ENUMS(KEY_LIGHTS, 12 * 2),// room for GreenRed
 		RUN_LIGHT,
@@ -902,14 +902,28 @@ struct Foundry : Module {
 		if (lightRefreshCounter >= displayRefreshStepSkips) {
 			lightRefreshCounter = 0;
 		
+			// Prepare values to visualize
+			StepAttributes attributesVisual;
+			float cvVisual;
+			if (editingSequence || attached) {
+				attributesVisual = seq.getAttribute();
+				cvVisual = seq.getCV();
+			}
+			else {
+				attributesVisual.clear();// clears everything, but just buttons used below
+				cvVisual = 0.0f;// not used
+			}
+			bool editingGates = isEditingGates();
+			
 			// Step lights
 			for (int stepn = 0; stepn < SequencerKernel::MAX_STEPS; stepn++) {
 				float red = 0.0f;
-				float green = 0.0f;		
+				float green = 0.0f;	
+				float white = 0.0f;
 				if ((displayState == DISP_COPY_SEQ) || (displayState == DISP_PASTE_SEQ)) {
 					int startCP = seq.getStepIndexEdit();
 					if (stepn >= startCP && stepn < (startCP + seq.getLengthSeqCPbug()))
-						green = 0.5f;// Green when copy interval
+						green = 0.5f;
 				}
 				else if (displayState == DISP_TRANSPOSE) {
 					red = 0.5f;
@@ -943,6 +957,7 @@ struct Foundry : Module {
 						else
 							green = 0.05f;
 					}
+					white = 1.0f;// signal for override below
 				}
 				else if (attached) {
 					// all active light green, current track is bright yellow
@@ -957,23 +972,15 @@ struct Foundry : Module {
 						green = 1.0f;
 						red = 1.0f;
 					}
+					white = 1.0f;// signal for override below
 				}
-				setGreenRed(STEP_PHRASE_LIGHTS + stepn * 2, green, red);
+				setGreenRed(STEP_PHRASE_LIGHTS + stepn * 3, green, red);
+				if (white == 1.0f)
+					white = ((green == 0.0f && red == 0.0f && (editingSequence || attached) && seq.getAttribute(seq.getTrackIndexEdit(), stepn).getGate() && displayState != DISP_MODE_SEQ && displayState != DISP_PPQN && displayState != DISP_DELAY) ? 0.05f : 0.0f);
+				//if (white != 0.0f && seq.getAttribute(seq.getTrackIndexEdit(), stepn).getGateP()) white = 0.01f;
+				lights[STEP_PHRASE_LIGHTS + stepn * 3 + 2].value = white;
 			}
 			
-			
-			// Prepare values to visualize
-			StepAttributes attributesVisual;
-			float cvVisual;
-			if (editingSequence || attached) {
-				attributesVisual = seq.getAttribute();
-				cvVisual = seq.getCV();
-			}
-			else {
-				attributesVisual.clear();// clears everything, but just buttons used below
-				cvVisual = 0.0f;// not used
-			}
-
 			
 			// Octave lights
 			int octLightIndex = (int) floor(cvVisual + 3.0f);
@@ -1003,7 +1010,7 @@ struct Foundry : Module {
 					}
 				}
 				else if (editingSequence || attached) {			
-					if (isEditingGates()) {
+					if (editingGates) {
 						green = 1.0f;
 						red = 0.2f;
 						unsigned long editingType = seq.getEditingType();
@@ -1043,7 +1050,7 @@ struct Foundry : Module {
 			if (!attributesVisual.getGate())
 				setGreenRed(GATE_LIGHT, 0.0f, 0.0f);
 			else 
-				setGreenRed(GATE_LIGHT, /*seq.getPulsesPerStep() == 1 ? 0.0f :*/ 1.0f, /*seq.getPulsesPerStep() == 1 ? 1.0f :*/ 0.2f);
+				setGreenRed(GATE_LIGHT, editingGates ? 1.0f : 0.0f, editingGates ? 0.2f : 1.0f);
 			if (tiedWarning > 0l) {
 				bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
 				lights[TIE_LIGHT].value = (warningFlashState) ? 1.0f : 0.0f;
@@ -1724,10 +1731,10 @@ struct FoundryWidget : ModuleWidget {
 		for (int x = 0; x < numX; x++) {
 			// First row
 			addParam(createParamCentered<LEDButton>(Vec(posX, rowRulerT0 - stepsOffsetY), module, Foundry::STEP_PHRASE_PARAMS + x, 0.0f, 1.0f, 0.0f));
-			addChild(createLightCentered<MediumLight<GreenRedLight>>(Vec(posX, rowRulerT0 - stepsOffsetY), module, Foundry::STEP_PHRASE_LIGHTS + (x * 2)));
+			addChild(createLightCentered<MediumLight<GreenRedWhiteLight>>(Vec(posX, rowRulerT0 - stepsOffsetY), module, Foundry::STEP_PHRASE_LIGHTS + (x * 3)));
 			// Second row
 			addParam(createParamCentered<LEDButton>(Vec(posX, rowRulerT0 + stepsOffsetY), module, Foundry::STEP_PHRASE_PARAMS + x + numX, 0.0f, 1.0f, 0.0f));
-			addChild(createLightCentered<MediumLight<GreenRedLight>>(Vec(posX, rowRulerT0 + stepsOffsetY), module, Foundry::STEP_PHRASE_LIGHTS + ((x + numX) * 2)));
+			addChild(createLightCentered<MediumLight<GreenRedWhiteLight>>(Vec(posX, rowRulerT0 + stepsOffsetY), module, Foundry::STEP_PHRASE_LIGHTS + ((x + numX) * 3)));
 			// step position to next location and handle groups of four
 			posX += spacingSteps;
 			if ((x + 1) % 4 == 0)
@@ -2000,6 +2007,9 @@ struct FoundryWidget : ModuleWidget {
 Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular", "Foundry", "SEQ - Foundry", SEQUENCER_TAG);
 
 /*CHANGE LOG
+
+0.6.16:
+add gate status feedback in steps (white lights)
 
 0.6.15:
 save ALL state and don't init ALL nor SEL on run or reset 

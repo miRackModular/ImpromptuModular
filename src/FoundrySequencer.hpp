@@ -55,6 +55,7 @@ class Sequencer {
 	inline int getStepIndexRun(int trkn) {return sek[trkn].getStepIndexRun();}
 	inline int getLength() {return sek[trackIndexEdit].getLength(seqIndexEdit);}
 	inline StepAttributes getAttribute() {return sek[trackIndexEdit].getAttribute(seqIndexEdit, stepIndexEdit);}
+	inline StepAttributes getAttribute(int trkn, int stepn) {return sek[trkn].getAttribute(seqIndexEdit, stepn);}
 	inline float getCV() {return sek[trackIndexEdit].getCV(seqIndexEdit, stepIndexEdit);}
 	inline int keyIndexToGateTypeEx(int keyn) {return sek[trackIndexEdit].keyIndexToGateTypeEx(keyn);}
 	inline int getGateType() {return sek[trackIndexEdit].getGateType(seqIndexEdit, stepIndexEdit);}
