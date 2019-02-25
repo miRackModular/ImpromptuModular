@@ -358,30 +358,13 @@ struct SemiModularSynth : Module {
 
 	
 	void onRandomize() override {
-		// runModeSong = randomu32() % 5;
-		// stepIndexEdit = 0;
-		// phraseIndexEdit = 0;
-		// sequence = randomu32() % 16;
-		// phrases = 1 + (randomu32() % 16);
-		// for (int i = 0; i < 16; i++) {
-			// sequences[i].randomize(16, NUM_MODES - 1);
-			// phrase[i] = randomu32() % 16;
-			// for (int s = 0; s < 16; s++) {
-				// cv[i][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
-				// attributes[i][s].randomize();
-				// if (attributes[i][s].getTied()) {
-					// activateTiedStep(i, s);
-				// }
-			// }
-		// }
-		// initRun();
 		if (isEditingSequence()) {
 			for (int s = 0; s < 16; s++) {
 				cv[sequence][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
 				attributes[sequence][s].randomize();
-				if (attributes[sequence][s].getTied()) {
-					activateTiedStep(sequence, s);
-				}
+				// if (attributes[sequence][s].getTied()) {
+					// activateTiedStep(sequence, s);
+				// }
 			}
 			sequences[sequence].randomize(16, NUM_MODES - 1);
 		}

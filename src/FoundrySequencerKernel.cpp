@@ -134,9 +134,9 @@ void SequencerKernel::randomizeSequence(int seqn) {
 	for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
 		cv[seqn][stepn] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
 		attributes[seqn][stepn].randomize();
-		if (attributes[seqn][stepn].getTied()) {
-			activateTiedStep(seqn, stepn);
-		}	
+		// if (attributes[seqn][stepn].getTied()) {
+			// activateTiedStep(seqn, stepn);
+		// }	
 	}
 	dirty[seqn] = 1;
 }

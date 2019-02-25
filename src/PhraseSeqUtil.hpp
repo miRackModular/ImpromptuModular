@@ -31,7 +31,7 @@ class StepAttributes {
 	
 	inline void clear() {attributes = 0u;}
 	inline void init() {attributes = ATT_MSK_INITSTATE;}
-	inline void randomize() {attributes = (randomu32() & (ATT_MSK_GATE1 | ATT_MSK_GATE1P | ATT_MSK_GATE2 | ATT_MSK_SLIDE | ATT_MSK_TIED | ATT_MSK_GATE1MODE | ATT_MSK_GATE2MODE));}
+	inline void randomize() {attributes = (randomu32() & (ATT_MSK_GATE1 | ATT_MSK_GATE1P | ATT_MSK_GATE2 | ATT_MSK_SLIDE /*| ATT_MSK_TIED*/ | ATT_MSK_GATE1MODE | ATT_MSK_GATE2MODE));}
 	
 	inline bool getGate1() {return (attributes & ATT_MSK_GATE1) != 0;}
 	inline bool getGate1P() {return (attributes & ATT_MSK_GATE1P) != 0;}
