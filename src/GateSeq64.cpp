@@ -1005,7 +1005,7 @@ struct GateSeq64 : Module {
 							float red = (i == (phraseIndexEdit) && ((editingPhraseSongRunning > 0l) || !running)) ? 1.0f : 0.0f;
 							green += ((running && (col == stepIndexRun[row]) && i != (phraseIndexEdit)) ? 0.1f : 0.0f);
 							setGreenRed3(STEP_LIGHTS + i * 3, clamp(green, 0.0f, 1.0f), red);
-							if (green == 0.0f && red == 0.0f){
+							if (green == 0.0f && red == 0.0f && displayState != DISP_MODES){
 								lights[STEP_LIGHTS + i * 3 + 2].value = (attributes[phrase[phraseIndexRun]][i].getGate() ? 0.2f : 0.0f);
 								lights[STEP_LIGHTS + i * 3 + 2].value -= (attributes[phrase[phraseIndexRun]][i].getGateP() ? 0.18f : 0.0f);
 							}
