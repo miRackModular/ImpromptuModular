@@ -1261,6 +1261,9 @@ struct PhraseSeq16 : Module {
 					else if (!editingSequence && attached)
 						gate = attributes[phrase[phraseIndexRun]][i].getGate1();
 					white = ((green == 0.0f && red == 0.0f && gate && displayState != DISP_MODE) ? 0.05f : 0.0f);
+					if (editingSequence && white != 0.0f) {
+						green = 0.01f; white = 0.0f;
+					}
 					//if (white != 0.0f && attributes[sequence][i].getGate1P()) white = 0.01f;
 				}
 				setGreenRed(STEP_PHRASE_LIGHTS + i * 3, green, red);
