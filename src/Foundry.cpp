@@ -484,10 +484,10 @@ struct Foundry : Module {
 								float maxVel = (velocityMode > 0 ? 127.0f : 200.0f);
 								float capturedCV = inputs[VEL_INPUTS + trkn].value + (velocityBipol ? 5.0f : 0.0f);
 								int intVel = (int)(capturedCV * maxVel / 10.0f + 0.5f);
-								seq.setVelocityVal(trkn, clamp(intVel, 0, 200), multiStepsCount, multiTracks);
+								seq.setVelocityVal(trkn, clamp(intVel, 0, 200), multiStepsCount, false);
 							}
 							if (inputs[CV_INPUTS + trkn].active && ((writeMode & 0x2) == 0)) {
-								seq.writeCV(trkn, clamp(inputs[CV_INPUTS + trkn].value, -10.0f, 10.0f), multiStepsCount, sampleRate, multiTracks);
+								seq.writeCV(trkn, clamp(inputs[CV_INPUTS + trkn].value, -10.0f, 10.0f), multiStepsCount, sampleRate, false);
 							}
 						}
 					}
