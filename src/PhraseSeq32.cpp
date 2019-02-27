@@ -996,11 +996,15 @@ struct PhraseSeq32 : Module {
 							}
 						}
 						else {
-							int newPhrase = phrase[phraseIndexEdit] + deltaKnob;
-							if (newPhrase < 0)
-								newPhrase += (1 - newPhrase / 32) * 32;// newPhrase now positive
-							newPhrase = newPhrase % 32;
-							phrase[phraseIndexEdit] = newPhrase;
+							if (!attached || (attached && !running)) {
+								int newPhrase = phrase[phraseIndexEdit] + deltaKnob;
+								if (newPhrase < 0)
+									newPhrase += (1 - newPhrase / 32) * 32;// newPhrase now positive
+								newPhrase = newPhrase % 32;
+								phrase[phraseIndexEdit] = newPhrase;
+							}
+							else 
+								attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 						}
 					}
 				}

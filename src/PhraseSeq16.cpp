@@ -991,7 +991,11 @@ struct PhraseSeq16 : Module {
 							}
 						}
 						else {
-							phrase[phraseIndexEdit] = clamp(phrase[phraseIndexEdit] + deltaKnob, 0, 16 - 1);
+							if (!attached || (attached && !running))
+								phrase[phraseIndexEdit] = clamp(phrase[phraseIndexEdit] + deltaKnob, 0, 16 - 1);
+							else
+								attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+							
 						}
 					}
 				}

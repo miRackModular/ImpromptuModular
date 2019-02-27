@@ -951,7 +951,7 @@ struct Foundry : Module {
 							red = 1.0f;
 						green = 0.0f;
 					}
-					if (running && red == 0.0f && stepn == seq.getStepIndexRun(seq.getTrackIndexEdit())) {
+					if (running && red != 0.2f && stepn == seq.getStepIndexRun(seq.getTrackIndexEdit())) {
 						green = 1.0f;
 						// if (green > 0.0f)
 							// green = 0.0f;
