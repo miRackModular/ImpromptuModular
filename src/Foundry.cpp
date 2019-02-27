@@ -952,10 +952,11 @@ struct Foundry : Module {
 						green = 0.0f;
 					}
 					if (running && red == 0.0f && stepn == seq.getStepIndexRun(seq.getTrackIndexEdit())) {
-						if (green > 0.0f)
-							green = 0.0f;
-						else
-							green = 0.05f;
+						green = 1.0f;
+						// if (green > 0.0f)
+							// green = 0.0f;
+						// else
+							// green = 0.05f;
 					}
 					white = 1.0f;// signal for override below
 				}
@@ -964,19 +965,22 @@ struct Foundry : Module {
 					for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 						bool trknIsUsed = outputs[CV_OUTPUTS + trkn].active || outputs[GATE_OUTPUTS + trkn].active || outputs[VEL_OUTPUTS + trkn].active;
 						if (stepn == seq.getStepIndexRun(trkn) && trknIsUsed) 
-							green = 0.05f;	
+							green = 0.1f;	
 					}
-					if (green > 0.1f) 
-						green = 0.1f;
+					if (green > 0.2f) 
+						green = 0.2f;
 					if (stepn == seq.getStepIndexEdit()) {
 						green = 1.0f;
 						red = 1.0f;
 					}
 					white = 1.0f;// signal for override below
 				}
-				setGreenRed(STEP_PHRASE_LIGHTS + stepn * 3, green, red);
 				if (white == 1.0f)
-					white = ((green == 0.0f && red == 0.0f && (editingSequence || attached) && seq.getAttribute(seq.getTrackIndexEdit(), stepn).getGate() && displayState != DISP_MODE_SEQ && displayState != DISP_PPQN && displayState != DISP_DELAY) ? 0.05f : 0.0f);
+					white = ((green == 0.0f && red == 0.0f && (editingSequence || attached) && seq.getAttribute(seq.getTrackIndexEdit(), stepn).getGate() && displayState != DISP_MODE_SEQ && displayState != DISP_PPQN && displayState != DISP_DELAY) ? 0.04f : 0.0f);
+				if (editingSequence && white != 0.0f) {
+					green = 0.02f; white = 0.0f;
+				}				
+				setGreenRed(STEP_PHRASE_LIGHTS + stepn * 3, green, red);
 				//if (white != 0.0f && seq.getAttribute(seq.getTrackIndexEdit(), stepn).getGateP()) white = 0.01f;
 				lights[STEP_PHRASE_LIGHTS + stepn * 3 + 2].value = white;
 			}
