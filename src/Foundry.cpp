@@ -953,10 +953,6 @@ struct Foundry : Module {
 					}
 					if (running && red != 0.2f && stepn == seq.getStepIndexRun(seq.getTrackIndexEdit())) {
 						green = 1.0f;
-						// if (green > 0.0f)
-							// green = 0.0f;
-						// else
-							// green = 0.05f;
 					}
 					white = 1.0f;// signal for override below
 				}
