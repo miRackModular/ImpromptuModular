@@ -2,6 +2,13 @@
 //Impromptu Modular: Modules for VCV Rack by Marc Boulé
 //***********************************************************************************************
 
+#ifndef GATE_SEQ_64_UTIL_HPP
+#define GATE_SEQ_64_UTIL_HPP
+
+
+#include "ImpromptuModular.hpp"
+#include "PhraseSeqUtil.hpp"
+
 
 class StepAttributesGS {
 	unsigned short attributes;
@@ -85,3 +92,4 @@ inline bool calcGate(int gateCode, Trigger clockTrigger) {
 }		
 
 
+#endif

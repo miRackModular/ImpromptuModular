@@ -2,6 +2,12 @@
 //Impromptu Modular: Modules for VCV Rack by Marc Boulé
 //***********************************************************************************************
 
+#ifndef PHRASE_SEQ_UTIL_HPP
+#define PHRASE_SEQ_UTIL_HPP
+
+
+#include "ImpromptuModular.hpp"
+
 
 // General constants
 
@@ -159,3 +165,4 @@ bool moveIndexRunMode(int* index, int numSteps, int runMode, unsigned long* hist
 int keyIndexToGateMode(int keyIndex, int pulsesPerStep);
 
 
+#endif

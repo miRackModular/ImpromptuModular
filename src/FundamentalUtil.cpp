@@ -5,8 +5,9 @@
 //See ./LICENSE.txt for all licenses
 //***********************************************************************************************
 
-#include "ImpromptuModular.hpp"
+
 #include "FundamentalUtil.hpp"
+
 
 // From Fundamental VCF.cpp
 

@@ -5,11 +5,16 @@
 //See ./LICENSE.txt for all licenses and see below for the filter code license
 //***********************************************************************************************
 
+#ifndef FUNDAMENTAL_UTIL_HPP
+#define FUNDAMENTAL_UTIL_HPP
+
+
 #include "rack.hpp"
 #include "dsp/functions.hpp"
 #include "dsp/resampler.hpp"
 #include "dsp/ode.hpp"
 #include "dsp/filter.hpp"
+#include "ImpromptuModular.hpp"
 
 
 extern float sawTable[2048];// see end of file
@@ -155,3 +160,6 @@ struct LowFrequencyOscillator {
 		return sinf(2*M_PI * phase);
 	}
 };
+
+
+#endif

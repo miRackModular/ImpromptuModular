@@ -12,8 +12,6 @@
 //***********************************************************************************************
 
 
-#include "ImpromptuModular.hpp"
-#include "PhraseSeqUtil.hpp"
 #include "GateSeq64Util.hpp"
 
 

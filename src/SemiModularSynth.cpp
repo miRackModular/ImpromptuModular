@@ -13,7 +13,6 @@
 //***********************************************************************************************
 
 
-#include "ImpromptuModular.hpp"
 #include "FundamentalUtil.hpp"
 #include "PhraseSeqUtil.hpp"
 

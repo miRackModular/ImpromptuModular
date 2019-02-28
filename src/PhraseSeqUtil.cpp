@@ -3,8 +3,8 @@
 //***********************************************************************************************
 
 
-#include "ImpromptuModular.hpp"
 #include "PhraseSeqUtil.hpp"
+
 
 static const uint32_t advGateHitMask[NUM_GATES] = 
 {0x00003F, 0x0F0F0F, 0x000FFF, 0x0F0F00, 0x03FFFF, 0xFFFFFF, 0x00000F, 0x03F03F, 0x000F00, 0x03F000, 0x0F0000, 0};

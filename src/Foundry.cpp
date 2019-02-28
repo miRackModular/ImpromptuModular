@@ -10,7 +10,6 @@
 //***********************************************************************************************
 
 #include <algorithm>
-#include "ImpromptuModular.hpp"
 #include "FoundrySequencer.hpp"
 
 
