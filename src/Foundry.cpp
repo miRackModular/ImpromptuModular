@@ -882,7 +882,8 @@ struct Foundry : Module {
 			if (inputs[SEQCV_INPUT].active && seqCVmethod == 2)
 				seq.setSeqIndexEdit(0);
 		}
-		
+
+
 		
 		
 		//********** Outputs and lights **********
