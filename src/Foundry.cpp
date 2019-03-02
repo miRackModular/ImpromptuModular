@@ -381,22 +381,6 @@ struct Foundry : Module {
 
 		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
 			
-			// Seq CV input
-			if (inputs[SEQCV_INPUT].active) {
-				if (seqCVmethod == 0) {// 0-10 V
-					int newSeq = (int)( inputs[SEQCV_INPUT].value * ((float)SequencerKernel::MAX_SEQS - 1.0f) / 10.0f + 0.5f );
-					seq.setSeqIndexEdit(clamp(newSeq, 0, SequencerKernel::MAX_SEQS - 1));
-				}
-				else if (seqCVmethod == 1) {// C2-D7#
-					int newSeq = (int)( (inputs[SEQCV_INPUT].value + 2.0f) * 12.0f + 0.5f );
-					seq.setSeqIndexEdit(clamp(newSeq, 0, SequencerKernel::MAX_SEQS - 1));
-				}
-				else {// TrigIncr
-					if (seqCVTrigger.process(inputs[SEQCV_INPUT].value))
-						seq.setSeqIndexEdit(clamp(seq.getSeqIndexEdit() + 1, 0, SequencerKernel::MAX_SEQS - 1));
-				}	
-			}
-			
 			// Track CV input
 			if (inputs[TRKCV_INPUT].active) {
 				int newTrk = (int)( inputs[TRKCV_INPUT].value * (2.0f * (float)Sequencer::NUM_TRACKS - 1.0f) / 10.0f + 0.5f );
@@ -405,6 +389,23 @@ struct Foundry : Module {
 					multiTracks = true;
 				else
 					multiTracks = false;
+			}
+			
+			// Seq CV input
+			if (inputs[SEQCV_INPUT].active) {
+				if (seqCVmethod == 0) {// 0-10 V
+					int newSeq = (int)( inputs[SEQCV_INPUT].value * ((float)SequencerKernel::MAX_SEQS - 1.0f) / 10.0f + 0.5f );
+					seq.setSeqIndexEdit(clamp(newSeq, 0, SequencerKernel::MAX_SEQS - 1), multiTracks);
+				}
+				else if (seqCVmethod == 1) {// C2-D7#
+					int newSeq = (int)( (inputs[SEQCV_INPUT].value + 2.0f) * 12.0f + 0.5f );
+					seq.setSeqIndexEdit(clamp(newSeq, 0, SequencerKernel::MAX_SEQS - 1), multiTracks);
+				}
+				else {// TrigIncr
+					if (seqCVTrigger.process(inputs[SEQCV_INPUT].value)) {
+						seq.moveSeqIndexEdit(1, multiTracks);
+					}
+				}	
 			}
 			
 			// Attach button
@@ -492,7 +493,7 @@ struct Foundry : Module {
 					}
 					seq.setEditingGateKeyLight(-1);
 					if (params[AUTOSTEP_PARAM].value > 0.5f)
-						seq.autostep(autoseq && !inputs[SEQCV_INPUT].active, autostepLen);
+						seq.autostep(autoseq && !inputs[SEQCV_INPUT].active, autostepLen, multiTracks);
 				}
 				else if (attached)
 					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
@@ -726,7 +727,7 @@ struct Foundry : Module {
 					else if (!attached) {
 						if (editingSequence) {
 							if (!inputs[SEQCV_INPUT].active) {
-								seq.moveSeqIndexEdit(deltaSeqKnob);
+								seq.moveSeqIndexEdit(deltaSeqKnob, multiTracks);
 								if (displayState != DISP_MODE_SEQ)
 									displayState = DISP_NORMAL;
 							}
@@ -880,7 +881,7 @@ struct Foundry : Module {
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++)
 				clockTriggers[trkn].reset();		
 			if (inputs[SEQCV_INPUT].active && seqCVmethod == 2)
-				seq.setSeqIndexEdit(0);
+				seq.setSeqIndexEdit(0, true);
 		}
 
 
@@ -1648,7 +1649,7 @@ struct FoundryWidget : ModuleWidget {
 				else if (!module->attached) {
 					if (module->isEditingSequence()) {
 						if (!module->inputs[Foundry::SEQCV_INPUT].active)
-							module->seq.setSeqIndexEdit(0);
+							module->seq.setSeqIndexEdit(0, module->multiTracks);
 					}
 					else {// editing song
 						module->seq.initPhraseSeqNum(module->multiTracks);

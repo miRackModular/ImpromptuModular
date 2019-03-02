@@ -15,20 +15,20 @@ void Sequencer::construct(bool* _holdTiedNotesPtr, int* _velocityModePtr) {// do
 
 
 void Sequencer::setVelocityVal(int trkn, int intVel, int multiStepsCount, bool multiTracks) {
-	sek[trkn].setVelocityVal(seqIndexEdit, stepIndexEdit, intVel, multiStepsCount);
+	sek[trkn].setVelocityVal(stepIndexEdit, intVel, multiStepsCount);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trkn) continue;
-			sek[i].setVelocityVal(seqIndexEdit, stepIndexEdit, intVel, multiStepsCount);
+			sek[i].setVelocityVal(stepIndexEdit, intVel, multiStepsCount);
 		}
 	}
 }
 void Sequencer::setLength(int length, bool multiTracks) {
-	sek[trackIndexEdit].setLength(seqIndexEdit, length);
+	sek[trackIndexEdit].setLength(length);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setLength(seqIndexEdit, length);
+			sek[i].setLength(length);
 		}
 	}
 }
@@ -54,11 +54,11 @@ bool Sequencer::setGateType(int keyn, int multiSteps, float sampleRate, bool aut
 	int newMode = keyIndexToGateTypeEx(keyn);
 	if (newMode == -1) 
 		return false;
-	sek[trackIndexEdit].setGateType(seqIndexEdit, stepIndexEdit, newMode, multiSteps);
+	sek[trackIndexEdit].setGateType(stepIndexEdit, newMode, multiSteps);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setGateType(seqIndexEdit, stepIndexEdit, newMode, multiSteps);
+			sek[i].setGateType(stepIndexEdit, newMode, multiSteps);
 		}
 	}
 	if (autostepClick){ // if right-click then move to next step
@@ -73,29 +73,29 @@ bool Sequencer::setGateType(int keyn, int multiSteps, float sampleRate, bool aut
 
 
 void Sequencer::initSlideVal(int multiStepsCount, bool multiTracks) {
-	sek[trackIndexEdit].setSlideVal(seqIndexEdit, stepIndexEdit, StepAttributes::INIT_SLIDE, multiStepsCount);
+	sek[trackIndexEdit].setSlideVal(stepIndexEdit, StepAttributes::INIT_SLIDE, multiStepsCount);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setSlideVal(seqIndexEdit, stepIndexEdit, StepAttributes::INIT_SLIDE, multiStepsCount);
+			sek[i].setSlideVal(stepIndexEdit, StepAttributes::INIT_SLIDE, multiStepsCount);
 		}
 	}		
 }
 void Sequencer::initGatePVal(int multiStepsCount, bool multiTracks) {
-	sek[trackIndexEdit].setGatePVal(seqIndexEdit, stepIndexEdit, StepAttributes::INIT_PROB, multiStepsCount);
+	sek[trackIndexEdit].setGatePVal(stepIndexEdit, StepAttributes::INIT_PROB, multiStepsCount);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setGatePVal(seqIndexEdit, stepIndexEdit, StepAttributes::INIT_PROB, multiStepsCount);
+			sek[i].setGatePVal(stepIndexEdit, StepAttributes::INIT_PROB, multiStepsCount);
 		}
 	}		
 }
 void Sequencer::initVelocityVal(int multiStepsCount, bool multiTracks) {
-	sek[trackIndexEdit].setVelocityVal(seqIndexEdit, stepIndexEdit, StepAttributes::INIT_VELOCITY, multiStepsCount);
+	sek[trackIndexEdit].setVelocityVal(stepIndexEdit, StepAttributes::INIT_VELOCITY, multiStepsCount);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setVelocityVal(seqIndexEdit, stepIndexEdit, StepAttributes::INIT_VELOCITY, multiStepsCount);
+			sek[i].setVelocityVal(stepIndexEdit, StepAttributes::INIT_VELOCITY, multiStepsCount);
 		}
 	}		
 }
@@ -127,20 +127,20 @@ void Sequencer::initRunModeSong(bool multiTracks) {
 	}		
 }
 void Sequencer::initRunModeSeq(bool multiTracks) {
-	sek[trackIndexEdit].setRunModeSeq(seqIndexEdit, SequencerKernel::MODE_FWD);
+	sek[trackIndexEdit].setRunModeSeq(SequencerKernel::MODE_FWD);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setRunModeSeq(seqIndexEdit, SequencerKernel::MODE_FWD);
+			sek[i].setRunModeSeq(SequencerKernel::MODE_FWD);
 		}
 	}		
 }
 void Sequencer::initLength(bool multiTracks) {
-	sek[trackIndexEdit].setLength(seqIndexEdit, SequencerKernel::MAX_STEPS);
+	sek[trackIndexEdit].setLength(SequencerKernel::MAX_STEPS);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setLength(seqIndexEdit, SequencerKernel::MAX_STEPS);
+			sek[i].setLength(SequencerKernel::MAX_STEPS);
 		}
 	}		
 }
@@ -165,15 +165,15 @@ void Sequencer::initPhraseSeqNum(bool multiTracks) {
 
 void Sequencer::copySequence(int countCP) {
 	int startCP = stepIndexEdit;
-	sek[trackIndexEdit].copySequence(&seqCPbuf, seqIndexEdit, startCP, countCP);
+	sek[trackIndexEdit].copySequence(&seqCPbuf, startCP, countCP);
 }
 void Sequencer::pasteSequence(bool multiTracks) {
 	int startCP = stepIndexEdit;
-	sek[trackIndexEdit].pasteSequence(&seqCPbuf, seqIndexEdit, startCP);
+	sek[trackIndexEdit].pasteSequence(&seqCPbuf, startCP);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].pasteSequence(&seqCPbuf, seqIndexEdit, startCP);
+			sek[i].pasteSequence(&seqCPbuf, startCP);
 		}
 	}
 }
@@ -192,55 +192,62 @@ void Sequencer::pasteSong(bool multiTracks) {
 
 
 void Sequencer::writeCV(int trkn, float cvVal, int multiStepsCount, float sampleRate, bool multiTracks) {
-	sek[trkn].writeCV(seqIndexEdit, stepIndexEdit, cvVal, multiStepsCount);
+	sek[trkn].writeCV(stepIndexEdit, cvVal, multiStepsCount);
 	editingGateCV[trkn] = cvVal;
-	editingGateCV2[trkn] = sek[trkn].getVelocityVal(seqIndexEdit, stepIndexEdit);
+	editingGateCV2[trkn] = sek[trkn].getVelocityVal(stepIndexEdit);
 	editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trkn) continue;
-			sek[i].writeCV(seqIndexEdit, stepIndexEdit, cvVal, multiStepsCount);
+			sek[i].writeCV(stepIndexEdit, cvVal, multiStepsCount);
 		}
 	}
 }
-void Sequencer::autostep(bool autoseq, bool autostepLen) {
+void Sequencer::autostep(bool autoseq, bool autostepLen, bool multiTracks) {
 	moveStepIndexEdit(1, autostepLen);
-	if (stepIndexEdit == 0 && autoseq)
-		seqIndexEdit = moveIndex(seqIndexEdit, seqIndexEdit + 1, SequencerKernel::MAX_SEQS);	
+	if (stepIndexEdit == 0 && autoseq) {
+		sek[trackIndexEdit].modSeqIndexEdit(1);
+		if (multiTracks) {
+			for (int i = 0; i < NUM_TRACKS; i++) {
+				if (i == trackIndexEdit) continue;
+				sek[i].modSeqIndexEdit(1);
+			}
+		}
+	}		
 }	
 
 bool Sequencer::applyNewOctave(int octn, int multiSteps, float sampleRate, bool multiTracks) { // returns true if tied
-	if (sek[trackIndexEdit].getTied(seqIndexEdit, stepIndexEdit))
+	if (sek[trackIndexEdit].getTied(stepIndexEdit))
 		return true;
-	editingGateCV[trackIndexEdit] = sek[trackIndexEdit].applyNewOctave(seqIndexEdit, stepIndexEdit, octn, multiSteps);
-	editingGateCV2[trackIndexEdit] = sek[trackIndexEdit].getVelocityVal(seqIndexEdit, stepIndexEdit);
+	editingGateCV[trackIndexEdit] = sek[trackIndexEdit].applyNewOctave(stepIndexEdit, octn, multiSteps);
+	editingGateCV2[trackIndexEdit] = sek[trackIndexEdit].getVelocityVal(stepIndexEdit);
 	editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 	editingGateKeyLight = -1;
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].applyNewOctave(seqIndexEdit, stepIndexEdit, octn, multiSteps);
+			sek[i].applyNewOctave(stepIndexEdit, octn, multiSteps);
 		}
 	}
 	return false;
 }
 bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool autostepClick, bool multiTracks) { // returns true if tied
 	bool ret = false;
-	if (sek[trackIndexEdit].getTied(seqIndexEdit, stepIndexEdit)) {
+	if (sek[trackIndexEdit].getTied(stepIndexEdit)) {
 		if (autostepClick)
 			moveStepIndexEdit(1, false);
 		else
 			ret = true;
 	}
 	else {
-		editingGateCV[trackIndexEdit] = sek[trackIndexEdit].applyNewKey(seqIndexEdit, stepIndexEdit, keyn, multiSteps);
-		editingGateCV2[trackIndexEdit] = sek[trackIndexEdit].getVelocityVal(seqIndexEdit, stepIndexEdit);
+		editingGateCV[trackIndexEdit] = sek[trackIndexEdit].applyNewKey(stepIndexEdit, keyn, multiSteps);
+		editingGateCV2[trackIndexEdit] = sek[trackIndexEdit].getVelocityVal(stepIndexEdit);
 		editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 		editingGateKeyLight = -1;
 		if (multiTracks) {
 			for (int i = 0; i < NUM_TRACKS; i++) {
 				if (i == trackIndexEdit) continue;
-				sek[i].applyNewKey(seqIndexEdit, stepIndexEdit, keyn, multiSteps);
+				sek[i].applyNewKey(stepIndexEdit, keyn, multiSteps);
 			}
 		}
 		if (autostepClick) {// if right-click then move to next step
@@ -256,11 +263,11 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 void Sequencer::moveStepIndexEditWithEditingGate(int delta, bool writeTrig, float sampleRate) {
 	moveStepIndexEdit(delta, false);
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
-		if (!sek[trkn].getTied(seqIndexEdit, stepIndexEdit)) {// play if non-tied step
+		if (!sek[trkn].getTied(stepIndexEdit)) {// play if non-tied step
 			if (!writeTrig) {// in case autostep when simultaneous writeCV and stepCV (keep what was done in Write Input block above)
 				editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
-				editingGateCV[trkn] = sek[trkn].getCV(seqIndexEdit, stepIndexEdit);
-				editingGateCV2[trkn] = sek[trkn].getVelocityVal(seqIndexEdit, stepIndexEdit);
+				editingGateCV[trkn] = sek[trkn].getCV(stepIndexEdit);
+				editingGateCV2[trkn] = sek[trkn].getVelocityVal(stepIndexEdit);
 				editingGateKeyLight = -1;
 			}
 		}
@@ -270,30 +277,30 @@ void Sequencer::moveStepIndexEditWithEditingGate(int delta, bool writeTrig, floa
 
 
 void Sequencer::modSlideVal(int deltaVelKnob, int mutliStepsCount, bool multiTracks) {
-	int sVal = sek[trackIndexEdit].modSlideVal(seqIndexEdit, stepIndexEdit, deltaVelKnob, mutliStepsCount);
+	int sVal = sek[trackIndexEdit].modSlideVal(stepIndexEdit, deltaVelKnob, mutliStepsCount);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setSlideVal(seqIndexEdit, stepIndexEdit, sVal, mutliStepsCount);
+			sek[i].setSlideVal(stepIndexEdit, sVal, mutliStepsCount);
 		}
 	}		
 }
 void Sequencer::modGatePVal(int deltaVelKnob, int mutliStepsCount, bool multiTracks) {
-	int gpVal = sek[trackIndexEdit].modGatePVal(seqIndexEdit, stepIndexEdit, deltaVelKnob, mutliStepsCount);
+	int gpVal = sek[trackIndexEdit].modGatePVal(stepIndexEdit, deltaVelKnob, mutliStepsCount);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setGatePVal(seqIndexEdit, stepIndexEdit, gpVal, mutliStepsCount);
+			sek[i].setGatePVal(stepIndexEdit, gpVal, mutliStepsCount);
 		}
 	}		
 }
 void Sequencer::modVelocityVal(int deltaVelKnob, int mutliStepsCount, bool multiTracks) {
 	int upperLimit = ((*velocityModePtr) == 0 ? 200 : 127);
-	int vVal = sek[trackIndexEdit].modVelocityVal(seqIndexEdit, stepIndexEdit, deltaVelKnob, upperLimit, mutliStepsCount);
+	int vVal = sek[trackIndexEdit].modVelocityVal(stepIndexEdit, deltaVelKnob, upperLimit, mutliStepsCount);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setVelocityVal(seqIndexEdit, stepIndexEdit, vVal, mutliStepsCount);
+			sek[i].setVelocityVal(stepIndexEdit, vVal, mutliStepsCount);
 		}
 	}		
 }
@@ -325,20 +332,20 @@ void Sequencer::modDelay(int deltaSeqKnob, bool multiTracks) {
 	}		
 }
 void Sequencer::modRunModeSeq(int deltaSeqKnob, bool multiTracks) {
-	int newRunMode = sek[trackIndexEdit].modRunModeSeq(seqIndexEdit, deltaSeqKnob);
+	int newRunMode = sek[trackIndexEdit].modRunModeSeq(deltaSeqKnob);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setRunModeSeq(seqIndexEdit, newRunMode);
+			sek[i].setRunModeSeq(newRunMode);
 		}
 	}		
 }
 void Sequencer::modLength(int deltaSeqKnob, bool multiTracks) {
-	int newLength = sek[trackIndexEdit].modLength(seqIndexEdit, deltaSeqKnob);
+	int newLength = sek[trackIndexEdit].modLength(deltaSeqKnob);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].setLength(seqIndexEdit, newLength);
+			sek[i].setLength(newLength);
 		}
 	}		
 }
@@ -361,82 +368,82 @@ void Sequencer::modPhraseSeqNum(int deltaSeqKnob, bool multiTracks) {
 	}		
 }
 void Sequencer::transposeSeq(int deltaSeqKnob, bool multiTracks) {
-	sek[trackIndexEdit].transposeSeq(seqIndexEdit, deltaSeqKnob);
+	sek[trackIndexEdit].transposeSeq(deltaSeqKnob);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].transposeSeq(seqIndexEdit, deltaSeqKnob);
+			sek[i].transposeSeq(deltaSeqKnob);
 		}
 	}		
 }
 void Sequencer::unTransposeSeq(bool multiTracks) {
-	sek[trackIndexEdit].unTransposeSeq(seqIndexEdit);
+	sek[trackIndexEdit].unTransposeSeq();
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].unTransposeSeq(seqIndexEdit);
+			sek[i].unTransposeSeq();
 		}
 	}		
 }
 void Sequencer::rotateSeq(int deltaSeqKnob, bool multiTracks) {
-	sek[trackIndexEdit].rotateSeq(seqIndexEdit, deltaSeqKnob);
+	sek[trackIndexEdit].rotateSeq(deltaSeqKnob);
 	if (stepIndexEdit < getLength())
 		moveStepIndexEdit(deltaSeqKnob, true);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].rotateSeq(seqIndexEdit, deltaSeqKnob);
+			sek[i].rotateSeq(deltaSeqKnob);
 		}
 	}		
 }
 void Sequencer::unRotateSeq(bool multiTracks) {
-	sek[trackIndexEdit].unRotateSeq(seqIndexEdit);
+	sek[trackIndexEdit].unRotateSeq();
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;
-			sek[i].unRotateSeq(seqIndexEdit);
+			sek[i].unRotateSeq();
 		}
 	}		
 }
 void Sequencer::toggleGate(int multiSteps, bool multiTracks) {
-	bool newGate = sek[trackIndexEdit].toggleGate(seqIndexEdit, stepIndexEdit, multiSteps);
+	bool newGate = sek[trackIndexEdit].toggleGate(stepIndexEdit, multiSteps);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;			
-			sek[i].setGate(seqIndexEdit, stepIndexEdit, newGate, multiSteps);
+			sek[i].setGate(stepIndexEdit, newGate, multiSteps);
 		}
 	}		
 }
 bool Sequencer::toggleGateP(int multiSteps, bool multiTracks) { // returns true if tied
-	if (sek[trackIndexEdit].getTied(seqIndexEdit,stepIndexEdit))
+	if (sek[trackIndexEdit].getTied(stepIndexEdit))
 		return true;
-	bool newGateP = sek[trackIndexEdit].toggleGateP(seqIndexEdit, stepIndexEdit, multiSteps);
+	bool newGateP = sek[trackIndexEdit].toggleGateP(stepIndexEdit, multiSteps);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;			
-			sek[i].setGateP(seqIndexEdit, stepIndexEdit, newGateP, multiSteps);
+			sek[i].setGateP(stepIndexEdit, newGateP, multiSteps);
 		}
 	}				
 	return false;
 }
 bool Sequencer::toggleSlide(int multiSteps, bool multiTracks) { // returns true if tied
-	if (sek[trackIndexEdit].getTied(seqIndexEdit,stepIndexEdit))
+	if (sek[trackIndexEdit].getTied(stepIndexEdit))
 		return true;
-	bool newSlide = sek[trackIndexEdit].toggleSlide(seqIndexEdit, stepIndexEdit, multiSteps);
+	bool newSlide = sek[trackIndexEdit].toggleSlide(stepIndexEdit, multiSteps);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;			
-			sek[i].setSlide(seqIndexEdit, stepIndexEdit, newSlide, multiSteps);
+			sek[i].setSlide(stepIndexEdit, newSlide, multiSteps);
 		}
 	}				
 	return false;
 }
 void Sequencer::toggleTied(int multiSteps, bool multiTracks) {
-	bool newTied = sek[trackIndexEdit].toggleTied(seqIndexEdit, stepIndexEdit, multiSteps);// will clear other attribs if new state is on
+	bool newTied = sek[trackIndexEdit].toggleTied(stepIndexEdit, multiSteps);// will clear other attribs if new state is on
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trackIndexEdit) continue;			
-			sek[i].setTied(seqIndexEdit, stepIndexEdit, newTied, multiSteps);
+			sek[i].setTied(stepIndexEdit, newTied, multiSteps);
 		}
 	}						
 }
@@ -445,9 +452,6 @@ void Sequencer::toggleTied(int multiSteps, bool multiTracks) {
 void Sequencer::toJson(json_t *rootJ) {
 	// stepIndexEdit
 	json_object_set_new(rootJ, "stepIndexEdit", json_integer(stepIndexEdit));
-
-	// seqIndexEdit
-	json_object_set_new(rootJ, "seqIndexEdit", json_integer(seqIndexEdit));
 
 	// phraseIndexEdit
 	json_object_set_new(rootJ, "phraseIndexEdit", json_integer(phraseIndexEdit));
@@ -471,11 +475,6 @@ void Sequencer::fromJson(json_t *rootJ) {
 	if (phraseIndexEditJ)
 		phraseIndexEdit = json_integer_value(phraseIndexEditJ);
 	
-	// seqIndexEdit
-	json_t *seqIndexEditJ = json_object_get(rootJ, "seqIndexEdit");
-	if (seqIndexEditJ)
-		seqIndexEdit = json_integer_value(seqIndexEditJ);
-	
 	// trackIndexEdit
 	json_t *trackIndexEditJ = json_object_get(rootJ, "trackIndexEdit");
 	if (trackIndexEditJ)
@@ -489,7 +488,6 @@ void Sequencer::fromJson(json_t *rootJ) {
 void Sequencer::reset() {
 	stepIndexEdit = 0;
 	phraseIndexEdit = 0;
-	seqIndexEdit = 0;
 	trackIndexEdit = 0;
 	seqCPbuf.reset();
 	songCPbuf.reset();
