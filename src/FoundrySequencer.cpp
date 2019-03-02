@@ -485,7 +485,7 @@ void Sequencer::fromJson(json_t *rootJ) {
 }
 
 
-void Sequencer::reset() {
+void Sequencer::reset(bool editingSequence) {
 	stepIndexEdit = 0;
 	phraseIndexEdit = 0;
 	trackIndexEdit = 0;
@@ -494,14 +494,14 @@ void Sequencer::reset() {
 
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
 		editingGate[trkn] = 0ul;
-		sek[trkn].reset();
+		sek[trkn].reset(editingSequence);
 	}
 	editingType = 0ul;
 }
 
 
-void Sequencer::clockStep(int trkn, bool runningSequence) {
-	bool phraseChange = sek[trkn].clockStep(runningSequence);
+void Sequencer::clockStep(int trkn, bool editingSequence) {
+	bool phraseChange = sek[trkn].clockStep(editingSequence);
 	if (trkn == 0 && phraseChange) {
 		for (int tkbcd = 1; tkbcd < NUM_TRACKS; tkbcd++) {// check for song run mode slaving
 			if (sek[tkbcd].getRunModeSong() == SequencerKernel::MODE_TKA) {

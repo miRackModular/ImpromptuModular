@@ -193,7 +193,7 @@ void SequencerKernel::pasteSong(SongCPbuffer* songCPbuf, int startCP) {
 }
 
 
-void SequencerKernel::reset() {
+void SequencerKernel::reset(bool editingSequence) {
 	seqIndexEdit = 0;
 	initPulsesPerStep();
 	initDelay();
@@ -202,13 +202,13 @@ void SequencerKernel::reset() {
 		initSequence(seqn);		
 	}
 	clockPeriod = 0ul;
-	initRun();
+	initRun(editingSequence);
 }
 
 
-void SequencerKernel::randomize() {
+void SequencerKernel::randomize(bool editingSequence) {
 	randomizeSequence();
-	initRun();
+	initRun(editingSequence);
 }
 	
 
@@ -362,19 +362,19 @@ void SequencerKernel::fromJson(json_t *rootJ) {
 }
 
 
-void SequencerKernel::initRun() {
+void SequencerKernel::initRun(bool editingSequence) {
 	movePhraseIndexRun(true);// true means init 
 	moveStepIndexRunIgnore = false;
 	moveStepIndexRun(true);// true means init 
 	
 	ppqnCount = 0;
 	ppqnLeftToSkip = delay;
-	calcGateCodeEx();// uses stepIndexRun as the step and phraseIndexRun to determine the seq
+	calcGateCodeEx(editingSequence);// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
 	slideStepsRemain = 0ul;
 }
 
 
-bool SequencerKernel::clockStep(bool runningSequence) {
+bool SequencerKernel::clockStep(bool editingSequence) {
 	bool phraseChange = false;
 	
 	if (ppqnLeftToSkip > 0) {
@@ -386,26 +386,26 @@ bool SequencerKernel::clockStep(bool runningSequence) {
 		if (ppqnCount >= ppsFiltered)
 			ppqnCount = 0;
 		if (ppqnCount == 0) {
-			float slideFromCV = getCVRun();
-			if (moveStepIndexRun(false) && !runningSequence) {// false means normal (not init)
+			float slideFromCV = getCVRun(editingSequence);
+			if (moveStepIndexRun(false) && !editingSequence) {// false means normal (not init)
 				movePhraseIndexRun(false);// false means normal (not init)
 				moveStepIndexRun(true);// true means init; must always refresh after phraseIndexRun has changed
 				phraseChange = true;// only used by first track
 			}
 
 			// Slide
-			StepAttributes attribRun = getAttributeRun();
+			StepAttributes attribRun = getAttributeRun(editingSequence);
 			if (attribRun.getSlide()) {
 				slideStepsRemain = (unsigned long) (((float)clockPeriod * ppsFiltered) * ((float)attribRun.getSlideVal() / 100.0f));
 				if (slideStepsRemain != 0ul) {
-					float slideToCV = getCVRun();
+					float slideToCV = getCVRun(editingSequence);
 					slideCVdelta = (slideToCV - slideFromCV)/(float)slideStepsRemain;
 				}
 			}
 			else
 				slideStepsRemain = 0ul;
 		}
-		calcGateCodeEx();// uses stepIndexRun as the step and phraseIndexRun to determine the seq
+		calcGateCodeEx(editingSequence);// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
 	}
 	clockPeriod = 0ul;
 	
@@ -538,8 +538,8 @@ void SequencerKernel::deactivateTiedStep(int seqn, int stepn) {// caller sets di
 }
 
 
-void SequencerKernel::calcGateCodeEx() {// uses stepIndexRun as the step and phraseIndexRun to determine the seq
-	int seqn = phrases[phraseIndexRun].getSeqNum();
+void SequencerKernel::calcGateCodeEx(bool editingSequence) {// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
+	int seqn = editingSequence ? seqIndexEdit : phrases[phraseIndexRun].getSeqNum();
 	StepAttributes attribute = attributes[seqn][stepIndexRun];
 	int ppsFiltered = getPulsesPerStep();// must use method
 	int gateType;

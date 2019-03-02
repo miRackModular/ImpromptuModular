@@ -86,7 +86,8 @@ class Sequencer {
 
 	}
 	inline void setPhraseIndexEdit(int _phraseIndexEdit) {phraseIndexEdit = _phraseIndexEdit;}
-	inline void setTrackIndexEdit(int _trackIndexEdit) {trackIndexEdit = _trackIndexEdit;}
+	inline void bringPhraseIndexRunToEdit() {sek[trackIndexEdit].setPhraseIndexRun(phraseIndexEdit);}
+	inline void setTrackIndexEdit(int _trackIndexEdit) {trackIndexEdit = _trackIndexEdit % NUM_TRACKS;}
 	void setVelocityVal(int trkn, int intVel, int multiStepsCount, bool multiTracks);
 	void setLength(int length, bool multiTracks);
 	void setBegin(bool multiTracks);
@@ -115,7 +116,7 @@ class Sequencer {
 		else trackIndexEdit = NUM_TRACKS - 1;
 	}
 	
-	int getLengthSeqCPbug() {return seqCPbuf.storedLength;}
+	int getLengthSeqCPbuf() {return seqCPbuf.storedLength;}
 	void copySequence(int countCP);
 	void pasteSequence(bool multiTracks);
 	void copySong(int startCP, int countCP);
@@ -169,26 +170,27 @@ class Sequencer {
 	void toggleTied(int multiSteps, bool multiTracks);
 
 
-	inline float calcCvOutputAndDecSlideStepsRemain(int trkn, bool running) {
+	inline float calcCvOutputAndDecSlideStepsRemain(int trkn, bool running, bool editingSequence) {
 		float cvout;
 		if (running)
-			cvout = sek[trkn].getCVRun() - sek[trkn].calcSlideOffset();
+			cvout = sek[trkn].getCVRun(editingSequence) - sek[trkn].calcSlideOffset();
 		else
 			cvout = (editingGate[trkn] > 0ul) ? editingGateCV[trkn] : sek[trkn].getCV(stepIndexEdit);
 		sek[trkn].decSlideStepsRemain();
 		return cvout;
 	}
-	inline float calcGateOutput(int trkn, bool running, Trigger clockTrigger, float sampleRate) {
+	inline float calcGateOutput(int trkn, bool running, Trigger clockTrigger, float sampleRate, bool editingSequence) {
 		if (running) 
 			return (sek[trkn].calcGate(clockTrigger, sampleRate) ? 10.0f : 0.0f);
 		return (editingGate[trkn] > 0ul) ? 10.0f : 0.0f;
 	}
-	inline float calcVelOutput(int trkn, bool running) {
+	inline float calcVelOutput(int trkn, bool running, bool editingSequence) {
+		int vVal = 0;
 		if (running)
-			return calcVelocityVoltage(sek[trkn].getVelocityValRun());
-		return calcVelocityVoltage( (editingGate[trkn] > 0ul) ? editingGateCV2[trkn] : sek[trkn].getVelocityVal(stepIndexEdit) );
-	}
-	inline float calcVelocityVoltage(int vVal) {// internal use only, used by: calcVelOutput()
+			vVal = sek[trkn].getVelocityValRun(editingSequence);
+		else 
+			vVal = (editingGate[trkn] > 0ul) ? editingGateCV2[trkn] : sek[trkn].getVelocityVal(stepIndexEdit);
+
 		float velRet = (float)vVal;
 		if (*velocityModePtr == 0)
 			velRet = velRet * 10.0f / 200.0f;
@@ -205,10 +207,13 @@ class Sequencer {
 	}
 	
 	
-	inline void attach() {
-		phraseIndexEdit = sek[trackIndexEdit].getPhraseIndexRun();
-		sek[trackIndexEdit].setSeqIndexEdit(sek[trackIndexEdit].getPhraseSeq(phraseIndexEdit));// if phraseIndexEdit goes down to kernel, make an attach method in kernel, it will be simpler.
-		stepIndexEdit = sek[trackIndexEdit].getStepIndexRun();
+	inline void attach(bool editingSequence) {
+		if (editingSequence) {
+			stepIndexEdit = sek[trackIndexEdit].getStepIndexRun();
+		}
+		else {
+			phraseIndexEdit = sek[trackIndexEdit].getPhraseIndexRun();
+		}		
 	}
 	
 	
@@ -225,16 +230,16 @@ class Sequencer {
 	void toJson(json_t *rootJ);
 	void fromJson(json_t *rootJ);
 	
-	void reset();
+	void reset(bool editingSequence);
 	
-	inline void randomize() {sek[trackIndexEdit].randomize();}
+	inline void randomize(bool editingSequence) {sek[trackIndexEdit].randomize(editingSequence);}
 	
-	inline void initRun() {
+	inline void initRun(bool editingSequence) {
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
-			sek[trkn].initRun();
+			sek[trkn].initRun(editingSequence);
 	}
 
-	void clockStep(int trkn, bool runningSequence);
+	void clockStep(int trkn, bool editingSequence);
 	
 	inline void step() {
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++) 

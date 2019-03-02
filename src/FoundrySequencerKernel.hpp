@@ -220,9 +220,17 @@ class SequencerKernel {
 	inline int getStepIndexRun() {return stepIndexRun;}
 	inline int getPhraseIndexRun() {return phraseIndexRun;}
 	inline float getCV(int stepn) {return cv[seqIndexEdit][stepn];}
-	inline float getCVRun() {return cv[phrases[phraseIndexRun].getSeqNum()][stepIndexRun];}
+	inline float getCVRun(bool editingSequence) {
+		if (editingSequence)
+			return cv[seqIndexEdit][stepIndexRun];
+		return cv[phrases[phraseIndexRun].getSeqNum()][stepIndexRun];
+	}
 	inline StepAttributes getAttribute(int stepn) {return attributes[seqIndexEdit][stepn];}
-	inline StepAttributes getAttributeRun() {return attributes[phrases[phraseIndexRun].getSeqNum()][stepIndexRun];}
+	inline StepAttributes getAttributeRun(bool editingSequence) {
+		if (editingSequence)
+			return attributes[seqIndexEdit][stepIndexRun];
+		return attributes[phrases[phraseIndexRun].getSeqNum()][stepIndexRun];
+	}
 	inline bool getGate(int seqn, int stepn) {return attributes[seqn][stepn].getGate();}
 	inline bool getGateP(int seqn, int stepn) {return attributes[seqn][stepn].getGateP();}
 	inline bool getSlide(int seqn, int stepn) {return attributes[seqn][stepn].getSlide();}
@@ -230,7 +238,7 @@ class SequencerKernel {
 	inline int getGatePVal(int stepn) {return attributes[seqIndexEdit][stepn].getGatePVal();}
 	inline int getSlideVal(int stepn) {return attributes[seqIndexEdit][stepn].getSlideVal();}
 	inline int getVelocityVal(int stepn) {return attributes[seqIndexEdit][stepn].getVelocityVal();}
-	inline int getVelocityValRun() {return getAttributeRun().getVelocityVal();}
+	inline int getVelocityValRun(bool editingSequence) {return getAttributeRun(editingSequence).getVelocityVal();}
 	inline int getGateType(int stepn) {return attributes[seqIndexEdit][stepn].getGateType();}	
 	
 	inline void setSeqIndexEdit(int _seqIndexEdit) {seqIndexEdit = _seqIndexEdit;}
@@ -360,12 +368,12 @@ class SequencerKernel {
 	void copySong(SongCPbuffer* songCPbuf, int startCP, int countCP);
 	void pasteSong(SongCPbuffer* songCPbuf, int startCP);
 	
-	void reset();
-	void randomize();
+	void reset(bool editingSequence);
+	void randomize(bool editingSequence);
 	void toJson(json_t *rootJ);
 	void fromJson(json_t *rootJ);
-	void initRun();
-	bool clockStep(bool runningSequence);
+	void initRun(bool editingSequence);
+	bool clockStep(bool editingSequence);
 	inline void step() {
 		clockPeriod++;
 	}
@@ -389,7 +397,7 @@ class SequencerKernel {
 	}
 	void activateTiedStep(int seqn, int stepn);
 	void deactivateTiedStep(int seqn, int stepn);
-	void calcGateCodeEx();
+	void calcGateCodeEx(bool editingSequence);
 	bool moveStepIndexRun(bool init);
 	void moveSongIndexBackward(bool init, bool rollover);
 	void moveSongIndexForeward(bool init, bool rollover);
