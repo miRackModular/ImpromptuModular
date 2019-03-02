@@ -44,11 +44,12 @@ Details about each module are given in the links above, and a feature comparison
 | Outputs					| CV+gate			| CV+2gates		| CV+2gates		| Gate				| CV+gate+ CV2	| Gate / Gate+CV|
 | Patterns per track/ channel| 1        		| 16 			| 32			| 32				| 64			| 2 (banks)		|
 | Song length				| - 				| 16			| 32 			| 64 				| 99			| - 			|
+| Seq. repetitions			| - 				| FWD 2,3,4		| FWD 2,3,4		| FWD 2,3,4			| 0 to 99		| -				|
 | Gate types				| 2 				| 12			| 12			| 8					| 12			| 1				|
 | Probability				| No 				| Global		| Global		| Per step			| Per step		| No			|
 | Slide						| No 				| Global		| Global		| -					| Per step		| - / No		|
 | Sequence play				| - 				| Yes			| Yes			| Yes				| No			| -				|
-| Seq. repetitions			| - 				| FWD 2,3,4		| FWD 2,3,4		| FWD 2,3,4			| 0 to 99		| -				|
+| Edit while runnning		| Gates only 		| Yes 			| Yes			| Yes				| Yes			| Yes			|
 
 \* Configuration is noted as follows: Channels/Tracks x Sequence-Length. The distinction between channels and tracks relates to clock inputs: when channles are separately clockable they are referred to as tracks.
 
