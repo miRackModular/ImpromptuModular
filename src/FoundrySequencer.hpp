@@ -234,7 +234,7 @@ class Sequencer {
 			sek[trkn].initRun();
 	}
 
-	void clockStep(int trkn);
+	void clockStep(int trkn, bool runningSequence);
 	
 	inline void step() {
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++) 

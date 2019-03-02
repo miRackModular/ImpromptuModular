@@ -162,7 +162,7 @@ struct Foundry : Module {
 	Trigger writeModeTrigger;
 
 	
-	inline bool isEditingSequence(void) {return params[EDIT_PARAM].value < 0.5f;}
+	inline bool isEditingSequence(void) {return params[EDIT_PARAM].value > 0.5f;}
 	inline bool isEditingGates(void) {return params[KEY_GATE_PARAM].value < 0.5f;}
 	inline int getCPMode(void) {
 		if (params[CPMODE_PARAM].value > 1.5f) return 2000;// this means end, and code should never loop up to this count. This value should be bigger than max(MAX_STEPS, MAX_PHRASES)
@@ -864,7 +864,7 @@ struct Foundry : Module {
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 				clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].value);
 				if (clockTrigged[clkInSources[trkn]]) {
-					seq.clockStep(trkn);
+					seq.clockStep(trkn, editingSequence);
 				}
 			}
 			seq.step();
@@ -875,8 +875,6 @@ struct Foundry : Module {
 			seq.initRun();
 			resetLight = 1.0f;
 			displayState = DISP_NORMAL;
-			//multiSteps = false;
-			//multiTracks = false;
 			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++)
 				clockTriggers[trkn].reset();		
@@ -1752,7 +1750,7 @@ struct FoundryWidget : ModuleWidget {
 		// see under Track display
 		
 		// Main switch
-		addParam(createParamCentered<CKSSNotify>(Vec(columnRulerT5, rowRulerT0), module, Foundry::EDIT_PARAM, 0.0f, 1.0f, 0.0f));// 1.0f is top position
+		addParam(createParamCentered<CKSSNotify>(Vec(columnRulerT5, rowRulerT0 + 3), module, Foundry::EDIT_PARAM, 0.0f, 1.0f, 0.0f));// 1.0f is top position
 
 		
 		
@@ -1855,8 +1853,8 @@ struct FoundryWidget : ModuleWidget {
 	
 	
 		// Attach button and light
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(columnRulerT5 - 10, rowRulerDisp + 4), module, Foundry::ATTACH_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
-		addChild(createLightCentered<MediumLight<RedLight>>(Vec(columnRulerT5 + 10, rowRulerDisp + 4), module, Foundry::ATTACH_LIGHT));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(columnRulerT5 - 10, rowRulerDisp + 14), module, Foundry::ATTACH_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addChild(createLightCentered<MediumLight<RedLight>>(Vec(columnRulerT5 + 10, rowRulerDisp + 14), module, Foundry::ATTACH_LIGHT));
 	
 	
 		// ****** Gate and slide section ******

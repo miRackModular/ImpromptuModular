@@ -374,7 +374,7 @@ void SequencerKernel::initRun() {
 }
 
 
-bool SequencerKernel::clockStep() {
+bool SequencerKernel::clockStep(bool runningSequence) {
 	bool phraseChange = false;
 	
 	if (ppqnLeftToSkip > 0) {
@@ -387,7 +387,7 @@ bool SequencerKernel::clockStep() {
 			ppqnCount = 0;
 		if (ppqnCount == 0) {
 			float slideFromCV = getCVRun();
-			if (moveStepIndexRun(false)) {// false means normal (not init)
+			if (moveStepIndexRun(false) && !runningSequence) {// false means normal (not init)
 				movePhraseIndexRun(false);// false means normal (not init)
 				moveStepIndexRun(true);// true means init; must always refresh after phraseIndexRun has changed
 				phraseChange = true;// only used by first track
