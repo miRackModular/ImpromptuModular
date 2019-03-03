@@ -117,7 +117,6 @@ struct Foundry : Module {
 	long tiedWarning;// 0 when no warning, positive downward step counter timer when warning
 	long attachedWarning;// 0 when no warning, positive downward step counter timer when warning
 	long revertDisplay;
-	long showLenInSteps;
 	bool multiSteps;
 	int clkInSources[Sequencer::NUM_TRACKS];// first index is always 0 and will never change
 	int cpSeqLength;
@@ -191,7 +190,6 @@ struct Foundry : Module {
 		tiedWarning = 0l;
 		attachedWarning = 0l;
 		revertDisplay = 0l;
-		showLenInSteps = 0l;
 		resetOnRun = false;
 		attached = false;
 		multiSteps = false;
@@ -358,7 +356,6 @@ struct Foundry : Module {
 	void step() override {
 		const float sampleRate = engineGetSampleRate();
 		static const float revertDisplayTime = 0.7f;// seconds
-		static const float showLenInStepsTime = 2.0f;// seconds
 		
 		
 		//********** Buttons, knobs, switches and inputs **********
@@ -532,7 +529,6 @@ struct Foundry : Module {
 								cpSeqLength = stepPressed - seq.getStepIndexEdit() + 1;
 							}
 							else {
-								showLenInSteps = (long) (showLenInStepsTime * sampleRate / displayRefreshStepSkips);
 								seq.setStepIndexEdit(stepPressed, sampleRate);
 								displayState = DISP_NORMAL; // leave this here, the if has it also, but through the revert mechanism
 								if (multiSteps && (getCPMode() == 2000)) {
@@ -930,22 +926,35 @@ struct Foundry : Module {
 
 				else {// normal led display (i.e. not length)
 					int stepIndexRun = seq.getStepIndexRun(seq.getTrackIndexEdit());
-					// Run cursor (green)
-					if (editingSequence)
-						green = ((running && (stepn == stepIndexRun)) ? 1.0f : 0.0f);
-					else {
-						//green = ((running && (i == phraseIndexRun)) ? 1.0f : 0.0f);
-						green += ((running && (stepn == stepIndexRun) ) ? 0.1f : 0.0f);
-						//green = clamp(green, 0.0f, 1.0f);
+					int stepIndexEdit = seq.getStepIndexEdit();
+					if (multiSteps) {
+						if (stepn >= stepIndexEdit && stepn < (stepIndexEdit + cpSeqLength))
+							red = 0.2f;
 					}
+
+					// Run cursor (green)
+					if (running) {
+						for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
+							bool trknIsUsed = outputs[CV_OUTPUTS + trkn].active || outputs[GATE_OUTPUTS + trkn].active || outputs[VEL_OUTPUTS + trkn].active;
+							if (stepn == seq.getStepIndexRun(trkn) && trknIsUsed) 
+								green = 0.1f;	
+						}
+						if (green > 0.2f) 
+							green = 0.2f;
+						if (stepn == stepIndexRun) {
+							green = 1.0f;
+						}
+					}
+
 					// Edit cursor (red)
-					if (editingSequence)
-						red = (stepn == seq.getStepIndexEdit() ? 1.0f : 0.0f);
-					//else
-						//red = (i == phraseIndexEdit ? 1.0f : 0.0f);						
+					if (editingSequence) {
+						if (red == 0.0f) // don't overwrite light multistep with full red
+							red = (stepn == stepIndexEdit ? 1.0f : 0.0f);
+					}
+
 					bool gate = false;
 					if (editingSequence)
-						gate = seq.getAttribute(true, stepn).getGate();//attributes[seqIndexEdit][i].getGate1();
+						gate = seq.getAttribute(true, stepn).getGate();
 					else if (!editingSequence && (attached && running))
 						gate = seq.getAttribute(false, stepn).getGate();
 					white = ((green == 0.0f && red == 0.0f && gate && displayState != DISP_MODE_SEQ && displayState != DISP_PPQN && displayState != DISP_DELAY) ? 0.04f : 0.0f);
@@ -1123,8 +1132,6 @@ struct Foundry : Module {
 				tiedWarning--;
 			if (attachedWarning > 0l)
 				attachedWarning--;
-			if (showLenInSteps > 0l)
-				showLenInSteps--;
 			if (revertDisplay > 0l) {
 				if (revertDisplay == 1)
 					displayState = DISP_NORMAL;
