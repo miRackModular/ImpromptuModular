@@ -219,26 +219,26 @@ class SequencerKernel {
 	inline int getRotateOffset() {return sequences[seqIndexEdit].getRotate();}
 	inline int getStepIndexRun() {return stepIndexRun;}
 	inline int getPhraseIndexRun() {return phraseIndexRun;}
-	inline float getCV(int stepn) {return cv[seqIndexEdit][stepn];}
-	inline float getCVRun(bool editingSequence) {
+	inline float getCV(bool editingSequence) {return getCV(editingSequence, stepIndexRun);}
+	inline float getCV(bool editingSequence, int stepn) {
 		if (editingSequence)
-			return cv[seqIndexEdit][stepIndexRun];
-		return cv[phrases[phraseIndexRun].getSeqNum()][stepIndexRun];
+			return cv[seqIndexEdit][stepn];
+		return cv[phrases[phraseIndexRun].getSeqNum()][stepn];
 	}
-	inline StepAttributes getAttribute(int stepn) {return attributes[seqIndexEdit][stepn];}
-	inline StepAttributes getAttributeRun(bool editingSequence) {
+	inline StepAttributes getAttribute(bool editingSequence) {return getAttribute(editingSequence, stepIndexRun);}
+	inline StepAttributes getAttribute(bool editingSequence, int stepn) {
 		if (editingSequence)
-			return attributes[seqIndexEdit][stepIndexRun];
-		return attributes[phrases[phraseIndexRun].getSeqNum()][stepIndexRun];
+			return attributes[seqIndexEdit][stepn];
+		return attributes[phrases[phraseIndexRun].getSeqNum()][stepn];
 	}
-	inline bool getGate(int seqn, int stepn) {return attributes[seqn][stepn].getGate();}
-	inline bool getGateP(int seqn, int stepn) {return attributes[seqn][stepn].getGateP();}
-	inline bool getSlide(int seqn, int stepn) {return attributes[seqn][stepn].getSlide();}
+	//inline bool getGate(int seqn, int stepn) {return attributes[seqn][stepn].getGate();}
+	//inline bool getGateP(int seqn, int stepn) {return attributes[seqn][stepn].getGateP();}
+	//inline bool getSlide(int seqn, int stepn) {return attributes[seqn][stepn].getSlide();}
 	inline bool getTied(int stepn) {return attributes[seqIndexEdit][stepn].getTied();}
-	inline int getGatePVal(int stepn) {return attributes[seqIndexEdit][stepn].getGatePVal();}
-	inline int getSlideVal(int stepn) {return attributes[seqIndexEdit][stepn].getSlideVal();}
+	//inline int getGatePVal(int stepn) {return attributes[seqIndexEdit][stepn].getGatePVal();}
+	//inline int getSlideVal(int stepn) {return attributes[seqIndexEdit][stepn].getSlideVal();}
 	inline int getVelocityVal(int stepn) {return attributes[seqIndexEdit][stepn].getVelocityVal();}
-	inline int getVelocityValRun(bool editingSequence) {return getAttributeRun(editingSequence).getVelocityVal();}
+	inline int getVelocityValRun(bool editingSequence) {return getAttribute(editingSequence).getVelocityVal();}
 	inline int getGateType(int stepn) {return attributes[seqIndexEdit][stepn].getGateType();}	
 	
 	inline void setSeqIndexEdit(int _seqIndexEdit) {seqIndexEdit = _seqIndexEdit;}
@@ -301,13 +301,13 @@ class SequencerKernel {
 		return delay;
 	}
 	inline int modGatePVal(int stepn, int delta, int count) {
-		int pVal = getGatePVal(stepn);
+		int pVal = attributes[seqIndexEdit][stepn].getGatePVal();
 		pVal = clamp(pVal + delta, 0, 100);
 		setGatePVal(stepn, pVal, count);
 		return pVal;
 	}		
 	inline int modSlideVal(int stepn, int delta, int count) {
-		int sVal = getSlideVal(stepn);
+		int sVal = attributes[seqIndexEdit][stepn].getSlideVal();
 		sVal = clamp(sVal + delta, 0, 100);
 		setSlideVal(stepn, sVal, count);
 		return sVal;

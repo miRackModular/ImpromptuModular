@@ -701,100 +701,108 @@ struct PhraseSeq16 : Module {
 			
 			// Copy button
 			if (copyTrigger.process(params[COPY_PARAM].value)) {
-				startCP = editingSequence ? stepIndexEdit : phraseIndexEdit;
-				countCP = 16;
-				if (params[CPMODE_PARAM].value > 1.5f)// all
-					startCP = 0;
-				else if (params[CPMODE_PARAM].value < 0.5f)// 4
-					countCP = min(4, 16 - startCP);
-				else// 8
-					countCP = min(8, 16 - startCP);
-				if (editingSequence) {
-					for (int i = 0, s = startCP; i < countCP; i++, s++) {
-						cvCPbuffer[i] = cv[seqIndexEdit][s];
-						attribCPbuffer[i] = attributes[seqIndexEdit][s];
+				if (!attached) {
+					startCP = editingSequence ? stepIndexEdit : phraseIndexEdit;
+					countCP = 16;
+					if (params[CPMODE_PARAM].value > 1.5f)// all
+						startCP = 0;
+					else if (params[CPMODE_PARAM].value < 0.5f)// 4
+						countCP = min(4, 16 - startCP);
+					else// 8
+						countCP = min(8, 16 - startCP);
+					if (editingSequence) {
+						for (int i = 0, s = startCP; i < countCP; i++, s++) {
+							cvCPbuffer[i] = cv[seqIndexEdit][s];
+							attribCPbuffer[i] = attributes[seqIndexEdit][s];
+						}
+						seqAttribCPbuffer.setSeqAttrib(sequences[seqIndexEdit].getSeqAttrib());
+						seqCopied = true;
 					}
-					seqAttribCPbuffer.setSeqAttrib(sequences[seqIndexEdit].getSeqAttrib());
-					seqCopied = true;
+					else {
+						for (int i = 0, p = startCP; i < countCP; i++, p++)
+							phraseCPbuffer[i] = phrase[p];
+						seqCopied = false;// so that a cross paste can be detected
+					}
+					infoCopyPaste = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
+					displayState = DISP_NORMAL;
 				}
-				else {
-					for (int i = 0, p = startCP; i < countCP; i++, p++)
-						phraseCPbuffer[i] = phrase[p];
-					seqCopied = false;// so that a cross paste can be detected
-				}
-				infoCopyPaste = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
-				displayState = DISP_NORMAL;
+				else
+					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 			}
 			// Paste button
 			if (pasteTrigger.process(params[PASTE_PARAM].value)) {
-				infoCopyPaste = (long) (-1 * revertDisplayTime * sampleRate / displayRefreshStepSkips);
-				startCP = 0;
-				if (countCP <= 8) {
-					startCP = editingSequence ? stepIndexEdit : phraseIndexEdit;
-					countCP = min(countCP, 16 - startCP);
-				}
-				// else nothing to do for ALL
+				if (!attached) {
+					infoCopyPaste = (long) (-1 * revertDisplayTime * sampleRate / displayRefreshStepSkips);
+					startCP = 0;
+					if (countCP <= 8) {
+						startCP = editingSequence ? stepIndexEdit : phraseIndexEdit;
+						countCP = min(countCP, 16 - startCP);
+					}
+					// else nothing to do for ALL
 
-				if (editingSequence) {
-					if (seqCopied) {// non-crossed paste (seq vs song)
-						for (int i = 0, s = startCP; i < countCP; i++, s++) {
-							cv[seqIndexEdit][s] = cvCPbuffer[i];
-							attributes[seqIndexEdit][s] = attribCPbuffer[i];
-						}
-						if (params[CPMODE_PARAM].value > 1.5f) {// all
-							sequences[seqIndexEdit].setSeqAttrib(seqAttribCPbuffer.getSeqAttrib());
-						}
-					}
-					else {// crossed paste to seq (seq vs song)
-						if (params[CPMODE_PARAM].value > 1.5f) { // ALL (init steps)
-							for (int s = 0; s < 16; s++) {
-								//cv[seqIndexEdit][s] = 0.0f;
-								//attributes[seqIndexEdit][s].init();
-								attributes[seqIndexEdit][s].toggleGate1();
+					if (editingSequence) {
+						if (seqCopied) {// non-crossed paste (seq vs song)
+							for (int i = 0, s = startCP; i < countCP; i++, s++) {
+								cv[seqIndexEdit][s] = cvCPbuffer[i];
+								attributes[seqIndexEdit][s] = attribCPbuffer[i];
 							}
-							sequences[seqIndexEdit].setTranspose(0);
-							sequences[seqIndexEdit].setRotate(0);
+							if (params[CPMODE_PARAM].value > 1.5f) {// all
+								sequences[seqIndexEdit].setSeqAttrib(seqAttribCPbuffer.getSeqAttrib());
+							}
 						}
-						else if (params[CPMODE_PARAM].value < 0.5f) {// 4 (randomize CVs)
-							for (int s = 0; s < 16; s++)
-								cv[seqIndexEdit][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
-							sequences[seqIndexEdit].setTranspose(0);
-							sequences[seqIndexEdit].setRotate(0);
-						}
-						else {// 8 (randomize gate 1)
-							for (int s = 0; s < 16; s++)
-								if ( (randomu32() & 0x1) != 0)
+						else {// crossed paste to seq (seq vs song)
+							if (params[CPMODE_PARAM].value > 1.5f) { // ALL (init steps)
+								for (int s = 0; s < 16; s++) {
+									//cv[seqIndexEdit][s] = 0.0f;
+									//attributes[seqIndexEdit][s].init();
 									attributes[seqIndexEdit][s].toggleGate1();
+								}
+								sequences[seqIndexEdit].setTranspose(0);
+								sequences[seqIndexEdit].setRotate(0);
+							}
+							else if (params[CPMODE_PARAM].value < 0.5f) {// 4 (randomize CVs)
+								for (int s = 0; s < 16; s++)
+									cv[seqIndexEdit][s] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
+								sequences[seqIndexEdit].setTranspose(0);
+								sequences[seqIndexEdit].setRotate(0);
+							}
+							else {// 8 (randomize gate 1)
+								for (int s = 0; s < 16; s++)
+									if ( (randomu32() & 0x1) != 0)
+										attributes[seqIndexEdit][s].toggleGate1();
+							}
+							startCP = 0;
+							countCP = 16;
+							infoCopyPaste *= 2l;
 						}
-						startCP = 0;
-						countCP = 16;
-						infoCopyPaste *= 2l;
 					}
-				}
-				else {
-					if (!seqCopied) {// non-crossed paste (seq vs song)
-						for (int i = 0, p = startCP; i < countCP; i++, p++)
-							phrase[p] = phraseCPbuffer[i];
+					else {
+						if (!seqCopied) {// non-crossed paste (seq vs song)
+							for (int i = 0, p = startCP; i < countCP; i++, p++)
+								phrase[p] = phraseCPbuffer[i];
+						}
+						else {// crossed paste to song (seq vs song)
+							if (params[CPMODE_PARAM].value > 1.5f) { // ALL (init phrases)
+								for (int p = 0; p < 16; p++)
+									phrase[p] = 0;
+							}
+							else if (params[CPMODE_PARAM].value < 0.5f) {// 4 (phrases increase from 1 to 16)
+								for (int p = 0; p < 16; p++)
+									phrase[p] = p;						
+							}
+							else {// 8 (randomize phrases)
+								for (int p = 0; p < 16; p++)
+									phrase[p] = randomu32() % 16;
+							}
+							startCP = 0;
+							countCP = 16;
+							infoCopyPaste *= 2l;
+						}					
 					}
-					else {// crossed paste to song (seq vs song)
-						if (params[CPMODE_PARAM].value > 1.5f) { // ALL (init phrases)
-							for (int p = 0; p < 16; p++)
-								phrase[p] = 0;
-						}
-						else if (params[CPMODE_PARAM].value < 0.5f) {// 4 (phrases increase from 1 to 16)
-							for (int p = 0; p < 16; p++)
-								phrase[p] = p;						
-						}
-						else {// 8 (randomize phrases)
-							for (int p = 0; p < 16; p++)
-								phrase[p] = randomu32() % 16;
-						}
-						startCP = 0;
-						countCP = 16;
-						infoCopyPaste *= 2l;
-					}					
+					displayState = DISP_NORMAL;
 				}
-				displayState = DISP_NORMAL;
+				else
+					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 			}
 
 			// Write input (must be before Left and Right in case route gate simultaneously to Right and Write for example)
@@ -888,20 +896,24 @@ struct PhraseSeq16 : Module {
 
 			// Mode/Length button
 			if (modeTrigger.process(params[RUNMODE_PARAM].value)) {
-				if (editingPpqn != 0l)
-					editingPpqn = 0l;			
-				if (displayState == DISP_NORMAL || displayState == DISP_TRANSPOSE || displayState == DISP_ROTATE)
-					displayState = DISP_LENGTH;
-				else if (displayState == DISP_LENGTH)
-					displayState = DISP_MODE;
+				if (!attached) {
+					if (editingPpqn != 0l)
+						editingPpqn = 0l;			
+					if (displayState == DISP_NORMAL || displayState == DISP_TRANSPOSE || displayState == DISP_ROTATE)
+						displayState = DISP_LENGTH;
+					else if (displayState == DISP_LENGTH)
+						displayState = DISP_MODE;
+					else
+						displayState = DISP_NORMAL;
+					modeHoldDetect.start((long) (holdDetectTime * sampleRate / displayRefreshStepSkips));
+				}
 				else
-					displayState = DISP_NORMAL;
-				modeHoldDetect.start((long) (holdDetectTime * sampleRate / displayRefreshStepSkips));
+					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 			}
 			
 			// Transpose/Rotate button
 			if (transposeTrigger.process(params[TRAN_ROT_PARAM].value)) {
-				if (editingSequence) {
+				if (editingSequence && !attached) {
 					if (displayState == DISP_NORMAL || displayState == DISP_MODE || displayState == DISP_LENGTH) {
 						displayState = DISP_TRANSPOSE;
 					}
@@ -911,6 +923,8 @@ struct PhraseSeq16 : Module {
 					else 
 						displayState = DISP_NORMAL;
 				}
+				else if (attached)
+					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 			}			
 			
 			// Sequence knob  
@@ -1247,7 +1261,7 @@ struct PhraseSeq16 : Module {
 					bool gate = false;
 					if (editingSequence)
 						gate = attributes[seqIndexEdit][i].getGate1();
-					else if (!editingSequence && attached)
+					else if (!editingSequence && (attached && running))
 						gate = attributes[phrase[phraseIndexRun]][i].getGate1();
 					white = ((green == 0.0f && red == 0.0f && gate && displayState != DISP_MODE) ? 0.04f : 0.0f);
 					if (editingSequence && white != 0.0f) {

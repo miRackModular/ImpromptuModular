@@ -46,9 +46,10 @@ class Sequencer {
 	inline int getTrackIndexEdit() {return trackIndexEdit;}
 	inline int getStepIndexRun(int trkn) {return sek[trkn].getStepIndexRun();}
 	inline int getLength() {return sek[trackIndexEdit].getLength();}
-	inline StepAttributes getAttribute() {return sek[trackIndexEdit].getAttribute(stepIndexEdit);}
-	inline StepAttributes getAttribute(int trkn, int stepn) {return sek[trkn].getAttribute(stepn);}
-	inline float getCV() {return sek[trackIndexEdit].getCV(stepIndexEdit);}
+	inline StepAttributes getAttribute(bool editingSequence) {return sek[trackIndexEdit].getAttribute(editingSequence);}
+	inline StepAttributes getAttribute(bool editingSequence, int stepn) {return sek[trackIndexEdit].getAttribute(editingSequence, stepn);}
+	inline float getCV(bool editingSequence) {return sek[trackIndexEdit].getCV(editingSequence);}
+	inline float getCV(bool editingSequence, int stepn) {return sek[trackIndexEdit].getCV(editingSequence, stepn);}
 	inline int keyIndexToGateTypeEx(int keyn) {return sek[trackIndexEdit].keyIndexToGateTypeEx(keyn);}
 	inline int getGateType() {return sek[trackIndexEdit].getGateType(stepIndexEdit);}
 	inline int getPulsesPerStep() {return sek[trackIndexEdit].getPulsesPerStep();}
@@ -70,7 +71,7 @@ class Sequencer {
 		stepIndexEdit = _stepIndexEdit;
 		if (!sek[trackIndexEdit].getTied(stepIndexEdit)) {// play if non-tied step
 			editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
-			editingGateCV[trackIndexEdit] = sek[trackIndexEdit].getCV(stepIndexEdit);
+			editingGateCV[trackIndexEdit] = sek[trackIndexEdit].getCV(false, stepIndexEdit);
 			editingGateCV2[trackIndexEdit] = sek[trackIndexEdit].getVelocityVal(stepIndexEdit);
 			editingGateKeyLight = -1;
 		}
@@ -173,13 +174,13 @@ class Sequencer {
 	inline float calcCvOutputAndDecSlideStepsRemain(int trkn, bool running, bool editingSequence) {
 		float cvout;
 		if (running)
-			cvout = sek[trkn].getCVRun(editingSequence) - sek[trkn].calcSlideOffset();
+			cvout = sek[trkn].getCV(editingSequence) - sek[trkn].calcSlideOffset();
 		else
-			cvout = (editingGate[trkn] > 0ul) ? editingGateCV[trkn] : sek[trkn].getCV(stepIndexEdit);
+			cvout = (editingGate[trkn] > 0ul) ? editingGateCV[trkn] : sek[trkn].getCV(false, stepIndexEdit);
 		sek[trkn].decSlideStepsRemain();
 		return cvout;
 	}
-	inline float calcGateOutput(int trkn, bool running, Trigger clockTrigger, float sampleRate, bool editingSequence) {
+	inline float calcGateOutput(int trkn, bool running, Trigger clockTrigger, float sampleRate) {
 		if (running) 
 			return (sek[trkn].calcGate(clockTrigger, sampleRate) ? 10.0f : 0.0f);
 		return (editingGate[trkn] > 0ul) ? 10.0f : 0.0f;
@@ -187,7 +188,7 @@ class Sequencer {
 	inline float calcVelOutput(int trkn, bool running, bool editingSequence) {
 		int vVal = 0;
 		if (running)
-			vVal = sek[trkn].getVelocityValRun(editingSequence);
+			vVal = sek[trkn].getAttribute(editingSequence).getVelocityVal();//getVelocityValRun(editingSequence);
 		else 
 			vVal = (editingGate[trkn] > 0ul) ? editingGateCV2[trkn] : sek[trkn].getVelocityVal(stepIndexEdit);
 

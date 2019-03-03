@@ -42,7 +42,7 @@
      showgrid="false"
      inkscape:zoom="2.1214855"
      inkscape:cx="337.5"
-     inkscape:cy="190"
+     inkscape:cy="246.56414"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
@@ -1543,27 +1543,21 @@
        word-spacing="0"
        id="path422" />
   </g>
-  <g
-     transform="rotate(45 50.53 14.98)"
-     fill="#cfcfcf"
-     stroke="#b7b7b6"
-     stroke-width=".132"
-     id="g430">
-    <path
-       d="M43.92 3.969v2.646s0 1.058 1.059 1.058h2.646s1.058 0 1.058-1.058V3.969z"
-       id="path426" />
-    <rect
-       ry=".265"
-       rx=".265"
-       y="3.44"
-       x="43.656"
-       height=".529"
-       width="5.292"
-       fill-rule="evenodd"
-       stroke-linecap="round"
-       stroke-linejoin="round"
-       id="rect428" />
-  </g>
+  <path
+     style="fill:#cfcfcf;stroke:none;stroke-width:0.132"
+     inkscape:connector-curvature="0"
+     id="path426"
+     d="M 53.641977,2.5200714 51.770972,4.391076 c 0,0 -0.748119,0.7481189 7.08e-4,1.496945 l 1.871004,1.8710046 c 0,0 0.748119,0.7481189 1.496238,0 L 57.009927,5.888021 Z" />
+  <rect
+     style="fill:#cfcfcf;fill-rule:evenodd;stroke:#cfcfcf;stroke-width:0.132;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1"
+     id="rect428"
+     width="5.2919998"
+     height="0.52899998"
+     x="39.448563"
+     y="-36.677647"
+     rx="0.26499999"
+     ry="0.26499999"
+     transform="rotate(45)" />
   <path
      d="M54.268 1.558v2.646l.53.794h1.058l.529-.794V1.558zm1.059 2.256a.39.39 0 1 1 0 .781.39.39 0 0 1 0-.781z"
      fill="#cfcfcf"
@@ -1571,7 +1565,8 @@
      stroke-width=".132"
      stroke-linecap="round"
      stroke-linejoin="round"
-     id="path432" />
+     id="path432"
+     style="stroke:none;fill:#bebebe;fill-opacity:1" />
   <g
      style="line-height:1.25"
      id="g436">

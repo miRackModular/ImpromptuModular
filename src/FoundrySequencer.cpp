@@ -266,7 +266,7 @@ void Sequencer::moveStepIndexEditWithEditingGate(int delta, bool writeTrig, floa
 		if (!sek[trkn].getTied(stepIndexEdit)) {// play if non-tied step
 			if (!writeTrig) {// in case autostep when simultaneous writeCV and stepCV (keep what was done in Write Input block above)
 				editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
-				editingGateCV[trkn] = sek[trkn].getCV(stepIndexEdit);
+				editingGateCV[trkn] = sek[trkn].getCV(false, stepIndexEdit);
 				editingGateCV2[trkn] = sek[trkn].getVelocityVal(stepIndexEdit);
 				editingGateKeyLight = -1;
 			}

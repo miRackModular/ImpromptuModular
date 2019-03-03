@@ -386,7 +386,7 @@ bool SequencerKernel::clockStep(bool editingSequence) {
 		if (ppqnCount >= ppsFiltered)
 			ppqnCount = 0;
 		if (ppqnCount == 0) {
-			float slideFromCV = getCVRun(editingSequence);
+			float slideFromCV = getCV(editingSequence);
 			if (moveStepIndexRun(false) && !editingSequence) {// false means normal (not init)
 				movePhraseIndexRun(false);// false means normal (not init)
 				moveStepIndexRun(true);// true means init; must always refresh after phraseIndexRun has changed
@@ -394,11 +394,11 @@ bool SequencerKernel::clockStep(bool editingSequence) {
 			}
 
 			// Slide
-			StepAttributes attribRun = getAttributeRun(editingSequence);
+			StepAttributes attribRun = getAttribute(editingSequence);
 			if (attribRun.getSlide()) {
 				slideStepsRemain = (unsigned long) (((float)clockPeriod * ppsFiltered) * ((float)attribRun.getSlideVal() / 100.0f));
 				if (slideStepsRemain != 0ul) {
-					float slideToCV = getCVRun(editingSequence);
+					float slideToCV = getCV(editingSequence);
 					slideCVdelta = (slideToCV - slideFromCV)/(float)slideStepsRemain;
 				}
 			}

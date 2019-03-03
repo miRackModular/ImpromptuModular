@@ -645,7 +645,7 @@ struct Foundry : Module {
 			
 			// Sel button
 			if (selTrigger.process(params[SEL_PARAM].value)) {
-				if (!attached && editingSequence)
+				if (editingSequence && !attached)
 					multiSteps = !multiSteps;
 				else if (attached) {
 					multiSteps = false;
@@ -655,7 +655,7 @@ struct Foundry : Module {
 			
 			// Vel mode button
 			if (velEditTrigger.process(params[VEL_EDIT_PARAM].value)) {
-				if (attached || editingSequence) {
+				if (editingSequence || (attached && running)) {
 					if (velEditMode < 2)
 						velEditMode++;
 					else {
@@ -666,7 +666,7 @@ struct Foundry : Module {
 			
 			// Write mode button
 			if (writeModeTrigger.process(params[WRITEMODE_PARAM].value)) {
-				if (attached || editingSequence) {
+				if (editingSequence) {
 					if (++writeMode > 2)
 						writeMode =0;
 				}
@@ -822,7 +822,7 @@ struct Foundry : Module {
 					displayState = DISP_NORMAL;
 					if (seq.toggleGateP(multiSteps ? cpSeqLength : 1, multiTracks)) 
 						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
-					else if (seq.getAttribute().getGateP())
+					else if (seq.getAttribute(false).getGateP())
 						velEditMode = 1;
 				}
 			}		
@@ -831,7 +831,7 @@ struct Foundry : Module {
 					displayState = DISP_NORMAL;
 					if (seq.toggleSlide(multiSteps ? cpSeqLength : 1, multiTracks))
 						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
-					else if (seq.getAttribute().getSlide())
+					else if (seq.getAttribute(false).getSlide())
 						velEditMode = 2;
 				}
 			}		
@@ -869,13 +869,12 @@ struct Foundry : Module {
 			displayState = DISP_NORMAL;
 			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++)
-				clockTriggers[trkn].reset();		
+				clockTriggers[trkn].reset();	
 			if (inputs[SEQCV_INPUT].active && seqCVmethod == 2)
 				seq.setSeqIndexEdit(0, true);
 		}
 
 
-		
 		
 		//********** Outputs and lights **********
 				
@@ -885,7 +884,7 @@ struct Foundry : Module {
 		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 			outputs[CV_OUTPUTS + trkn].value = seq.calcCvOutputAndDecSlideStepsRemain(trkn, running, editingSequence);
 			bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
-			outputs[GATE_OUTPUTS + trkn].value = seq.calcGateOutput(trkn, running && !retriggingOnReset, clockTriggers[clkInSources[trkn]], sampleRate, editingSequence);
+			outputs[GATE_OUTPUTS + trkn].value = seq.calcGateOutput(trkn, running && !retriggingOnReset, clockTriggers[clkInSources[trkn]], sampleRate);
 			outputs[VEL_OUTPUTS + trkn].value = seq.calcVelOutput(trkn, running && !retriggingOnReset, editingSequence) - (velocityBipol ? 5.0f : 0.0f);			
 		}
 
@@ -896,14 +895,11 @@ struct Foundry : Module {
 		
 			// Prepare values to visualize
 			StepAttributes attributesVisual;
-			float cvVisual;
-			if (editingSequence || attached) {
-				attributesVisual = seq.getAttribute();
-				cvVisual = seq.getCV();
-			}
-			else {
-				attributesVisual.clear();// clears everything, but just buttons used below
-				cvVisual = 0.0f;// not used
+			attributesVisual.clear();
+			float cvVisual = 0.0f;
+			if (editingSequence || (attached && running)) {
+				attributesVisual = seq.getAttribute(editingSequence);
+				cvVisual = seq.getCV(editingSequence);
 			}
 			bool editingGates = isEditingGates();
 			
@@ -930,6 +926,37 @@ struct Foundry : Module {
 					else if (stepn == seqEnd)
 						green =  1.0f;
 				}				
+
+/*
+				else {// normal led display (i.e. not length)
+					int stepIndexRun = seq.getStepIndexRun(seq.getTrackIndexEdit());
+					int trackIndexEdit = seq.getTrackIndexEdit();
+					// Run cursor (green)
+					if (editingSequence)
+						green = ((running && (i == stepIndexRun)) ? 1.0f : 0.0f);
+					else {
+						//green = ((running && (i == phraseIndexRun)) ? 1.0f : 0.0f);
+						green += ((running && (i == stepIndexRun) ) ? 0.1f : 0.0f);
+						//green = clamp(green, 0.0f, 1.0f);
+					}
+					// Edit cursor (red)
+					if (editingSequence)
+						red = (i == stepIndexEdit ? 1.0f : 0.0f);
+					//else
+						//red = (i == phraseIndexEdit ? 1.0f : 0.0f);						
+					bool gate = false;
+					if (editingSequence)
+						gate = seq.getAttribute(trackIndexEdit, i);//attributes[seqIndexEdit][i].getGate1();
+					else if (!editingSequence && (attached && running))
+						gate = attributes[phrase[phraseIndexRun]][i].getGate1();
+					white = ((green == 0.0f && red == 0.0f && gate && displayState != DISP_MODE) ? 0.04f : 0.0f);
+					if (editingSequence && white != 0.0f) {
+						green = 0.02f; white = 0.0f;
+					}
+					//if (white != 0.0f && attributes[seqIndexEdit][i].getGate1P()) white = 0.01f;
+				}
+*/
+
 				else if (editingSequence && !attached) {
 					if (multiSteps) {
 						if (stepn >= seq.getStepIndexEdit() && stepn < (seq.getStepIndexEdit() + cpSeqLength))
@@ -964,10 +991,11 @@ struct Foundry : Module {
 					white = 1.0f;// signal for override below
 				}
 				if (white == 1.0f)
-					white = ((green == 0.0f && red == 0.0f && (editingSequence || attached) && seq.getAttribute(seq.getTrackIndexEdit(), stepn).getGate() && displayState != DISP_MODE_SEQ && displayState != DISP_PPQN && displayState != DISP_DELAY) ? 0.04f : 0.0f);
+					white = ((green == 0.0f && red == 0.0f && (editingSequence || attached) && seq.getAttribute(editingSequence, stepn).getGate() && displayState != DISP_MODE_SEQ && displayState != DISP_PPQN && displayState != DISP_DELAY) ? 0.04f : 0.0f);
 				if (editingSequence && white != 0.0f) {
 					green = 0.02f; white = 0.0f;
-				}				
+				}	
+
 				setGreenRed(STEP_PHRASE_LIGHTS + stepn * 3, green, red);
 				//if (white != 0.0f && seq.getAttribute(seq.getTrackIndexEdit(), stepn).getGateP()) white = 0.01f;
 				lights[STEP_PHRASE_LIGHTS + stepn * 3 + 2].value = white;
@@ -978,7 +1006,7 @@ struct Foundry : Module {
 			int octLightIndex = (int) floor(cvVisual + 3.0f);
 			for (int i = 0; i < 7; i++) {
 				float red = 0.0f;
-				if (editingSequence || attached) {
+				if (editingSequence || (attached && running)) {
 					if (tiedWarning > 0l) {
 						bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
 						red = (warningFlashState && (i == (6 - octLightIndex))) ? 1.0f : 0.0f;
@@ -1001,7 +1029,7 @@ struct Foundry : Module {
 						red = 1.0f;
 					}
 				}
-				else if (editingSequence || attached) {			
+				else if (editingSequence || (attached && running)) {			
 					if (editingGates) {
 						green = 1.0f;
 						red = 0.2f;
@@ -1071,7 +1099,7 @@ struct Foundry : Module {
 				lights[ATTACH_LIGHT].value = (attached ? 1.0f : 0.0f);
 				
 			// Velocity edit mode lights
-			if (editingSequence || attached) {
+			if (editingSequence || (attached && running)) {
 				setGreenRed(VEL_PROB_LIGHT, velEditMode == 1 ? 1.0f : 0.0f, velEditMode == 1 ? 1.0f : 0.0f);
 				lights[VEL_SLIDE_LIGHT].value = (velEditMode == 2 ? 1.0f : 0.0f);
 			}
@@ -1082,7 +1110,7 @@ struct Foundry : Module {
 			
 			// CV writing lights
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-				if (editingSequence && !attached) {
+				if (editingSequence) {
 					lights[WRITECV_LIGHTS + trkn].value = (((writeMode & 0x2) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
 					lights[WRITECV2_LIGHTS + trkn].value = (((writeMode & 0x1) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
 				}
@@ -1208,10 +1236,15 @@ struct FoundryWidget : ModuleWidget {
 
 		char printText() override {
 			char ret = 0;// used for a color instead of overlay char. 0 = default (green), 1 = red
-			if (module->isEditingSequence() || module->attached) {
-				StepAttributes attributesVal = module->seq.getAttribute();
+			StepAttributes attributesVisual;
+			attributesVisual.clear();
+			bool editingSequence = module->isEditingSequence();
+			if (editingSequence || (module->attached && module->running)) {
+				attributesVisual = module->seq.getAttribute(editingSequence);
+			}
+			if (editingSequence || (module->attached && module->running)) {
 				if (module->velEditMode == 2) {
-					int slide = attributesVal.getSlideVal();						
+					int slide = attributesVisual.getSlideVal();						
 					if ( slide >= 100)
 						snprintf(displayStr, 5, "   1");
 					else if (slide >= 1)
@@ -1220,7 +1253,7 @@ struct FoundryWidget : ModuleWidget {
 						snprintf(displayStr, 5, "   0");
 				}
 				else if (module->velEditMode == 1) {
-					int prob = attributesVal.getGatePVal();
+					int prob = attributesVisual.getGatePVal();
 					if ( prob >= 100)
 						snprintf(displayStr, 5, "   1");
 					else if (prob >= 1)
@@ -1229,7 +1262,7 @@ struct FoundryWidget : ModuleWidget {
 						snprintf(displayStr, 5, "   0");
 				}
 				else {
-					unsigned int velocityDisp = (unsigned)(attributesVal.getVelocityVal());
+					unsigned int velocityDisp = (unsigned)(attributesVisual.getVelocityVal());
 					if (module->velocityMode > 0) {// velocity is 0-127 or semitone
 						if (module->velocityMode == 2)// semitone
 							printNote(((float)velocityDisp)/12.0f - (module->velocityBipol ? 5.0f : 0.0f), &displayStr[1], true);// given str pointer must be 4 chars (3 display and one end of string)
@@ -1303,19 +1336,14 @@ struct FoundryWidget : ModuleWidget {
 				}
 				break;
 				default :
-					// two paths below are equivalent when attached, so no need to check attached
+				{
 					if (module->isEditingSequence()) {
 						snprintf(displayStr, 4, " %2u", (unsigned)(module->seq.getSeqIndexEdit() + 1) );
-						// if (module->displayState == Foundry::DISP_MODE_SEQ) {// Arrow
-							// displayStr[0] = displayStr[1];
-							// displayStr[1] = displayStr[2];
-							// displayStr[2] = ')';
-						// }
-				break;
-
 					}
-					else
+					else {
 						snprintf(displayStr, 4, " %2u", (unsigned)(module->seq.getPhraseSeq() + 1) );
+					}
+				}
 			}
 			return 0;
 		}
@@ -1387,9 +1415,6 @@ struct FoundryWidget : ModuleWidget {
 				snprintf(displayStr, 3, "%c%c", (unsigned)(trkn + 0x41), ((module->multiTracks && (time(0) & 0x1)) ? '*' : ' '));
 			else {
 				snprintf(displayStr, 3, " %c", (unsigned)(trkn + 0x41));
-				// if (module->displayState == Foundry::DISP_MODE_SONG || // Arrow
-					// module->displayState == Foundry::DISP_PPQN || module->displayState == Foundry::DISP_DELAY)
-					// displayStr[0] = '(';
 			}
 			return 0;
 		}
