@@ -231,15 +231,6 @@ class SequencerKernel {
 			return attributes[seqIndexEdit][stepn];
 		return attributes[phrases[phraseIndexRun].getSeqNum()][stepn];
 	}
-	//inline bool getGate(int seqn, int stepn) {return attributes[seqn][stepn].getGate();}
-	//inline bool getGateP(int seqn, int stepn) {return attributes[seqn][stepn].getGateP();}
-	//inline bool getSlide(int seqn, int stepn) {return attributes[seqn][stepn].getSlide();}
-	inline bool getTied(int stepn) {return attributes[seqIndexEdit][stepn].getTied();}
-	//inline int getGatePVal(int stepn) {return attributes[seqIndexEdit][stepn].getGatePVal();}
-	//inline int getSlideVal(int stepn) {return attributes[seqIndexEdit][stepn].getSlideVal();}
-	inline int getVelocityVal(int stepn) {return attributes[seqIndexEdit][stepn].getVelocityVal();}
-	inline int getVelocityValRun(bool editingSequence) {return getAttribute(editingSequence).getVelocityVal();}
-	inline int getGateType(int stepn) {return attributes[seqIndexEdit][stepn].getGateType();}	
 	
 	inline void setSeqIndexEdit(int _seqIndexEdit) {seqIndexEdit = _seqIndexEdit;}
 	inline void setPhraseIndexRun(int _phraseIndexRun) {phraseIndexRun = _phraseIndexRun;}
@@ -313,7 +304,7 @@ class SequencerKernel {
 		return sVal;
 	}		
 	inline int modVelocityVal(int stepn, int delta, int upperLimit, int count) {
-		int vVal = getVelocityVal(stepn);
+		int vVal = attributes[seqIndexEdit][stepn].getVelocityVal();
 		vVal = clamp(vVal + delta, 0, upperLimit);
 		setVelocityVal(stepn, vVal, count);
 		return vVal;

@@ -1277,7 +1277,6 @@ struct SemiModularSynth : Module {
 					if (editingSequence && white != 0.0f) {
 						green = 0.02f; white = 0.0f;
 					}
-					//if (white != 0.0f && attributes[seqIndexEdit][i].getGate1P()) white = 0.01f;
 				}
 				setGreenRed(STEP_PHRASE_LIGHTS + i * 3, green, red);
 				lights[STEP_PHRASE_LIGHTS + i * 3 + 2].value = white;

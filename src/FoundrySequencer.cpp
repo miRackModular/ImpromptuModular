@@ -194,7 +194,7 @@ void Sequencer::pasteSong(bool multiTracks) {
 void Sequencer::writeCV(int trkn, float cvVal, int multiStepsCount, float sampleRate, bool multiTracks) {
 	sek[trkn].writeCV(stepIndexEdit, cvVal, multiStepsCount);
 	editingGateCV[trkn] = cvVal;
-	editingGateCV2[trkn] = sek[trkn].getVelocityVal(stepIndexEdit);
+	editingGateCV2[trkn] = sek[trkn].getAttribute(true, stepIndexEdit).getVelocityVal();
 	editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
@@ -217,10 +217,11 @@ void Sequencer::autostep(bool autoseq, bool autostepLen, bool multiTracks) {
 }	
 
 bool Sequencer::applyNewOctave(int octn, int multiSteps, float sampleRate, bool multiTracks) { // returns true if tied
-	if (sek[trackIndexEdit].getTied(stepIndexEdit))
+	StepAttributes stepAttrib = sek[trackIndexEdit].getAttribute(true, stepIndexEdit);
+	if (stepAttrib.getTied())
 		return true;
 	editingGateCV[trackIndexEdit] = sek[trackIndexEdit].applyNewOctave(stepIndexEdit, octn, multiSteps);
-	editingGateCV2[trackIndexEdit] = sek[trackIndexEdit].getVelocityVal(stepIndexEdit);
+	editingGateCV2[trackIndexEdit] = stepAttrib.getVelocityVal();
 	editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 	editingGateKeyLight = -1;
 	if (multiTracks) {
@@ -233,7 +234,8 @@ bool Sequencer::applyNewOctave(int octn, int multiSteps, float sampleRate, bool 
 }
 bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool autostepClick, bool multiTracks) { // returns true if tied
 	bool ret = false;
-	if (sek[trackIndexEdit].getTied(stepIndexEdit)) {
+	StepAttributes stepAttrib = sek[trackIndexEdit].getAttribute(true, stepIndexEdit);
+	if (stepAttrib.getTied()) {
 		if (autostepClick)
 			moveStepIndexEdit(1, false);
 		else
@@ -241,7 +243,7 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 	}
 	else {
 		editingGateCV[trackIndexEdit] = sek[trackIndexEdit].applyNewKey(stepIndexEdit, keyn, multiSteps);
-		editingGateCV2[trackIndexEdit] = sek[trackIndexEdit].getVelocityVal(stepIndexEdit);
+		editingGateCV2[trackIndexEdit] = stepAttrib.getVelocityVal();
 		editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 		editingGateKeyLight = -1;
 		if (multiTracks) {
@@ -263,11 +265,12 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 void Sequencer::moveStepIndexEditWithEditingGate(int delta, bool writeTrig, float sampleRate) {
 	moveStepIndexEdit(delta, false);
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
-		if (!sek[trkn].getTied(stepIndexEdit)) {// play if non-tied step
+		StepAttributes stepAttrib = sek[trkn].getAttribute(true, stepIndexEdit);
+		if (!stepAttrib.getTied()) {// play if non-tied step
 			if (!writeTrig) {// in case autostep when simultaneous writeCV and stepCV (keep what was done in Write Input block above)
 				editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
-				editingGateCV[trkn] = sek[trkn].getCV(false, stepIndexEdit);
-				editingGateCV2[trkn] = sek[trkn].getVelocityVal(stepIndexEdit);
+				editingGateCV[trkn] = sek[trkn].getCV(true, stepIndexEdit);
+				editingGateCV2[trkn] = stepAttrib.getVelocityVal();
 				editingGateKeyLight = -1;
 			}
 		}
@@ -415,7 +418,7 @@ void Sequencer::toggleGate(int multiSteps, bool multiTracks) {
 	}		
 }
 bool Sequencer::toggleGateP(int multiSteps, bool multiTracks) { // returns true if tied
-	if (sek[trackIndexEdit].getTied(stepIndexEdit))
+	if (sek[trackIndexEdit].getAttribute(true, stepIndexEdit).getTied())
 		return true;
 	bool newGateP = sek[trackIndexEdit].toggleGateP(stepIndexEdit, multiSteps);
 	if (multiTracks) {
@@ -427,7 +430,7 @@ bool Sequencer::toggleGateP(int multiSteps, bool multiTracks) { // returns true 
 	return false;
 }
 bool Sequencer::toggleSlide(int multiSteps, bool multiTracks) { // returns true if tied
-	if (sek[trackIndexEdit].getTied(stepIndexEdit))
+	if (sek[trackIndexEdit].getAttribute(true, stepIndexEdit).getTied())
 		return true;
 	bool newSlide = sek[trackIndexEdit].toggleSlide(stepIndexEdit, multiSteps);
 	if (multiTracks) {

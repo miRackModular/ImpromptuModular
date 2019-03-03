@@ -822,7 +822,7 @@ struct Foundry : Module {
 					displayState = DISP_NORMAL;
 					if (seq.toggleGateP(multiSteps ? cpSeqLength : 1, multiTracks)) 
 						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
-					else if (seq.getAttribute(false).getGateP())
+					else if (seq.getAttribute(true).getGateP())
 						velEditMode = 1;
 				}
 			}		
@@ -831,7 +831,7 @@ struct Foundry : Module {
 					displayState = DISP_NORMAL;
 					if (seq.toggleSlide(multiSteps ? cpSeqLength : 1, multiTracks))
 						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
-					else if (seq.getAttribute(false).getSlide())
+					else if (seq.getAttribute(true).getSlide())
 						velEditMode = 2;
 				}
 			}		
@@ -927,37 +927,35 @@ struct Foundry : Module {
 						green =  1.0f;
 				}				
 
-/*
+
 				else {// normal led display (i.e. not length)
 					int stepIndexRun = seq.getStepIndexRun(seq.getTrackIndexEdit());
-					int trackIndexEdit = seq.getTrackIndexEdit();
 					// Run cursor (green)
 					if (editingSequence)
-						green = ((running && (i == stepIndexRun)) ? 1.0f : 0.0f);
+						green = ((running && (stepn == stepIndexRun)) ? 1.0f : 0.0f);
 					else {
 						//green = ((running && (i == phraseIndexRun)) ? 1.0f : 0.0f);
-						green += ((running && (i == stepIndexRun) ) ? 0.1f : 0.0f);
+						green += ((running && (stepn == stepIndexRun) ) ? 0.1f : 0.0f);
 						//green = clamp(green, 0.0f, 1.0f);
 					}
 					// Edit cursor (red)
 					if (editingSequence)
-						red = (i == stepIndexEdit ? 1.0f : 0.0f);
+						red = (stepn == seq.getStepIndexEdit() ? 1.0f : 0.0f);
 					//else
 						//red = (i == phraseIndexEdit ? 1.0f : 0.0f);						
 					bool gate = false;
 					if (editingSequence)
-						gate = seq.getAttribute(trackIndexEdit, i);//attributes[seqIndexEdit][i].getGate1();
+						gate = seq.getAttribute(true, stepn).getGate();//attributes[seqIndexEdit][i].getGate1();
 					else if (!editingSequence && (attached && running))
-						gate = attributes[phrase[phraseIndexRun]][i].getGate1();
-					white = ((green == 0.0f && red == 0.0f && gate && displayState != DISP_MODE) ? 0.04f : 0.0f);
+						gate = seq.getAttribute(false, stepn).getGate();
+					white = ((green == 0.0f && red == 0.0f && gate && displayState != DISP_MODE_SEQ && displayState != DISP_PPQN && displayState != DISP_DELAY) ? 0.04f : 0.0f);
 					if (editingSequence && white != 0.0f) {
 						green = 0.02f; white = 0.0f;
 					}
-					//if (white != 0.0f && attributes[seqIndexEdit][i].getGate1P()) white = 0.01f;
 				}
-*/
 
-				else if (editingSequence && !attached) {
+
+/*				else if (editingSequence && !attached) {
 					if (multiSteps) {
 						if (stepn >= seq.getStepIndexEdit() && stepn < (seq.getStepIndexEdit() + cpSeqLength))
 							red = 0.2f;
@@ -995,7 +993,7 @@ struct Foundry : Module {
 				if (editingSequence && white != 0.0f) {
 					green = 0.02f; white = 0.0f;
 				}	
-
+*/
 				setGreenRed(STEP_PHRASE_LIGHTS + stepn * 3, green, red);
 				//if (white != 0.0f && seq.getAttribute(seq.getTrackIndexEdit(), stepn).getGateP()) white = 0.01f;
 				lights[STEP_PHRASE_LIGHTS + stepn * 3 + 2].value = white;
@@ -1046,7 +1044,7 @@ struct Foundry : Module {
 							}
 						}
 						else {
-							int modeLightIndex = seq.getGateType();
+							int modeLightIndex = attributesVisual.getGateType();
 							if (i != modeLightIndex) {// show dim note if gatetype is different than note
 								green = 0.0f;
 								red = (i == keyLightIndex ? 0.1f : 0.0f);
