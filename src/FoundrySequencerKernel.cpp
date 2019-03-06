@@ -374,7 +374,7 @@ void SequencerKernel::initRun(bool editingSequence) {
 }
 
 
-bool SequencerKernel::clockStep(bool editingSequence) {
+bool SequencerKernel::clockStep(bool editingSequence, int delayedSeqNumberRequest) {// delayedSeqNumberRequest is only valid in seq mode (-1 means no request)
 	bool phraseChange = false;
 	
 	if (ppqnLeftToSkip > 0) {
@@ -387,10 +387,17 @@ bool SequencerKernel::clockStep(bool editingSequence) {
 			ppqnCount = 0;
 		if (ppqnCount == 0) {
 			float slideFromCV = getCV(editingSequence);
-			if (moveStepIndexRun(false) && !editingSequence) {// false means normal (not init)
-				movePhraseIndexRun(false);// false means normal (not init)
-				moveStepIndexRun(true);// true means init; must always refresh after phraseIndexRun has changed
-				phraseChange = true;// only used by first track
+			if (moveStepIndexRun(false)) {// false means normal (not init)
+				phraseChange = true;// used by first track for random slaving, and also by all tracks for delayed Seq CV request
+				if (editingSequence) {
+					if (delayedSeqNumberRequest >= 0) {
+						seqIndexEdit = delayedSeqNumberRequest;
+					}
+				}
+				else {
+					movePhraseIndexRun(false);// false means normal (not init)
+					moveStepIndexRun(true);// true means init; must always refresh after phraseIndexRun has changed
+				}
 			}
 
 			// Slide

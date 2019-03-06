@@ -31,6 +31,7 @@ class Sequencer {
 	float editingGateCV[NUM_TRACKS];// no need to initialize, this goes with editingGate (output this only when editingGate > 0)
 	int editingGateCV2[NUM_TRACKS];// no need to initialize, this goes with editingGate (output this only when editingGate > 0)
 	int editingGateKeyLight;// no need to initialize, this goes with editingGate (use this only when editingGate > 0)
+	int delayedSeqNumberRequest[NUM_TRACKS];
 	SeqCPbuffer seqCPbuf;
 	SongCPbuffer songCPbuf;
 	int* velocityModePtr;
@@ -42,6 +43,7 @@ class Sequencer {
 
 	inline int getStepIndexEdit() {return stepIndexEdit;}
 	inline int getSeqIndexEdit() {return sek[trackIndexEdit].getSeqIndexEdit();}
+	inline int getSeqIndexEdit(int trkn) {return sek[trkn].getSeqIndexEdit();}
 	inline int getPhraseIndexEdit() {return phraseIndexEdit;}
 	inline int getTrackIndexEdit() {return trackIndexEdit;}
 	inline int getStepIndexRun(int trkn) {return sek[trkn].getStepIndexRun();}
@@ -76,15 +78,8 @@ class Sequencer {
 			editingGateKeyLight = -1;
 		}
 	}
-	inline void setSeqIndexEdit(int _seqIndexEdit, bool multiTracks) {
-		sek[trackIndexEdit].setSeqIndexEdit(_seqIndexEdit);
-		if (multiTracks) {
-			for (int i = 0; i < NUM_TRACKS; i++) {
-				if (i == trackIndexEdit) continue;
-				sek[i].setSeqIndexEdit(_seqIndexEdit);
-			}
-		}
-
+	inline void setSeqIndexEdit(int _seqIndexEdit, int trkn) {
+		sek[trkn].setSeqIndexEdit(_seqIndexEdit);
 	}
 	inline void setPhraseIndexEdit(int _phraseIndexEdit) {phraseIndexEdit = _phraseIndexEdit;}
 	inline void bringPhraseIndexRunToEdit() {sek[trackIndexEdit].setPhraseIndexRun(phraseIndexEdit);}
@@ -135,14 +130,8 @@ class Sequencer {
 	
 	void moveStepIndexEditWithEditingGate(int delta, bool writeTrig, float sampleRate);
 	
-	inline void moveSeqIndexEdit(int delta, bool multiTracks) {
-		sek[trackIndexEdit].modSeqIndexEdit(delta);
-		if (multiTracks) {
-			for (int i = 0; i < NUM_TRACKS; i++) {
-				if (i == trackIndexEdit) continue;
-				sek[i].modSeqIndexEdit(delta);
-			}
-		}
+	inline void moveSeqIndexEdit(int delta, int trkn) {
+		sek[trkn].modSeqIndexEdit(delta);
 	}
 	
 	inline void movePhraseIndexEdit(int deltaPhrKnob) {
@@ -232,10 +221,19 @@ class Sequencer {
 	void fromJson(json_t *rootJ);
 	
 	void reset(bool editingSequence);
+	inline void initDelayedSeqNumberRequest() {
+		for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
+			delayedSeqNumberRequest[trkn] = -1;
+		}
+	};
+	inline void requestDelayedSeqChange(int trkn, int seqn) {
+		delayedSeqNumberRequest[trkn] = seqn;
+	};
 	
 	inline void randomize(bool editingSequence) {sek[trackIndexEdit].randomize(editingSequence);}
 	
 	inline void initRun(bool editingSequence) {
+		initDelayedSeqNumberRequest();
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
 			sek[trkn].initRun(editingSequence);
 	}
@@ -243,7 +241,7 @@ class Sequencer {
 	void clockStep(int trkn, bool editingSequence);
 	
 	inline void step() {
-		for (int trkn = 0; trkn < NUM_TRACKS; trkn++) 
+		for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
 			sek[trkn].step();
 	}
 	

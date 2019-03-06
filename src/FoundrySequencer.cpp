@@ -492,6 +492,7 @@ void Sequencer::reset(bool editingSequence) {
 	stepIndexEdit = 0;
 	phraseIndexEdit = 0;
 	trackIndexEdit = 0;
+	initDelayedSeqNumberRequest();
 	seqCPbuf.reset();
 	songCPbuf.reset();
 
@@ -504,19 +505,27 @@ void Sequencer::reset(bool editingSequence) {
 
 
 void Sequencer::clockStep(int trkn, bool editingSequence) {
-	bool phraseChange = sek[trkn].clockStep(editingSequence);
-	if (trkn == 0 && phraseChange) {
-		for (int tkbcd = 1; tkbcd < NUM_TRACKS; tkbcd++) {// check for song run mode slaving
-			if (sek[tkbcd].getRunModeSong() == SequencerKernel::MODE_TKA) {
-				sek[tkbcd].setPhraseIndexRun(sek[0].getPhraseIndexRun());
-				// The code below is to make it such that stepIndexRun should re-init upon phraseChange
-				//   example for phrase jump does not reset stepIndexRun in B
-					//A (FWD): 1 = 1x10, 2 = 1x10
-					//B (TKA): 1 = 1x20, 2 = 1x20
-				// next line will not work, it will result in a double move of stepIndexRun since clock will move it also
-				//sek[tkbcd].moveStepIndexRun(true); 
-				// this next mechanism works, the chain of events will make moveStepIndexRun(true) happen automatically and no double move will occur
-				sek[tkbcd].setMoveStepIndexRunIgnore();// 
+	bool phraseChange = sek[trkn].clockStep(editingSequence, delayedSeqNumberRequest[trkn]);
+	
+	if (editingSequence) {
+		if (phraseChange) {
+			delayedSeqNumberRequest[trkn] = -1;// consumed
+		}
+	}
+	else {
+		if (trkn == 0 && phraseChange) {
+			for (int tkbcd = 1; tkbcd < NUM_TRACKS; tkbcd++) {// check for song run mode slaving
+				if (sek[tkbcd].getRunModeSong() == SequencerKernel::MODE_TKA) {
+					sek[tkbcd].setPhraseIndexRun(sek[0].getPhraseIndexRun());
+					// The code below is to make it such that stepIndexRun should re-init upon phraseChange
+					//   example for phrase jump does not reset stepIndexRun in B
+						//A (FWD): 1 = 1x10, 2 = 1x10
+						//B (TKA): 1 = 1x20, 2 = 1x20
+					// next line will not work, it will result in a double move of stepIndexRun since clock will move it also
+					//sek[tkbcd].moveStepIndexRun(true); 
+					// this next mechanism works, the chain of events will make moveStepIndexRun(true) happen automatically and no double move will occur
+					sek[tkbcd].setMoveStepIndexRunIgnore();// 
+				}
 			}
 		}
 	}
