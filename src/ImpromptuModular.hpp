@@ -44,7 +44,7 @@ static const float lightLambda = 0.075f;
 static const int displayAlpha = 23;
 static const std::string lightPanelID = "Classic";
 static const std::string darkPanelID = "Dark-valor";
-static const std::string expansionMenuLabel = "Extra CVs (requires +4HP to the right!)";// note: PS32EX detects '4' and replaces it with '7'
+static const std::string expansionMenuLabel = "Extra CVs (requires +4HP to the right!)";// note: Foundry detects '4' and replaces it with bigger value
 static const unsigned int displayRefreshStepSkips = 256;
 static const unsigned int userInputsStepSkipMask = 0xF;// sub interval of displayRefreshStepSkips, since inputs should be more responsive than lights
 // above value should make it such that inputs are sampled > 1kHz so as to not miss 1ms triggers

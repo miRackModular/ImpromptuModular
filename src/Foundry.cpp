@@ -46,6 +46,7 @@ struct Foundry : Module {
 		ATTACH_PARAM,
 		VEL_EDIT_PARAM,
 		WRITEMODE_PARAM,
+		SYNC_SEQCV_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -88,6 +89,7 @@ struct Foundry : Module {
 		VEL_SLIDE_LIGHT,
 		ENUMS(WRITECV_LIGHTS, Sequencer::NUM_TRACKS),
 		ENUMS(WRITECV2_LIGHTS, Sequencer::NUM_TRACKS),
+		ENUMS(WRITE_SEL_LIGHTS, 2),
 		NUM_LIGHTS
 	};
 	
@@ -663,7 +665,7 @@ struct Foundry : Module {
 			}
 			
 			// Write mode button
-			if (writeModeTrigger.process(params[WRITEMODE_PARAM].value)) {
+			if (writeModeTrigger.process(params[WRITEMODE_PARAM].value + inputs[WRITE_SRC_INPUT].value)) {
 				if (editingSequence) {
 					if (++writeMode > 2)
 						writeMode =0;
@@ -1127,7 +1129,9 @@ struct Foundry : Module {
 					lights[WRITECV_LIGHTS + trkn].value = 0.0f;
 					lights[WRITECV2_LIGHTS + trkn].value = 0.0f;
 				}
-			}				
+			}	
+			lights[WRITE_SEL_LIGHTS + 0].value = (((writeMode & 0x2) == 0) && editingSequence) ? 1.0f : 0.0f;
+			lights[WRITE_SEL_LIGHTS + 1].value = (((writeMode & 0x1) == 0) && editingSequence) ? 1.0f : 0.0f;
 				
 			seq.stepEditingGate();// also steps editingType
 			if (tiedWarning > 0l)
@@ -1171,7 +1175,7 @@ struct FoundryWidget : ModuleWidget {
 	Foundry *module;
 	DynamicSVGPanel *panel;
 	int oldExpansion;
-	int expWidth = 135;
+	int expWidth = 150;
 	IMPort* expPorts[16];
 	
 	template <int NUMCHAR>
@@ -1571,9 +1575,7 @@ struct FoundryWidget : ModuleWidget {
 		expansionLabel->text = "Expansion module";
 		menu->addChild(expansionLabel);
 
-		std::string expansionMenuLabel32EX(expansionMenuLabel);
-		std::replace( expansionMenuLabel32EX.begin(), expansionMenuLabel32EX.end(), '4', '9');// TODO make this a 10 instead of 9
-		ExpansionItem *expItem = MenuItem::create<ExpansionItem>(expansionMenuLabel32EX, CHECKMARK(module->expansion != 0));
+		ExpansionItem *expItem = MenuItem::create<ExpansionItem>("Extra CVs (requires +11HP to the right!)", CHECKMARK(module->expansion != 0));
 		expItem->module = module;
 		menu->addChild(expItem);
 		
@@ -1782,7 +1784,7 @@ struct FoundryWidget : ModuleWidget {
 		// see under Track display
 		
 		// Main switch
-		addParam(createParamCentered<CKSSNotify>(Vec(columnRulerT5, rowRulerT0 + 3), module, Foundry::EDIT_PARAM, 0.0f, 1.0f, 0.0f));// 1.0f is top position
+		addParam(createParamCentered<CKSSNotify>(Vec(columnRulerT5, rowRulerT0 + 3), module, Foundry::EDIT_PARAM, 0.0f, 1.0f, 1.0f));// 1.0f is top position
 
 		
 		
@@ -2005,32 +2007,33 @@ struct FoundryWidget : ModuleWidget {
 		static const int rowSpacingExp = 49;
 		static const int colRulerExp = panel->box.size.x - expWidth / 2;
 		static const int colOffsetX = 44;
+		static const int se = -10;
 		
-		// Gate, tied, slide
-		addInput(expPorts[0] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 4), Port::INPUT, module, Foundry::GATECV_INPUT, &module->panelTheme));
-		addInput(expPorts[1] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 4), Port::INPUT, module, Foundry::TIEDCV_INPUT, &module->panelTheme));
-		addInput(expPorts[2] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 4), Port::INPUT, module, Foundry::SLIDECV_INPUT, &module->panelTheme));
-
-		// GateP, left, right
-		addInput(expPorts[3] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 3), Port::INPUT, module, Foundry::GATEPCV_INPUT, &module->panelTheme));
-		addInput(expPorts[4] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 3), Port::INPUT, module, Foundry::LEFTCV_INPUT, &module->panelTheme));
-		addInput(expPorts[5] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 3), Port::INPUT, module, Foundry::RIGHTCV_INPUT, &module->panelTheme));
-
-	
 		// Seq A,B and track row
-		addInput(expPorts[6] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 2), Port::INPUT, module, Foundry::SEQCV_INPUTS + 0, &module->panelTheme));
+		addInput(expPorts[6] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 4 + 2*se), Port::INPUT, module, Foundry::SEQCV_INPUTS + 0, &module->panelTheme));
 
-		addInput(expPorts[7] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 2), Port::INPUT, module, Foundry::SEQCV_INPUTS + 2, &module->panelTheme));
+		addInput(expPorts[7] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 4 + 2*se), Port::INPUT, module, Foundry::SEQCV_INPUTS + 2, &module->panelTheme));
 		
-		addInput(expPorts[8] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 2), Port::INPUT, module, Foundry::TRKCV_INPUT, &module->panelTheme));
+		addInput(expPorts[8] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 4 + 2*se), Port::INPUT, module, Foundry::TRKCV_INPUT, &module->panelTheme));
 		
 		// Seq C,D and write source cv 
-		addInput(expPorts[9] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 1), Port::INPUT, module, Foundry::SEQCV_INPUTS + 0, &module->panelTheme));
+		addInput(expPorts[9] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 3 + 2*se), Port::INPUT, module, Foundry::SEQCV_INPUTS + 0, &module->panelTheme));
 
-		addInput(expPorts[10] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 1), Port::INPUT, module, Foundry::SEQCV_INPUTS + 2, &module->panelTheme));
+		addInput(expPorts[10] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 3 + 2*se), Port::INPUT, module, Foundry::SEQCV_INPUTS + 2, &module->panelTheme));
+
+		addParam(createParamCentered<CKSSNotify>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 3 + 2*se), module, Foundry::SYNC_SEQCV_PARAM, 0.0f, 1.0f, 0.0f));// 1.0f is top position
+
 		
-		addInput(expPorts[11] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 1), Port::INPUT, module, Foundry::WRITE_SRC_INPUT, &module->panelTheme));
-		
+		// Gate, tied, slide
+		addInput(expPorts[0] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 2 + se), Port::INPUT, module, Foundry::GATECV_INPUT, &module->panelTheme));
+		addInput(expPorts[1] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 2 + se), Port::INPUT, module, Foundry::TIEDCV_INPUT, &module->panelTheme));
+		addInput(expPorts[2] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 2 + se), Port::INPUT, module, Foundry::SLIDECV_INPUT, &module->panelTheme));
+
+		// GateP, left, right
+		addInput(expPorts[3] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 1 + se), Port::INPUT, module, Foundry::GATEPCV_INPUT, &module->panelTheme));
+		addInput(expPorts[4] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 1 + se), Port::INPUT, module, Foundry::LEFTCV_INPUT, &module->panelTheme));
+		addInput(expPorts[5] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 1 + se), Port::INPUT, module, Foundry::RIGHTCV_INPUT, &module->panelTheme));
+	
 		
 		// before-last row
 		addInput(expPorts[12] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh), Port::INPUT, module, Foundry::VEL_INPUTS + 0, &module->panelTheme));
@@ -2039,7 +2042,11 @@ struct FoundryWidget : ModuleWidget {
 		addInput(expPorts[13] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh), Port::INPUT, module, Foundry::VEL_INPUTS + 2, &module->panelTheme));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 2));
 
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - 20), module, Foundry::WRITEMODE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerExp + colOffsetX, rowRulerBHigh + 18), module, Foundry::WRITEMODE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp + colOffsetX - 12, rowRulerBHigh + 3), module, Foundry::WRITE_SEL_LIGHTS + 0));
+		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp + colOffsetX + 12, rowRulerBHigh + 3), module, Foundry::WRITE_SEL_LIGHTS + 1));
+		
+		
 		
 		// last row
 		addInput(expPorts[14] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBLow), Port::INPUT, module, Foundry::VEL_INPUTS + 1, &module->panelTheme));
@@ -2047,6 +2054,8 @@ struct FoundryWidget : ModuleWidget {
 
 		addInput(expPorts[15] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBLow), Port::INPUT, module, Foundry::VEL_INPUTS + 3, &module->panelTheme));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 3));
+		
+		addInput(expPorts[11] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBLow), Port::INPUT, module, Foundry::WRITE_SRC_INPUT, &module->panelTheme));
 	}
 };
 
