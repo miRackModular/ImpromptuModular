@@ -48,9 +48,17 @@ class Sequencer {
 	inline int getTrackIndexEdit() {return trackIndexEdit;}
 	inline int getStepIndexRun(int trkn) {return sek[trkn].getStepIndexRun();}
 	inline int getLength() {return sek[trackIndexEdit].getLength();}
-	inline StepAttributes getAttribute(bool editingSequence) {return sek[trackIndexEdit].getAttribute(editingSequence);}
+	inline StepAttributes getAttribute(bool editingSequence) {
+		if (editingSequence)
+			return sek[trackIndexEdit].getAttribute(editingSequence, stepIndexEdit);
+		return sek[trackIndexEdit].getAttribute(editingSequence);
+	}
 	inline StepAttributes getAttribute(bool editingSequence, int stepn) {return sek[trackIndexEdit].getAttribute(editingSequence, stepn);}
-	inline float getCV(bool editingSequence) {return sek[trackIndexEdit].getCV(editingSequence);}
+	inline float getCV(bool editingSequence) {
+		if (editingSequence)
+			return sek[trackIndexEdit].getCV(editingSequence, stepIndexEdit);
+		return sek[trackIndexEdit].getCV(editingSequence);
+	}
 	//inline float getCV(bool editingSequence, int stepn) {return sek[trackIndexEdit].getCV(editingSequence, stepn);}
 	inline int keyIndexToGateTypeEx(int keyn) {return sek[trackIndexEdit].keyIndexToGateTypeEx(keyn);}
 	inline int getPulsesPerStep() {return sek[trackIndexEdit].getPulsesPerStep();}
@@ -130,8 +138,8 @@ class Sequencer {
 	
 	void moveStepIndexEditWithEditingGate(int delta, bool writeTrig, float sampleRate);
 	
-	inline void moveSeqIndexEdit(int delta, int trkn) {
-		sek[trkn].modSeqIndexEdit(delta);
+	inline void moveSeqIndexEdit(int delta) {
+		sek[trackIndexEdit].modSeqIndexEdit(delta);
 	}
 	
 	inline void movePhraseIndexEdit(int deltaPhrKnob) {

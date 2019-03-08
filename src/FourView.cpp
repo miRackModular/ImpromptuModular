@@ -219,7 +219,7 @@ struct FourViewWidget : ModuleWidget {
 	}
 };
 
-Model *modelFourView = Model::create<FourView, FourViewWidget>("Impromptu Modular", "Four-View", "VIS - Four-View", VISUAL_TAG);
+Model *modelFourView = Model::create<FourView, FourViewWidget>("Impromptu Modular", "Four-View", "VIS - FourView", VISUAL_TAG);
 
 /*CHANGE LOG
 

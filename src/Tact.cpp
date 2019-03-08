@@ -750,7 +750,7 @@ struct Tact1Widget : ModuleWidget {
 //*****************************************************************************
 
 Model *modelTact = Model::create<Tact, TactWidget>("Impromptu Modular", "Tact", "CTRL - Tact", CONTROLLER_TAG);
-Model *modelTact1 = Model::create<Tact1, Tact1Widget>("Impromptu Modular", "Tact1", "CTRL - Tact-1", CONTROLLER_TAG);
+Model *modelTact1 = Model::create<Tact1, Tact1Widget>("Impromptu Modular", "Tact1", "CTRL - Tact1", CONTROLLER_TAG);
 
 /*CHANGE LOG
 

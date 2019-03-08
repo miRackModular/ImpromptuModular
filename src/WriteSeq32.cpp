@@ -781,7 +781,7 @@ struct WriteSeq32Widget : ModuleWidget {
 	}
 };
 
-Model *modelWriteSeq32 = Model::create<WriteSeq32, WriteSeq32Widget>("Impromptu Modular", "Write-Seq-32", "SEQ - Write-Seq-32", SEQUENCER_TAG);
+Model *modelWriteSeq32 = Model::create<WriteSeq32, WriteSeq32Widget>("Impromptu Modular", "Write-Seq-32", "SEQ - WriteSeq32", SEQUENCER_TAG);
 
 /*CHANGE LOG
 

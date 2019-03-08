@@ -1317,7 +1317,7 @@ struct GateSeq64Widget : ModuleWidget {
 		SequenceKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
 			GateSeq64* module = dynamic_cast<GateSeq64*>(this->module);
-			if (e.button == 1) {
+			if (e.button == 1) {// if right button (see events.hpp)
 				// same code structure below as in sequence knob in main step()
 				bool editingSequence = module->isEditingSequence();
 				if (module->displayProbInfo != 0l && editingSequence) {
@@ -1504,7 +1504,7 @@ struct GateSeq64Widget : ModuleWidget {
 };
 
 
-Model *modelGateSeq64 = Model::create<GateSeq64, GateSeq64Widget>("Impromptu Modular", "Gate-Seq-64", "SEQ - Gate-Seq-64", SEQUENCER_TAG);
+Model *modelGateSeq64 = Model::create<GateSeq64, GateSeq64Widget>("Impromptu Modular", "Gate-Seq-64", "SEQ - GateSeq64", SEQUENCER_TAG);
 
 /*CHANGE LOG
 

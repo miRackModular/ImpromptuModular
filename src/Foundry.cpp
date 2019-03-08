@@ -15,7 +15,7 @@
 
 struct Foundry : Module {	
 	enum ParamIds {
-		EDIT_PARAM,
+		WRITEMODE_PARAM,
 		PHRASE_PARAM,
 		SEQUENCE_PARAM,
 		RUN_PARAM,
@@ -45,7 +45,7 @@ struct Foundry : Module {
 		KEY_GATE_PARAM,
 		ATTACH_PARAM,
 		VEL_EDIT_PARAM,
-		WRITEMODE_PARAM,
+		EDIT_PARAM,
 		SYNC_SEQCV_PARAM,
 		NUM_PARAMS
 	};
@@ -731,9 +731,17 @@ struct Foundry : Module {
 					}
 					else {// DISP_NORMAL
 						if (editingSequence) {
-							for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-								if (!inputs[SEQCV_INPUTS + trkn].active) {
-									seq.moveSeqIndexEdit(deltaSeqKnob, trkn);
+							int activeTrack = seq.getTrackIndexEdit();
+							if (!inputs[SEQCV_INPUTS + activeTrack].active) {
+								seq.moveSeqIndexEdit(deltaSeqKnob);
+								if (multiTracks) {
+									int newSeq = seq.getSeqIndexEdit();
+									for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
+										if (trkn == activeTrack) continue;
+										if (!inputs[SEQCV_INPUTS + trkn].active) {
+											seq.setSeqIndexEdit(newSeq, trkn);
+										}
+									}
 								}
 							}
 						}
@@ -977,48 +985,7 @@ struct Foundry : Module {
 					}
 				}
 
-
-/*				else if (editingSequence && !attached) {
-					if (multiSteps) {
-						if (stepn >= seq.getStepIndexEdit() && stepn < (seq.getStepIndexEdit() + cpSeqLength))
-							red = 0.2f;
-					}
-					else if (!running && showLenInSteps > 0l && stepn < seq.getLength()) {
-						green = 0.01f;
-					}
-					if (stepn == seq.getStepIndexEdit()) {
-						if (red == 0.0f) // don't overwrite light multistep with full red
-							red = 1.0f;
-						green = 0.0f;
-					}
-					if (running && red != 0.2f && stepn == seq.getStepIndexRun(seq.getTrackIndexEdit())) {
-						green = 1.0f;
-					}
-					white = 1.0f;// signal for override below
-				}
-				else if (attached) {
-					// all active light green, current track is bright yellow
-					for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-						bool trknIsUsed = outputs[CV_OUTPUTS + trkn].active || outputs[GATE_OUTPUTS + trkn].active || outputs[VEL_OUTPUTS + trkn].active;
-						if (stepn == seq.getStepIndexRun(trkn) && trknIsUsed) 
-							green = 0.1f;	
-					}
-					if (green > 0.2f) 
-						green = 0.2f;
-					if (stepn == seq.getStepIndexEdit()) {
-						green = 1.0f;
-						red = 1.0f;
-					}
-					white = 1.0f;// signal for override below
-				}
-				if (white == 1.0f)
-					white = ((green == 0.0f && red == 0.0f && (editingSequence || attached) && seq.getAttribute(editingSequence, stepn).getGate() && displayState != DISP_MODE_SEQ && displayState != DISP_PPQN && displayState != DISP_DELAY) ? 0.04f : 0.0f);
-				if (editingSequence && white != 0.0f) {
-					green = 0.02f; white = 0.0f;
-				}	
-*/
 				setGreenRed(STEP_PHRASE_LIGHTS + stepn * 3, green, red);
-				//if (white != 0.0f && seq.getAttribute(seq.getTrackIndexEdit(), stepn).getGateP()) white = 0.01f;
 				lights[STEP_PHRASE_LIGHTS + stepn * 3 + 2].value = white;
 			}
 			
@@ -1317,7 +1284,7 @@ struct FoundryWidget : ModuleWidget {
 		}
 	};
 	
-
+	// Sequence edit display
 	struct SeqEditDisplayWidget : DisplayWidget<3> {
 		SeqEditDisplayWidget(Vec _pos, Vec _size, Foundry *_module) : DisplayWidget(_pos, _size, _module) {};
 		
@@ -1370,7 +1337,7 @@ struct FoundryWidget : ModuleWidget {
 		}
 	};
 	
-
+	// Phrase edit display
 	struct PhrEditDisplayWidget : DisplayWidget<3> {
 		PhrEditDisplayWidget(Vec _pos, Vec _size, Foundry *_module) : DisplayWidget(_pos, _size, _module) {};
 
@@ -1639,7 +1606,7 @@ struct FoundryWidget : ModuleWidget {
 		VelocityKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
 			Foundry* module = dynamic_cast<Foundry*>(this->module);
-			if (e.button == 1) {
+			if (e.button == 1) {// if right button (see events.hpp)
 				// same code structure below as in velocity knob in main step()
 				if (module->isEditingSequence()) {
 					module->displayState = Foundry::DISP_NORMAL;
@@ -1663,7 +1630,7 @@ struct FoundryWidget : ModuleWidget {
 		SequenceKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
 			Foundry* module = dynamic_cast<Foundry*>(this->module);
-			if (e.button == 1) {
+			if (e.button == 1) {// if right button (see events.hpp)
 				// same code structure below as in sequence knob in main step()
 				if (module->displayState == Foundry::DISP_LEN) {
 					module->seq.initLength(module->multiTracks);
@@ -1683,7 +1650,9 @@ struct FoundryWidget : ModuleWidget {
 					if (module->isEditingSequence()) {
 						for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 							if (!module->inputs[Foundry::SEQCV_INPUTS + trkn].active) {
-								module->seq.setSeqIndexEdit(0, trkn);
+								if (module->multiTracks || (trkn == module->seq.getTrackIndexEdit())) {
+									module->seq.setSeqIndexEdit(0, trkn);
+								}
 							}
 						}
 					}
@@ -1701,7 +1670,7 @@ struct FoundryWidget : ModuleWidget {
 		PhraseKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
 			Foundry* module = dynamic_cast<Foundry*>(this->module);
-			if (e.button == 1) {
+			if (e.button == 1) {// if right button (see events.hpp)
 				// same code structure below as in phrase knob in main step()
 				if (module->displayState == Foundry::DISP_MODE_SEQ) {
 					module->seq.initRunModeSeq(module->multiTracks);
@@ -2079,6 +2048,7 @@ Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular",
 0.6.17:
 make seq/song switch behave like in PS series
 remove metal panel theme
+reword expansion panel (add 4 SEQ CV inputs, and add sync mode for delayed change on end of sequence)
 
 0.6.16:
 add gate status feedback in steps (white lights)

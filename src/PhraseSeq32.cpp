@@ -1812,7 +1812,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 		SequenceKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
 			PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(this->module);
-			if (e.button == 1) {
+			if (e.button == 1) {// if right button (see events.hpp)
 				// same code structure below as in sequence knob in main step()
 				if (module->editingPpqn != 0) {
 					module->pulsesPerStep = 1;
@@ -2099,7 +2099,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 	}
 };
 
-Model *modelPhraseSeq32 = Model::create<PhraseSeq32, PhraseSeq32Widget>("Impromptu Modular", "Phrase-Seq-32", "SEQ - Phrase-Seq-32", SEQUENCER_TAG);
+Model *modelPhraseSeq32 = Model::create<PhraseSeq32, PhraseSeq32Widget>("Impromptu Modular", "Phrase-Seq-32", "SEQ - PhraseSeq32", SEQUENCER_TAG);
 
 /*CHANGE LOG
 

@@ -792,7 +792,7 @@ struct BigButtonSeq2Widget : ModuleWidget {
 	}
 };
 
-Model *modelBigButtonSeq2 = Model::create<BigButtonSeq2, BigButtonSeq2Widget>("Impromptu Modular", "Big-Button-Seq2", "SEQ - Big-Button-Seq2", SEQUENCER_TAG);
+Model *modelBigButtonSeq2 = Model::create<BigButtonSeq2, BigButtonSeq2Widget>("Impromptu Modular", "Big-Button-Seq2", "SEQ - BigButtonSeq2", SEQUENCER_TAG);
 
 /*CHANGE LOG
 

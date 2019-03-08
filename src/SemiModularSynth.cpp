@@ -1831,7 +1831,7 @@ struct SemiModularSynthWidget : ModuleWidget {
 		SequenceKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
 			SemiModularSynth* module = dynamic_cast<SemiModularSynth*>(this->module);
-			if (e.button == 1) {
+			if (e.button == 1) {// if right button (see events.hpp)
 				// same code structure below as in sequence knob in main step()
 				if (module->editingPpqn != 0) {
 					module->pulsesPerStep = 1;
@@ -2194,7 +2194,7 @@ struct SemiModularSynthWidget : ModuleWidget {
 	}
 };
 
-Model *modelSemiModularSynth = Model::create<SemiModularSynth, SemiModularSynthWidget>("Impromptu Modular", "Semi-Modular Synth", "MISC - Semi-Modular Synth", SEQUENCER_TAG, OSCILLATOR_TAG);
+Model *modelSemiModularSynth = Model::create<SemiModularSynth, SemiModularSynthWidget>("Impromptu Modular", "Semi-Modular Synth", "MISC - SemiModular Synth", SEQUENCER_TAG, OSCILLATOR_TAG);
 
 /*CHANGE LOG
 

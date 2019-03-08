@@ -104,4 +104,4 @@ struct BlankPanelWidget : ModuleWidget {
 	}
 };
 
-Model *modelBlankPanel = Model::create<BlankPanel, BlankPanelWidget>("Impromptu Modular", "Blank-Panel", "MISC - Blank-Panel", BLANK_TAG);
+Model *modelBlankPanel = Model::create<BlankPanel, BlankPanelWidget>("Impromptu Modular", "Blank-Panel", "MISC - BlankPanel", BLANK_TAG);
