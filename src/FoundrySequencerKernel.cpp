@@ -365,7 +365,7 @@ void SequencerKernel::fromJson(json_t *rootJ) {
 void SequencerKernel::initRun(bool editingSequence) {
 	movePhraseIndexRun(true);// true means init 
 	moveStepIndexRunIgnore = false;
-	moveStepIndexRun(true);// true means init 
+	moveStepIndexRun(true, editingSequence);// true means init 
 	
 	ppqnCount = 0;
 	ppqnLeftToSkip = delay;
@@ -387,7 +387,7 @@ bool SequencerKernel::clockStep(bool editingSequence, int delayedSeqNumberReques
 			ppqnCount = 0;
 		if (ppqnCount == 0) {
 			float slideFromCV = getCV(editingSequence);
-			if (moveStepIndexRun(false)) {// false means normal (not init)
+			if (moveStepIndexRun(false, editingSequence)) {// false means normal (not init)
 				phraseChange = true;// used by first track for random slaving, and also by all tracks for delayed Seq CV request
 				if (editingSequence) {
 					if (delayedSeqNumberRequest >= 0) {
@@ -396,7 +396,7 @@ bool SequencerKernel::clockStep(bool editingSequence, int delayedSeqNumberReques
 				}
 				else {
 					movePhraseIndexRun(false);// false means normal (not init)
-					moveStepIndexRun(true);// true means init; must always refresh after phraseIndexRun has changed
+					moveStepIndexRun(true, editingSequence);// true means init; must always refresh after phraseIndexRun has changed
 				}
 			}
 
@@ -580,13 +580,13 @@ void SequencerKernel::calcGateCodeEx(bool editingSequence) {// uses stepIndexRun
 }
 	
 
-bool SequencerKernel::moveStepIndexRun(bool init) {	
+bool SequencerKernel::moveStepIndexRun(bool init, bool editingSequence) {	
 	if (moveStepIndexRunIgnore) {
 		moveStepIndexRunIgnore = false;
 		return true;
 	}
 	
-	int reps = phrases[phraseIndexRun].getReps();// 0-rep seqs should be filtered elsewhere and should never happen here. If they do, they will be played (this can be the case when all of the song has 0-rep seqs, or the song is started (reset) into a first phrase that has 0 reps)
+	int reps = (editingSequence ? 1 : phrases[phraseIndexRun].getReps());// 0-rep seqs should be filtered elsewhere and should never happen here. If they do, they will be played (this can be the case when all of the song has 0-rep seqs, or the song is started (reset) into a first phrase that has 0 reps)
 	// assert((reps * MAX_STEPS) <= 0xFFF); // for BRN and RND run modes, history is not a span count but a step count
 	int seqn = phrases[phraseIndexRun].getSeqNum();
 	int runMode = sequences[seqn].getRunMode();
