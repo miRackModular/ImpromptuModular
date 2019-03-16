@@ -588,7 +588,7 @@ bool SequencerKernel::moveStepIndexRun(bool init, bool editingSequence) {
 	
 	int reps = (editingSequence ? 1 : phrases[phraseIndexRun].getReps());// 0-rep seqs should be filtered elsewhere and should never happen here. If they do, they will be played (this can be the case when all of the song has 0-rep seqs, or the song is started (reset) into a first phrase that has 0 reps)
 	// assert((reps * MAX_STEPS) <= 0xFFF); // for BRN and RND run modes, history is not a span count but a step count
-	int seqn = phrases[phraseIndexRun].getSeqNum();
+	int seqn = (editingSequence ? seqIndexEdit : phrases[phraseIndexRun].getSeqNum());
 	int runMode = sequences[seqn].getRunMode();
 	int endStep = sequences[seqn].getLength() - 1;
 	
