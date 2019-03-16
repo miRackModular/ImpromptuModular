@@ -81,7 +81,7 @@ struct TwelveKey : Module {
 		lastKeyPressed = 0;
 	}
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		
 		// panelTheme
@@ -99,7 +99,7 @@ struct TwelveKey : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		// panelTheme
 		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
 		if (panelThemeJ)
@@ -232,9 +232,7 @@ struct TwelveKeyWidget : ModuleWidget {
 			rightText = (module->panelTheme == theme) ? "✔" : "";
 		}
 	};
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
-
+	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
 
@@ -256,8 +254,6 @@ struct TwelveKeyWidget : ModuleWidget {
 		darkItem->module = module;
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
-
-		return menu;
 	}	
 	
 	
@@ -284,32 +280,32 @@ struct TwelveKeyWidget : ModuleWidget {
 		static const int offsetKeyLEDy = 41;
 
 		// Black keys
-		addParam(ParamWidget::create<InvisibleKey>(Vec(30, 40), module, TwelveKey::KEY_PARAMS + 1, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(30+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 1));
-		addParam(ParamWidget::create<InvisibleKey>(Vec(71, 40), module, TwelveKey::KEY_PARAMS + 3, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(71+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 3));
-		addParam(ParamWidget::create<InvisibleKey>(Vec(154, 40), module, TwelveKey::KEY_PARAMS + 6, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(154+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 6));
-		addParam(ParamWidget::create<InvisibleKey>(Vec(195, 40), module, TwelveKey::KEY_PARAMS + 8, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(195+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 8));
-		addParam(ParamWidget::create<InvisibleKey>(Vec(236, 40), module, TwelveKey::KEY_PARAMS + 10, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(236+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 10));
+		addParam(createParam<InvisibleKey>(Vec(30, 40), module, TwelveKey::KEY_PARAMS + 1, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(30+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 1));
+		addParam(createParam<InvisibleKey>(Vec(71, 40), module, TwelveKey::KEY_PARAMS + 3, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(71+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 3));
+		addParam(createParam<InvisibleKey>(Vec(154, 40), module, TwelveKey::KEY_PARAMS + 6, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(154+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 6));
+		addParam(createParam<InvisibleKey>(Vec(195, 40), module, TwelveKey::KEY_PARAMS + 8, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(195+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 8));
+		addParam(createParam<InvisibleKey>(Vec(236, 40), module, TwelveKey::KEY_PARAMS + 10, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(236+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 10));
 
 		// White keys
-		addParam(ParamWidget::create<InvisibleKey>(Vec(10, 112), module, TwelveKey::KEY_PARAMS + 0, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(10+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 0));
-		addParam(ParamWidget::create<InvisibleKey>(Vec(51, 112), module, TwelveKey::KEY_PARAMS + 2, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(51+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 2));
-		addParam(ParamWidget::create<InvisibleKey>(Vec(92, 112), module, TwelveKey::KEY_PARAMS + 4, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(92+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 4));
-		addParam(ParamWidget::create<InvisibleKey>(Vec(133, 112), module, TwelveKey::KEY_PARAMS + 5, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(133+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 5));
-		addParam(ParamWidget::create<InvisibleKey>(Vec(174, 112), module, TwelveKey::KEY_PARAMS + 7, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(174+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 7));
-		addParam(ParamWidget::create<InvisibleKey>(Vec(215, 112), module, TwelveKey::KEY_PARAMS + 9, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(215+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 9));
-		addParam(ParamWidget::create<InvisibleKey>(Vec(256, 112), module, TwelveKey::KEY_PARAMS + 11, 0.0, 1.0, 0.0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(256+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 11));
+		addParam(createParam<InvisibleKey>(Vec(10, 112), module, TwelveKey::KEY_PARAMS + 0, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(10+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 0));
+		addParam(createParam<InvisibleKey>(Vec(51, 112), module, TwelveKey::KEY_PARAMS + 2, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(51+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 2));
+		addParam(createParam<InvisibleKey>(Vec(92, 112), module, TwelveKey::KEY_PARAMS + 4, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(92+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 4));
+		addParam(createParam<InvisibleKey>(Vec(133, 112), module, TwelveKey::KEY_PARAMS + 5, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(133+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 5));
+		addParam(createParam<InvisibleKey>(Vec(174, 112), module, TwelveKey::KEY_PARAMS + 7, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(174+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 7));
+		addParam(createParam<InvisibleKey>(Vec(215, 112), module, TwelveKey::KEY_PARAMS + 9, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(215+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 9));
+		addParam(createParam<InvisibleKey>(Vec(256, 112), module, TwelveKey::KEY_PARAMS + 11, 0.0, 1.0, 0.0));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(256+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 11));
 		
 		
 		// ****** Bottom portion ******
@@ -328,13 +324,13 @@ struct TwelveKeyWidget : ModuleWidget {
 		// Left side inputs
 		
 		
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler0), Port::INPUT, module, TwelveKey::CV_INPUT, &module->panelTheme));
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler1), Port::INPUT, module, TwelveKey::GATE_INPUT, &module->panelTheme));
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler2), Port::INPUT, module, TwelveKey::OCT_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler0), true, module, TwelveKey::CV_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler1), true, module, TwelveKey::GATE_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler2), true, module, TwelveKey::OCT_INPUT, &module->panelTheme));
 
 		// Middle
 		// Press LED (moved other controls below up by 16 px when removed, to better center)
-		//addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(columnRulerM + offsetMediumLight, rowRuler0 - 31 + offsetMediumLight), module, TwelveKey::PRESS_LIGHT));
+		//addChild(createLight<MediumLight<GreenLight>>(Vec(columnRulerM + offsetMediumLight, rowRuler0 - 31 + offsetMediumLight), module, TwelveKey::PRESS_LIGHT));
 		// Octave display
 		OctaveNumDisplayWidget *octaveNumDisplay = new OctaveNumDisplayWidget();
 		octaveNumDisplay->box.pos = Vec(columnRulerM + 2, rowRuler1 - 27 + vOffsetDisplay);
@@ -347,17 +343,15 @@ struct TwelveKeyWidget : ModuleWidget {
 		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRulerM + 22 + offsetCKD6b, rowRuler2 - 26 + offsetCKD6b), module, TwelveKey::OCTINC_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		
 		// Right side outputs
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler0), Port::OUTPUT, module, TwelveKey::CV_OUTPUT, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler1), Port::OUTPUT, module, TwelveKey::GATE_OUTPUT, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler2), Port::OUTPUT, module, TwelveKey::OCT_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler0), false, module, TwelveKey::CV_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler1), false, module, TwelveKey::GATE_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler2), false, module, TwelveKey::OCT_OUTPUT, &module->panelTheme));
 	}
 };
 
-Model *modelTwelveKey = Model::create<TwelveKey, TwelveKeyWidget>("Impromptu Modular", "Twelve-Key", "CTRL - TwelveKey", CONTROLLER_TAG);
+// Model *modelTwelveKey = createModel<TwelveKey, TwelveKeyWidget>("Impromptu Modular", "Twelve-Key", "CTRL - TwelveKey", CONTROLLER_TAG);
+Model *modelTwelveKey = createModel<TwelveKey, TwelveKeyWidget>("Twelve-Key");
 
 /*CHANGE LOG
-
-0.6.12:
-input refresh optimization
 
 */

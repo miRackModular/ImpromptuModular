@@ -190,7 +190,7 @@ int keyIndexToGateMode(int keyIndex, int pulsesPerStep) {
 /*CHANGE LOG
 
 0.6.12:
-revert PPG and add the new one as a run mode called PND (Pendulum); fix PS, SMS, GS toJson/fromJson to adjust old patches
+revert PPG and add the new one as a run mode called PND (Pendulum); fix PS, SMS, GS dataToJson/dataFromJson to adjust old patches
 fix PPG run mode, so that it is a true PPG (ex: 1,2,3,2,1,2... instead of 1,2,3,3,2,1,1,2...)
 
 */

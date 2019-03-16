@@ -21,7 +21,7 @@ struct BlankPanel : Module {
 	void onRandomize() override {
 	}
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		// panelTheme
@@ -30,7 +30,7 @@ struct BlankPanel : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		// panelTheme
 		// json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
 		// if (panelThemeJ)
@@ -56,8 +56,8 @@ struct BlankPanelWidget : ModuleWidget {
 			// rightText = (module->panelTheme == theme) ? "✔" : "";
 		// }
 	// };
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
+
+	void appendContextMenu(Menu *menu) override {
 
 		BlankPanel *module = dynamic_cast<BlankPanel*>(this->module);
 		assert(module);
@@ -80,16 +80,14 @@ struct BlankPanelWidget : ModuleWidget {
 		// darkItem->module = module;
 		// darkItem->theme = 1;
 		// menu->addChild(darkItem);
-
-		return menu;
 	}	
 
 
 	BlankPanelWidget(BlankPanel *module) : ModuleWidget(module) {
 		// Main panel from Inkscape
         DynamicSVGPanel *panel = new DynamicSVGPanel();
-        //panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/BlankPanel.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/BlankPanel_dark.svg")));
+        //panel->addPanel(APP->window->loadSvg(asset::plugin(plugin, "res/light/BlankPanel.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BlankPanel_dark.svg")));
         box.size = panel->box.size;
         //panel->mode = &module->panelTheme;
         addChild(panel);
@@ -104,4 +102,5 @@ struct BlankPanelWidget : ModuleWidget {
 	}
 };
 
-Model *modelBlankPanel = Model::create<BlankPanel, BlankPanelWidget>("Impromptu Modular", "Blank-Panel", "MISC - BlankPanel", BLANK_TAG);
+//Model *modelBlankPanel = createModel<BlankPanel, BlankPanelWidget>("Impromptu Modular", "Blank-Panel", "MISC - BlankPanel", BLANK_TAG);
+Model *modelBlankPanel = createModel<BlankPanel, BlankPanelWidget>("Blank-Panel");

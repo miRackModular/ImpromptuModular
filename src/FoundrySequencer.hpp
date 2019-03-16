@@ -225,8 +225,8 @@ class Sequencer {
 	}
 	
 	
-	void toJson(json_t *rootJ);
-	void fromJson(json_t *rootJ);
+	void dataToJson(json_t *rootJ);
+	void dataFromJson(json_t *rootJ);
 	
 	void reset(bool editingSequence);
 	inline void initDelayedSeqNumberRequest() {

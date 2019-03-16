@@ -260,7 +260,7 @@ struct GateSeq64 : Module {
 	}
 	
 	
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		// panelTheme
@@ -323,7 +323,7 @@ struct GateSeq64 : Module {
 	}
 
 	
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		// panelTheme
 		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
 		if (panelThemeJ)
@@ -501,7 +501,7 @@ struct GateSeq64 : Module {
 		if (phraseIndexEditJ)
 			phraseIndexEdit = json_integer_value(phraseIndexEditJ);
 		
-		stepConfigSync = 1;// signal a sync from fromJson so that step will get lengths from seqAttribBuffer
+		stepConfigSync = 1;// signal a sync from dataFromJson so that step will get lengths from seqAttribBuffer
 	}
 
 	
@@ -543,7 +543,7 @@ struct GateSeq64 : Module {
 			// Config switch
 			if (stepConfigSync != 0) {
 				stepConfig = getStepConfig(params[CONFIG_PARAM].value);
-				if (stepConfigSync == 1) {// sync from fromJson, so read lengths from seqAttribBuffer
+				if (stepConfigSync == 1) {// sync from dataFromJson, so read lengths from seqAttribBuffer
 					for (int i = 0; i < MAX_SEQS; i++)
 						sequences[i].setSeqAttrib(seqAttribBuffer[i].getSeqAttrib());
 				}
@@ -810,7 +810,7 @@ struct GateSeq64 : Module {
 			// Sequence knob (Main knob)
 			float seqParamValue = params[SEQUENCE_PARAM].value;
 			int newSequenceKnob = (int)roundf(seqParamValue * 7.0f);
-			if (seqParamValue == 0.0f)// true when constructor or fromJson() occured
+			if (seqParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				sequenceKnob = newSequenceKnob;
 			int deltaKnob = newSequenceKnob - sequenceKnob;
 			if (deltaKnob != 0) {
@@ -1237,9 +1237,7 @@ struct GateSeq64Widget : ModuleWidget {
 				text = "Seq CV in: 0-10V,  C4-G6,  <Trig-Incr>";
 		}	
 	};
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
-
+	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
 
@@ -1268,15 +1266,15 @@ struct GateSeq64Widget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
+		ResetOnRunItem *rorItem = createMenuItem<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
 		
-		AutoseqItem *aseqItem = MenuItem::create<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
+		AutoseqItem *aseqItem = createMenuItem<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
 		aseqItem->module = module;
 		menu->addChild(aseqItem);
 
-		SeqCVmethodItem *seqcvItem = MenuItem::create<SeqCVmethodItem>("Seq CV in: ", "");
+		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in: ", "");
 		seqcvItem->module = module;
 		menu->addChild(seqcvItem);
 		
@@ -1286,11 +1284,9 @@ struct GateSeq64Widget : ModuleWidget {
 		expansionLabel->text = "Expansion module";
 		menu->addChild(expansionLabel);
 
-		ExpansionItem *expItem = MenuItem::create<ExpansionItem>(expansionMenuLabel, CHECKMARK(module->expansion != 0));
+		ExpansionItem *expItem = createMenuItem<ExpansionItem>(expansionMenuLabel, CHECKMARK(module->expansion != 0));
 		expItem->module = module;
 		menu->addChild(expItem);
-
-		return menu;
 	}	
 	
 	void step() override {
@@ -1443,9 +1439,9 @@ struct GateSeq64Widget : ModuleWidget {
 				
 		
 		// Clock input
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC0, rowRulerC1), Port::INPUT, module, GateSeq64::CLOCK_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC0, rowRulerC1), true, module, GateSeq64::CLOCK_INPUT, &module->panelTheme));
 		// Reset CV
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC0, rowRulerC2), Port::INPUT, module, GateSeq64::RESET_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC0, rowRulerC2), true, module, GateSeq64::RESET_INPUT, &module->panelTheme));
 		
 				
 		// Prob button
@@ -1454,7 +1450,7 @@ struct GateSeq64Widget : ModuleWidget {
 		addParam(createParam<LEDBezel>(Vec(colRulerC1 + offsetLEDbezel, rowRulerC1 + offsetLEDbezel), module, GateSeq64::RESET_PARAM, 0.0f, 1.0f, 0.0f));
 		addChild(createLight<MuteLight<GreenLight>>(Vec(colRulerC1 + offsetLEDbezel + offsetLEDbezelLight, rowRulerC1 + offsetLEDbezel + offsetLEDbezelLight), module, GateSeq64::RESET_LIGHT));
 		// Seq CV
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC1, rowRulerC2), Port::INPUT, module, GateSeq64::SEQCV_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC1, rowRulerC2), true, module, GateSeq64::SEQCV_INPUT, &module->panelTheme));
 		
 		// Sequence knob
 		addParam(createDynamicParam<SequenceKnob>(Vec(colRulerC2 + 1 + offsetIMBigKnob, rowRulerC0 + offsetIMBigKnob), module, GateSeq64::SEQUENCE_PARAM, -INFINITY, INFINITY, 0.0f, &module->panelTheme));		
@@ -1462,7 +1458,7 @@ struct GateSeq64Widget : ModuleWidget {
 		addParam(createParam<LEDBezel>(Vec(colRulerC2 + offsetLEDbezel, rowRulerC1 + offsetLEDbezel), module, GateSeq64::RUN_PARAM, 0.0f, 1.0f, 0.0f));
 		addChild(createLight<MuteLight<GreenLight>>(Vec(colRulerC2 + offsetLEDbezel + offsetLEDbezelLight, rowRulerC1 + offsetLEDbezel + offsetLEDbezelLight), module, GateSeq64::RUN_LIGHT));
 		// Run CV
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC2, rowRulerC2), Port::INPUT, module, GateSeq64::RUNCV_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC2, rowRulerC2), true, module, GateSeq64::RUNCV_INPUT, &module->panelTheme));
 
 		
 		// Sequence display
@@ -1487,71 +1483,26 @@ struct GateSeq64Widget : ModuleWidget {
 
 		// Outputs
 		for (int iSides = 0; iSides < 4; iSides++)
-			addOutput(createDynamicPort<IMPort>(Vec(311, rowRulerC0 + iSides * 40), Port::OUTPUT, module, GateSeq64::GATE_OUTPUTS + iSides, &module->panelTheme));
+			addOutput(createDynamicPort<IMPort>(Vec(311, rowRulerC0 + iSides * 40), false, module, GateSeq64::GATE_OUTPUTS + iSides, &module->panelTheme));
 		
 		// Expansion module
 		static const int rowRulerExpTop = 60;
 		static const int rowSpacingExp = 50;
 		static const int colRulerExp = 497 - 30 - 90;// GS64 is (2+6)HP less than PS32
-		addInput(expPorts[0] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), Port::INPUT, module, GateSeq64::WRITE_INPUT, &module->panelTheme));
-		addInput(expPorts[1] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), Port::INPUT, module, GateSeq64::GATE_INPUT, &module->panelTheme));
-		addInput(expPorts[2] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), Port::INPUT, module, GateSeq64::PROB_INPUT, &module->panelTheme));
-		addInput(expPorts[3] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), Port::INPUT, module, GateSeq64::WRITE0_INPUT, &module->panelTheme));
-		addInput(expPorts[4] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), Port::INPUT, module, GateSeq64::WRITE1_INPUT, &module->panelTheme));
-		addInput(expPorts[5] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), Port::INPUT, module, GateSeq64::STEPL_INPUT, &module->panelTheme));
+		addInput(expPorts[0] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), true, module, GateSeq64::WRITE_INPUT, &module->panelTheme));
+		addInput(expPorts[1] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), true, module, GateSeq64::GATE_INPUT, &module->panelTheme));
+		addInput(expPorts[2] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), true, module, GateSeq64::PROB_INPUT, &module->panelTheme));
+		addInput(expPorts[3] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, GateSeq64::WRITE0_INPUT, &module->panelTheme));
+		addInput(expPorts[4] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, GateSeq64::WRITE1_INPUT, &module->panelTheme));
+		addInput(expPorts[5] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), true, module, GateSeq64::STEPL_INPUT, &module->panelTheme));
 
 	}
 };
 
 
-Model *modelGateSeq64 = Model::create<GateSeq64, GateSeq64Widget>("Impromptu Modular", "Gate-Seq-64", "SEQ - GateSeq64", SEQUENCER_TAG);
+// Model *modelGateSeq64 = createModel<GateSeq64, GateSeq64Widget>("Impromptu Modular", "Gate-Seq-64", "SEQ - GateSeq64", SEQUENCER_TAG);
+Model *modelGateSeq64 = createModel<GateSeq64, GateSeq64Widget>("Gate-Seq-64");
 
 /*CHANGE LOG
 
-0.6.16:
-support for 32 sequences instead of 16
-add step indication in song mode (white lights), and add right-click initialization on main knob
-
-0.6.14:
-allow right click to turn steps off
-
-0.6.13:
-fix run mode bug (history not reset when hard reset)
-fix initRun() timing bug when turn off-and-then-on running button (it was resetting ppqnCount)
-add two extra modes for Seq CV input (right-click menu): note-voltage-levels and trigger-increment
-
-0.6.12:
-input refresh optimization
-add separate buttons for each advanced-gate (remove left right buttons)
-change behavior of write CV input in exp pannel (prob not reset when ProbIn unconnected, and gate not written when GateIn unconnected)
-
-0.6.11:
-step optimization of lights refresh
-add RN2 run mode
-add step-left CV input in expansion panel
-implement copy-paste in song mode and change 4/ROW/ALL to 4/8/ALL
-implement cross paste trick for init and randomize seq/song
-add AutoSeq option when writing via CV inputs 
-make song mode 64 sequences long
-
-0.6.10:
-add advanced gate mode
-
-0.6.9:
-add FW2, FW3 and FW4 run modes for sequences (but not for song)
-
-0.6.7:
-add expansion panel with extra CVs for writing steps into the module
-allow full edit capabilities in song mode
-no reset on run by default, with switch added in context menu
-reset does not revert seq or song number to 1
-
-0.6.6:
-config and knob bug fixes when loading patch
-
-0.6.5:
-swap MODE/LEN so that length happens first (update manual)
-
-0.6.4:
-initial release of GS64
 */

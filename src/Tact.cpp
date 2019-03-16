@@ -94,7 +94,7 @@ struct Tact : Module {
 	}
 
 	
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		// cv
@@ -118,7 +118,7 @@ struct Tact : Module {
 	}
 
 	
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 
 		// cv
 		json_t *cv0J = json_object_get(rootJ, "cv0");
@@ -342,9 +342,7 @@ struct TactWidget : ModuleWidget {
 			module->levelSensitiveTopBot = !module->levelSensitiveTopBot;
 		}
 	};
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
-
+	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
 
@@ -373,15 +371,13 @@ struct TactWidget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ExtendRateItem *extRateItem = MenuItem::create<ExtendRateItem>("Rate knob x3 (max 12 s/V)", CHECKMARK(module->rateMultiplier > 2.0f));
+		ExtendRateItem *extRateItem = createMenuItem<ExtendRateItem>("Rate knob x3 (max 12 s/V)", CHECKMARK(module->rateMultiplier > 2.0f));
 		extRateItem->module = module;
 		menu->addChild(extRateItem);
 
-		LevelSensitiveItem *levelSensItem = MenuItem::create<LevelSensitiveItem>("Level sensitive arrow CV inputs", CHECKMARK(module->levelSensitiveTopBot));
+		LevelSensitiveItem *levelSensItem = createMenuItem<LevelSensitiveItem>("Level sensitive arrow CV inputs", CHECKMARK(module->levelSensitiveTopBot));
 		levelSensItem->module = module;
 		menu->addChild(levelSensItem);
-
-		return menu;
 	}	
 	
 	TactWidget(Tact *module) : ModuleWidget(module) {
@@ -430,8 +426,8 @@ struct TactWidget : ModuleWidget {
 		static const int colRulerC3R = colRulerCenter + 101;
 		
 		// Recall CV inputs
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC3L, rowRuler2), Port::INPUT, module, Tact::RECALL_INPUTS + 0, &module->panelTheme));		
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC3R, rowRuler2), Port::INPUT, module, Tact::RECALL_INPUTS + 1, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC3L, rowRuler2), true, module, Tact::RECALL_INPUTS + 0, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC3R, rowRuler2), true, module, Tact::RECALL_INPUTS + 1, &module->panelTheme));		
 		
 
 		static const int rowRuler1d = rowRuler2 - 54;
@@ -471,10 +467,10 @@ struct TactWidget : ModuleWidget {
 		addParam(createParam<CKSS>(Vec(colRulerCenter + hOffsetCKSS, rowRuler2 + vOffsetCKSS), module, Tact::EXP_PARAM, 0.0f, 1.0f, 0.0f));		
 
 		// Top/bot CV Inputs
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC2L, rowRuler2), Port::INPUT, module, Tact::TOP_INPUTS + 0, &module->panelTheme));		
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC1L, rowRuler2), Port::INPUT, module, Tact::BOT_INPUTS + 0, &module->panelTheme));		
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC1R, rowRuler2), Port::INPUT, module, Tact::BOT_INPUTS + 1, &module->panelTheme));	
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC2R, rowRuler2), Port::INPUT, module, Tact::TOP_INPUTS + 1, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC2L, rowRuler2), true, module, Tact::TOP_INPUTS + 0, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC1L, rowRuler2), true, module, Tact::BOT_INPUTS + 0, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC1R, rowRuler2), true, module, Tact::BOT_INPUTS + 1, &module->panelTheme));	
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC2R, rowRuler2), true, module, Tact::TOP_INPUTS + 1, &module->panelTheme));		
 
 		
 		static const int rowRuler3 = rowRuler2 + 54;
@@ -483,12 +479,12 @@ struct TactWidget : ModuleWidget {
 		addParam(createParam<CKSS>(Vec(colRulerCenter + hOffsetCKSS, rowRuler3 + vOffsetCKSS), module, Tact::LINK_PARAM, 0.0f, 1.0f, 0.0f));		
 
 		// Outputs
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter - 49 - 1, rowRuler3), Port::OUTPUT, module, Tact::CV_OUTPUTS + 0, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter + 49, rowRuler3), Port::OUTPUT, module, Tact::CV_OUTPUTS + 1, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter - 49 - 1, rowRuler3), false, module, Tact::CV_OUTPUTS + 0, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter + 49, rowRuler3), false, module, Tact::CV_OUTPUTS + 1, &module->panelTheme));
 		
 		// EOC
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter - 89 - 1, rowRuler3), Port::OUTPUT, module, Tact::EOC_OUTPUTS + 0, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter + 89, rowRuler3), Port::OUTPUT, module, Tact::EOC_OUTPUTS + 1, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter - 89 - 1, rowRuler3), false, module, Tact::EOC_OUTPUTS + 0, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter + 89, rowRuler3), false, module, Tact::EOC_OUTPUTS + 1, &module->panelTheme));
 
 		
 		// Lights
@@ -550,7 +546,7 @@ struct Tact1 : Module {
 	}
 
 	
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		// cv
@@ -566,7 +562,7 @@ struct Tact1 : Module {
 	}
 
 	
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 
 		// cv
 		json_t *cvJ = json_object_get(rootJ, "cv");
@@ -662,9 +658,7 @@ struct Tact1Widget : ModuleWidget {
 				module->rateMultiplier = 1.0f;
 		}
 	};
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
-
+	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
 
@@ -693,11 +687,9 @@ struct Tact1Widget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ExtendRateItem *extRateItem = MenuItem::create<ExtendRateItem>("Rate knob x3 (max 12 s/V)", CHECKMARK(module->rateMultiplier > 2.0f));
+		ExtendRateItem *extRateItem = createMenuItem<ExtendRateItem>("Rate knob x3 (max 12 s/V)", CHECKMARK(module->rateMultiplier > 2.0f));
 		extRateItem->module = module;
 		menu->addChild(extRateItem);
-
-		return menu;
 	}	
 	
 	Tact1Widget(Tact1 *module) : ModuleWidget(module) {
@@ -740,7 +732,7 @@ struct Tact1Widget : ModuleWidget {
 		static const int rowRuler3 = 320;
 		
 		// Output
-		addOutput(createDynamicPort<IMPort>(Vec(18, rowRuler3), Port::OUTPUT, module, Tact1::CV_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(18, rowRuler3), false, module, Tact1::CV_OUTPUT, &module->panelTheme));
 		// Exp switch
 		addParam(createParam<CKSS>(Vec(57 + hOffsetCKSS, rowRuler3 + vOffsetCKSS), module, Tact1::EXP_PARAM, 0.0f, 1.0f, 0.0f));		
 	}
@@ -749,28 +741,12 @@ struct Tact1Widget : ModuleWidget {
 
 //*****************************************************************************
 
-Model *modelTact = Model::create<Tact, TactWidget>("Impromptu Modular", "Tact", "CTRL - Tact", CONTROLLER_TAG);
-Model *modelTact1 = Model::create<Tact1, Tact1Widget>("Impromptu Modular", "Tact1", "CTRL - Tact1", CONTROLLER_TAG);
+// Model *modelTact = createModel<Tact, TactWidget>("Impromptu Modular", "Tact", "CTRL - Tact", CONTROLLER_TAG);
+Model *modelTact = createModel<Tact, TactWidget>("Tact");
+
+// Model *modelTact1 = createModel<Tact1, Tact1Widget>("Impromptu Modular", "Tact1", "CTRL - Tact1", CONTROLLER_TAG);
+Model *modelTact1 = createModel<Tact1, Tact1Widget>("Tact1");
 
 /*CHANGE LOG
-
-0.6.12:
-input refresh optimization
-
-0.6.11:
-create Tact-1
-add right click option for rate x3 in both Tacts
-add right click option in Tact for level sensitive min/max CV inputs
-
-0.6.9:
-move EOC outputs to main panel and remove expansion panel
-
-0.6.8:
-remove widget pointer dependancy in module for changing a tact param value
-implement exponential sliding
-add expansion panel with EOC outputs 
-
-0.6.7:
-created
 
 */

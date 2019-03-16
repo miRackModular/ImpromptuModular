@@ -11,31 +11,30 @@
 #include "ImpromptuModular.hpp"
 
 
-Plugin *plugin;
+Plugin *pluginInstance;
+
 
 void init(rack::Plugin *p) {
-	plugin = p;
-	p->slug = TOSTRING(SLUG);
-	p->version = TOSTRING(VERSION);
+	pluginInstance = p;
 
-	p->addModel(modelTact);
-	p->addModel(modelTact1);
-	p->addModel(modelTwelveKey);
-	p->addModel(modelClocked);
-	p->addModel(modelFoundry);
-	p->addModel(modelGateSeq64);
-	p->addModel(modelPhraseSeq16);
-	p->addModel(modelPhraseSeq32);
-	p->addModel(modelWriteSeq32);
-	p->addModel(modelWriteSeq64);
-	p->addModel(modelBigButtonSeq);
-	p->addModel(modelBigButtonSeq2);
-	p->addModel(modelFourView);
-	p->addModel(modelSemiModularSynth);
+	// p->addModel(modelTact);
+	// p->addModel(modelTact1);
+	// p->addModel(modelTwelveKey);
+	// p->addModel(modelClocked);
+	// p->addModel(modelFoundry);
+	// p->addModel(modelGateSeq64);
+	// p->addModel(modelPhraseSeq16);
+	// p->addModel(modelPhraseSeq32);
+	// p->addModel(modelWriteSeq32);
+	// p->addModel(modelWriteSeq64);
+	// p->addModel(modelBigButtonSeq);
+	// p->addModel(modelBigButtonSeq2);
+	// p->addModel(modelFourView);
+	// p->addModel(modelSemiModularSynth);
 	p->addModel(modelBlankPanel);
 }
 
-
+/*
 void IMBigPushButtonWithRClick::onMouseDown(EventMouseDown &e)  {
 	if (e.button == 1) {// if right button (see events.hpp)
 		maxValue = 2.0f;
@@ -58,8 +57,34 @@ void IMBigPushButtonWithRClick::onMouseUp(EventMouseUp &e) {
 	ParamWidget::onMouseUp(e);
 }		
 
+void IMBigPushButtonWithRClick::onButton(const widget::ButtonEvent &e) {
+	if (e.action == GLFW_PRESS) {
+		if (e.button == GLFW_MOUSE_BUTTON_RIGHT) {// see widget/event.hpp
+			maxValue = 2.0f;
+			// Simulate MomentarySwitch::onDragStart() since not called for right clicks:
+			setValue(maxValue);
+			EventAction eAction;
+			onAction(eAction);
+		}
+		else 
+			maxValue = 1.0f;
+		//ParamWidget::onMouseDown(e);// don't want the reset() that is called in ParamWidget::onMouseDown(), so implement rest of that function here:
+		e.consumed = true;
+		e.target = this;
+	}
+	else if (e.action == GLFW_RELEASE) {
+		if (e.button == GLFW_MOUSE_BUTTON_RIGHT) {// see widget/event.hpp
+			// Simulate MomentarySwitch::onDragEnd() since not called for right clicks:
+			setValue(minValue);
+		}
+		ParamWidget::onButton(e);		
+	}
+}
+*/
+
 
 LEDBezelBig::LEDBezelBig() {
+	momentary = true;
 	float ratio = 2.13f;
 	addFrame(SVG::load(assetGlobal("res/ComponentLibrary/LEDBezel.svg")));
 	sw->box.size = sw->box.size.mult(ratio);
@@ -74,7 +99,7 @@ LEDBezelBig::LEDBezelBig() {
 	tw->scale(Vec(ratio, ratio));
 }
 
-
+/*
 void InvisibleKeySmall::onMouseDown(EventMouseDown &e) {
 	if (e.button == 1) {// if right button (see events.hpp)
 		maxValue = 2.0f;
@@ -96,16 +121,39 @@ void InvisibleKeySmall::onMouseUp(EventMouseUp &e) {
 	}
 	ParamWidget::onMouseUp(e);
 }
+void InvisibleKeySmall::onButton(const widget::ButtonEvent &e) {
+	if (e.action == GLFW_PRESS) {
+		if (e.button == GLFW_MOUSE_BUTTON_RIGHT) {// see widget/event.hpp
+			maxValue = 2.0f;
+			// Simulate MomentarySwitch::onDragStart() since not called for right clicks:
+			setValue(maxValue);
+			//EventAction eAction;
+			//onAction(eAction);
+		}
+		else 
+			maxValue = 1.0f;
+		//ParamWidget::onMouseDown(e);// don't want the reset() that is called in ParamWidget::onMouseDown(), so implement rest of that function here:
+		e.consumed = true;
+		e.target = this;
+	}
+	else if (e.action == GLFW_RELEASE) {
+		if (e.button == GLFW_MOUSE_BUTTON_RIGHT) {// see widget/event.hpp
+			// Simulate MomentarySwitch::onDragEnd() since not called for right clicks:
+			setValue(minValue);
+		}
+		ParamWidget::onButton(e);		
+	}
+}
+*/
 
-
-
+/*
 void LEDButtonWithRClick::onMouseDown(EventMouseDown &e)  {
 	if (e.button == 1) {// if right button (see events.hpp)
 		maxValue = 2.0f;
 		// Simulate MomentarySwitch::onDragStart() since not called for right clicks:
 		setValue(maxValue);
-		EventAction eAction;
-		onAction(eAction);
+		//EventAction eAction;
+		//onAction(eAction);
 	}
 	else 
 		maxValue = 1.0f;
@@ -119,8 +167,31 @@ void LEDButtonWithRClick::onMouseUp(EventMouseUp &e) {
 		setValue(minValue);
 	}
 	ParamWidget::onMouseUp(e);
+}
+void LEDButtonWithRClick::onButton(const widget::ButtonEvent &e) {
+	if (e.action == GLFW_PRESS) {
+		if (e.button == GLFW_MOUSE_BUTTON_RIGHT) {// see widget/event.hpp
+			maxValue = 2.0f;
+			// Simulate MomentarySwitch::onDragStart() since not called for right clicks:
+			setValue(maxValue);
+			//EventAction eAction;
+			//onAction(eAction);
+		}
+		else 
+			maxValue = 1.0f;
+		//ParamWidget::onMouseDown(e);// don't want the reset() that is called in ParamWidget::onMouseDown(), so implement rest of that function here:
+		e.consumed = true;
+		e.target = this;
+	}
+	else if (e.action == GLFW_RELEASE) {
+		if (e.button == GLFW_MOUSE_BUTTON_RIGHT) {// see widget/event.hpp
+			// Simulate MomentarySwitch::onDragEnd() since not called for right clicks:
+			setValue(minValue);
+		}
+		ParamWidget::onButton(e);		
+	}
 }		
-
+*/
 
 ScrewSilverRandomRot::ScrewSilverRandomRot() {
 	float angle0_90 = randomUniform()*M_PI/2.0f;
@@ -129,9 +200,9 @@ ScrewSilverRandomRot::ScrewSilverRandomRot() {
 	tw = new TransformWidget();
 	addChild(tw);
 	
-	sw = new SVGWidget();
+	sw = new widget::SvgWidget();
 	tw->addChild(sw);
-	//sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw0.svg")));
+	//sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/Screw0.svg")));
 	sw->setSVG(SVG::load(assetGlobal("res/ComponentLibrary/ScrewSilver.svg")));
 	
 	sc = new ScrewCircle(angle0_90);

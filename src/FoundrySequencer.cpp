@@ -452,7 +452,7 @@ void Sequencer::toggleTied(int multiSteps, bool multiTracks) {
 }
 
 
-void Sequencer::toJson(json_t *rootJ) {
+void Sequencer::dataToJson(json_t *rootJ) {
 	// stepIndexEdit
 	json_object_set_new(rootJ, "stepIndexEdit", json_integer(stepIndexEdit));
 
@@ -463,11 +463,11 @@ void Sequencer::toJson(json_t *rootJ) {
 	json_object_set_new(rootJ, "trackIndexEdit", json_integer(trackIndexEdit));
 
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
-		sek[trkn].toJson(rootJ);
+		sek[trkn].dataToJson(rootJ);
 }
 
 
-void Sequencer::fromJson(json_t *rootJ) {
+void Sequencer::dataFromJson(json_t *rootJ) {
 	// stepIndexEdit
 	json_t *stepIndexEditJ = json_object_get(rootJ, "stepIndexEdit");
 	if (stepIndexEditJ)
@@ -484,7 +484,7 @@ void Sequencer::fromJson(json_t *rootJ) {
 		trackIndexEdit = json_integer_value(trackIndexEditJ);
 	
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
-		sek[trkn].fromJson(rootJ);
+		sek[trkn].dataFromJson(rootJ);
 }
 
 

@@ -394,7 +394,7 @@ struct Clocked : Module {
 	}	
 	
 	
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		
 		// running
@@ -425,7 +425,7 @@ struct Clocked : Module {
 	}
 
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		// running
 		json_t *runningJ = json_object_get(rootJ, "running");
 		if (runningJ)
@@ -820,9 +820,7 @@ struct ClockedWidget : ModuleWidget {
 			module->resetClocked(true);
 		}
 	};	
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
-
+	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
 
@@ -851,15 +849,15 @@ struct ClockedWidget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		DelayDisplayNoteItem *ddnItem = MenuItem::create<DelayDisplayNoteItem>("Display delay values in notes", CHECKMARK(module->displayDelayNoteMode));
+		DelayDisplayNoteItem *ddnItem = createMenuItem<DelayDisplayNoteItem>("Display delay values in notes", CHECKMARK(module->displayDelayNoteMode));
 		ddnItem->module = module;
 		menu->addChild(ddnItem);
 
-		EmitResetItem *erItem = MenuItem::create<EmitResetItem>("Reset when run is turned off", CHECKMARK(module->emitResetOnStopRun));
+		EmitResetItem *erItem = createMenuItem<EmitResetItem>("Reset when run is turned off", CHECKMARK(module->emitResetOnStopRun));
 		erItem->module = module;
 		menu->addChild(erItem);
 
-		ResetHighItem *rhItem = MenuItem::create<ResetHighItem>("Outputs reset high when not running", CHECKMARK(module->resetClockOutputsHigh));
+		ResetHighItem *rhItem = createMenuItem<ResetHighItem>("Outputs reset high when not running", CHECKMARK(module->resetClockOutputsHigh));
 		rhItem->module = module;
 		menu->addChild(rhItem);
 
@@ -869,11 +867,9 @@ struct ClockedWidget : ModuleWidget {
 		expansionLabel->text = "Expansion module";
 		menu->addChild(expansionLabel);
 
-		ExpansionItem *expItem = MenuItem::create<ExpansionItem>(expansionMenuLabel, CHECKMARK(module->expansion != 0));
+		ExpansionItem *expItem = createMenuItem<ExpansionItem>(expansionMenuLabel, CHECKMARK(module->expansion != 0));
 		expItem->module = module;
 		menu->addChild(expItem);
-
-		return menu;
 	}	
 	
 	void step() override {
@@ -975,11 +971,11 @@ struct ClockedWidget : ModuleWidget {
 		
 		// Row 0
 		// Reset input
-		addInput(createDynamicPort<IMPort>(Vec(colRulerL, rowRuler0), Port::INPUT, module, Clocked::RESET_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerL, rowRuler0), true, module, Clocked::RESET_INPUT, &module->panelTheme));
 		// Run input
-		addInput(createDynamicPort<IMPort>(Vec(colRulerT1, rowRuler0), Port::INPUT, module, Clocked::RUN_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerT1, rowRuler0), true, module, Clocked::RUN_INPUT, &module->panelTheme));
 		// In input
-		addInput(createDynamicPort<IMPort>(Vec(colRulerT2, rowRuler0), Port::INPUT, module, Clocked::BPM_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerT2, rowRuler0), true, module, Clocked::BPM_INPUT, &module->panelTheme));
 		// Master BPM knob
 		addParam(createDynamicParam<IMBigSnapKnobNotify>(Vec(colRulerT3 + 1 + offsetIMBigKnob, rowRuler0 + offsetIMBigKnob), module, Clocked::RATIO_PARAMS + 0, (float)(module->bpmMin), (float)(module->bpmMax), 120.0f, &module->panelTheme));// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		// BPM display
@@ -1007,7 +1003,7 @@ struct ClockedWidget : ModuleWidget {
 		// PW master knob
 		addParam(createDynamicParam<IMSmallKnobNotify>(Vec(colRulerT4 + offsetIMSmallKnob, rowRuler1 + offsetIMSmallKnob), module, Clocked::PW_PARAMS + 0, 0.0f, 1.0f, 0.5f, &module->panelTheme));
 		// Clock master out
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT5, rowRuler1), Port::OUTPUT, module, Clocked::CLK_OUTPUTS + 0, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT5, rowRuler1), false, module, Clocked::CLK_OUTPUTS + 0, &module->panelTheme));
 		
 		
 		// Row 2-4 (sub clocks)		
@@ -1033,69 +1029,32 @@ struct ClockedWidget : ModuleWidget {
 
 		// Last row
 		// Reset out
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerL, rowRuler5), Port::OUTPUT, module, Clocked::RESET_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerL, rowRuler5), false, module, Clocked::RESET_OUTPUT, &module->panelTheme));
 		// Run out
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT1, rowRuler5), Port::OUTPUT, module, Clocked::RUN_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT1, rowRuler5), false, module, Clocked::RUN_OUTPUT, &module->panelTheme));
 		// Out out
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT2, rowRuler5), Port::OUTPUT, module, Clocked::BPM_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT2, rowRuler5), false, module, Clocked::BPM_OUTPUT, &module->panelTheme));
 		// Sub-clock outputs
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT3, rowRuler5), Port::OUTPUT, module, Clocked::CLK_OUTPUTS + 1, &module->panelTheme));	
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT4, rowRuler5), Port::OUTPUT, module, Clocked::CLK_OUTPUTS + 2, &module->panelTheme));	
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT5, rowRuler5), Port::OUTPUT, module, Clocked::CLK_OUTPUTS + 3, &module->panelTheme));	
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT3, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 1, &module->panelTheme));	
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT4, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 2, &module->panelTheme));	
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT5, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 3, &module->panelTheme));	
 
 		// Expansion module
 		static const int rowRulerExpTop = 60;
 		static const int rowSpacingExp = 50;
 		static const int colRulerExp = 497 - 30 -150;// Clocked is (2+10)HP less than PS32
-		addInput(expPorts[0] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), Port::INPUT, module, Clocked::PW_INPUTS + 0, &module->panelTheme));
-		addInput(expPorts[1] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), Port::INPUT, module, Clocked::PW_INPUTS + 1, &module->panelTheme));
-		addInput(expPorts[2] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), Port::INPUT, module, Clocked::PW_INPUTS + 2, &module->panelTheme));
-		addInput(expPorts[3] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), Port::INPUT, module, Clocked::SWING_INPUTS + 0, &module->panelTheme));
-		addInput(expPorts[4] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), Port::INPUT, module, Clocked::SWING_INPUTS + 1, &module->panelTheme));
-		addInput(expPorts[5] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), Port::INPUT, module, Clocked::SWING_INPUTS + 2, &module->panelTheme));
+		addInput(expPorts[0] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), true, module, Clocked::PW_INPUTS + 0, &module->panelTheme));
+		addInput(expPorts[1] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), true, module, Clocked::PW_INPUTS + 1, &module->panelTheme));
+		addInput(expPorts[2] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), true, module, Clocked::PW_INPUTS + 2, &module->panelTheme));
+		addInput(expPorts[3] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, Clocked::SWING_INPUTS + 0, &module->panelTheme));
+		addInput(expPorts[4] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, Clocked::SWING_INPUTS + 1, &module->panelTheme));
+		addInput(expPorts[5] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), true, module, Clocked::SWING_INPUTS + 2, &module->panelTheme));
 	}
 };
 
-Model *modelClocked = Model::create<Clocked, ClockedWidget>("Impromptu Modular", "Clocked", "CLK - Clocked", CLOCK_TAG);
+// Model *modelClocked = createModel<Clocked, ClockedWidget>("Impromptu Modular", "Clocked", "CLK - Clocked", CLOCK_TAG);
+Model *modelClocked = createModel<Clocked, ClockedWidget>("Clocked");
 
 /*CHANGE LOG
-
-0.6.15:
-add right click menu option for outputs reset high/low when not running
-add P2 and P16 pulses per step modes
-
-0.6.14:
-optimize swing, pw and delay knobs (those with CV inputs have the CV input effect now visible in value when move knob)
-rail clock outputs high when reset
-
-0.6.13:
-run button now serves as a pause, and will not reset the internal counters in the clock (except when 
-Emit reset is checked, then a reset is done).
-
-0.6.12:
-fixed BPM memorization in BPM sync mode (i.e. when external clock stops, remember last BPM instead of revert to 120)
-
-0.6.11:
-display PW when knob changes (1 to 99, indicative of knob position only, actual PW determined by clock engine)
-let mode button change mode even if no BPM input connected (will have no effect but can nonetheless be changed)
-allow extended BPM range in sync mode (20-450 BPM) to improve sync speed for supported range (30-300 BPM)
-
-0.6.10:
-add ppqn setting of 12
-move master PW to expansion panel and move BPM mode from right-click menu to main pannel button
-
-0.6.9:
-new approach to BPM Detection (all slaves must enable Use BPM Detect if master does, and same ppqn)
-choice of 4, 8, 24 PPQN when using BPM detection
-add sub-clock ratio of 24 (existing patches making use of greater than 23 mult or div will need to adjust)
-add right click option for emit reset when run turned off
-
-0.6.8:
-replace bit-ring-buffer delay engine with event-based delay engine
-add BPM pulse frequency vs CV level option in right click settings
-updated BPM CV levels (in, out) to new Rack standard for clock CVs
-
-0.6.7:
-created
 
 */

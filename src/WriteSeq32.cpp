@@ -142,7 +142,7 @@ struct WriteSeq32 : Module {
 	}
 
 	
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		// panelTheme
@@ -182,7 +182,7 @@ struct WriteSeq32 : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		// panelTheme
 		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
 		if (panelThemeJ)
@@ -582,9 +582,7 @@ struct WriteSeq32Widget : ModuleWidget {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
-
+	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
 
@@ -613,11 +611,9 @@ struct WriteSeq32Widget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
+		ResetOnRunItem *rorItem = createMenuItem<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
-		
-		return menu;
 	}	
 	
 	
@@ -720,7 +716,7 @@ struct WriteSeq32Widget : ModuleWidget {
 		addParam(createParam<CKSSThreeInvNoRandom>(Vec(columnRuler0+hOffsetCKSS, rowRuler2+vOffsetCKSSThree), module, WriteSeq32::PASTESYNC_PARAM, 0.0f, 2.0f, 0.0f));	
 		addChild(createLight<SmallLight<RedLight>>(Vec(columnRuler0 + 41, rowRuler2 + 14), module, WriteSeq32::PENDING_LIGHT));		
 		// Run CV input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler0, rowRuler3), Port::INPUT, module, WriteSeq32::RUNCV_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler0, rowRuler3), true, module, WriteSeq32::RUNCV_INPUT, &module->panelTheme));
 		
 		
 		// Column 1
@@ -730,9 +726,9 @@ struct WriteSeq32Widget : ModuleWidget {
 		addParam(createParam<LEDBezel>(Vec(columnRuler1+offsetLEDbezel, rowRuler1+offsetLEDbezel), module, WriteSeq32::RUN_PARAM, 0.0f, 1.0f, 0.0f));
 		addChild(createLight<MuteLight<GreenLight>>(Vec(columnRuler1+offsetLEDbezel+offsetLEDbezelLight, rowRuler1+offsetLEDbezel+offsetLEDbezelLight), module, WriteSeq32::RUN_LIGHT));
 		// Gate input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler1, rowRuler2), Port::INPUT, module, WriteSeq32::GATE_INPUT, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler1, rowRuler2), true, module, WriteSeq32::GATE_INPUT, &module->panelTheme));		
 		// Step L input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler1, rowRuler3), Port::INPUT, module, WriteSeq32::STEPL_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler1, rowRuler3), true, module, WriteSeq32::STEPL_INPUT, &module->panelTheme));
 		
 		
 		// Column 2
@@ -742,9 +738,9 @@ struct WriteSeq32Widget : ModuleWidget {
 		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRuler2+offsetCKD6b, rowRuler1+offsetCKD6b), module, WriteSeq32::WRITE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(columnRuler2 -12, rowRuler1 - 12), module, WriteSeq32::WRITE_LIGHT));
 		// CV input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler2, rowRuler2), Port::INPUT, module, WriteSeq32::CV_INPUT, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler2, rowRuler2), true, module, WriteSeq32::CV_INPUT, &module->panelTheme));		
 		// Step R input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler2, rowRuler3), Port::INPUT, module, WriteSeq32::STEPR_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler2, rowRuler3), true, module, WriteSeq32::STEPR_INPUT, &module->panelTheme));
 		
 		
 		// Column 3
@@ -759,39 +755,31 @@ struct WriteSeq32Widget : ModuleWidget {
 		// Monitor
 		addParam(createParam<CKSSHNoRandom>(Vec(columnRuler3+hOffsetCKSSH, rowRuler2+vOffsetCKSSH), module, WriteSeq32::MONITOR_PARAM, 0.0f, 1.0f, 0.0f));		
 		// Write input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler3), Port::INPUT, module, WriteSeq32::WRITE_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler3), true, module, WriteSeq32::WRITE_INPUT, &module->panelTheme));
 		
 		
 		// Column 4
 		// Outputs
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler0), Port::OUTPUT, module, WriteSeq32::CV_OUTPUTS + 0, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler1), Port::OUTPUT, module, WriteSeq32::CV_OUTPUTS + 1, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler2), Port::OUTPUT, module, WriteSeq32::CV_OUTPUTS + 2, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler0), false, module, WriteSeq32::CV_OUTPUTS + 0, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler1), false, module, WriteSeq32::CV_OUTPUTS + 1, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler2), false, module, WriteSeq32::CV_OUTPUTS + 2, &module->panelTheme));
 		// Reset
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler3), Port::INPUT, module, WriteSeq32::RESET_INPUT, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler3), true, module, WriteSeq32::RESET_INPUT, &module->panelTheme));		
 
 		
 		// Column 5
 		// Gates
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler0), Port::OUTPUT, module, WriteSeq32::GATE_OUTPUTS + 0, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler1), Port::OUTPUT, module, WriteSeq32::GATE_OUTPUTS + 1, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler2), Port::OUTPUT, module, WriteSeq32::GATE_OUTPUTS + 2, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler0), false, module, WriteSeq32::GATE_OUTPUTS + 0, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler1), false, module, WriteSeq32::GATE_OUTPUTS + 1, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler2), false, module, WriteSeq32::GATE_OUTPUTS + 2, &module->panelTheme));
 		// Clock
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler3), Port::INPUT, module, WriteSeq32::CLOCK_INPUT, &module->panelTheme));			
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler3), true, module, WriteSeq32::CLOCK_INPUT, &module->panelTheme));			
 	}
 };
 
-Model *modelWriteSeq32 = Model::create<WriteSeq32, WriteSeq32Widget>("Impromptu Modular", "Write-Seq-32", "SEQ - WriteSeq32", SEQUENCER_TAG);
+// Model *modelWriteSeq32 = createModel<WriteSeq32, WriteSeq32Widget>("Impromptu Modular", "Write-Seq-32", "SEQ - WriteSeq32", SEQUENCER_TAG);
+Model *modelWriteSeq32 = createModel<WriteSeq32, WriteSeq32Widget>("Write-Seq-32");
 
 /*CHANGE LOG
 
-0.6.16:
-add 2nd gate mode for held gates (with right click to turn off)
-
-0.6.12:
-input refresh optimization
-
-0.6.7:
-no reset on run by default, with switch added in context menu
-reset does not revert chan number to 1
 */

@@ -11,28 +11,30 @@
 #define IMPROMPU_MODULAR_HPP
 
 
-#include "rack.hpp"
+#include "rack0.hpp"
 #include "IMWidgets.hpp"
-#include "dsp/digital.hpp"
+
+using namespace rack;
 
 
-extern Plugin *plugin;
+extern Plugin *pluginInstance;
 
-// All modules that are part of plugin go here
-extern Model *modelTact;
-extern Model *modelTact1;
-extern Model *modelTwelveKey;
-extern Model *modelClocked;
-extern Model *modelFoundry;
-extern Model *modelGateSeq64;
-extern Model *modelPhraseSeq16;
-extern Model *modelPhraseSeq32;
-extern Model *modelWriteSeq32;
-extern Model *modelWriteSeq64;
-extern Model *modelBigButtonSeq;
-extern Model *modelBigButtonSeq2;
-extern Model *modelFourView;
-extern Model *modelSemiModularSynth;
+
+// All modules that are part of pluginInstance go here
+// extern Model *modelTact;
+// extern Model *modelTact1;
+// extern Model *modelTwelveKey;
+// extern Model *modelClocked;
+// extern Model *modelFoundry;
+// extern Model *modelGateSeq64;
+// extern Model *modelPhraseSeq16;
+// extern Model *modelPhraseSeq32;
+// extern Model *modelWriteSeq32;
+// extern Model *modelWriteSeq64;
+// extern Model *modelBigButtonSeq;
+// extern Model *modelBigButtonSeq2;
+// extern Model *modelFourView;
+// extern Model *modelSemiModularSynth;
 extern Model *modelBlankPanel;
 
 
@@ -80,7 +82,7 @@ static const int offsetTrimpot = 3;//does both h and v
 
 struct IMScrew : DynamicSVGScrew {
 	IMScrew() {
-		addSVGalt(SVG::load(assetPlugin(plugin, "res/dark/comp/ScrewSilver.svg")));
+		//addSVGalt(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/ScrewSilver.svg")));
 	}
 };
 
@@ -89,9 +91,9 @@ struct IMScrew : DynamicSVGScrew {
 
 struct IMPort : DynamicSVGPort {
 	IMPort() {
-		//addFrame(SVG::load(assetGlobal("res/ComponentLibrary/PJ301M.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/light/comp/PJ301M.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/dark/comp/PJ301M.svg")));
+		//addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/PJ301M.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/PJ301M.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/PJ301M.svg")));
 		shadow->blurRadius = 10.0;
 		shadow->opacity = 0.8;
 	}
@@ -105,10 +107,10 @@ struct CKSSNoRandom : CKSS {
 	void randomize() override {}
 };
 
-struct CKSSH : SVGSwitch, ToggleSwitch {
+struct CKSSH : app::SvgSwitch {
 	CKSSH() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/comp/CKSSH_0.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/comp/CKSSH_1.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/CKSSH_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/CKSSH_1.svg")));
 		sw->wrap();
 		box.size = sw->box.size;
 	}
@@ -119,21 +121,21 @@ struct CKSSHNoRandom : CKSSH {
 	void randomize() override {}
 };
 
-struct CKSSHThree : SVGSwitch, ToggleSwitch {
+struct CKSSHThree : app::SvgSwitch {
 	CKSSHThree() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/comp/CKSSHThree_0.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/comp/CKSSHThree_1.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/comp/CKSSHThree_2.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/CKSSHThree_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/CKSSHThree_1.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/CKSSHThree_2.svg")));
 		sw->wrap();
 		box.size = sw->box.size;
 	}
 };
 
-struct CKSSThreeInv : SVGSwitch, ToggleSwitch {
+struct CKSSThreeInv : app::SvgSwitch {
 	CKSSThreeInv() {
-		addFrame(SVG::load(assetGlobal("res/ComponentLibrary/CKSSThree_2.svg")));
-		addFrame(SVG::load(assetGlobal("res/ComponentLibrary/CKSSThree_1.svg")));
-		addFrame(SVG::load(assetGlobal("res/ComponentLibrary/CKSSThree_0.svg")));
+		addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/CKSSThree_2.svg")));
+		addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/CKSSThree_1.svg")));
+		addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/CKSSThree_0.svg")));
 	}
 };
 
@@ -142,30 +144,33 @@ struct CKSSThreeInvNoRandom : CKSSThreeInv {
 	void randomize() override {}
 };
 
-struct IMBigPushButton : DynamicSVGSwitch, MomentarySwitch {
+struct IMBigPushButton : DynamicSVGSwitch {
 	IMBigPushButton() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/CKD6b_0.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/CKD6b_1.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/CKD6b_0.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/CKD6b_1.svg")));	
+		momentary = true;
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/CKD6b_0.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/CKD6b_1.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/CKD6b_0.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/CKD6b_1.svg")));	
 	}
 };
 
 struct IMBigPushButtonWithRClick : IMBigPushButton {// with right click that sets value to 2.0 instead of 1.0
-	void onMouseDown(EventMouseDown &e) override;
-	void onMouseUp(EventMouseUp &e) override;
+	// void onMouseDown(EventMouseDown &e) override; // replaced by onButton()
+	// void onMouseUp(EventMouseUp &e) override; // replaced by onButton()
+	// void onButton(const widget::ButtonEvent &e) override;// replaces onMouseDown() and onMouseUp()  // TODO redo this implementation
 };
 
-struct IMPushButton : DynamicSVGSwitch, MomentarySwitch {
+struct IMPushButton : DynamicSVGSwitch {
 	IMPushButton() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/TL1105_0.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/TL1105_1.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/TL1105_0.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/TL1105_1.svg")));	
+		momentary = true;
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/TL1105_0.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/TL1105_1.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/TL1105_0.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/TL1105_1.svg")));	
 	}
 };
 
-struct LEDBezelBig : SVGSwitch, MomentarySwitch {
+struct LEDBezelBig : app::SvgSwitch {
 	TransformWidget *tw;
 	LEDBezelBig();
 };
@@ -184,9 +189,9 @@ struct IMKnob : DynamicSVGKnob {
 
 struct IMBigKnob : IMKnob {
 	IMBigKnob() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/BlackKnobLargeWithMark.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/BlackKnobLargeWithMark.svg")));
-		addEffect(SVG::load(assetPlugin(plugin, "res/dark/comp/BlackKnobLargeWithMarkEffects.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/BlackKnobLargeWithMark.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLargeWithMark.svg")));
+		addEffect(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLargeWithMarkEffects.svg")));
 	}
 };
 struct IMBigSnapKnob : IMBigKnob {
@@ -199,9 +204,9 @@ struct IMBigSnapKnob : IMBigKnob {
 
 struct IMBigKnobInf : IMKnob {
 	IMBigKnobInf() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/BlackKnobLarge.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/BlackKnobLarge.svg")));
-		addEffect(SVG::load(assetPlugin(plugin, "res/dark/comp/BlackKnobLargeEffects.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/BlackKnobLarge.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLarge.svg")));
+		addEffect(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLargeEffects.svg")));
 		speed = 0.9f;				
 		//smooth = false;
 	}
@@ -209,9 +214,9 @@ struct IMBigKnobInf : IMKnob {
 
 struct IMSmallKnob : IMKnob {
 	IMSmallKnob() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/RoundSmallBlackKnob.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/RoundSmallBlackKnob.svg")));
-		addEffect(SVG::load(assetPlugin(plugin, "res/dark/comp/RoundSmallBlackKnobEffects.svg")));		
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/RoundSmallBlackKnob.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/RoundSmallBlackKnob.svg")));
+		addEffect(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/RoundSmallBlackKnobEffects.svg")));		
 		shadow->box.pos = Vec(0.0, box.size.y * 0.15);
 	}
 };
@@ -225,9 +230,9 @@ struct IMSmallSnapKnob : IMSmallKnob {
 
 struct IMMediumKnobInf : IMKnob {
 	IMMediumKnobInf() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/RoundMediumBlackKnobNoMark.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/RoundMediumBlackKnobNoMark.svg")));
-		addEffect(SVG::load(assetPlugin(plugin, "res/dark/comp/RoundMediumBlackKnobNoMarkEffects.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/RoundMediumBlackKnobNoMark.svg")));
+		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/RoundMediumBlackKnobNoMark.svg")));
+		addEffect(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/RoundMediumBlackKnobNoMarkEffects.svg")));
 		shadow->box.pos = Vec(0.0, box.size.y * 0.15);
 		speed = 0.9f;				
 		//smooth = false;
@@ -249,12 +254,12 @@ struct IMSixPosBigKnob : IMBigSnapKnob {
 	void randomize() override {}
 };
 
-struct IMTactile : DynamicIMTactile {
+/*struct IMTactile : DynamicIMTactile {
 	IMTactile() {
-		smooth = false;// must be false or else DynamicIMTactile::changeValue() call from module will crash Rack
+		//smooth = false;// must be false or else DynamicIMTactile::changeValue() call from module will crash Rack // TODO commented for 1.0
 	}
 };
-
+*/
 
 
 // Lights
@@ -295,28 +300,32 @@ struct GiantLight2 : BASE {
 
 // Other widgets
 
-struct InvisibleKey : MomentarySwitch {
+struct InvisibleKey : app::SvgSwitch {
 	InvisibleKey() {
+		momentary = true;
 		box.size = Vec(34, 72);
 	}
 };
 
-struct InvisibleKeySmall : MomentarySwitch {
+struct InvisibleKeySmall : app::SvgSwitch {
 	InvisibleKeySmall() {
+		momentary = true;
 		box.size = Vec(23, 38);
 	}
-	void onMouseDown(EventMouseDown &e) override;
-	void onMouseUp(EventMouseUp &e) override;
+	// void onMouseDown(EventMouseDown &e) override;
+	// void onMouseUp(EventMouseUp &e) override;
+	// void onButton(const widget::ButtonEvent &e) override;// replaces onMouseDown() and onMouseUp()  // TODO redo this implementation
 };
 
 struct LEDButtonWithRClick : LEDButton {// with right click that sets value to 2.0 instead of 1.0
-	void onMouseDown(EventMouseDown &e) override;
-	void onMouseUp(EventMouseUp &e) override;
+	// void onMouseDown(EventMouseDown &e) override;
+	// void onMouseUp(EventMouseUp &e) override;
+	// void onButton(const widget::ButtonEvent &e) override;// replaces onMouseDown() and onMouseUp()  // TODO redo this implementation
 };
 
 
 struct ScrewSilverRandomRot : FramebufferWidget {// location: include/app.hpp and src/app/SVGScrew.cpp [some code also from src/app/SVGKnob.cpp]
-	SVGWidget *sw;
+	widget::SvgWidget *sw;
 	TransformWidget *tw;
 	ScrewCircle *sc;
 	ScrewSilverRandomRot();

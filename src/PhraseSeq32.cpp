@@ -301,7 +301,7 @@ struct PhraseSeq32 : Module {
 	}	
 
 	
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		// panelTheme
@@ -381,7 +381,7 @@ struct PhraseSeq32 : Module {
 	}
 
 	
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		// panelTheme
 		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
 		if (panelThemeJ)
@@ -565,7 +565,7 @@ struct PhraseSeq32 : Module {
 		if (phraseIndexEditJ)
 			phraseIndexEdit = json_integer_value(phraseIndexEditJ);
 		
-		stepConfigSync = 1;// signal a sync from fromJson so that step will get lengths from seqAttribBuffer
+		stepConfigSync = 1;// signal a sync from dataFromJson so that step will get lengths from seqAttribBuffer
 	}
 
 	void rotateSeq(int seqNum, bool directionRight, int seqLength, bool chanB_16) {
@@ -626,7 +626,7 @@ struct PhraseSeq32 : Module {
 			// Config switch
 			if (stepConfigSync != 0) {
 				stepConfig = getStepConfig(params[CONFIG_PARAM].value);
-				if (stepConfigSync == 1) {// sync from fromJson, so read lengths from seqAttribBuffer
+				if (stepConfigSync == 1) {// sync from dataFromJson, so read lengths from seqAttribBuffer
 					for (int i = 0; i < 32; i++)
 						sequences[i].setSeqAttrib(seqAttribBuffer[i].getSeqAttrib());
 				}
@@ -923,7 +923,7 @@ struct PhraseSeq32 : Module {
 			// Sequence knob 
 			float seqParamValue = params[SEQUENCE_PARAM].value;
 			int newSequenceKnob = (int)roundf(seqParamValue * 7.0f);
-			if (seqParamValue == 0.0f)// true when constructor or fromJson() occured
+			if (seqParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				sequenceKnob = newSequenceKnob;
 			int deltaKnob = newSequenceKnob - sequenceKnob;
 			if (deltaKnob != 0) {
@@ -1723,9 +1723,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 				text = "Seq CV in: 0-10V,  C4-G6,  <Trig-Incr>";
 		}	
 	};
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
-
+	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
 
@@ -1754,23 +1752,23 @@ struct PhraseSeq32Widget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
+		ResetOnRunItem *rorItem = createMenuItem<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
 
-		AutoStepLenItem *astlItem = MenuItem::create<AutoStepLenItem>("AutoStep write bounded by seq length", CHECKMARK(module->autostepLen));
+		AutoStepLenItem *astlItem = createMenuItem<AutoStepLenItem>("AutoStep write bounded by seq length", CHECKMARK(module->autostepLen));
 		astlItem->module = module;
 		menu->addChild(astlItem);
 
-		AutoseqItem *aseqItem = MenuItem::create<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
+		AutoseqItem *aseqItem = createMenuItem<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
 		aseqItem->module = module;
 		menu->addChild(aseqItem);
 
-		HoldTiedItem *holdItem = MenuItem::create<HoldTiedItem>("Hold tied notes", CHECKMARK(module->holdTiedNotes));
+		HoldTiedItem *holdItem = createMenuItem<HoldTiedItem>("Hold tied notes", CHECKMARK(module->holdTiedNotes));
 		holdItem->module = module;
 		menu->addChild(holdItem);
 
-		SeqCVmethodItem *seqcvItem = MenuItem::create<SeqCVmethodItem>("Seq CV in: ", "");
+		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in: ", "");
 		seqcvItem->module = module;
 		menu->addChild(seqcvItem);
 		
@@ -1780,11 +1778,9 @@ struct PhraseSeq32Widget : ModuleWidget {
 		expansionLabel->text = "Expansion module";
 		menu->addChild(expansionLabel);
 
-		ExpansionItem *expItem = MenuItem::create<ExpansionItem>(expansionMenuLabel, CHECKMARK(module->expansion != 0));
+		ExpansionItem *expItem = createMenuItem<ExpansionItem>(expansionMenuLabel, CHECKMARK(module->expansion != 0));
 		expItem->module = module;
 		menu->addChild(expItem);
-		
-		return menu;
 	}	
 	
 	void step() override {
@@ -2064,110 +2060,44 @@ struct PhraseSeq32Widget : ModuleWidget {
 		// Slide knob
 		addParam(createDynamicParam<IMSmallKnob>(Vec(columnRulerB3 + offsetIMSmallKnob, rowRulerB1 + offsetIMSmallKnob), module, PhraseSeq32::SLIDE_KNOB_PARAM, 0.0f, 2.0f, 0.2f, &module->panelTheme));
 		// CV in
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerB4, rowRulerB1), Port::INPUT, module, PhraseSeq32::CV_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerB4, rowRulerB1), true, module, PhraseSeq32::CV_INPUT, &module->panelTheme));
 		// Clock input
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerB5, rowRulerB1), Port::INPUT, module, PhraseSeq32::CLOCK_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerB5, rowRulerB1), true, module, PhraseSeq32::CLOCK_INPUT, &module->panelTheme));
 		// Channel A outputs
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB6, rowRulerB1), Port::OUTPUT, module, PhraseSeq32::CVA_OUTPUT, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB7, rowRulerB1), Port::OUTPUT, module, PhraseSeq32::GATE1A_OUTPUT, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB8, rowRulerB1), Port::OUTPUT, module, PhraseSeq32::GATE2A_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB6, rowRulerB1), false, module, PhraseSeq32::CVA_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB7, rowRulerB1), false, module, PhraseSeq32::GATE1A_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB8, rowRulerB1), false, module, PhraseSeq32::GATE2A_OUTPUT, &module->panelTheme));
 
 
 		// CV control Inputs 
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerB0, rowRulerB0), Port::INPUT, module, PhraseSeq32::LEFTCV_INPUT, &module->panelTheme));
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerB1, rowRulerB0), Port::INPUT, module, PhraseSeq32::RIGHTCV_INPUT, &module->panelTheme));
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerB2, rowRulerB0), Port::INPUT, module, PhraseSeq32::SEQCV_INPUT, &module->panelTheme));
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerB3, rowRulerB0), Port::INPUT, module, PhraseSeq32::RUNCV_INPUT, &module->panelTheme));
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerB4, rowRulerB0), Port::INPUT, module, PhraseSeq32::WRITE_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerB0, rowRulerB0), true, module, PhraseSeq32::LEFTCV_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerB1, rowRulerB0), true, module, PhraseSeq32::RIGHTCV_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerB2, rowRulerB0), true, module, PhraseSeq32::SEQCV_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerB3, rowRulerB0), true, module, PhraseSeq32::RUNCV_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerB4, rowRulerB0), true, module, PhraseSeq32::WRITE_INPUT, &module->panelTheme));
 		// Reset input
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerB5, rowRulerB0), Port::INPUT, module, PhraseSeq32::RESET_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerB5, rowRulerB0), true, module, PhraseSeq32::RESET_INPUT, &module->panelTheme));
 		// Channel B outputs
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB6, rowRulerB0), Port::OUTPUT, module, PhraseSeq32::CVB_OUTPUT, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB7, rowRulerB0), Port::OUTPUT, module, PhraseSeq32::GATE1B_OUTPUT, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB8, rowRulerB0), Port::OUTPUT, module, PhraseSeq32::GATE2B_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB6, rowRulerB0), false, module, PhraseSeq32::CVB_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB7, rowRulerB0), false, module, PhraseSeq32::GATE1B_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerB8, rowRulerB0), false, module, PhraseSeq32::GATE2B_OUTPUT, &module->panelTheme));
 		
 		
 		// Expansion module
 		static const int rowRulerExpTop = 65;
 		static const int rowSpacingExp = 60;
 		static const int colRulerExp = 497;
-		addInput(expPorts[0] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), Port::INPUT, module, PhraseSeq32::GATE1CV_INPUT, &module->panelTheme));
-		addInput(expPorts[1] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), Port::INPUT, module, PhraseSeq32::GATE2CV_INPUT, &module->panelTheme));
-		addInput(expPorts[2] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), Port::INPUT, module, PhraseSeq32::TIEDCV_INPUT, &module->panelTheme));
-		addInput(expPorts[3] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), Port::INPUT, module, PhraseSeq32::SLIDECV_INPUT, &module->panelTheme));
-		addInput(expPorts[4] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), Port::INPUT, module, PhraseSeq32::MODECV_INPUT, &module->panelTheme));
+		addInput(expPorts[0] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), true, module, PhraseSeq32::GATE1CV_INPUT, &module->panelTheme));
+		addInput(expPorts[1] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), true, module, PhraseSeq32::GATE2CV_INPUT, &module->panelTheme));
+		addInput(expPorts[2] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), true, module, PhraseSeq32::TIEDCV_INPUT, &module->panelTheme));
+		addInput(expPorts[3] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, PhraseSeq32::SLIDECV_INPUT, &module->panelTheme));
+		addInput(expPorts[4] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, PhraseSeq32::MODECV_INPUT, &module->panelTheme));
 	}
 };
 
-Model *modelPhraseSeq32 = Model::create<PhraseSeq32, PhraseSeq32Widget>("Impromptu Modular", "Phrase-Seq-32", "SEQ - PhraseSeq32", SEQUENCER_TAG);
+// Model *modelPhraseSeq32 = createModel<PhraseSeq32, PhraseSeq32Widget>("Impromptu Modular", "Phrase-Seq-32", "SEQ - PhraseSeq32", SEQUENCER_TAG);
+Model *modelPhraseSeq32 = createModel<PhraseSeq32, PhraseSeq32Widget>("Phrase-Seq-32");
 
 /*CHANGE LOG
 
-0.6.16:
-add gate status feedback in steps (white lights)
-
-0.6.15:
-add right-click menu option to bound AutoStep writes by sequence lengths
-
-0.6.14: 
-rotate offsets are now persistent and stored in the sequencer
-allow ctrl-right-click of notes to copy note/gate-type over to next step (not just move to next step)
-
-0.6.13:
-fix run mode bug (history not reset when hard reset)
-fix slide bug when reset happens during a slide and run stays on
-fix transposeOffset not initialized bug
-add live mute on Gate1 and Gate2 buttons in song mode
-fix initRun() timing bug when turn off-and-then-on running button (it was resetting ppqnCount)
-allow pulsesPerStep setting of 1 and all even values from 2 to 24, and allow all gate types that work in these
-add two extra modes for Seq CV input (right-click menu): note-voltage-levels and trigger-increment
-fix tied bug that prevented correct tied propagation when editing beyond sequence length less than 16
-implement held tied notes option
-clear all attributes (gates, gatep, tied, slide) when cross-paste to seq ALL (CVs not affected)
-implement right-click initialization on main knob
-
-0.6.12:
-input refresh optimization
-add buttons for note vs advanced-gate selection (remove timeout method)
-transposition amount stays persistent and is saved (reset to 0 on module init or paste ALL)
-
-0.6.11:
-step optimization of lights refresh
-change behavior of extra CV inputs (Gate1, Gate2, Tied, Slide), such that they act when triggered and not when write 
-add RN2 run mode
-implement copy-paste in song mode
-implement cross paste trick for init and randomize seq/song
-add AutoSeq option when writing via CV inputs 
-
-0.6.10:
-add advanced gate mode
-unlock gates when tied (turn off when press tied, but allow to be turned back on)
-
-0.6.9:
-add FW2, FW3 and FW4 run modes for sequences (but not for song)
-right click on notes now does same as left click but with autostep
-
-0.6.8:
-allow rollover when selecting sequences in a song phrase (easier access to higher numbered seqs)
-
-0.6.7:
-allow full edit capabilities in Seq and song mode
-no reset on run by default, with switch added in context menu
-reset does not revert seq or song number to 1
-gate 2 is off by default
-fix emitted monitoring gates to depend on gate states instead of always triggering
-
-0.6.6:
-config and knob bug fixes when loading patch
-
-0.6.5:
-paste 4, 8 doesn't loop over to overwrite first steps
-small adjustements to gates and CVs used in monitoring write operations
-add GATE1, GATE2, TIED, SLIDE CV inputs 
-add MODE CV input (affects only selected sequence and in Seq mode)
-add expansion panel option
-swap MODE/LEN so that length happens first (update manual)
-
-0.6.4:
-initial release of PS32
 */

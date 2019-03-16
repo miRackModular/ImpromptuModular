@@ -212,7 +212,7 @@ void SequencerKernel::randomize(bool editingSequence) {
 }
 	
 
-void SequencerKernel::toJson(json_t *rootJ) {
+void SequencerKernel::dataToJson(json_t *rootJ) {
 	// pulsesPerStep
 	json_object_set_new(rootJ, (ids + "pulsesPerStep").c_str(), json_integer(pulsesPerStep));
 
@@ -266,7 +266,7 @@ void SequencerKernel::toJson(json_t *rootJ) {
 }
 
 
-void SequencerKernel::fromJson(json_t *rootJ) {
+void SequencerKernel::dataFromJson(json_t *rootJ) {
 	// pulsesPerStep
 	json_t *pulsesPerStepJ = json_object_get(rootJ, (ids + "pulsesPerStep").c_str());
 	if (pulsesPerStepJ)

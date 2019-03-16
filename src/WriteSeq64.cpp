@@ -153,7 +153,7 @@ struct WriteSeq64 : Module {
 	}
 
 	
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		// panelTheme
@@ -200,7 +200,7 @@ struct WriteSeq64 : Module {
 	}
 
 	
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		// panelTheme
 		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
 		if (panelThemeJ)
@@ -334,7 +334,7 @@ struct WriteSeq64 : Module {
 			// Steps knob
 			float stepsParamValue = params[STEPS_PARAM].value;
 			int newStepsKnob = (int)roundf(stepsParamValue * 10.0f);
-			if (stepsParamValue == 0.0f)// true when constructor or fromJson() occured
+			if (stepsParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				stepsKnob = newStepsKnob;
 			if (newStepsKnob != stepsKnob) {
 				if (abs(newStepsKnob - stepsKnob) <= 3) // avoid discontinuous step (initialize for example)
@@ -344,7 +344,7 @@ struct WriteSeq64 : Module {
 			// Step knob
 			float stepParamValue = params[STEP_PARAM].value;
 			int newStepKnob = (int)roundf(stepParamValue * 10.0f);
-			if (stepParamValue == 0.0f)// true when constructor or fromJson() occured
+			if (stepParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				stepKnob = newStepKnob;
 			if (newStepKnob != stepKnob) {
 				if (canEdit && (abs(newStepKnob - stepKnob) <= 3) ) // avoid discontinuous step (initialize for example)
@@ -643,9 +643,7 @@ struct WriteSeq64Widget : ModuleWidget {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
-
+	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
 
@@ -674,11 +672,9 @@ struct WriteSeq64Widget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		ResetOnRunItem *rorItem = MenuItem::create<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
+		ResetOnRunItem *rorItem = createMenuItem<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
-		
-		return menu;
 	}	
 	
 	
@@ -781,9 +777,9 @@ struct WriteSeq64Widget : ModuleWidget {
 		addParam(createParam<CKSSThreeInvNoRandom>(Vec(columnRuler0+hOffsetCKSS, rowRuler1+vOffsetCKSSThree), module, WriteSeq64::PASTESYNC_PARAM, 0.0f, 2.0f, 0.0f));	
 		addChild(createLight<SmallLight<RedLight>>(Vec(columnRuler0 + 41, rowRuler1 + 14), module, WriteSeq64::PENDING_LIGHT));
 		// Gate input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler0, rowRuler2), Port::INPUT, module, WriteSeq64::GATE_INPUT, &module->panelTheme));				
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler0, rowRuler2), true, module, WriteSeq64::GATE_INPUT, &module->panelTheme));				
 		// Run CV input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler0, rowRuler3), Port::INPUT, module, WriteSeq64::RUNCV_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler0, rowRuler3), true, module, WriteSeq64::RUNCV_INPUT, &module->panelTheme));
 		
 		
 		// Column 1
@@ -793,9 +789,9 @@ struct WriteSeq64Widget : ModuleWidget {
 		addParam(createParam<LEDBezel>(Vec(columnRuler1+offsetLEDbezel, rowRuler1+offsetLEDbezel), module, WriteSeq64::RUN_PARAM, 0.0f, 1.0f, 0.0f));
 		addChild(createLight<MuteLight<GreenLight>>(Vec(columnRuler1+offsetLEDbezel+offsetLEDbezelLight, rowRuler1+offsetLEDbezel+offsetLEDbezelLight), module, WriteSeq64::RUN_LIGHT));
 		// CV input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler1, rowRuler2), Port::INPUT, module, WriteSeq64::CV_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler1, rowRuler2), true, module, WriteSeq64::CV_INPUT, &module->panelTheme));
 		// Step L input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler1, rowRuler3), Port::INPUT, module, WriteSeq64::STEPL_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler1, rowRuler3), true, module, WriteSeq64::STEPL_INPUT, &module->panelTheme));
 		
 		
 		// Column 2
@@ -807,47 +803,39 @@ struct WriteSeq64Widget : ModuleWidget {
 		// Monitor
 		addParam(createParam<CKSSHNoRandom>(Vec(columnRuler2+hOffsetCKSSH, rowRuler2+vOffsetCKSSH), module, WriteSeq64::MONITOR_PARAM, 0.0f, 1.0f, 0.0f));
 		// Step R input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler2, rowRuler3), Port::INPUT, module, WriteSeq64::STEPR_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler2, rowRuler3), true, module, WriteSeq64::STEPR_INPUT, &module->panelTheme));
 		
 		
 		// Column 3
 		// Clocks
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler0), Port::INPUT, module, WriteSeq64::CLOCK12_INPUT, &module->panelTheme));		
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler1), Port::INPUT, module, WriteSeq64::CLOCK34_INPUT, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler0), true, module, WriteSeq64::CLOCK12_INPUT, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler1), true, module, WriteSeq64::CLOCK34_INPUT, &module->panelTheme));		
 		// Reset
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler2), Port::INPUT, module, WriteSeq64::RESET_INPUT, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler2), true, module, WriteSeq64::RESET_INPUT, &module->panelTheme));		
 		// Write input
-		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler3), Port::INPUT, module, WriteSeq64::WRITE_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler3), true, module, WriteSeq64::WRITE_INPUT, &module->panelTheme));
 		
 					
 		// Column 4 (CVs)
 		// Outputs
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler0), Port::OUTPUT, module, WriteSeq64::CV_OUTPUTS + 0, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler1), Port::OUTPUT, module, WriteSeq64::CV_OUTPUTS + 1, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler2), Port::OUTPUT, module, WriteSeq64::CV_OUTPUTS + 2, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler3), Port::OUTPUT, module, WriteSeq64::CV_OUTPUTS + 3, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler0), false, module, WriteSeq64::CV_OUTPUTS + 0, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler1), false, module, WriteSeq64::CV_OUTPUTS + 1, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler2), false, module, WriteSeq64::CV_OUTPUTS + 2, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler4, rowRuler3), false, module, WriteSeq64::CV_OUTPUTS + 3, &module->panelTheme));
 		
 		
 		// Column 5 (Gates)
 		// Gates
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler0), Port::OUTPUT, module, WriteSeq64::GATE_OUTPUTS + 0, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler1), Port::OUTPUT, module, WriteSeq64::GATE_OUTPUTS + 1, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler2), Port::OUTPUT, module, WriteSeq64::GATE_OUTPUTS + 2, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler3), Port::OUTPUT, module, WriteSeq64::GATE_OUTPUTS + 3, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler0), false, module, WriteSeq64::GATE_OUTPUTS + 0, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler1), false, module, WriteSeq64::GATE_OUTPUTS + 1, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler2), false, module, WriteSeq64::GATE_OUTPUTS + 2, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler3), false, module, WriteSeq64::GATE_OUTPUTS + 3, &module->panelTheme));
 	}
 };
 
-Model *modelWriteSeq64 = Model::create<WriteSeq64, WriteSeq64Widget>("Impromptu Modular", "Write-Seq-64", "SEQ - WriteSeq64", SEQUENCER_TAG);
+// Model *modelWriteSeq64 = createModel<WriteSeq64, WriteSeq64Widget>("Impromptu Modular", "Write-Seq-64", "SEQ - WriteSeq64", SEQUENCER_TAG);
+Model *modelWriteSeq64 = createModel<WriteSeq64, WriteSeq64Widget>("Write-Seq-64");
 
 /*CHANGE LOG
 
-0.6.16:
-add 2nd gate mode for held gates (with right click to turn off)
-
-0.6.12:
-input refresh optimization
-
-0.6.7:
-no reset on run by default, with switch added in context menu
-reset does not revert chan number to 1
 */

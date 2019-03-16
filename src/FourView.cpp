@@ -53,7 +53,7 @@ struct FourView : Module {
 	}
 
 	
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		// panelTheme
@@ -65,7 +65,7 @@ struct FourView : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		// panelTheme
 		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
 		if (panelThemeJ)
@@ -144,9 +144,7 @@ struct FourViewWidget : ModuleWidget {
 			module->showSharp = !module->showSharp;
 		}
 	};
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
-
+	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
 
@@ -175,11 +173,9 @@ struct FourViewWidget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
-		SharpItem *shrpItem = MenuItem::create<SharpItem>("Sharp (unchecked is flat)", CHECKMARK(module->showSharp));
+		SharpItem *shrpItem = createMenuItem<SharpItem>("Sharp (unchecked is flat)", CHECKMARK(module->showSharp));
 		shrpItem->module = module;
 		menu->addChild(shrpItem);
-		
-		return menu;
 	}	
 	
 	
@@ -213,17 +209,15 @@ struct FourViewWidget : ModuleWidget {
 		static const int portOffsetX = 28;
 		
 		for (int i = 0; i < 4; i++) {
-			addInput(createDynamicPortCentered<IMPort>(Vec(centerX - portOffsetX, rowRulerPort + i * portSpacingY), Port::INPUT, module, FourView::CV_INPUTS + i, &module->panelTheme));	
-			addOutput(createDynamicPortCentered<IMPort>(Vec(centerX + portOffsetX, rowRulerPort + i * portSpacingY), Port::OUTPUT, module, FourView::CV_OUTPUTS + i, &module->panelTheme));
+			addInput(createDynamicPortCentered<IMPort>(Vec(centerX - portOffsetX, rowRulerPort + i * portSpacingY), true, module, FourView::CV_INPUTS + i, &module->panelTheme));	
+			addOutput(createDynamicPortCentered<IMPort>(Vec(centerX + portOffsetX, rowRulerPort + i * portSpacingY), false, module, FourView::CV_OUTPUTS + i, &module->panelTheme));
 		}
 	}
 };
 
-Model *modelFourView = Model::create<FourView, FourViewWidget>("Impromptu Modular", "Four-View", "VIS - FourView", VISUAL_TAG);
+// Model *modelFourView = createModel<FourView, FourViewWidget>("Impromptu Modular", "Four-View", "VIS - FourView", VISUAL_TAG);
+Model *modelFourView = createModel<FourView, FourViewWidget>("Four-View");
 
 /*CHANGE LOG
-
-0.6.13:
-created
 
 */

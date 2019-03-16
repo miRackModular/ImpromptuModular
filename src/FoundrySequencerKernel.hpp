@@ -361,8 +361,8 @@ class SequencerKernel {
 	
 	void reset(bool editingSequence);
 	void randomize(bool editingSequence);
-	void toJson(json_t *rootJ);
-	void fromJson(json_t *rootJ);
+	void dataToJson(json_t *rootJ);
+	void dataFromJson(json_t *rootJ);
 	void initRun(bool editingSequence);
 	bool clockStep(bool editingSequence, int delayedSeqNumberRequest);
 	inline void step() {

@@ -9,8 +9,8 @@
 #define IM_WIDGETS_HPP
 
 
-#include "rack.hpp"
-#include "window.hpp"
+#include "rack0.hpp"
+//#include "window.hpp"
 
 using namespace rack;
 
@@ -26,24 +26,24 @@ TWidget* createDynamicScrew(Vec pos, int* mode) {
 	return dynScrew;
 }
 
-struct ScrewCircle : TransparentWidget {
+struct ScrewCircle : widget::TransparentWidget {
 	float angle = 0.0f;
 	float radius = 2.0f;
 	ScrewCircle(float _angle);
-	void draw(NVGcontext *vg) override;
+	void draw(const DrawArgs &args) override;
 };
-struct DynamicSVGScrew : FramebufferWidget {
+struct DynamicSVGScrew : widget::FramebufferWidget {
     int* mode;
     int oldMode;
 	// for random rotated screw used in primary mode
-	SVGWidget *sw;
+	widget::SvgWidget *sw;
 	TransformWidget *tw;
 	ScrewCircle *sc;
 	// for fixed svg screw used in alternate mode
-    SVGWidget* swAlt;
+    widget::SvgWidget* swAlt;
 	
     DynamicSVGScrew();
-    void addSVGalt(std::shared_ptr<SVG> svg);
+    //void addSVGalt(std::shared_ptr<Svg> svg);
     void step() override;
 };
 
@@ -51,20 +51,20 @@ struct DynamicSVGScrew : FramebufferWidget {
 
 // Dynamic SVGPanel
 
-struct PanelBorderWidget : TransparentWidget { // from SVGPanel.cpp
+struct PanelBorderWidget : widget::TransparentWidget { // from app/SvgPanel.hpp
 	int** expWidth = nullptr;
-	void draw(NVGcontext *vg) override;
+	void draw(const DrawArgs &args) override;
 };
 
-struct DynamicSVGPanel : FramebufferWidget { // like SVGPanel (in app.hpp and SVGPanel.cpp) but with dynmically assignable panel
+struct DynamicSVGPanel : widget::FramebufferWidget { // like app/SvgPanel.hpp but with dynmically assignable resizable panel
     int* mode;
     int oldMode;
 	int* expWidth;
-    std::vector<std::shared_ptr<SVG>> panels;
-    SVGWidget* visiblePanel;
+    std::vector<std::shared_ptr<Svg>> panels;
+    widget::SvgWidget* visiblePanel;
     PanelBorderWidget* border;
     DynamicSVGPanel();
-    void addPanel(std::shared_ptr<SVG> svg);
+    void addPanel(std::shared_ptr<Svg> svg);
     void dupPanel();
     void step() override;
 };
@@ -75,18 +75,18 @@ struct DynamicSVGPanel : FramebufferWidget { // like SVGPanel (in app.hpp and SV
 
 // General Dynamic Port creation
 template <class TDynamicPort>
-TDynamicPort* createDynamicPort(Vec pos, Port::PortType type, Module *module, int portId,
+TDynamicPort* createDynamicPort(Vec pos, bool isInput, Module *module, int portId,
                                                int* mode) {
-	TDynamicPort *dynPort = type == Port::INPUT ? 
+	TDynamicPort *dynPort = isInput ? 
 		createInput<TDynamicPort>(pos, module, portId) :
 		createOutput<TDynamicPort>(pos, module, portId);
 	dynPort->mode = mode;
 	return dynPort;
 }
 template <class TDynamicPort>
-TDynamicPort* createDynamicPortCentered(Vec pos, Port::PortType type, Module *module, int portId,
+TDynamicPort* createDynamicPortCentered(Vec pos, bool isInput, Module *module, int portId,
                                                int* mode) {
-	TDynamicPort *dynPort = type == Port::INPUT ? 
+	TDynamicPort *dynPort = isInput ? 
 		createInput<TDynamicPort>(pos, module, portId) :
 		createOutput<TDynamicPort>(pos, module, portId);
 	dynPort->mode = mode;
@@ -94,14 +94,14 @@ TDynamicPort* createDynamicPortCentered(Vec pos, Port::PortType type, Module *mo
 	return dynPort;
 }
 
-// Dynamic SVGPort (see SVGPort in app.hpp and SVGPort.cpp)
-struct DynamicSVGPort : SVGPort {
+// Dynamic SVGPort (see SvgPort in app/SvgPort.hpp)
+struct DynamicSVGPort : SvgPort {
     int* mode;
     int oldMode;
-    std::vector<std::shared_ptr<SVG>> frames;
+    std::vector<std::shared_ptr<Svg>> frames;
 
     DynamicSVGPort();
-    void addFrame(std::shared_ptr<SVG> svg);
+    void addFrame(std::shared_ptr<Svg> svg);
     void step() override;
 };
 
@@ -126,27 +126,27 @@ TDynamicParam* createDynamicParamCentered(Vec pos, Module *module, int paramId, 
 	return dynParam;
 }
 
-// Dynamic SVGSwitch (see SVGSwitch in app.hpp and SVGSwitch.cpp)
-struct DynamicSVGSwitch : SVGSwitch {
+// Dynamic SVGSwitch (see app/SvgSwitch.hpp)
+struct DynamicSVGSwitch : app::SvgSwitch {
     int* mode;
     int oldMode;
-	std::vector<std::shared_ptr<SVG>> framesAll;
+	std::vector<std::shared_ptr<Svg>> framesAll;
 	
     DynamicSVGSwitch();
-	void addFrameAll(std::shared_ptr<SVG> svg);
+	void addFrameAll(std::shared_ptr<Svg> svg);
     void step() override;
 };
 
-// Dynamic SVGKnob (see SVGKnob in app.hpp and SVGKnob.cpp)
+// Dynamic SVGKnob (see app/SvgKnob.hpp)
 struct DynamicSVGKnob : SVGKnob {
     int* mode;
     int oldMode;
-	std::vector<std::shared_ptr<SVG>> framesAll;
-	SVGWidget* effect;
+	std::vector<std::shared_ptr<Svg>> framesAll;
+	widget::SvgWidget* effect;
 	
     DynamicSVGKnob();
-	void addFrameAll(std::shared_ptr<SVG> svg);
-	void addEffect(std::shared_ptr<SVG> svg);// do this last
+	void addFrameAll(std::shared_ptr<Svg> svg);
+	void addEffect(std::shared_ptr<Svg> svg);// do this last
     void step() override;
 };
 
@@ -162,8 +162,9 @@ TDynamicParam* createDynamicParam2(Vec pos, Module *module, int paramId, float m
 	return dynParam;
 }
 
+/*
 // Dynamic Tactile pad (see Knob in app.hpp and Knob.cpp, and see SVGSlider in SVGSlider.cpp and app.hpp)
-struct DynamicIMTactile : ParamWidget, FramebufferWidget {
+struct DynamicIMTactile : ParamWidget, widget::FramebufferWidget {
 	float* wider;// > 0.5f = true
 	float* paramReadRequest;
 	float oldWider;
@@ -177,10 +178,12 @@ struct DynamicIMTactile : ParamWidget, FramebufferWidget {
 	
 	DynamicIMTactile();
 	void step() override;
-	void onDragStart(EventDragStart &e) override;
-	void onDragMove(EventDragMove &e) override;	
-	void onMouseDown(EventMouseDown &e) override;
+	//void onDragStart(EventDragStart &e) override; // TODO
+	//void onDragMove(EventDragMove &e) override; // TODO	
+	
+	//void onMouseDown(EventMouseDown &e) override; // replaced by onButton()
+	void onButton(const widget::ButtonEvent &e) override;// replaces onMouseDown() and onMouseUp()
 };
-
+*/
 
 #endif

@@ -9,7 +9,7 @@
 #define FUNDAMENTAL_UTIL_HPP
 
 
-#include "rack.hpp"
+#include "rack0.hpp"
 #include "dsp/functions.hpp"
 #include "dsp/resampler.hpp"
 #include "dsp/ode.hpp"
