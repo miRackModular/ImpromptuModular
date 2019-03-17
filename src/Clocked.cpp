@@ -281,7 +281,7 @@ struct Clocked : Module {
 
 	
 	inline float getBpmKnob() {
-		float knobBPM = params[RATIO_PARAMS + 0].value;// already integer BPM since using snap knob
+		float knobBPM = params[RATIO_PARAMS + 0].getValue();// already integer BPM since using snap knob
 		if (knobBPM < (float)bpmMin)// safety in case module step() starts before widget defaults take effect.
 			return (float)bpmMin;	
 		return knobBPM;
@@ -293,7 +293,7 @@ struct Clocked : Module {
 		if (ratioKnobIndex < 1) 
 			return 1;
 		bool isDivision = false;
-		int i = (int) round( params[RATIO_PARAMS + ratioKnobIndex].value );// [ -(numRatios-1) ; (numRatios-1) ]
+		int i = (int) round( params[RATIO_PARAMS + ratioKnobIndex].getValue() );// [ -(numRatios-1) ; (numRatios-1) ]
 		if (i < 0) {
 			i *= -1;
 			isDivision = true;
@@ -310,16 +310,16 @@ struct Clocked : Module {
 	void updatePulseSwingDelay() {
 		for (int i = 0; i < 4; i++) {
 			// Pulse Width
-			pulseWidth[i] = params[PW_PARAMS + i].value;
-			if (i < 3 && inputs[PW_INPUTS + i].active) {
-				pulseWidth[i] += (inputs[PW_INPUTS + i].value / 10.0f) - 0.5f;
+			pulseWidth[i] = params[PW_PARAMS + i].getValue();
+			if (i < 3 && inputs[PW_INPUTS + i].isConnected()) {
+				pulseWidth[i] += (inputs[PW_INPUTS + i].getVoltage() / 10.0f) - 0.5f;
 				pulseWidth[i] = clamp(pulseWidth[i], 0.0f, 1.0f);
 			}
 			
 			// Swing
-			swingAmount[i] = params[SWING_PARAMS + i].value;
-			if (i < 3 && inputs[SWING_INPUTS + i].active) {
-				swingAmount[i] += (inputs[SWING_INPUTS + i].value / 5.0f) - 1.0f;
+			swingAmount[i] = params[SWING_PARAMS + i].getValue();
+			if (i < 3 && inputs[SWING_INPUTS + i].isConnected()) {
+				swingAmount[i] += (inputs[SWING_INPUTS + i].getVoltage() / 5.0f) - 1.0f;
 				swingAmount[i] = clamp(swingAmount[i], -1.0f, 1.0f);
 			}
 		}
@@ -327,7 +327,7 @@ struct Clocked : Module {
 		// Delay
 		delaySamples[0] = 0ul;
 		for (int i = 1; i < 4; i++) {	
-			int delayKnobIndex = (int)(params[DELAY_PARAMS + i].value + 0.5f);
+			int delayKnobIndex = (int)(params[DELAY_PARAMS + i].getValue() + 0.5f);
 			float delayFraction = delayValues[delayKnobIndex];
 			float ratioValue = ((float)ratiosDoubled[i]) / 2.0f;
 			if (ratioValue < 0)
@@ -338,7 +338,8 @@ struct Clocked : Module {
 	
 	
 	// called from the main thread (step() can not be called until all modules created)
-	Clocked() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	Clocked() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		for (int i = 1; i < 4; i++) {
 			clk[i].setup(&clk[0], &resetClockOutputsHigh);		
 		}
@@ -347,7 +348,7 @@ struct Clocked : Module {
 	
 
 	void onReset() override {
-		sampleRate = (double)engineGetSampleRate();
+		sampleRate = (double)args.sampleRate;
 		sampleTime = 1.0 / sampleRate;
 		displayDelayNoteMode = true;
 		bpmDetectionMode = false;
@@ -373,19 +374,19 @@ struct Clocked : Module {
 			syncRatios[i] = false;
 			ratiosDoubled[i] = getRatioDoubled(i);
 			updatePulseSwingDelay();
-			outputs[CLK_OUTPUTS + i].value = (resetClockOutputsHigh ? 10.0f : 0.0f);
+			outputs[CLK_OUTPUTS + i].setVoltage((resetClockOutputsHigh ? 10.0f : 0.0f));
 		}
 		extPulseNumber = -1;
 		extIntervalTime = 0.0;
 		timeoutTime = 2.0 / ppqn + 0.1;// worst case. This is a double period at 30 BPM (4s), divided by the expected number of edges in the double period 
 									   //   which is 2*ppqn, plus epsilon. This timeoutTime is only used for timingout the 2nd clock edge
-		if (inputs[BPM_INPUT].active) {
+		if (inputs[BPM_INPUT].isConnected()) {
 			if (bpmDetectionMode) {
 				if (hardReset)
 					newMasterLength = 1.0f;// 120 BPM
 			}
 			else
-				newMasterLength = 1.0f / powf(2.0f, inputs[BPM_INPUT].value);// bpm = 120*2^V, 2T = 120/bpm = 120/(120*2^V) = 1/2^V
+				newMasterLength = 1.0f / powf(2.0f, inputs[BPM_INPUT].getVoltage());// bpm = 120*2^V, 2T = 120/bpm = 120/(120*2^V) = 1/2^V
 		}
 		else
 			newMasterLength = 120.0f / getBpmKnob();
@@ -471,13 +472,13 @@ struct Clocked : Module {
 
 	
 	void onSampleRateChange() override {
-		sampleRate = (double)engineGetSampleRate();
+		sampleRate = (double)args.sampleRate;
 		sampleTime = 1.0 / sampleRate;
 		resetClocked(false);
 	}		
 	
 
-	void step() override {		
+	void process(const ProcessArgs &args) override {		
 
 		// Scheduled reset
 		if (scheduledReset) {
@@ -486,8 +487,8 @@ struct Clocked : Module {
 		}
 		
 		// Run button
-		if (runTrigger.process(params[RUN_PARAM].value + inputs[RUN_INPUT].value)) {// no input refresh here, don't want to introduce clock skew
-			if (!(bpmDetectionMode && inputs[BPM_INPUT].active) || running) {// toggle when not BPM detect, turn off only when BPM detect (allows turn off faster than timeout if don't want any trailing beats after stoppage). If allow manually start in bpmDetectionMode   the clock will not know which pulse is the 1st of a ppqn set, so only allow stop
+		if (runTrigger.process(params[RUN_PARAM].getValue() + inputs[RUN_INPUT].getVoltage())) {// no input refresh here, don't want to introduce clock skew
+			if (!(bpmDetectionMode && inputs[BPM_INPUT].isConnected()) || running) {// toggle when not BPM detect, turn off only when BPM detect (allows turn off faster than timeout if don't want any trailing beats after stoppage). If allow manually start in bpmDetectionMode   the clock will not know which pulse is the 1st of a ppqn set, so only allow stop
 				running = !running;
 				runPulse.trigger(0.001f);
 				if (!running && emitResetOnStopRun) {
@@ -501,7 +502,7 @@ struct Clocked : Module {
 		}
 
 		// Reset (has to be near top because it sets steps to 0, and 0 not a real step (clock section will move to 1 before reaching outputs)
-		if (resetTrigger.process(inputs[RESET_INPUT].value + params[RESET_PARAM].value)) {
+		if (resetTrigger.process(inputs[RESET_INPUT].getVoltage() + params[RESET_PARAM].getValue())) {
 			resetLight = 1.0f;
 			resetPulse.trigger(0.001f);
 			resetClocked(false);	
@@ -512,8 +513,8 @@ struct Clocked : Module {
 			updatePulseSwingDelay();
 		
 			// BPM mode
-			bool trigUp = bpmModeUpTrigger.process(params[BPMMODE_UP_PARAM].value);
-			bool trigDown = bpmModeDownTrigger.process(params[BPMMODE_DOWN_PARAM].value);
+			bool trigUp = bpmModeUpTrigger.process(params[BPMMODE_UP_PARAM].getValue());
+			bool trigDown = bpmModeDownTrigger.process(params[BPMMODE_DOWN_PARAM].getValue());
 			if (trigUp || trigDown) {
 				if (editingBpmMode != 0ul) {// force active before allow change
 					if (bpmDetectionMode == false) {
@@ -546,8 +547,8 @@ struct Clocked : Module {
 	
 		// BPM input and knob
 		newMasterLength = masterLength;
-		if (inputs[BPM_INPUT].active) { 
-			bool trigBpmInValue = bpmDetectTrigger.process(inputs[BPM_INPUT].value);
+		if (inputs[BPM_INPUT].isConnected()) { 
+			bool trigBpmInValue = bpmDetectTrigger.process(inputs[BPM_INPUT].getVoltage());
 			
 			// BPM Detection method
 			if (bpmDetectionMode) {
@@ -590,7 +591,7 @@ struct Clocked : Module {
 			}
 			// BPM CV method
 			else {// bpmDetectionMode not active
-				newMasterLength = clamp(1.0f / powf(2.0f, inputs[BPM_INPUT].value), masterLengthMin, masterLengthMax);// bpm = 120*2^V, 2T = 120/bpm = 120/(120*2^V) = 1/2^V
+				newMasterLength = clamp(1.0f / powf(2.0f, inputs[BPM_INPUT].getVoltage()), masterLengthMin, masterLengthMax);// bpm = 120*2^V, 2T = 120/bpm = 120/(120*2^V) = 1/2^V
 				// no need to round since this clocked's master's BPM knob is a snap knob thus already rounded, and with passthru approach, no cumul error
 			}
 		}
@@ -624,7 +625,7 @@ struct Clocked : Module {
 				clk[0].setup(masterLength, 1, sampleTime);// must call setup before start. length = double_period
 				clk[0].start();
 			}
-			outputs[CLK_OUTPUTS + 0].value = clk[0].isHigh(swingAmount[0], pulseWidth[0]) ? 10.0f : 0.0f;		
+			outputs[CLK_OUTPUTS + 0].setVoltage(clk[0].isHigh(swingAmount[0], pulseWidth[0]) ? 10.0f : 0.0f);		
 			
 			// Sub clocks
 			for (int i = 1; i < 4; i++) {
@@ -646,7 +647,7 @@ struct Clocked : Module {
 					clk[i].start();
 				}
 				delay[i - 1].write(clk[i].isHigh(swingAmount[i], pulseWidth[i]));
-				outputs[CLK_OUTPUTS + i].value = delay[i - 1].read(delaySamples[i]) ? 10.0f : 0.0f;
+				outputs[CLK_OUTPUTS + i].setVoltage(delay[i - 1].read(delaySamples[i]) ? 10.0f : 0.0f);
 			}
 
 			// Step clocks
@@ -655,9 +656,9 @@ struct Clocked : Module {
 		}
 			
 		// Chaining outputs
-		outputs[RESET_OUTPUT].value = (resetPulse.process((float)sampleTime) ? 10.0f : 0.0f);
-		outputs[RUN_OUTPUT].value = (runPulse.process((float)sampleTime) ? 10.0f : 0.0f);
-		outputs[BPM_OUTPUT].value =  inputs[BPM_INPUT].active ? inputs[BPM_INPUT].value : log2f(1.0f / masterLength);
+		outputs[RESET_OUTPUT].setVoltage((resetPulse.process((float)sampleTime) ? 10.0f : 0.0f));
+		outputs[RUN_OUTPUT].setVoltage((runPulse.process((float)sampleTime) ? 10.0f : 0.0f));
+		outputs[BPM_OUTPUT].setVoltage( inputs[BPM_INPUT].isConnected() ? inputs[BPM_INPUT].getVoltage() : log2f(1.0f / masterLength));
 			
 		
 		lightRefreshCounter++;
@@ -716,23 +717,23 @@ struct ClockedWidget : ModuleWidget {
 
 		
 		RatioDisplayWidget() {
-			font = Font::load(assetPlugin(plugin, "res/fonts/Segment14.ttf"));
+			font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Segment14.ttf"));
 		}
 		
-		void draw(NVGcontext *vg) override {
-			NVGcolor textColor = prepareDisplay(vg, &box, 18);
-			nvgFontFaceId(vg, font->handle);
-			//nvgTextLetterSpacing(vg, 2.5);
+		void draw(const DrawArgs &args) override {
+			NVGcolor textColor = prepareDisplay(args.vg, &box, 18);
+			nvgFontFaceId(args.vg, font->handle);
+			//nvgTextLetterSpacing(args.vg, 2.5);
 
 			Vec textPos = Vec(6, 24);
-			nvgFillColor(vg, nvgTransRGBA(textColor, displayAlpha));
-			nvgText(vg, textPos.x, textPos.y, "~~~", NULL);
-			nvgFillColor(vg, textColor);
+			nvgFillColor(args.vg, nvgTransRGBA(textColor, displayAlpha));
+			nvgText(args.vg, textPos.x, textPos.y, "~~~", NULL);
+			nvgFillColor(args.vg, textColor);
 			if (module->notifyInfo[knobIndex] > 0l)
 			{
 				int srcParam = module->notifyingSource[knobIndex];
 				if ( (srcParam >= Clocked::SWING_PARAMS + 0) && (srcParam <= Clocked::SWING_PARAMS + 3) ) {
-					float swValue = module->swingAmount[knobIndex];//module->params[Clocked::SWING_PARAMS + knobIndex].value;
+					float swValue = module->swingAmount[knobIndex];//module->params[Clocked::SWING_PARAMS + knobIndex].getValue();
 					int swInt = (int)round(swValue * 99.0f);
 					snprintf(displayStr, 4, " %2u", (unsigned) abs(swInt));
 					if (swInt < 0)
@@ -741,14 +742,14 @@ struct ClockedWidget : ModuleWidget {
 						displayStr[0] = '+';
 				}
 				else if ( (srcParam >= Clocked::DELAY_PARAMS + 1) && (srcParam <= Clocked::DELAY_PARAMS + 3) ) {				
-					int delayKnobIndex = (int)(module->params[Clocked::DELAY_PARAMS + knobIndex].value + 0.5f);
+					int delayKnobIndex = (int)(module->params[Clocked::DELAY_PARAMS + knobIndex].getValue() + 0.5f);
 					if (module->displayDelayNoteMode)
 						snprintf(displayStr, 4, "%s", (delayLabelsNote[delayKnobIndex]).c_str());
 					else
 						snprintf(displayStr, 4, "%s", (delayLabelsClock[delayKnobIndex]).c_str());
 				}					
 				else if ( (srcParam >= Clocked::PW_PARAMS + 0) && (srcParam <= Clocked::PW_PARAMS + 3) ) {				
-					float pwValue = module->pulseWidth[knobIndex];//module->params[Clocked::PW_PARAMS + knobIndex].value;
+					float pwValue = module->pulseWidth[knobIndex];//module->params[Clocked::PW_PARAMS + knobIndex].getValue();
 					int pwInt = ((int)round(pwValue * 98.0f)) + 1;
 					snprintf(displayStr, 4, "_%2u", (unsigned) abs(pwInt));
 				}					
@@ -781,14 +782,14 @@ struct ClockedWidget : ModuleWidget {
 				}
 			}
 			displayStr[3] = 0;// more safety
-			nvgText(vg, textPos.x, textPos.y, displayStr, NULL);
+			nvgText(args.vg, textPos.x, textPos.y, displayStr, NULL);
 		}
 	};		
 	
 	struct PanelThemeItem : MenuItem {
 		Clocked *module;
 		int theme;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -797,25 +798,25 @@ struct ClockedWidget : ModuleWidget {
 	};
 	struct ExpansionItem : MenuItem {
 		Clocked *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->expansion = module->expansion == 1 ? 0 : 1;
 		}
 	};
 	struct DelayDisplayNoteItem : MenuItem {
 		Clocked *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->displayDelayNoteMode = !module->displayDelayNoteMode;
 		}
 	};
 	struct EmitResetItem : MenuItem {
 		Clocked *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->emitResetOnStopRun = !module->emitResetOnStopRun;
 		}
 	};	
 	struct ResetHighItem : MenuItem {
 		Clocked *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->resetClockOutputsHigh = !module->resetClockOutputsHigh;
 			module->resetClocked(true);
 		}
@@ -921,27 +922,28 @@ struct ClockedWidget : ModuleWidget {
 	};
 
 	
-	ClockedWidget(Clocked *module) : ModuleWidget(module) {
+	ClockedWidget(Clocked *module) {
+		setModule(module);
  		this->module = module;
 		oldExpansion = -1;
 		
 		// Main panel from Inkscape
         panel = new DynamicSVGPanel();
-        panel->mode = &module->panelTheme;
+        panel->mode = module ? &module->panelTheme : NULL;
 		panel->expWidth = &expWidth;
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/Clocked.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/Clocked_dark.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Clocked.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Clocked_dark.svg")));
         box.size = panel->box.size;
 		box.size.x = box.size.x - (1 - module->expansion) * expWidth;
         addChild(panel);		
 		
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 365), module ? &module->panelTheme : NULL));
 
 
 		static const int rowRuler0 = 50;//reset,run inputs, master knob and bpm display
@@ -971,13 +973,13 @@ struct ClockedWidget : ModuleWidget {
 		
 		// Row 0
 		// Reset input
-		addInput(createDynamicPort<IMPort>(Vec(colRulerL, rowRuler0), true, module, Clocked::RESET_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerL, rowRuler0), true, module, Clocked::RESET_INPUT, module ? &module->panelTheme : NULL));
 		// Run input
-		addInput(createDynamicPort<IMPort>(Vec(colRulerT1, rowRuler0), true, module, Clocked::RUN_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerT1, rowRuler0), true, module, Clocked::RUN_INPUT, module ? &module->panelTheme : NULL));
 		// In input
-		addInput(createDynamicPort<IMPort>(Vec(colRulerT2, rowRuler0), true, module, Clocked::BPM_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerT2, rowRuler0), true, module, Clocked::BPM_INPUT, module ? &module->panelTheme : NULL));
 		// Master BPM knob
-		addParam(createDynamicParam<IMBigSnapKnobNotify>(Vec(colRulerT3 + 1 + offsetIMBigKnob, rowRuler0 + offsetIMBigKnob), module, Clocked::RATIO_PARAMS + 0, (float)(module->bpmMin), (float)(module->bpmMax), 120.0f, &module->panelTheme));// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
+		addParam(createDynamicParam<IMBigSnapKnobNotify>(Vec(colRulerT3 + 1 + offsetIMBigKnob, rowRuler0 + offsetIMBigKnob), module, Clocked::RATIO_PARAMS + 0, (float)(module->bpmMin), (float)(module->bpmMax), 120.0f, module ? &module->panelTheme : NULL));// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		// BPM display
 		displayRatios[0] = new RatioDisplayWidget();
 		displayRatios[0]->box.pos = Vec(colRulerT4 + 11, rowRuler0 + vOffsetDisplay);
@@ -994,22 +996,22 @@ struct ClockedWidget : ModuleWidget {
 		addParam(createParam<LEDBezel>(Vec(colRulerT1 + offsetLEDbezel, rowRuler1 + offsetLEDbezel), module, Clocked::RUN_PARAM, 0.0f, 1.0f, 0.0f));
 		addChild(createLight<MuteLight<GreenLight>>(Vec(colRulerT1 + offsetLEDbezel + offsetLEDbezelLight, rowRuler1 + offsetLEDbezel + offsetLEDbezelLight), module, Clocked::RUN_LIGHT));
 		// BPM mode buttons
-		addParam(createDynamicParam<IMPushButton>(Vec(colRulerT2 + offsetTL1105 - 12, rowRuler1 + offsetTL1105), module, Clocked::BPMMODE_DOWN_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
-		addParam(createDynamicParam<IMPushButton>(Vec(colRulerT2 + offsetTL1105 + 12, rowRuler1 + offsetTL1105), module, Clocked::BPMMODE_UP_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParam<IMPushButton>(Vec(colRulerT2 + offsetTL1105 - 12, rowRuler1 + offsetTL1105), module, Clocked::BPMMODE_DOWN_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMPushButton>(Vec(colRulerT2 + offsetTL1105 + 12, rowRuler1 + offsetTL1105), module, Clocked::BPMMODE_UP_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		// BPM mode light
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(colRulerT2 + offsetMediumLight, rowRuler1 + 22), module, Clocked::BPMSYNC_LIGHT));		
 		// Swing master knob
-		addParam(createDynamicParam<IMSmallKnobNotify>(Vec(colRulerT3 + offsetIMSmallKnob, rowRuler1 + offsetIMSmallKnob), module, Clocked::SWING_PARAMS + 0, -1.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParam<IMSmallKnobNotify>(Vec(colRulerT3 + offsetIMSmallKnob, rowRuler1 + offsetIMSmallKnob), module, Clocked::SWING_PARAMS + 0, -1.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		// PW master knob
-		addParam(createDynamicParam<IMSmallKnobNotify>(Vec(colRulerT4 + offsetIMSmallKnob, rowRuler1 + offsetIMSmallKnob), module, Clocked::PW_PARAMS + 0, 0.0f, 1.0f, 0.5f, &module->panelTheme));
+		addParam(createDynamicParam<IMSmallKnobNotify>(Vec(colRulerT4 + offsetIMSmallKnob, rowRuler1 + offsetIMSmallKnob), module, Clocked::PW_PARAMS + 0, 0.0f, 1.0f, 0.5f, module ? &module->panelTheme : NULL));
 		// Clock master out
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT5, rowRuler1), false, module, Clocked::CLK_OUTPUTS + 0, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT5, rowRuler1), false, module, Clocked::CLK_OUTPUTS + 0, module ? &module->panelTheme : NULL));
 		
 		
 		// Row 2-4 (sub clocks)		
 		for (int i = 0; i < 3; i++) {
 			// Ratio1 knob
-			addParam(createDynamicParam<IMBigSnapKnobNotify>(Vec(colRulerM0 + offsetIMBigKnob, rowRuler2 + i * rowSpacingClks + offsetIMBigKnob), module, Clocked::RATIO_PARAMS + 1 + i, (34.0f - 1.0f)*-1.0f, 34.0f - 1.0f, 0.0f, &module->panelTheme));		
+			addParam(createDynamicParam<IMBigSnapKnobNotify>(Vec(colRulerM0 + offsetIMBigKnob, rowRuler2 + i * rowSpacingClks + offsetIMBigKnob), module, Clocked::RATIO_PARAMS + 1 + i, (34.0f - 1.0f)*-1.0f, 34.0f - 1.0f, 0.0f, module ? &module->panelTheme : NULL));		
 			// Ratio display
 			displayRatios[i + 1] = new RatioDisplayWidget();
 			displayRatios[i + 1]->box.pos = Vec(colRulerM1, rowRuler2 + i * rowSpacingClks + vOffsetDisplay);
@@ -1020,35 +1022,35 @@ struct ClockedWidget : ModuleWidget {
 			// Sync light
 			addChild(createLight<SmallLight<RedLight>>(Vec(colRulerM1 + 62, rowRuler2 + i * rowSpacingClks + 10), module, Clocked::CLK_LIGHTS + i + 1));		
 			// Swing knobs
-			addParam(createDynamicParam<IMSmallKnobNotify>(Vec(colRulerM2 + offsetIMSmallKnob, rowRuler2 + i * rowSpacingClks + offsetIMSmallKnob), module, Clocked::SWING_PARAMS + 1 + i, -1.0f, 1.0f, 0.0f, &module->panelTheme));
+			addParam(createDynamicParam<IMSmallKnobNotify>(Vec(colRulerM2 + offsetIMSmallKnob, rowRuler2 + i * rowSpacingClks + offsetIMSmallKnob), module, Clocked::SWING_PARAMS + 1 + i, -1.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 			// PW knobs
-			addParam(createDynamicParam<IMSmallKnobNotify>(Vec(colRulerM3 + offsetIMSmallKnob, rowRuler2 + i * rowSpacingClks + offsetIMSmallKnob), module, Clocked::PW_PARAMS + 1 + i, 0.0f, 1.0f, 0.5f, &module->panelTheme));
+			addParam(createDynamicParam<IMSmallKnobNotify>(Vec(colRulerM3 + offsetIMSmallKnob, rowRuler2 + i * rowSpacingClks + offsetIMSmallKnob), module, Clocked::PW_PARAMS + 1 + i, 0.0f, 1.0f, 0.5f, module ? &module->panelTheme : NULL));
 			// Delay knobs
-			addParam(createDynamicParam<IMSmallSnapKnobNotify>(Vec(colRulerM4 + offsetIMSmallKnob, rowRuler2 + i * rowSpacingClks + offsetIMSmallKnob), module, Clocked::DELAY_PARAMS + 1 + i , 0.0f, 8.0f - 1.0f, 0.0f, &module->panelTheme));
+			addParam(createDynamicParam<IMSmallSnapKnobNotify>(Vec(colRulerM4 + offsetIMSmallKnob, rowRuler2 + i * rowSpacingClks + offsetIMSmallKnob), module, Clocked::DELAY_PARAMS + 1 + i , 0.0f, 8.0f - 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		}
 
 		// Last row
 		// Reset out
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerL, rowRuler5), false, module, Clocked::RESET_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerL, rowRuler5), false, module, Clocked::RESET_OUTPUT, module ? &module->panelTheme : NULL));
 		// Run out
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT1, rowRuler5), false, module, Clocked::RUN_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT1, rowRuler5), false, module, Clocked::RUN_OUTPUT, module ? &module->panelTheme : NULL));
 		// Out out
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT2, rowRuler5), false, module, Clocked::BPM_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT2, rowRuler5), false, module, Clocked::BPM_OUTPUT, module ? &module->panelTheme : NULL));
 		// Sub-clock outputs
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT3, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 1, &module->panelTheme));	
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT4, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 2, &module->panelTheme));	
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerT5, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 3, &module->panelTheme));	
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT3, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 1, module ? &module->panelTheme : NULL));	
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT4, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 2, module ? &module->panelTheme : NULL));	
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerT5, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 3, module ? &module->panelTheme : NULL));	
 
 		// Expansion module
 		static const int rowRulerExpTop = 60;
 		static const int rowSpacingExp = 50;
 		static const int colRulerExp = 497 - 30 -150;// Clocked is (2+10)HP less than PS32
-		addInput(expPorts[0] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), true, module, Clocked::PW_INPUTS + 0, &module->panelTheme));
-		addInput(expPorts[1] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), true, module, Clocked::PW_INPUTS + 1, &module->panelTheme));
-		addInput(expPorts[2] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), true, module, Clocked::PW_INPUTS + 2, &module->panelTheme));
-		addInput(expPorts[3] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, Clocked::SWING_INPUTS + 0, &module->panelTheme));
-		addInput(expPorts[4] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, Clocked::SWING_INPUTS + 1, &module->panelTheme));
-		addInput(expPorts[5] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), true, module, Clocked::SWING_INPUTS + 2, &module->panelTheme));
+		addInput(expPorts[0] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), true, module, Clocked::PW_INPUTS + 0, module ? &module->panelTheme : NULL));
+		addInput(expPorts[1] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), true, module, Clocked::PW_INPUTS + 1, module ? &module->panelTheme : NULL));
+		addInput(expPorts[2] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), true, module, Clocked::PW_INPUTS + 2, module ? &module->panelTheme : NULL));
+		addInput(expPorts[3] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, Clocked::SWING_INPUTS + 0, module ? &module->panelTheme : NULL));
+		addInput(expPorts[4] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, Clocked::SWING_INPUTS + 1, module ? &module->panelTheme : NULL));
+		addInput(expPorts[5] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), true, module, Clocked::SWING_INPUTS + 2, module ? &module->panelTheme : NULL));
 	}
 };
 

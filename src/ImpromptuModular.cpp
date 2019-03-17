@@ -19,7 +19,7 @@ void init(rack::Plugin *p) {
 
 	// p->addModel(modelTact);
 	// p->addModel(modelTact1);
-	// p->addModel(modelTwelveKey);
+	p->addModel(modelTwelveKey);
 	// p->addModel(modelClocked);
 	// p->addModel(modelFoundry);
 	// p->addModel(modelGateSeq64);
@@ -86,7 +86,7 @@ void IMBigPushButtonWithRClick::onButton(const widget::ButtonEvent &e) {
 LEDBezelBig::LEDBezelBig() {
 	momentary = true;
 	float ratio = 2.13f;
-	addFrame(SVG::load(assetGlobal("res/ComponentLibrary/LEDBezel.svg")));
+	addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/LEDBezel.svg")));
 	sw->box.size = sw->box.size.mult(ratio);
 	box.size = sw->box.size;
 	tw = new TransformWidget();
@@ -194,16 +194,16 @@ void LEDButtonWithRClick::onButton(const widget::ButtonEvent &e) {
 */
 
 ScrewSilverRandomRot::ScrewSilverRandomRot() {
-	float angle0_90 = randomUniform()*M_PI/2.0f;
-	//float angle0_90 = randomUniform() > 0.5f ? M_PI/4.0f : 0.0f;// for testing
+	float angle0_90 = random::uniform()*M_PI/2.0f;
+	//float angle0_90 = random::uniform() > 0.5f ? M_PI/4.0f : 0.0f;// for testing
 	
 	tw = new TransformWidget();
 	addChild(tw);
 	
 	sw = new widget::SvgWidget();
 	tw->addChild(sw);
-	//sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/Screw0.svg")));
-	sw->setSVG(SVG::load(assetGlobal("res/ComponentLibrary/ScrewSilver.svg")));
+	//sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Screw0.svg")));
+	sw->setSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/ScrewSilver.svg")));
 	
 	sc = new ScrewCircle(angle0_90);
 	sc->box.size = sw->box.size;
@@ -217,23 +217,6 @@ ScrewSilverRandomRot::ScrewSilverRandomRot() {
 	tw->translate(center);
 	tw->rotate(angle0_90);
 	tw->translate(center.neg());	
-}
-
-
-ScrewHole::ScrewHole(Vec posGiven) {
-	box.size = Vec(16, 7);
-	box.pos = Vec(posGiven.x, posGiven.y + 4);// nudgeX for realism, 0 = no nudge
-}
-void ScrewHole::draw(NVGcontext *vg) {
-	NVGcolor backgroundColor = nvgRGB(0x10, 0x10, 0x10); 
-	NVGcolor borderColor = nvgRGB(0x20, 0x20, 0x20);
-	nvgBeginPath(vg);
-	nvgRoundedRect(vg, 0.0, 0.0, box.size.x, box.size.y, 2.5f);
-	nvgFillColor(vg, backgroundColor);
-	nvgFill(vg);
-	nvgStrokeWidth(vg, 1.0);
-	nvgStrokeColor(vg, borderColor);
-	nvgStroke(vg);
 }
 
 

@@ -23,7 +23,7 @@ class StepAttributesGS {
 	static const unsigned short ATT_MSK_INITSTATE =  50;
 	
 	inline void init() {attributes = ATT_MSK_INITSTATE;}
-	inline void randomize() {attributes = ( (randomu32() % 101) | (randomu32() & (ATT_MSK_GATEP | ATT_MSK_GATE | ATT_MSK_GATEMODE)) );}
+	inline void randomize() {attributes = ( (random::u32() % 101) | (random::u32() & (ATT_MSK_GATEP | ATT_MSK_GATE | ATT_MSK_GATEMODE)) );}
 		
 	inline bool getGate() {return (attributes & ATT_MSK_GATE) != 0;}
 	inline bool getGateP() {return (attributes & ATT_MSK_GATEP) != 0;}
@@ -54,7 +54,7 @@ class SeqAttributesGS {
 	static const unsigned short SEQ_MSK_RUNMODE =   0x0000FF00, runModeShift = 8;
 	
 	inline void init(int length, int runMode) {attributes = ((length) | (((unsigned short)runMode) << runModeShift));}
-	inline void randomize(int maxSteps, int numModes) {attributes = ( (1 + (randomu32() % maxSteps)) | (((unsigned short)(randomu32() % numModes) << runModeShift)) );}
+	inline void randomize(int maxSteps, int numModes) {attributes = ( (1 + (random::u32() % maxSteps)) | (((unsigned short)(random::u32() % numModes) << runModeShift)) );}
 	
 	inline int getLength() {return (int)(attributes & SEQ_MSK_LENGTH);}
 	inline int getRunMode() {return (int)((attributes & SEQ_MSK_RUNMODE) >> runModeShift);}

@@ -37,7 +37,7 @@ class StepAttributes {
 	
 	inline void clear() {attributes = 0u;}
 	inline void init() {attributes = ATT_MSK_INITSTATE;}
-	inline void randomize() {attributes = (randomu32() & (ATT_MSK_GATE1 | ATT_MSK_GATE1P | ATT_MSK_GATE2 | ATT_MSK_SLIDE /*| ATT_MSK_TIED*/ | ATT_MSK_GATE1MODE | ATT_MSK_GATE2MODE));}
+	inline void randomize() {attributes = (random::u32() & (ATT_MSK_GATE1 | ATT_MSK_GATE1P | ATT_MSK_GATE2 | ATT_MSK_SLIDE /*| ATT_MSK_TIED*/ | ATT_MSK_GATE1MODE | ATT_MSK_GATE2MODE));}
 	
 	inline bool getGate1() {return (attributes & ATT_MSK_GATE1) != 0;}
 	inline bool getGate1P() {return (attributes & ATT_MSK_GATE1P) != 0;}
@@ -88,7 +88,7 @@ class SeqAttributes {
 	static const unsigned long SEQ_MSK_ROTSIGN =   0x80000000;// manually implement sign bit (+ is right, - is left)
 	
 	inline void init(int length, int runMode) {attributes = ((length) | (((unsigned long)runMode) << runModeShift));}
-	inline void randomize(int maxSteps, int numModes) {attributes = ( (1 + (randomu32() % maxSteps)) | (((unsigned long)(randomu32() % numModes) << runModeShift)) );}
+	inline void randomize(int maxSteps, int numModes) {attributes = ( (1 + (random::u32() % maxSteps)) | (((unsigned long)(random::u32() % numModes) << runModeShift)) );}
 	
 	inline int getLength() {return (int)(attributes & SEQ_MSK_LENGTH);}
 	inline int getRunMode() {return (int)((attributes & SEQ_MSK_RUNMODE) >> runModeShift);}

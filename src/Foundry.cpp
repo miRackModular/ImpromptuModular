@@ -165,16 +165,17 @@ struct Foundry : Module {
 	Trigger writeModeTrigger;
 
 	
-	inline bool isEditingSequence(void) {return params[EDIT_PARAM].value > 0.5f;}
-	inline bool isEditingGates(void) {return params[KEY_GATE_PARAM].value < 0.5f;}
+	inline bool isEditingSequence(void) {return params[EDIT_PARAM].getValue() > 0.5f;}
+	inline bool isEditingGates(void) {return params[KEY_GATE_PARAM].getValue() < 0.5f;}
 	inline int getCPMode(void) {
-		if (params[CPMODE_PARAM].value > 1.5f) return 2000;// this means end, and code should never loop up to this count. This value should be bigger than max(MAX_STEPS, MAX_PHRASES)
-		if (params[CPMODE_PARAM].value < 0.5f) return 4;
+		if (params[CPMODE_PARAM].getValue() > 1.5f) return 2000;// this means end, and code should never loop up to this count. This value should be bigger than max(MAX_STEPS, MAX_PHRASES)
+		if (params[CPMODE_PARAM].getValue() < 0.5f) return 4;
 		return 8;
 	}
 
 	
-	Foundry() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	Foundry() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		seq.construct(&holdTiedNotes, &velocityMode);
 		onReset();
 	}
@@ -206,7 +207,7 @@ struct Foundry : Module {
 		velEditMode = 0;
 		writeMode = 0;
 		seq.reset(isEditingSequence());
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * engineGetSampleRate());
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
 	}
 	
 	
@@ -357,8 +358,8 @@ struct Foundry : Module {
 	}
 
 
-	void step() override {
-		const float sampleRate = engineGetSampleRate();
+	void process(const ProcessArgs &args) override {
+		const float sampleRate = args.sampleRate;
 		static const float revertDisplayTime = 0.7f;// seconds
 		
 		
@@ -367,7 +368,7 @@ struct Foundry : Module {
 		bool editingSequence = isEditingSequence();
 		
 		// Run button
-		if (runningTrigger.process(params[RUN_PARAM].value + inputs[RUNCV_INPUT].value)) {// no input refresh here, don't want to introduce startup skew
+		if (runningTrigger.process(params[RUN_PARAM].getValue() + inputs[RUNCV_INPUT].getVoltage())) {// no input refresh here, don't want to introduce startup skew
 			running = !running;
 			if (running) {
 				if (resetOnRun)
@@ -381,29 +382,29 @@ struct Foundry : Module {
 		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
 			
 			// Track CV input
-			if (inputs[TRKCV_INPUT].active) {
-				int newTrk = (int)( inputs[TRKCV_INPUT].value * (2.0f * (float)Sequencer::NUM_TRACKS - 1.0f) / 10.0f + 0.5f );
+			if (inputs[TRKCV_INPUT].isConnected()) {
+				int newTrk = (int)( inputs[TRKCV_INPUT].getVoltage() * (2.0f * (float)Sequencer::NUM_TRACKS - 1.0f) / 10.0f + 0.5f );
 				seq.setTrackIndexEdit(abs(newTrk));
 				multiTracks = (newTrk > 3);
 			}
 			
 			// Seq CV input
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-				if (inputs[SEQCV_INPUTS + trkn].active) {
+				if (inputs[SEQCV_INPUTS + trkn].isConnected()) {
 					int newSeq = -1;
 					if (seqCVmethod == 0) {// 0-10 V
-						newSeq = (int)( inputs[SEQCV_INPUTS + trkn].value * ((float)SequencerKernel::MAX_SEQS - 1.0f) / 10.0f + 0.5f );
+						newSeq = (int)( inputs[SEQCV_INPUTS + trkn].getVoltage() * ((float)SequencerKernel::MAX_SEQS - 1.0f) / 10.0f + 0.5f );
 						newSeq = clamp(newSeq, 0, SequencerKernel::MAX_SEQS - 1);
 					}
 					else if (seqCVmethod == 1) {// C2-D7#
-						newSeq = (int)( (inputs[SEQCV_INPUTS + trkn].value + 2.0f) * 12.0f + 0.5f );
+						newSeq = (int)( (inputs[SEQCV_INPUTS + trkn].getVoltage() + 2.0f) * 12.0f + 0.5f );
 						newSeq = clamp(newSeq, 0, SequencerKernel::MAX_SEQS - 1);
 					}
-					else if (seqCVTriggers[trkn].process(inputs[SEQCV_INPUTS + trkn].value)) {// TrigIncr
+					else if (seqCVTriggers[trkn].process(inputs[SEQCV_INPUTS + trkn].getVoltage())) {// TrigIncr
 						newSeq = clamp(seq.getSeqIndexEdit(trkn) + 1, 0, SequencerKernel::MAX_SEQS - 1);
 					}
 					if (newSeq >= 0) {
-						if (params[SYNC_SEQCV_PARAM].value > 0.5f)
+						if (params[SYNC_SEQCV_PARAM].getValue() > 0.5f)
 							seq.requestDelayedSeqChange(trkn, newSeq);
 						else
 							seq.setSeqIndexEdit(newSeq, trkn);				
@@ -412,7 +413,7 @@ struct Foundry : Module {
 			}
 			
 			// Attach button
-			if (attachedTrigger.process(params[ATTACH_PARAM].value)) {
+			if (attachedTrigger.process(params[ATTACH_PARAM].getValue())) {
 				attached = !attached;
 				displayState = DISP_NORMAL;			
 				multiSteps = false;
@@ -424,7 +425,7 @@ struct Foundry : Module {
 			
 	
 			// Copy 
-			if (copyTrigger.process(params[COPY_PARAM].value)) {
+			if (copyTrigger.process(params[COPY_PARAM].getValue())) {
 				if (!attached) {
 					multiTracks = false;
 					if (editingSequence) {
@@ -455,7 +456,7 @@ struct Foundry : Module {
 					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 			}
 			// Paste 
-			if (pasteTrigger.process(params[PASTE_PARAM].value)) {
+			if (pasteTrigger.process(params[PASTE_PARAM].getValue())) {
 				if (!attached) {
 					if (editingSequence) {
 						seq.pasteSequence(multiTracks);
@@ -477,34 +478,34 @@ struct Foundry : Module {
 
 			// Write input (must be before Left and Right in case route gate simultaneously to Right and Write for example)
 			//  (write must be to correct step)
-			bool writeTrig = writeTrigger.process(inputs[WRITE_INPUT].value);
+			bool writeTrig = writeTrigger.process(inputs[WRITE_INPUT].getVoltage());
 			if (writeTrig) {
 				if (editingSequence) {
 					int multiStepsCount = multiSteps ? cpSeqLength : 1;
 					for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 						if (trkn == seq.getTrackIndexEdit() || multiTracks) {
-							if (inputs[VEL_INPUTS + trkn].active && ((writeMode & 0x1) == 0)) {	// must be before seq.writeCV() below, so that editing CV2 can be grabbed
+							if (inputs[VEL_INPUTS + trkn].isConnected() && ((writeMode & 0x1) == 0)) {	// must be before seq.writeCV() below, so that editing CV2 can be grabbed
 								float maxVel = (velocityMode > 0 ? 127.0f : 200.0f);
-								float capturedCV = inputs[VEL_INPUTS + trkn].value + (velocityBipol ? 5.0f : 0.0f);
+								float capturedCV = inputs[VEL_INPUTS + trkn].getVoltage() + (velocityBipol ? 5.0f : 0.0f);
 								int intVel = (int)(capturedCV * maxVel / 10.0f + 0.5f);
 								seq.setVelocityVal(trkn, clamp(intVel, 0, 200), multiStepsCount, false);
 							}
-							if (inputs[CV_INPUTS + trkn].active && ((writeMode & 0x2) == 0)) {
-								seq.writeCV(trkn, clamp(inputs[CV_INPUTS + trkn].value, -10.0f, 10.0f), multiStepsCount, sampleRate, false);
+							if (inputs[CV_INPUTS + trkn].isConnected() && ((writeMode & 0x2) == 0)) {
+								seq.writeCV(trkn, clamp(inputs[CV_INPUTS + trkn].getVoltage(), -10.0f, 10.0f), multiStepsCount, sampleRate, false);
 							}
 						}
 					}
 					seq.setEditingGateKeyLight(-1);
-					if (params[AUTOSTEP_PARAM].value > 0.5f)
-						seq.autostep(autoseq && !inputs[SEQCV_INPUTS + seq.getTrackIndexEdit()].active, autostepLen, multiTracks);
+					if (params[AUTOSTEP_PARAM].getValue() > 0.5f)
+						seq.autostep(autoseq && !inputs[SEQCV_INPUTS + seq.getTrackIndexEdit()].isConnected(), autostepLen, multiTracks);
 				}
 			}
 			// Left and right CV inputs
 			int delta = 0;
-			if (leftTrigger.process(inputs[LEFTCV_INPUT].value)) {
+			if (leftTrigger.process(inputs[LEFTCV_INPUT].getVoltage())) {
 				delta = -1;
 			}
-			if (rightTrigger.process(inputs[RIGHTCV_INPUT].value)) {
+			if (rightTrigger.process(inputs[RIGHTCV_INPUT].getVoltage())) {
 				delta = +1;
 			}
 			if (delta != 0) {
@@ -523,7 +524,7 @@ struct Foundry : Module {
 			// Step button presses
 			int stepPressed = -1;
 			for (int i = 0; i < SequencerKernel::MAX_STEPS; i++) {
-				if (stepTriggers[i].process(params[STEP_PHRASE_PARAMS + i].value))
+				if (stepTriggers[i].process(params[STEP_PHRASE_PARAMS + i].getValue()))
 					stepPressed = i;
 			}
 			if (stepPressed != -1) {
@@ -555,7 +556,7 @@ struct Foundry : Module {
 			}
 			
 			// Mode button
-			if (modeTrigger.process(params[MODE_PARAM].value)) {
+			if (modeTrigger.process(params[MODE_PARAM].getValue())) {
 				if (!attached) {
 					if (displayState != DISP_MODE_SEQ && displayState != DISP_MODE_SONG)
 						displayState = editingSequence ? DISP_MODE_SEQ : DISP_MODE_SONG;
@@ -567,7 +568,7 @@ struct Foundry : Module {
 			}
 			
 			// Clk res/delay button
-			if (clkResTrigger.process(params[CLKRES_PARAM].value)) {
+			if (clkResTrigger.process(params[CLKRES_PARAM].getValue())) {
 				if (!attached) {
 					if (displayState != DISP_PPQN && displayState != DISP_DELAY)	
 						displayState = DISP_PPQN;
@@ -581,7 +582,7 @@ struct Foundry : Module {
 			}
 			
 			// Transpose/Rotate button
-			if (transposeTrigger.process(params[TRAN_ROT_PARAM].value)) {
+			if (transposeTrigger.process(params[TRAN_ROT_PARAM].getValue())) {
 				if (editingSequence && !attached) {
 					if (displayState != DISP_TRANSPOSE && displayState != DISP_ROTATE) {
 						displayState = DISP_TRANSPOSE;
@@ -597,7 +598,7 @@ struct Foundry : Module {
 			}			
 
 			// Begin/End buttons
-			if (beginTrigger.process(params[BEGIN_PARAM].value)) {
+			if (beginTrigger.process(params[BEGIN_PARAM].getValue())) {
 				if (!editingSequence && !attached) {
 					seq.setBegin(multiTracks);
 					displayState = DISP_NORMAL;
@@ -605,7 +606,7 @@ struct Foundry : Module {
 				else if (attached)
 					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 			}	
-			if (endTrigger.process(params[END_PARAM].value)) {
+			if (endTrigger.process(params[END_PARAM].getValue())) {
 				if (!editingSequence && !attached) {
 					seq.setEnd(multiTracks);
 					displayState = DISP_NORMAL;
@@ -615,7 +616,7 @@ struct Foundry : Module {
 			}	
 
 			// Rep/Len button
-			if (repLenTrigger.process(params[REP_LEN_PARAM].value)) {
+			if (repLenTrigger.process(params[REP_LEN_PARAM].getValue())) {
 				if (!attached) {
 					if (displayState != DISP_LEN && displayState != DISP_REPS)
 						displayState = editingSequence ? DISP_LEN : DISP_REPS;
@@ -627,19 +628,19 @@ struct Foundry : Module {
 			}	
 
 			// Track Inc/Dec buttons
-			if (trackIncTrigger.process(params[TRACKUP_PARAM].value)) {
-				if (!inputs[TRKCV_INPUT].active) {
+			if (trackIncTrigger.process(params[TRACKUP_PARAM].getValue())) {
+				if (!inputs[TRKCV_INPUT].isConnected()) {
 					seq.incTrackIndexEdit();
 				}
 			}
-			if (trackDeccTrigger.process(params[TRACKDOWN_PARAM].value)) {
-				if (!inputs[TRKCV_INPUT].active) {
+			if (trackDeccTrigger.process(params[TRACKDOWN_PARAM].getValue())) {
+				if (!inputs[TRKCV_INPUT].isConnected()) {
 					seq.decTrackIndexEdit();
 				}
 			}
 			// All button
-			if (allTrigger.process(params[ALLTRACKS_PARAM].value)) {
-				if (!inputs[TRKCV_INPUT].active) {
+			if (allTrigger.process(params[ALLTRACKS_PARAM].getValue())) {
+				if (!inputs[TRKCV_INPUT].isConnected()) {
 					if (!attached) {
 						multiTracks = !multiTracks;
 					}
@@ -651,7 +652,7 @@ struct Foundry : Module {
 			}	
 			
 			// Sel button
-			if (selTrigger.process(params[SEL_PARAM].value)) {
+			if (selTrigger.process(params[SEL_PARAM].getValue())) {
 				if (editingSequence && !attached)
 					multiSteps = !multiSteps;
 				else if (attached) {
@@ -661,7 +662,7 @@ struct Foundry : Module {
 			}	
 			
 			// Vel mode button
-			if (velEditTrigger.process(params[VEL_EDIT_PARAM].value)) {
+			if (velEditTrigger.process(params[VEL_EDIT_PARAM].getValue())) {
 				if (editingSequence || (attached && running)) {
 					if (velEditMode < 2)
 						velEditMode++;
@@ -672,7 +673,7 @@ struct Foundry : Module {
 			}
 			
 			// Write mode button
-			if (writeModeTrigger.process(params[WRITEMODE_PARAM].value + inputs[WRITE_SRC_INPUT].value)) {
+			if (writeModeTrigger.process(params[WRITEMODE_PARAM].getValue() + inputs[WRITE_SRC_INPUT].getVoltage())) {
 				if (editingSequence) {
 					if (++writeMode > 2)
 						writeMode =0;
@@ -680,7 +681,7 @@ struct Foundry : Module {
 			}
 		
 			// Velocity edit knob 
-			float velParamValue = params[VEL_KNOB_PARAM].value;
+			float velParamValue = params[VEL_KNOB_PARAM].getValue();
 			int newVelocityKnob = (int)roundf(velParamValue * 30.0f);
 			if (velParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				velocityKnob = newVelocityKnob;
@@ -707,7 +708,7 @@ struct Foundry : Module {
 
 						
 			// Sequence edit knob 
-			float seqParamValue = params[SEQUENCE_PARAM].value;
+			float seqParamValue = params[SEQUENCE_PARAM].getValue();
 			int newSequenceKnob = (int)roundf(seqParamValue * 7.0f);
 			if (seqParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				sequenceKnob = newSequenceKnob;
@@ -732,13 +733,13 @@ struct Foundry : Module {
 					else {// DISP_NORMAL
 						if (editingSequence) {
 							int activeTrack = seq.getTrackIndexEdit();
-							if (!inputs[SEQCV_INPUTS + activeTrack].active) {
+							if (!inputs[SEQCV_INPUTS + activeTrack].isConnected()) {
 								seq.moveSeqIndexEdit(deltaSeqKnob);
 								if (multiTracks) {
 									int newSeq = seq.getSeqIndexEdit();
 									for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 										if (trkn == activeTrack) continue;
-										if (!inputs[SEQCV_INPUTS + trkn].active) {
+										if (!inputs[SEQCV_INPUTS + trkn].isConnected()) {
 											seq.setSeqIndexEdit(newSeq, trkn);
 										}
 									}
@@ -758,7 +759,7 @@ struct Foundry : Module {
 		
 
 			// Phrase edit knob 
-			float phraseParamValue = params[PHRASE_PARAM].value;
+			float phraseParamValue = params[PHRASE_PARAM].getValue();
 			int newPhraseKnob = (int)roundf(phraseParamValue * 7.0f);
 			if (phraseParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				phraseKnob = newPhraseKnob;
@@ -800,7 +801,7 @@ struct Foundry : Module {
 	
 			// Octave buttons
 			for (int octn = 0; octn < 7; octn++) {
-				if (octTriggers[octn].process(params[OCTAVE_PARAM + octn].value)) {
+				if (octTriggers[octn].process(params[OCTAVE_PARAM + octn].getValue())) {
 					if (editingSequence) {
 						displayState = DISP_NORMAL;
 						if (seq.applyNewOctave(6 - octn, multiSteps ? cpSeqLength : 1, sampleRate, multiTracks))
@@ -811,10 +812,10 @@ struct Foundry : Module {
 			
 			// Keyboard buttons
 			for (int keyn = 0; keyn < 12; keyn++) {
-				if (keyTriggers[keyn].process(params[KEY_PARAMS + keyn].value)) {
+				if (keyTriggers[keyn].process(params[KEY_PARAMS + keyn].getValue())) {
 					if (editingSequence) {
 						displayState = DISP_NORMAL;
-						bool autostepClick = params[KEY_PARAMS + keyn].value > 1.5f;// if right-click
+						bool autostepClick = params[KEY_PARAMS + keyn].getValue() > 1.5f;// if right-click
 						if (isEditingGates()) {
 							if (!seq.setGateType(keyn, multiSteps ? cpSeqLength : 1, sampleRate, autostepClick, multiTracks))
 								displayState = DISP_PPQN;
@@ -828,13 +829,13 @@ struct Foundry : Module {
 			}
 			
 			// Gate, GateProb, Slide and Tied buttons
-			if (gate1Trigger.process(params[GATE_PARAM].value + inputs[GATECV_INPUT].value)) {
+			if (gate1Trigger.process(params[GATE_PARAM].getValue() + inputs[GATECV_INPUT].getVoltage())) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					seq.toggleGate(multiSteps ? cpSeqLength : 1, multiTracks);
 				}
 			}		
-			if (gateProbTrigger.process(params[GATE_PROB_PARAM].value + inputs[GATEPCV_INPUT].value)) {
+			if (gateProbTrigger.process(params[GATE_PROB_PARAM].getValue() + inputs[GATEPCV_INPUT].getVoltage())) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (seq.toggleGateP(multiSteps ? cpSeqLength : 1, multiTracks)) 
@@ -843,7 +844,7 @@ struct Foundry : Module {
 						velEditMode = 1;
 				}
 			}		
-			if (slideTrigger.process(params[SLIDE_BTN_PARAM].value + inputs[SLIDECV_INPUT].value)) {
+			if (slideTrigger.process(params[SLIDE_BTN_PARAM].getValue() + inputs[SLIDECV_INPUT].getVoltage())) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (seq.toggleSlide(multiSteps ? cpSeqLength : 1, multiTracks))
@@ -852,7 +853,7 @@ struct Foundry : Module {
 						velEditMode = 2;
 				}
 			}		
-			if (tiedTrigger.process(params[TIE_PARAM].value + inputs[TIEDCV_INPUT].value)) {
+			if (tiedTrigger.process(params[TIE_PARAM].getValue() + inputs[TIEDCV_INPUT].getVoltage())) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					seq.toggleTied(multiSteps ? cpSeqLength : 1, multiTracks);// will clear other attribs if new state is on
@@ -871,7 +872,7 @@ struct Foundry : Module {
 		if (running && clockIgnoreOnReset == 0l) {
 			bool clockTrigged[Sequencer::NUM_TRACKS];
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-				clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].value);
+				clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].getVoltage());
 				if (clockTrigged[clkInSources[trkn]]) {
 					seq.clockStep(trkn, editingSequence);
 				}
@@ -880,14 +881,14 @@ struct Foundry : Module {
 		}
 				
 		// Reset
-		if (resetTrigger.process(inputs[RESET_INPUT].value + params[RESET_PARAM].value)) {
+		if (resetTrigger.process(inputs[RESET_INPUT].getVoltage() + params[RESET_PARAM].getValue())) {
 			seq.initRun(editingSequence);
 			resetLight = 1.0f;
 			displayState = DISP_NORMAL;
 			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 				clockTriggers[trkn].reset();	
-				if (inputs[SEQCV_INPUTS + trkn].active && seqCVmethod == 2)
+				if (inputs[SEQCV_INPUTS + trkn].isConnected() && seqCVmethod == 2)
 					seq.setSeqIndexEdit(0, trkn);
 			}
 		}
@@ -900,10 +901,10 @@ struct Foundry : Module {
 		
 		// CV, gate and velocity outputs
 		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-			outputs[CV_OUTPUTS + trkn].value = seq.calcCvOutputAndDecSlideStepsRemain(trkn, running, editingSequence);
+			outputs[CV_OUTPUTS + trkn].setVoltage(seq.calcCvOutputAndDecSlideStepsRemain(trkn, running, editingSequence));
 			bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
-			outputs[GATE_OUTPUTS + trkn].value = seq.calcGateOutput(trkn, running && !retriggingOnReset, clockTriggers[clkInSources[trkn]], sampleRate);
-			outputs[VEL_OUTPUTS + trkn].value = seq.calcVelOutput(trkn, running && !retriggingOnReset, editingSequence) - (velocityBipol ? 5.0f : 0.0f);			
+			outputs[GATE_OUTPUTS + trkn].setVoltage(seq.calcGateOutput(trkn, running && !retriggingOnReset, clockTriggers[clkInSources[trkn]], sampleRate));
+			outputs[VEL_OUTPUTS + trkn].setVoltage(seq.calcVelOutput(trkn, running && !retriggingOnReset, editingSequence) - (velocityBipol ? 5.0f : 0.0f));			
 		}
 
 		// lights
@@ -957,7 +958,7 @@ struct Foundry : Module {
 					// Run cursor (green)
 					if (running) {
 						for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-							bool trknIsUsed = outputs[CV_OUTPUTS + trkn].active || outputs[GATE_OUTPUTS + trkn].active || outputs[VEL_OUTPUTS + trkn].active;
+							bool trknIsUsed = outputs[CV_OUTPUTS + trkn].isConnected() || outputs[GATE_OUTPUTS + trkn].isConnected() || outputs[VEL_OUTPUTS + trkn].isConnected();
 							if (stepn == seq.getStepIndexRun(trkn) && trknIsUsed) 
 								green = 0.1f;	
 						}
@@ -1073,7 +1074,7 @@ struct Foundry : Module {
 			
 			// Reset light
 			lights[RESET_LIGHT].value =	resetLight;
-			resetLight -= (resetLight / lightLambda) * engineGetSampleTime() * displayRefreshStepSkips;
+			resetLight -= (resetLight / lightLambda) * args.sampleTime * displayRefreshStepSkips;
 			
 			// Run light
 			lights[RUN_LIGHT].value = (running ? 1.0f : 0.0f);
@@ -1136,7 +1137,7 @@ struct Foundry : Module {
 	inline void calcClkInSources() {
 		// index 0 is always 0 so nothing to do for it
 		for (int trkn = 1; trkn < Sequencer::NUM_TRACKS; trkn++) {
-			if (inputs[CLOCK_INPUTS + trkn].active)
+			if (inputs[CLOCK_INPUTS + trkn].isConnected())
 				clkInSources[trkn] = trkn;
 			else 
 				clkInSources[trkn] = clkInSources[trkn - 1];
@@ -1172,25 +1173,25 @@ struct FoundryWidget : ModuleWidget {
 			box.size = _size;
 			box.pos = _pos.minus(_size.div(2));
 			module = _module;
-			font = Font::load(assetPlugin(plugin, "res/fonts/Segment14.ttf"));
+			font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Segment14.ttf"));
 		}
 		
-		void draw(NVGcontext *vg) override {
-			NVGcolor textColor = prepareDisplay(vg, &box, textFontSize);
-			nvgFontFaceId(vg, font->handle);
-			nvgTextLetterSpacing(vg, -0.4);
+		void draw(const DrawArgs &args) override {
+			NVGcolor textColor = prepareDisplay(args.vg, &box, textFontSize);
+			nvgFontFaceId(args.vg, font->handle);
+			nvgTextLetterSpacing(args.vg, -0.4);
 
 			Vec textPos = Vec(5.7f, textOffsetY);
-			nvgFillColor(vg, nvgTransRGBA(textColor, displayAlpha));
+			nvgFillColor(args.vg, nvgTransRGBA(textColor, displayAlpha));
 			std::string initString(NUMCHAR,'~');
-			nvgText(vg, textPos.x, textPos.y, initString.c_str(), NULL);
-			nvgFillColor(vg, textColor);
+			nvgText(args.vg, textPos.x, textPos.y, initString.c_str(), NULL);
+			nvgFillColor(args.vg, textColor);
 			char overlayChar = printText();
-			nvgText(vg, textPos.x, textPos.y, displayStr, NULL);
+			nvgText(args.vg, textPos.x, textPos.y, displayStr, NULL);
 			if (overlayChar != 0) {
 				displayStr[0] = overlayChar;
 				displayStr[1] = 0;
-				nvgText(vg, textPos.x, textPos.y, displayStr, NULL);
+				nvgText(args.vg, textPos.x, textPos.y, displayStr, NULL);
 			}
 		}
 		
@@ -1200,26 +1201,26 @@ struct FoundryWidget : ModuleWidget {
 	struct VelocityDisplayWidget : DisplayWidget<4> {
 		VelocityDisplayWidget(Vec _pos, Vec _size, Foundry *_module) : DisplayWidget(_pos, _size, _module) {};
 
-		void draw(NVGcontext *vg) override {
+		void draw(const DrawArgs &args) override {
 			static const float offsetXfrac = 3.5f;
-			NVGcolor textColor = prepareDisplay(vg, &box, textFontSize);
-			nvgFontFaceId(vg, font->handle);
-			nvgTextLetterSpacing(vg, -0.4);
+			NVGcolor textColor = prepareDisplay(args.vg, &box, textFontSize);
+			nvgFontFaceId(args.vg, font->handle);
+			nvgTextLetterSpacing(args.vg, -0.4);
 
 			Vec textPos = Vec(6.3f, textOffsetY);
 			char useRed = printText();
 			if (useRed == 1)
 				textColor = nvgRGB(0xE0, 0xD0, 0x30);
-			nvgFillColor(vg, nvgTransRGBA(textColor, displayAlpha));
-			nvgText(vg, textPos.x, textPos.y, "~", NULL);
+			nvgFillColor(args.vg, nvgTransRGBA(textColor, displayAlpha));
+			nvgText(args.vg, textPos.x, textPos.y, "~", NULL);
 			std::string initString(".~~");
-			nvgText(vg, textPos.x + offsetXfrac, textPos.y, initString.c_str(), NULL);
+			nvgText(args.vg, textPos.x + offsetXfrac, textPos.y, initString.c_str(), NULL);
 			if (useRed == 1)
 				textColor = nvgRGB(0xFF, 0x2C, 0x20);
-			nvgFillColor(vg, textColor);
-			nvgText(vg, textPos.x + offsetXfrac, textPos.y, &displayStr[1], NULL);
+			nvgFillColor(args.vg, textColor);
+			nvgText(args.vg, textPos.x + offsetXfrac, textPos.y, &displayStr[1], NULL);
 			displayStr[1] = 0;
-			nvgText(vg, textPos.x, textPos.y, displayStr, NULL);
+			nvgText(args.vg, textPos.x, textPos.y, displayStr, NULL);
 		}
 
 		char printText() override {
@@ -1412,7 +1413,7 @@ struct FoundryWidget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		Foundry *module;
 		int theme;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -1421,31 +1422,31 @@ struct FoundryWidget : ModuleWidget {
 	};
 	struct ExpansionItem : MenuItem {
 		Foundry *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->expansion = module->expansion == 1 ? 0 : 1;
 		}
 	};
 	struct ResetOnRunItem : MenuItem {
 		Foundry *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
 	struct AutoStepLenItem : MenuItem {
 		Foundry *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->autostepLen = !module->autostepLen;
 		}
 	};
 	struct AutoseqItem : MenuItem {
 		Foundry *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->autoseq = !module->autoseq;
 		}
 	};
 	struct SeqCVmethodItem : MenuItem {
 		Foundry *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->seqCVmethod++;
 			if (module->seqCVmethod > 2)
 				module->seqCVmethod = 0;
@@ -1461,7 +1462,7 @@ struct FoundryWidget : ModuleWidget {
 	};
 	struct VelModeItem : MenuItem {
 		Foundry *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->velocityMode++;
 			if (module->velocityMode > 2)
 				module->velocityMode = 0;
@@ -1477,13 +1478,13 @@ struct FoundryWidget : ModuleWidget {
 	};
 	struct VelBipolItem : MenuItem {
 		Foundry *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->velocityBipol = !module->velocityBipol;
 		}
 	};
 	struct HoldTiedItem : MenuItem {
 		Foundry *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->holdTiedNotes = !module->holdTiedNotes;
 		}
 	};
@@ -1645,7 +1646,7 @@ struct FoundryWidget : ModuleWidget {
 				else {// DISP_NORMAL
 					if (module->isEditingSequence()) {
 						for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-							if (!module->inputs[Foundry::SEQCV_INPUTS + trkn].active) {
+							if (!module->inputs[Foundry::SEQCV_INPUTS + trkn].isConnected()) {
 								if (module->multiTracks || (trkn == module->seq.getTrackIndexEdit())) {
 									module->seq.setSeqIndexEdit(0, trkn);
 								}
@@ -1698,29 +1699,30 @@ struct FoundryWidget : ModuleWidget {
 		}
 	};
 		
-	FoundryWidget(Foundry *module) : ModuleWidget(module) {
+	FoundryWidget(Foundry *module) {
+		setModule(module);
 		this->module = module;
 		oldExpansion = -1;
 		
 		// Main panel from Inkscape
         panel = new DynamicSVGPanel();
-        panel->mode = &module->panelTheme;
+        panel->mode = module ? &module->panelTheme : NULL;
 		panel->expWidth = &expWidth;
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/Foundry.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/Foundry_dark.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Foundry.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Foundry_dark.svg")));
         box.size = panel->box.size;
 		box.size.x = box.size.x - (1 - module->expansion) * expWidth;
         addChild(panel);
 		
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-expWidth + 15, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-expWidth + 15, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-expWidth + 15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-expWidth + 15, 365), module ? &module->panelTheme : NULL));
 
 		
 		
@@ -1753,7 +1755,7 @@ struct FoundryWidget : ModuleWidget {
 				posX += spacingSteps4;
 		}
 		// Sel button
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(columnRulerT1, rowRulerT0), module, Foundry::SEL_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(columnRulerT1, rowRulerT0), module, Foundry::SEL_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		
 		// Copy-paste and select mode switch (3 position)
 		addParam(createParamCentered<CPModeSwitch>(Vec(columnRulerT2, rowRulerT0), module, Foundry::CPMODE_PARAM, 0.0f, 2.0f, 0.0f));	// 0.0f is top position
@@ -1825,9 +1827,9 @@ struct FoundryWidget : ModuleWidget {
 		static const int trkButtonsOffsetX = 14;
 		addChild(new VelocityDisplayWidget(Vec(colRulerVel, rowRulerDisp), Vec(displayWidths + 4, displayHeights), module));// 3 characters
 		// Velocity knob
-		addParam(createDynamicParamCentered<VelocityKnob>(Vec(colRulerVel, rowRulerKnobs), module, Foundry::VEL_KNOB_PARAM, -INFINITY, INFINITY, 0.0f, &module->panelTheme));	
+		addParam(createDynamicParamCentered<VelocityKnob>(Vec(colRulerVel, rowRulerKnobs), module, Foundry::VEL_KNOB_PARAM, -INFINITY, INFINITY, 0.0f, module ? &module->panelTheme : NULL));	
 		// Veocity mode button and lights
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerVel - trkButtonsOffsetX - 2, rowRulerSmallButtons), module, Foundry::VEL_EDIT_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerVel - trkButtonsOffsetX - 2, rowRulerSmallButtons), module, Foundry::VEL_EDIT_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<MediumLight<GreenRedLight>>(Vec(colRulerVel + 4, rowRulerSmallButtons), module, Foundry::VEL_PROB_LIGHT));
 		addChild(createLightCentered<MediumLight<RedLight>>(Vec(colRulerVel + 20, rowRulerSmallButtons), module, Foundry::VEL_SLIDE_LIGHT));
 		
@@ -1836,36 +1838,36 @@ struct FoundryWidget : ModuleWidget {
 		static const int colRulerEditSeq = colRulerVel + displaySpacingX + 3;
 		addChild(new SeqEditDisplayWidget(Vec(colRulerEditSeq, rowRulerDisp), Vec(displayWidths, displayHeights), module));// 5 characters
 		// Sequence-edit knob
-		addParam(createDynamicParamCentered<SequenceKnob>(Vec(colRulerEditSeq, rowRulerKnobs), module, Foundry::SEQUENCE_PARAM, -INFINITY, INFINITY, 0.0f, &module->panelTheme));		
+		addParam(createDynamicParamCentered<SequenceKnob>(Vec(colRulerEditSeq, rowRulerKnobs), module, Foundry::SEQUENCE_PARAM, -INFINITY, INFINITY, 0.0f, module ? &module->panelTheme : NULL));		
 		// Transpose/rotate button
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerEditSeq, rowRulerSmallButtons), module, Foundry::TRAN_ROT_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerEditSeq, rowRulerSmallButtons), module, Foundry::TRAN_ROT_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 	
 			
 		// Phrase edit display 
 		static const int colRulerEditPhr = colRulerEditSeq + displaySpacingX + 1;
 		addChild(new PhrEditDisplayWidget(Vec(colRulerEditPhr, rowRulerDisp), Vec(displayWidths, displayHeights), module));// 5 characters
 		// Phrase knob
-		addParam(createDynamicParamCentered<PhraseKnob>(Vec(colRulerEditPhr, rowRulerKnobs), module, Foundry::PHRASE_PARAM, -INFINITY, INFINITY, 0.0f, &module->panelTheme));		
+		addParam(createDynamicParamCentered<PhraseKnob>(Vec(colRulerEditPhr, rowRulerKnobs), module, Foundry::PHRASE_PARAM, -INFINITY, INFINITY, 0.0f, module ? &module->panelTheme : NULL));		
 		// Begin/end buttons
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerEditPhr - trkButtonsOffsetX, rowRulerSmallButtons), module, Foundry::BEGIN_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerEditPhr + trkButtonsOffsetX, rowRulerSmallButtons), module, Foundry::END_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerEditPhr - trkButtonsOffsetX, rowRulerSmallButtons), module, Foundry::BEGIN_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerEditPhr + trkButtonsOffsetX, rowRulerSmallButtons), module, Foundry::END_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 
 				
 		// Track display
 		static const int colRulerTrk = colRulerEditPhr + displaySpacingX;
 		addChild(new TrackDisplayWidget(Vec(colRulerTrk, rowRulerDisp), Vec(displayWidths - 13, displayHeights), module));// 2 characters
 		// Track buttons
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerTrk + trkButtonsOffsetX, rowRulerKnobs), module, Foundry::TRACKUP_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerTrk - trkButtonsOffsetX, rowRulerKnobs), module, Foundry::TRACKDOWN_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerTrk + trkButtonsOffsetX, rowRulerKnobs), module, Foundry::TRACKUP_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerTrk - trkButtonsOffsetX, rowRulerKnobs), module, Foundry::TRACKDOWN_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		// AllTracks button
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerTrk, rowRulerSmallButtons - 12), module, Foundry::ALLTRACKS_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerTrk, rowRulerSmallButtons - 12), module, Foundry::ALLTRACKS_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		// Copy/paste buttons
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerTrk - trkButtonsOffsetX, rowRulerT0), module, Foundry::COPY_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerTrk + trkButtonsOffsetX, rowRulerT0), module, Foundry::PASTE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerTrk - trkButtonsOffsetX, rowRulerT0), module, Foundry::COPY_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerTrk + trkButtonsOffsetX, rowRulerT0), module, Foundry::PASTE_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 	
 	
 		// Attach button and light
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(columnRulerT5 - 10, rowRulerDisp + 14), module, Foundry::ATTACH_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(columnRulerT5 - 10, rowRulerDisp + 14), module, Foundry::ATTACH_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<MediumLight<RedLight>>(Vec(columnRulerT5 + 10, rowRulerDisp + 14), module, Foundry::ATTACH_LIGHT));
 	
 	
@@ -1882,23 +1884,23 @@ struct FoundryWidget : ModuleWidget {
 		
 		// Gate 1 light and button
 		addChild(createLightCentered<MediumLight<GreenRedLight>>(Vec(columnRulerMB1 + posLEDvsButton, rowRulerMB0), module, Foundry::GATE_LIGHT));		
-		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerMB1, rowRulerMB0), module, Foundry::GATE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerMB1, rowRulerMB0), module, Foundry::GATE_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		// Tie light and button
 		addChild(createLightCentered<MediumLight<RedLight>>(Vec(columnRulerMB2 + posLEDvsButton, rowRulerMB0), module, Foundry::TIE_LIGHT));		
-		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerMB2, rowRulerMB0), module, Foundry::TIE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerMB2, rowRulerMB0), module, Foundry::TIE_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		// Gate 1 probability light and button
 		addChild(createLightCentered<MediumLight<GreenRedLight>>(Vec(columnRulerMB3 + posLEDvsButton, rowRulerMB0), module, Foundry::GATE_PROB_LIGHT));		
-		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerMB3, rowRulerMB0), module, Foundry::GATE_PROB_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerMB3, rowRulerMB0), module, Foundry::GATE_PROB_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		
 		// Slide light and button
 		addChild(createLightCentered<MediumLight<RedLight>>(Vec(colRulerVel + posLEDvsButton, rowRulerMB0), module, Foundry::SLIDE_LIGHT));		
-		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(colRulerVel, rowRulerMB0), module, Foundry::SLIDE_BTN_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(colRulerVel, rowRulerMB0), module, Foundry::SLIDE_BTN_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		// Mode button
-		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(colRulerEditPhr, rowRulerMB0), module, Foundry::MODE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(colRulerEditPhr, rowRulerMB0), module, Foundry::MODE_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		// Rep/Len button
-		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(colRulerEditSeq, rowRulerMB0), module, Foundry::REP_LEN_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(colRulerEditSeq, rowRulerMB0), module, Foundry::REP_LEN_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		// Clk res
-		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(colRulerTrk, rowRulerMB0), module, Foundry::CLKRES_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(colRulerTrk, rowRulerMB0), module, Foundry::CLKRES_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		
 		// Reset and run LED buttons
 		static const int colRulerResetRun = columnRulerT5;
@@ -1935,49 +1937,49 @@ struct FoundryWidget : ModuleWidget {
 
 		// Autostep and write
 		addParam(createParamCentered<CKSSNoRandom>(Vec(columnRulerB0, rowRulerBHigh), module, Foundry::AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f));		
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB0, rowRulerBLow), true, module, Foundry::WRITE_INPUT, &module->panelTheme));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB0, rowRulerBLow), true, module, Foundry::WRITE_INPUT, module ? &module->panelTheme : NULL));
 	
 		// CV IN inputs
 		static const int writeLEDoffsetX = 16;
 		static const int writeLEDoffsetY = 18;
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB1, rowRulerBHigh), true, module, Foundry::CV_INPUTS + 0, &module->panelTheme));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB1, rowRulerBHigh), true, module, Foundry::CV_INPUTS + 0, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(columnRulerB1 + writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV_LIGHTS + 0));
 		
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB2, rowRulerBHigh), true, module, Foundry::CV_INPUTS + 2, &module->panelTheme));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB2, rowRulerBHigh), true, module, Foundry::CV_INPUTS + 2, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(columnRulerB2 - writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV_LIGHTS + 2));
 
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB1, rowRulerBLow), true, module, Foundry::CV_INPUTS + 1, &module->panelTheme));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB1, rowRulerBLow), true, module, Foundry::CV_INPUTS + 1, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(columnRulerB1 + writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV_LIGHTS + 1));
 
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB2, rowRulerBLow), true, module, Foundry::CV_INPUTS + 3, &module->panelTheme));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB2, rowRulerBLow), true, module, Foundry::CV_INPUTS + 3, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(columnRulerB2 - writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV_LIGHTS + 3));
 		
 		// Clock+CV+Gate+Vel outputs
 		// Track A
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB3, rowRulerBHigh), true, module, Foundry::CLOCK_INPUTS + 0, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB4, rowRulerBHigh), false, module, Foundry::CV_OUTPUTS + 0, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB5, rowRulerBHigh), false, module, Foundry::GATE_OUTPUTS + 0, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB6, rowRulerBHigh), false, module, Foundry::VEL_OUTPUTS + 0, &module->panelTheme));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB3, rowRulerBHigh), true, module, Foundry::CLOCK_INPUTS + 0, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB4, rowRulerBHigh), false, module, Foundry::CV_OUTPUTS + 0, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB5, rowRulerBHigh), false, module, Foundry::GATE_OUTPUTS + 0, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB6, rowRulerBHigh), false, module, Foundry::VEL_OUTPUTS + 0, module ? &module->panelTheme : NULL));
 		// Track C
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB7, rowRulerBHigh), true, module, Foundry::CLOCK_INPUTS + 2, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB8, rowRulerBHigh), false, module, Foundry::CV_OUTPUTS + 2, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB9, rowRulerBHigh), false, module, Foundry::GATE_OUTPUTS + 2, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB10, rowRulerBHigh), false, module, Foundry::VEL_OUTPUTS + 2, &module->panelTheme));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB7, rowRulerBHigh), true, module, Foundry::CLOCK_INPUTS + 2, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB8, rowRulerBHigh), false, module, Foundry::CV_OUTPUTS + 2, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB9, rowRulerBHigh), false, module, Foundry::GATE_OUTPUTS + 2, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB10, rowRulerBHigh), false, module, Foundry::VEL_OUTPUTS + 2, module ? &module->panelTheme : NULL));
 		//
 		// Track B
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB3, rowRulerBLow), true, module, Foundry::CLOCK_INPUTS + 1, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB4, rowRulerBLow), false, module, Foundry::CV_OUTPUTS + 1, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB5, rowRulerBLow), false, module, Foundry::GATE_OUTPUTS + 1, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB6, rowRulerBLow), false, module, Foundry::VEL_OUTPUTS + 1, &module->panelTheme));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB3, rowRulerBLow), true, module, Foundry::CLOCK_INPUTS + 1, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB4, rowRulerBLow), false, module, Foundry::CV_OUTPUTS + 1, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB5, rowRulerBLow), false, module, Foundry::GATE_OUTPUTS + 1, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB6, rowRulerBLow), false, module, Foundry::VEL_OUTPUTS + 1, module ? &module->panelTheme : NULL));
 		// Track D
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB7, rowRulerBLow), true, module, Foundry::CLOCK_INPUTS + 3, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB8, rowRulerBLow), false, module, Foundry::CV_OUTPUTS + 3, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB9, rowRulerBLow), false, module, Foundry::GATE_OUTPUTS + 3, &module->panelTheme));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB10, rowRulerBLow), false, module, Foundry::VEL_OUTPUTS + 3, &module->panelTheme));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB7, rowRulerBLow), true, module, Foundry::CLOCK_INPUTS + 3, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB8, rowRulerBLow), false, module, Foundry::CV_OUTPUTS + 3, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB9, rowRulerBLow), false, module, Foundry::GATE_OUTPUTS + 3, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerB10, rowRulerBLow), false, module, Foundry::VEL_OUTPUTS + 3, module ? &module->panelTheme : NULL));
 
 		// Run and reset inputs
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB11, rowRulerBHigh), true, module, Foundry::RUNCV_INPUT, &module->panelTheme));
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB11, rowRulerBLow), true, module, Foundry::RESET_INPUT, &module->panelTheme));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB11, rowRulerBHigh), true, module, Foundry::RUNCV_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerB11, rowRulerBLow), true, module, Foundry::RESET_INPUT, module ? &module->panelTheme : NULL));
 		
 		
 		
@@ -1988,52 +1990,52 @@ struct FoundryWidget : ModuleWidget {
 		static const int se = -10;
 		
 		// Seq A,B and track row
-		addInput(expPorts[0] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 4 + 2*se), true, module, Foundry::SEQCV_INPUTS + 0, &module->panelTheme));
+		addInput(expPorts[0] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 4 + 2*se), true, module, Foundry::SEQCV_INPUTS + 0, module ? &module->panelTheme : NULL));
 
-		addInput(expPorts[1] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 4 + 2*se), true, module, Foundry::SEQCV_INPUTS + 2, &module->panelTheme));
+		addInput(expPorts[1] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 4 + 2*se), true, module, Foundry::SEQCV_INPUTS + 2, module ? &module->panelTheme : NULL));
 		
-		addInput(expPorts[2] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 4 + 2*se), true, module, Foundry::TRKCV_INPUT, &module->panelTheme));
+		addInput(expPorts[2] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 4 + 2*se), true, module, Foundry::TRKCV_INPUT, module ? &module->panelTheme : NULL));
 		
 		// Seq C,D and write source cv 
-		addInput(expPorts[3] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 3 + 2*se), true, module, Foundry::SEQCV_INPUTS + 1, &module->panelTheme));
+		addInput(expPorts[3] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 3 + 2*se), true, module, Foundry::SEQCV_INPUTS + 1, module ? &module->panelTheme : NULL));
 
-		addInput(expPorts[4] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 3 + 2*se), true, module, Foundry::SEQCV_INPUTS + 3, &module->panelTheme));
+		addInput(expPorts[4] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 3 + 2*se), true, module, Foundry::SEQCV_INPUTS + 3, module ? &module->panelTheme : NULL));
 
 		addParam(createParamCentered<CKSSNotify>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 3 + 2*se), module, Foundry::SYNC_SEQCV_PARAM, 0.0f, 1.0f, 0.0f));// 1.0f is top position
 
 		
 		// Gate, tied, slide
-		addInput(expPorts[5] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 2 + se), true, module, Foundry::GATECV_INPUT, &module->panelTheme));
-		addInput(expPorts[6] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 2 + se), true, module, Foundry::TIEDCV_INPUT, &module->panelTheme));
-		addInput(expPorts[7] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 2 + se), true, module, Foundry::SLIDECV_INPUT, &module->panelTheme));
+		addInput(expPorts[5] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 2 + se), true, module, Foundry::GATECV_INPUT, module ? &module->panelTheme : NULL));
+		addInput(expPorts[6] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 2 + se), true, module, Foundry::TIEDCV_INPUT, module ? &module->panelTheme : NULL));
+		addInput(expPorts[7] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 2 + se), true, module, Foundry::SLIDECV_INPUT, module ? &module->panelTheme : NULL));
 
 		// GateP, left, right
-		addInput(expPorts[8] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 1 + se), true, module, Foundry::GATEPCV_INPUT, &module->panelTheme));
-		addInput(expPorts[9] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 1 + se), true, module, Foundry::LEFTCV_INPUT, &module->panelTheme));
-		addInput(expPorts[10] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 1 + se), true, module, Foundry::RIGHTCV_INPUT, &module->panelTheme));
+		addInput(expPorts[8] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 1 + se), true, module, Foundry::GATEPCV_INPUT, module ? &module->panelTheme : NULL));
+		addInput(expPorts[9] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 1 + se), true, module, Foundry::LEFTCV_INPUT, module ? &module->panelTheme : NULL));
+		addInput(expPorts[10] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 1 + se), true, module, Foundry::RIGHTCV_INPUT, module ? &module->panelTheme : NULL));
 	
 		
 		// before-last row
-		addInput(expPorts[11] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh), true, module, Foundry::VEL_INPUTS + 0, &module->panelTheme));
+		addInput(expPorts[11] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh), true, module, Foundry::VEL_INPUTS + 0, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - colOffsetX + writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 0));
 		
-		addInput(expPorts[12] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh), true, module, Foundry::VEL_INPUTS + 2, &module->panelTheme));
+		addInput(expPorts[12] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh), true, module, Foundry::VEL_INPUTS + 2, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 2));
 
-		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerExp + colOffsetX, rowRulerBHigh + 18), module, Foundry::WRITEMODE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerExp + colOffsetX, rowRulerBHigh + 18), module, Foundry::WRITEMODE_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp + colOffsetX - 12, rowRulerBHigh + 3), module, Foundry::WRITE_SEL_LIGHTS + 0));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp + colOffsetX + 12, rowRulerBHigh + 3), module, Foundry::WRITE_SEL_LIGHTS + 1));
 		
 		
 		
 		// last row
-		addInput(expPorts[13] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBLow), true, module, Foundry::VEL_INPUTS + 1, &module->panelTheme));
+		addInput(expPorts[13] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBLow), true, module, Foundry::VEL_INPUTS + 1, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - colOffsetX + writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 1));
 
-		addInput(expPorts[14] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBLow), true, module, Foundry::VEL_INPUTS + 3, &module->panelTheme));
+		addInput(expPorts[14] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBLow), true, module, Foundry::VEL_INPUTS + 3, module ? &module->panelTheme : NULL));
 		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 3));
 		
-		addInput(expPorts[15] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBLow), true, module, Foundry::WRITE_SRC_INPUT, &module->panelTheme));
+		addInput(expPorts[15] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBLow), true, module, Foundry::WRITE_SRC_INPUT, module ? &module->panelTheme : NULL));
 	}
 };
 

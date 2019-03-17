@@ -12,7 +12,7 @@ LDFLAGS +=
 
 # Add .cpp files to the build
 #SOURCES += $(wildcard src/*.cpp)
-SOURCES += src/IMWidgets.cpp  src/ImpromptuModular.cpp src/BlankPanel.cpp
+SOURCES += src/IMWidgets.cpp src/ImpromptuModular.cpp src/BlankPanel.cpp src/TwelveKey.cpp
 
 # Add files to the ZIP package when running `make dist`
 # The compiled plugin and "plugin.json" are automatically added.

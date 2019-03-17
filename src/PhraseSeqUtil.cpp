@@ -20,7 +20,7 @@ int getAdvGate(int ppqnCount, int pulsesPerStep, int gateMode) {
 
 int calcGate1Code(StepAttributes attribute, int ppqnCount, int pulsesPerStep, float randKnob) {
 	// -1 = gate off for whole step, 0 = gate off for current ppqn, 1 = gate on, 2 = clock high, 3 = trigger
-	if (ppqnCount == 0 && attribute.getGate1P() && !(randomUniform() < randKnob))// randomUniform is [0.0, 1.0), see include/util/common.hpp
+	if (ppqnCount == 0 && attribute.getGate1P() && !(random::uniform() < randKnob))// random::uniform is [0.0, 1.0), see include/util/common.hpp
 		return -1;// must do this first in this method since it will kill rest of step if prob turns off the step
 	if (!attribute.getGate1())
 		return 0;
@@ -117,7 +117,7 @@ bool moveIndexRunMode(int* index, int numSteps, int runMode, unsigned long* hist
 		case MODE_BRN :// brownian random; history base is 0x5000
 			if ((*history) < 0x5001 || (*history) > 0x5FFF) 
 				(*history) = 0x5000 + numSteps * reps;
-			(*index) += (randomu32() % 3) - 1;
+			(*index) += (random::u32() % 3) - 1;
 			if ((*index) >= numSteps) {
 				(*index) = 0;
 			}
@@ -134,7 +134,7 @@ bool moveIndexRunMode(int* index, int numSteps, int runMode, unsigned long* hist
 		case MODE_RN2 :
 			if ((*history) < 0x6001 || (*history) > 0x6FFF) 
 				(*history) = 0x6000 + numSteps * reps;
-			(*index) = (randomu32() % numSteps) ;
+			(*index) = (random::u32() % numSteps) ;
 			(*history)--;
 			if ((*history) <= 0x6000) {
 				crossBoundary = true;

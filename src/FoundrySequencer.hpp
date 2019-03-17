@@ -248,7 +248,7 @@ class Sequencer {
 
 	void clockStep(int trkn, bool editingSequence);
 	
-	inline void step() {
+	inline void process(const ProcessArgs &args) {
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
 			sek[trkn].step();
 	}

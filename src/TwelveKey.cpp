@@ -61,22 +61,41 @@ struct TwelveKey : Module {
 	Trigger octDecTrigger;
 	
 
-	TwelveKey() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	TwelveKey() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		
+		params[KEY_PARAMS + 1].config(0.0, 1.0, 0.0, "C# key");
+		params[KEY_PARAMS + 3].config(0.0, 1.0, 0.0, "D# key");
+		params[KEY_PARAMS + 6].config(0.0, 1.0, 0.0, "F# key");
+		params[KEY_PARAMS + 8].config(0.0, 1.0, 0.0, "G# key");
+		params[KEY_PARAMS + 10].config(0.0, 1.0, 0.0, "A# key");
+
+		params[KEY_PARAMS + 0].config(0.0, 1.0, 0.0, "C key");
+		params[KEY_PARAMS + 2].config(0.0, 1.0, 0.0, "D key");
+		params[KEY_PARAMS + 4].config(0.0, 1.0, 0.0, "E key");
+		params[KEY_PARAMS + 5].config(0.0, 1.0, 0.0, "F key");
+		params[KEY_PARAMS + 7].config(0.0, 1.0, 0.0, "G key");
+		params[KEY_PARAMS + 9].config(0.0, 1.0, 0.0, "A key");
+		params[KEY_PARAMS + 11].config(0.0, 1.0, 0.0, "B key");
+
+		params[OCTDEC_PARAM].config(0.0, 1.0, 0.0, "Oct down");
+		params[OCTINC_PARAM].config(0.0, 1.0, 0.0, "Oct up");
+		
 		onReset();
 	}
 
 	void onReset() override {
 		octaveNum = 4;
 		cv = 0.0f;
-		stateInternal = inputs[GATE_INPUT].active ? false : true;
+		stateInternal = inputs[GATE_INPUT].isConnected() ? false : true;
 		noteLightCounter = 0ul;
 		lastKeyPressed = 0;
 	}
 
 	void onRandomize() override {
-		octaveNum = randomu32() % 10;
-		cv = ((float)(octaveNum - 4)) + ((float)(randomu32() % 12)) / 12.0f;
-		stateInternal = inputs[GATE_INPUT].active ? false : true;
+		octaveNum = random::u32() % 10;
+		cv = ((float)(octaveNum - 4)) + ((float)(random::u32() % 12)) / 12.0f;
+		stateInternal = inputs[GATE_INPUT].isConnected() ? false : true;
 		noteLightCounter = 0ul;
 		lastKeyPressed = 0;
 	}
@@ -122,7 +141,7 @@ struct TwelveKey : Module {
 	}
 
 	
-	void step() override {		
+	void process(const ProcessArgs &args) override {		
 		static const float noteLightTime = 0.5f;// seconds
 		
 		//********** Buttons, knobs, switches and inputs **********
@@ -133,15 +152,15 @@ struct TwelveKey : Module {
 		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
 		
 			// Octave buttons and input
-			upOctTrig = octIncTrigger.process(params[OCTINC_PARAM].value);
-			downOctTrig = octDecTrigger.process(params[OCTDEC_PARAM].value);
+			upOctTrig = octIncTrigger.process(params[OCTINC_PARAM].getValue());
+			downOctTrig = octDecTrigger.process(params[OCTDEC_PARAM].getValue());
 				
 			// Keyboard buttons and gate input
 			for (int i = 0; i < 12; i++) {
-				if (keyTriggers[i].process(params[KEY_PARAMS + i].value)) {
+				if (keyTriggers[i].process(params[KEY_PARAMS + i].getValue())) {
 					cv = ((float)(octaveNum - 4)) + ((float) i) / 12.0f;
 					stateInternal = true;
-					noteLightCounter = (unsigned long) (noteLightTime * engineGetSampleRate() / displayRefreshStepSkips);
+					noteLightCounter = (unsigned long) (noteLightTime * args.sampleRate / displayRefreshStepSkips);
 					lastKeyPressed = i;
 				}
 			}
@@ -149,8 +168,8 @@ struct TwelveKey : Module {
 		}// userInputs refresh
 		
 		
-		if (inputs[OCT_INPUT].active)
-			octaveNum = ((int) floor(inputs[OCT_INPUT].value));
+		if (inputs[OCT_INPUT].isConnected())
+			octaveNum = ((int) floor(inputs[OCT_INPUT].getVoltage()));
 		else if (upOctTrig)
 			octaveNum++;
 		else if (downOctTrig)
@@ -158,8 +177,8 @@ struct TwelveKey : Module {
 		if (octaveNum > 9) octaveNum = 9;
 		if (octaveNum < 0) octaveNum = 0;
 		
-		if (gateInputTrigger.process(inputs[GATE_INPUT].value)) {// no input refresh here, don't want propagation lag in long 12-key chain
-			cv = inputs[CV_INPUT].value;			
+		if (gateInputTrigger.process(inputs[GATE_INPUT].getVoltage())) {// no input refresh here, don't want propagation lag in long 12-key chain
+			cv = inputs[CV_INPUT].getVoltage();			
 			stateInternal = false;
 		}
 		
@@ -167,18 +186,18 @@ struct TwelveKey : Module {
 		//********** Outputs and lights **********
 		
 		// cv output
-		outputs[CV_OUTPUT].value = cv;
+		outputs[CV_OUTPUT].setVoltage(cv);
 		
 		// gate output
 		if (stateInternal == false) {// if receiving a key from left chain
-			outputs[GATE_OUTPUT].value = inputs[GATE_INPUT].value;
+			outputs[GATE_OUTPUT].setVoltage(inputs[GATE_INPUT].getVoltage());
 		}
 		else {// key from this
-			outputs[GATE_OUTPUT].value = (params[KEY_PARAMS + lastKeyPressed].value > 0.5f) ? 10.0f : 0.0f;
+			outputs[GATE_OUTPUT].setVoltage((params[KEY_PARAMS + lastKeyPressed].getValue() > 0.5f) ? 10.0f : 0.0f);
 		}
 		
 		// Octave output
-		outputs[OCT_OUTPUT].value = round( (float)(octaveNum + 1) );
+		outputs[OCT_OUTPUT].setVoltage(round( (float)(octaveNum + 1) ));
 		
 		lightRefreshCounter++;
 		if (lightRefreshCounter >= displayRefreshStepSkips) {
@@ -186,7 +205,7 @@ struct TwelveKey : Module {
 
 			// Key lights
 			for (int i = 0; i < 12; i++)
-				lights[KEY_LIGHTS + i].value = (( i == lastKeyPressed && (noteLightCounter > 0ul || params[KEY_PARAMS + i].value > 0.5f)) ? 1.0f : 0.0f);
+				lights[KEY_LIGHTS + i].value = (( i == lastKeyPressed && (noteLightCounter > 0ul || params[KEY_PARAMS + i].getValue() > 0.5f)) ? 1.0f : 0.0f);
 			
 			if (noteLightCounter > 0ul)
 				noteLightCounter--;
@@ -202,22 +221,22 @@ struct TwelveKeyWidget : ModuleWidget {
 		std::shared_ptr<Font> font;
 		
 		OctaveNumDisplayWidget() {
-			font = Font::load(assetPlugin(plugin, "res/fonts/Segment14.ttf"));
+			font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Segment14.ttf"));
 		}
 
-		void draw(NVGcontext *vg) override {
-			NVGcolor textColor = prepareDisplay(vg, &box, 18);
-			nvgFontFaceId(vg, font->handle);
-			//nvgTextLetterSpacing(vg, 2.5);
+		void draw(const DrawArgs &args) override {
+			NVGcolor textColor = prepareDisplay(args.vg, &box, 18);
+			nvgFontFaceId(args.vg, font->handle);
+			//nvgTextLetterSpacing(args.vg, 2.5);
 
 			Vec textPos = Vec(6, 24);
-			nvgFillColor(vg, nvgTransRGBA(textColor, displayAlpha));
-			nvgText(vg, textPos.x, textPos.y, "~", NULL);
-			nvgFillColor(vg, textColor);
+			nvgFillColor(args.vg, nvgTransRGBA(textColor, displayAlpha));
+			nvgText(args.vg, textPos.x, textPos.y, "~", NULL);
+			nvgFillColor(args.vg, textColor);
 			char displayStr[2];
-			displayStr[0] = 0x30 + (char) *octaveNum;
+			displayStr[0] = 0x30 + (char) (octaveNum != NULL ? *octaveNum : 4);
 			displayStr[1] = 0;
-			nvgText(vg, textPos.x, textPos.y, displayStr, NULL);
+			nvgText(args.vg, textPos.x, textPos.y, displayStr, NULL);
 		}
 	};
 	
@@ -225,7 +244,7 @@ struct TwelveKeyWidget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		TwelveKey *module;
 		int theme;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -257,20 +276,22 @@ struct TwelveKeyWidget : ModuleWidget {
 	}	
 	
 	
-	TwelveKeyWidget(TwelveKey *module) : ModuleWidget(module) {
+	TwelveKeyWidget(TwelveKey *module) {
+		setModule(module);
+		
 		// Main panel from Inkscape
         DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/TwelveKey.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/TwelveKey_dark.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/TwelveKey.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/TwelveKey_dark.svg")));
         box.size = panel->box.size;
-        panel->mode = &module->panelTheme;
+        panel->mode = module ? &module->panelTheme : NULL;
         addChild(panel);
 
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 
 
 
@@ -280,31 +301,31 @@ struct TwelveKeyWidget : ModuleWidget {
 		static const int offsetKeyLEDy = 41;
 
 		// Black keys
-		addParam(createParam<InvisibleKey>(Vec(30, 40), module, TwelveKey::KEY_PARAMS + 1, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(30, 40), module, TwelveKey::KEY_PARAMS + 1));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(30+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 1));
-		addParam(createParam<InvisibleKey>(Vec(71, 40), module, TwelveKey::KEY_PARAMS + 3, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(71, 40), module, TwelveKey::KEY_PARAMS + 3));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(71+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 3));
-		addParam(createParam<InvisibleKey>(Vec(154, 40), module, TwelveKey::KEY_PARAMS + 6, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(154, 40), module, TwelveKey::KEY_PARAMS + 6));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(154+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 6));
-		addParam(createParam<InvisibleKey>(Vec(195, 40), module, TwelveKey::KEY_PARAMS + 8, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(195, 40), module, TwelveKey::KEY_PARAMS + 8));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(195+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 8));
-		addParam(createParam<InvisibleKey>(Vec(236, 40), module, TwelveKey::KEY_PARAMS + 10, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(236, 40), module, TwelveKey::KEY_PARAMS + 10));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(236+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 10));
 
 		// White keys
-		addParam(createParam<InvisibleKey>(Vec(10, 112), module, TwelveKey::KEY_PARAMS + 0, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(10, 112), module, TwelveKey::KEY_PARAMS + 0));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(10+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 0));
-		addParam(createParam<InvisibleKey>(Vec(51, 112), module, TwelveKey::KEY_PARAMS + 2, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(51, 112), module, TwelveKey::KEY_PARAMS + 2));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(51+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 2));
-		addParam(createParam<InvisibleKey>(Vec(92, 112), module, TwelveKey::KEY_PARAMS + 4, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(92, 112), module, TwelveKey::KEY_PARAMS + 4));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(92+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 4));
-		addParam(createParam<InvisibleKey>(Vec(133, 112), module, TwelveKey::KEY_PARAMS + 5, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(133, 112), module, TwelveKey::KEY_PARAMS + 5));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(133+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 5));
-		addParam(createParam<InvisibleKey>(Vec(174, 112), module, TwelveKey::KEY_PARAMS + 7, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(174, 112), module, TwelveKey::KEY_PARAMS + 7));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(174+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 7));
-		addParam(createParam<InvisibleKey>(Vec(215, 112), module, TwelveKey::KEY_PARAMS + 9, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(215, 112), module, TwelveKey::KEY_PARAMS + 9));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(215+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 9));
-		addParam(createParam<InvisibleKey>(Vec(256, 112), module, TwelveKey::KEY_PARAMS + 11, 0.0, 1.0, 0.0));
+		addParam(createParam<InvisibleKey>(Vec(256, 112), module, TwelveKey::KEY_PARAMS + 11));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(256+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 11));
 		
 		
@@ -324,9 +345,9 @@ struct TwelveKeyWidget : ModuleWidget {
 		// Left side inputs
 		
 		
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler0), true, module, TwelveKey::CV_INPUT, &module->panelTheme));
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler1), true, module, TwelveKey::GATE_INPUT, &module->panelTheme));
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler2), true, module, TwelveKey::OCT_INPUT, &module->panelTheme));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler0), true, module, TwelveKey::CV_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler1), true, module, TwelveKey::GATE_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler2), true, module, TwelveKey::OCT_INPUT, module ? &module->panelTheme : NULL));
 
 		// Middle
 		// Press LED (moved other controls below up by 16 px when removed, to better center)
@@ -335,17 +356,17 @@ struct TwelveKeyWidget : ModuleWidget {
 		OctaveNumDisplayWidget *octaveNumDisplay = new OctaveNumDisplayWidget();
 		octaveNumDisplay->box.pos = Vec(columnRulerM + 2, rowRuler1 - 27 + vOffsetDisplay);
 		octaveNumDisplay->box.size = Vec(24, 30);// 1 character
-		octaveNumDisplay->octaveNum = &module->octaveNum;
+		octaveNumDisplay->octaveNum = module ? &module->octaveNum : NULL;
 		addChild(octaveNumDisplay);
 		
 		// Octave buttons
-		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRulerM - 20 + offsetCKD6b, rowRuler2 - 26 + offsetCKD6b), module, TwelveKey::OCTDEC_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
-		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRulerM + 22 + offsetCKD6b, rowRuler2 - 26 + offsetCKD6b), module, TwelveKey::OCTINC_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRulerM - 20 + offsetCKD6b, rowRuler2 - 26 + offsetCKD6b), module, TwelveKey::OCTDEC_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRulerM + 22 + offsetCKD6b, rowRuler2 - 26 + offsetCKD6b), module, TwelveKey::OCTINC_PARAM, module ? &module->panelTheme : NULL));
 		
 		// Right side outputs
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler0), false, module, TwelveKey::CV_OUTPUT, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler1), false, module, TwelveKey::GATE_OUTPUT, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler2), false, module, TwelveKey::OCT_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler0), false, module, TwelveKey::CV_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler1), false, module, TwelveKey::GATE_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler2), false, module, TwelveKey::OCT_OUTPUT, module ? &module->panelTheme : NULL));
 	}
 };
 

@@ -8,12 +8,13 @@
 
 struct BlankPanel : Module {
 
-	int panelTheme = 1;
-
-
-	BlankPanel() : Module(0, 0, 0, 0) {
+	BlankPanel() {
+		config(0, 0, 0, 0);
 		onReset();
 	}
+
+	int panelTheme = 1;
+	
 
 	void onReset() override {
 	}
@@ -38,8 +39,8 @@ struct BlankPanel : Module {
 	}
 
 	
-	// Advances the module by 1 audio frame with duration 1.0 / engineGetSampleRate()
-	void step() override {		
+	// Advances the module by 1 audio frame with duration 1.0 / args.sampleRate
+	void process(const ProcessArgs &args) override {		
 	}
 };
 
@@ -49,7 +50,7 @@ struct BlankPanelWidget : ModuleWidget {
 	// struct PanelThemeItem : MenuItem {
 		// BlankPanel *module;
 		// int theme;
-		// void onAction(EventAction &e) override {
+		// void onAction(const widget::ActionEvent &e) override {
 			// module->panelTheme = theme;
 		// }
 		// void step() override {
@@ -58,7 +59,6 @@ struct BlankPanelWidget : ModuleWidget {
 	// };
 
 	void appendContextMenu(Menu *menu) override {
-
 		BlankPanel *module = dynamic_cast<BlankPanel*>(this->module);
 		assert(module);
 
@@ -83,21 +83,23 @@ struct BlankPanelWidget : ModuleWidget {
 	}	
 
 
-	BlankPanelWidget(BlankPanel *module) : ModuleWidget(module) {
+	BlankPanelWidget(BlankPanel *module) {
+		setModule(module);
+		
 		// Main panel from Inkscape
         DynamicSVGPanel *panel = new DynamicSVGPanel();
-        //panel->addPanel(APP->window->loadSvg(asset::plugin(plugin, "res/light/BlankPanel.svg")));
+        //panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/BlankPanel.svg")));
         panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BlankPanel_dark.svg")));
         box.size = panel->box.size;
-        //panel->mode = &module->panelTheme;
+        //panel->mode = module ? &module->panelTheme : NULL;
         addChild(panel);
 
 
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 		
 	}
 };

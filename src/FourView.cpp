@@ -40,7 +40,8 @@ struct FourView : Module {
 	}
 	
 	
-	FourView() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	FourView() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		onReset();
 	}
 	
@@ -78,9 +79,9 @@ struct FourView : Module {
 	}
 
 	
-	void step() override {
+	void process(const ProcessArgs &args) override {
 		for (int i = 0; i < 4; i++)
-			outputs[CV_OUTPUTS + i].value = inputs[CV_INPUTS + i].value;
+			outputs[CV_OUTPUTS + i].setVoltage(inputs[CV_INPUTS + i].getVoltage());
 	}
 };
 
@@ -99,30 +100,30 @@ struct FourViewWidget : ModuleWidget {
 			box.pos = _pos.minus(_size.div(2));
 			module = _module;
 			baseIndex = _baseIndex;
-			font = Font::load(assetPlugin(plugin, "res/fonts/Segment14.ttf"));
+			font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Segment14.ttf"));
 		}
 		
 		void cvToStr(int index2) {
-			if (module->inputs[FourView::CV_INPUTS + baseIndex + index2].active) {
-				float cvVal = module->inputs[FourView::CV_INPUTS + baseIndex + index2].value;
+			if (module->inputs[FourView::CV_INPUTS + baseIndex + index2].isConnected()) {
+				float cvVal = module->inputs[FourView::CV_INPUTS + baseIndex + index2].getVoltage();
 				printNote(cvVal, text, module->showSharp);
 			}
 			else
 				snprintf(text, 4," - ");
 		}
 
-		void draw(NVGcontext *vg) override {
-			NVGcolor textColor = prepareDisplay(vg, &box, 17);
-			nvgFontFaceId(vg, font->handle);
-			nvgTextLetterSpacing(vg, -1.5);
+		void draw(const DrawArgs &args) override {
+			NVGcolor textColor = prepareDisplay(args.vg, &box, 17);
+			nvgFontFaceId(args.vg, font->handle);
+			nvgTextLetterSpacing(args.vg, -1.5);
 
 			for (int i = 0; i < 2; i++) {
 				Vec textPos = Vec(7.0f + i * 46.0f, 23.4f);
-				nvgFillColor(vg, nvgTransRGBA(textColor, displayAlpha));
-				nvgText(vg, textPos.x, textPos.y, "~~~", NULL);
-				nvgFillColor(vg, textColor);
+				nvgFillColor(args.vg, nvgTransRGBA(textColor, displayAlpha));
+				nvgText(args.vg, textPos.x, textPos.y, "~~~", NULL);
+				nvgFillColor(args.vg, textColor);
 				cvToStr(i);
-				nvgText(vg, textPos.x, textPos.y, text, NULL);
+				nvgText(args.vg, textPos.x, textPos.y, text, NULL);
 			}
 		}
 	};
@@ -131,7 +132,7 @@ struct FourViewWidget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		FourView *module;
 		int theme;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -140,7 +141,7 @@ struct FourViewWidget : ModuleWidget {
 	};
 	struct SharpItem : MenuItem {
 		FourView *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->showSharp = !module->showSharp;
 		}
 	};
@@ -179,22 +180,23 @@ struct FourViewWidget : ModuleWidget {
 	}	
 	
 	
-	FourViewWidget(FourView *module) : ModuleWidget(module) {
+	FourViewWidget(FourView *module) {
+		setModule(module);
 		this->module = module;
 		
 		// Main panel from Inkscape
         DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/FourView.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/FourView_dark.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/FourView.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/FourView_dark.svg")));
         box.size = panel->box.size;
-        panel->mode = &module->panelTheme;
+        panel->mode = module ? &module->panelTheme : NULL;
         addChild(panel);
 
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 
 		const int centerX = box.size.x / 2;
 
@@ -209,8 +211,8 @@ struct FourViewWidget : ModuleWidget {
 		static const int portOffsetX = 28;
 		
 		for (int i = 0; i < 4; i++) {
-			addInput(createDynamicPortCentered<IMPort>(Vec(centerX - portOffsetX, rowRulerPort + i * portSpacingY), true, module, FourView::CV_INPUTS + i, &module->panelTheme));	
-			addOutput(createDynamicPortCentered<IMPort>(Vec(centerX + portOffsetX, rowRulerPort + i * portSpacingY), false, module, FourView::CV_OUTPUTS + i, &module->panelTheme));
+			addInput(createDynamicPortCentered<IMPort>(Vec(centerX - portOffsetX, rowRulerPort + i * portSpacingY), true, module, FourView::CV_INPUTS + i, module ? &module->panelTheme : NULL));	
+			addOutput(createDynamicPortCentered<IMPort>(Vec(centerX + portOffsetX, rowRulerPort + i * portSpacingY), false, module, FourView::CV_OUTPUTS + i, module ? &module->panelTheme : NULL));
 		}
 	}
 };

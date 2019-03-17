@@ -11,7 +11,7 @@
 #define IMPROMPU_MODULAR_HPP
 
 
-#include "rack0.hpp"
+#include "rack.hpp"
 #include "IMWidgets.hpp"
 
 using namespace rack;
@@ -23,7 +23,7 @@ extern Plugin *pluginInstance;
 // All modules that are part of pluginInstance go here
 // extern Model *modelTact;
 // extern Model *modelTact1;
-// extern Model *modelTwelveKey;
+extern Model *modelTwelveKey;
 // extern Model *modelClocked;
 // extern Model *modelFoundry;
 // extern Model *modelGateSeq64;
@@ -82,7 +82,7 @@ static const int offsetTrimpot = 3;//does both h and v
 
 struct IMScrew : DynamicSVGScrew {
 	IMScrew() {
-		//addSVGalt(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/ScrewSilver.svg")));
+		addSVGalt(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/ScrewSilver.svg")));
 	}
 };
 
@@ -266,14 +266,14 @@ struct IMSixPosBigKnob : IMBigSnapKnob {
 
 struct OrangeLight : GrayModuleLightWidget {
 	OrangeLight() {
-		addBaseColor(COLOR_ORANGE);
+		addBaseColor(SCHEME_ORANGE);
 	}
 };
 struct GreenRedWhiteLight : GrayModuleLightWidget {
 	GreenRedWhiteLight() {
-		addBaseColor(COLOR_GREEN);
-		addBaseColor(COLOR_RED);
-		addBaseColor(COLOR_WHITE);
+		addBaseColor(SCHEME_GREEN);
+		addBaseColor(SCHEME_RED);
+		addBaseColor(SCHEME_WHITE);
 	}
 };
 
@@ -331,16 +331,11 @@ struct ScrewSilverRandomRot : FramebufferWidget {// location: include/app.hpp an
 	ScrewSilverRandomRot();
 };
 
-struct ScrewHole : TransparentWidget {
-	ScrewHole(Vec posGiven);
-	void draw(NVGcontext *vg) override;
-};	
-
 
 
 // Other
 
-struct Trigger : SchmittTrigger {
+struct Trigger : dsp::SchmittTrigger {
 	// implements a 0.1V - 1.0V SchmittTrigger (include/dsp/digital.hpp) instead of 
 	//   calling SchmittTriggerInstance.process(math::rescale(in, 0.1f, 1.f, 0.f, 1.f))
 	bool process(float in) {

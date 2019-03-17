@@ -9,7 +9,7 @@
 #define IM_WIDGETS_HPP
 
 
-#include "rack0.hpp"
+#include "rack.hpp"
 //#include "window.hpp"
 
 using namespace rack;
@@ -43,7 +43,7 @@ struct DynamicSVGScrew : widget::FramebufferWidget {
     widget::SvgWidget* swAlt;
 	
     DynamicSVGScrew();
-    //void addSVGalt(std::shared_ptr<Svg> svg);
+    void addSVGalt(std::shared_ptr<Svg> svg);
     void step() override;
 };
 
@@ -52,7 +52,7 @@ struct DynamicSVGScrew : widget::FramebufferWidget {
 // Dynamic SVGPanel
 
 struct PanelBorderWidget : widget::TransparentWidget { // from app/SvgPanel.hpp
-	int** expWidth = nullptr;
+	int** expWidth = NULL;
 	void draw(const DrawArgs &args) override;
 };
 
@@ -111,16 +111,16 @@ struct DynamicSVGPort : SvgPort {
 
 // General Dynamic Param creation
 template <class TDynamicParam>
-TDynamicParam* createDynamicParam(Vec pos, Module *module, int paramId, float minValue, float maxValue, float defaultValue,
+TDynamicParam* createDynamicParam(Vec pos, Module *module, int paramId,
                                                int* mode) {
-	TDynamicParam *dynParam = createParam<TDynamicParam>(pos, module, paramId, minValue, maxValue, defaultValue);
+	TDynamicParam *dynParam = createParam<TDynamicParam>(pos, module, paramId);
 	dynParam->mode = mode;
 	return dynParam;
 }
 template <class TDynamicParam>
-TDynamicParam* createDynamicParamCentered(Vec pos, Module *module, int paramId, float minValue, float maxValue, float defaultValue,
+TDynamicParam* createDynamicParamCentered(Vec pos, Module *module, int paramId,
                                                int* mode) {
-	TDynamicParam *dynParam = createParam<TDynamicParam>(pos, module, paramId, minValue, maxValue, defaultValue);
+	TDynamicParam *dynParam = createParam<TDynamicParam>(pos, module, paramId);
 	dynParam->mode = mode;
 	dynParam->box.pos = dynParam->box.pos.minus(dynParam->box.size.div(2));// centering
 	return dynParam;
@@ -177,7 +177,7 @@ struct DynamicIMTactile : ParamWidget, widget::FramebufferWidget {
 	static const int padWidthWide = padWidth * 2 + padInterSpace;
 	
 	DynamicIMTactile();
-	void step() override;
+	void process(const ProcessArgs &args) override;
 	//void onDragStart(EventDragStart &e) override; // TODO
 	//void onDragMove(EventDragMove &e) override; // TODO	
 	

@@ -32,7 +32,7 @@ class StepAttributes {
 
 	inline void clear() {attributes = 0ul;}
 	inline void init() {attributes = ATT_MSK_INITSTATE;}
-	inline void randomize() {attributes = ( (randomu32() & (ATT_MSK_GATE | ATT_MSK_GATEP | ATT_MSK_SLIDE /*| ATT_MSK_TIED*/)) | ((randomu32() % 101) << gatePValShift) | ((randomu32() % 101) << slideValShift) | (randomu32() % (MAX_VELOCITY + 1)) ) ;}
+	inline void randomize() {attributes = ( (random::u32() & (ATT_MSK_GATE | ATT_MSK_GATEP | ATT_MSK_SLIDE /*| ATT_MSK_TIED*/)) | ((random::u32() % 101) << gatePValShift) | ((random::u32() % 101) << slideValShift) | (random::u32() % (MAX_VELOCITY + 1)) ) ;}
 	
 	inline bool getGate() {return (attributes & ATT_MSK_GATE) != 0;}
 	inline int getGateType() {return (int)((attributes & ATT_MSK_GATETYPE) >> gateTypeShift);}
@@ -75,7 +75,7 @@ class Phrase {
 	static const unsigned long PHR_MSK_REPS =   0xFF00, repShift = 8;// a rep is 0 to 99
 	
 	inline void init() {phrase = (1 << repShift);}
-	inline void randomize(int maxSeqs) {phrase = ((randomu32() % maxSeqs) | ((randomu32() % 4 + 1) << repShift));}
+	inline void randomize(int maxSeqs) {phrase = ((random::u32() % maxSeqs) | ((random::u32() % 4 + 1) << repShift));}
 	
 	inline int getSeqNum() {return (int)(phrase & PHR_MSK_SEQNUM);}
 	inline int getReps() {return (int)((phrase & PHR_MSK_REPS) >> repShift);}
@@ -103,7 +103,7 @@ class SeqAttributes {
 	static const unsigned long SEQ_MSK_ROTSIGN =   0x80000000;// manually implement sign bit (+ is right, - is left)
 	
 	inline void init(int length, int runMode) {attributes = ((length) | (((unsigned long)runMode) << runModeShift));}
-	inline void randomize(int maxSteps, int numModes) {attributes = ( (1 + (randomu32() % maxSteps)) | (((unsigned long)(randomu32() % numModes) << runModeShift)) );}
+	inline void randomize(int maxSteps, int numModes) {attributes = ( (1 + (random::u32() % maxSteps)) | (((unsigned long)(random::u32() % numModes) << runModeShift)) );}
 	
 	inline int getLength() {return (int)(attributes & SEQ_MSK_LENGTH);}
 	inline int getRunMode() {return (int)((attributes & SEQ_MSK_RUNMODE) >> runModeShift);}
@@ -365,7 +365,7 @@ class SequencerKernel {
 	void dataFromJson(json_t *rootJ);
 	void initRun(bool editingSequence);
 	bool clockStep(bool editingSequence, int delayedSeqNumberRequest);
-	inline void step() {
+	inline void process(const ProcessArgs &args) {
 		clockPeriod++;
 	}
 	int keyIndexToGateTypeEx(int keyIndex);

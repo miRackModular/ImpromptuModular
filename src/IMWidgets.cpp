@@ -34,14 +34,14 @@ void ScrewCircle::draw(const DrawArgs &args) {
 }
 
 DynamicSVGScrew::DynamicSVGScrew() {
-    mode = nullptr;
+    mode = NULL;
     oldMode = -1;
  
 	
 	// for random rotated screw used in primary mode (code copied from ImpromptuModular.cpp ScrewSilverRandomRot::ScrewSilverRandomRot())
 	// **********
 	float angle0_90 = random::uniform()*M_PI/2.0f;
-	//float angle0_90 = randomUniform() > 0.5f ? M_PI/4.0f : 0.0f;// for testing
+	//float angle0_90 = random::uniform() > 0.5f ? M_PI/4.0f : 0.0f;// for testing
 	
 	tw = new TransformWidget();
 	addChild(tw);
@@ -66,23 +66,18 @@ DynamicSVGScrew::DynamicSVGScrew() {
 	// for fixed svg screw used in alternate mode
 	// **********
 	swAlt = new widget::SvgWidget();
-	swAlt->setSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/ScrewSilver.svg")));// TODO remove this line
 	swAlt->visible = false;
     addChild(swAlt);
 }
 
-/*void DynamicSVGScrew::addSVGalt(std::shared_ptr<Svg> svg) {
+void DynamicSVGScrew::addSVGalt(std::shared_ptr<Svg> svg) {
     if(!swAlt->svg) {
         swAlt->setSvg(svg);
     }
-}*/
+}
 
-void DynamicSVGScrew::step() { // all code except middle if() from SvgPanel::step() in app/SvgPanel.cpp
-	if (math::isNear(APP->window->pixelRatio, 1.0)) {
-		// Small details draw poorly at low DPI, so oversample when drawing to the framebuffer
-		oversample = 2.0;
-	}
-    if(mode != nullptr && *mode != oldMode) {
+void DynamicSVGScrew::step() {
+    if(mode != NULL && *mode != oldMode) {
         if ((*mode) == 0) {
 			sw->visible = true;
 			swAlt->visible = false;
@@ -108,7 +103,7 @@ void PanelBorderWidget::draw(const DrawArgs &args) {  // first 6 lines were copi
     nvgStrokeColor(args.vg, borderColor);
     nvgStrokeWidth(args.vg, 1.0);
     nvgStroke(args.vg);
-	if (expWidth != nullptr && *expWidth != nullptr) {// add expansion division when pannel uses expansion area
+	if (expWidth != NULL && *expWidth != NULL) {// add expansion division when pannel uses expansion area
 		int expW = **expWidth;
 		nvgBeginPath(args.vg);
 		nvgMoveTo(args.vg, box.size.x - expW, 1);
@@ -119,9 +114,9 @@ void PanelBorderWidget::draw(const DrawArgs &args) {  // first 6 lines were copi
 }
 
 DynamicSVGPanel::DynamicSVGPanel() {
-    mode = nullptr;
+    mode = NULL;
     oldMode = -1;
-	expWidth = nullptr;
+	expWidth = NULL;
     visiblePanel = new widget::SvgWidget();
     addChild(visiblePanel);
     border = new PanelBorderWidget();
@@ -141,12 +136,8 @@ void DynamicSVGPanel::dupPanel() {
     panels.push_back(panels[panels.size() - 1]);
 }
 
-void DynamicSVGPanel::step() { // all code except middle if() from SvgPanel::step() in app/SvgPanel.cpp
-	if (math::isNear(APP->window->pixelRatio, 1.0)) {
-		// Small details draw poorly at low DPI, so oversample when drawing to the framebuffer
-		oversample = 2.0;
-	}
-    if(mode != nullptr && *mode != oldMode) {
+void DynamicSVGPanel::step() { 
+    if(mode != NULL && *mode != oldMode) {
         visiblePanel->setSvg(panels[*mode]);
         oldMode = *mode;
         dirty = true;
@@ -159,7 +150,7 @@ void DynamicSVGPanel::step() { // all code except middle if() from SvgPanel::ste
 // Dynamic SVGPort
 
 DynamicSVGPort::DynamicSVGPort() {
-    mode = nullptr;
+    mode = NULL;
     oldMode = -1;
 	//SvgPort constructor automatically called
 }
@@ -171,10 +162,10 @@ void DynamicSVGPort::addFrame(std::shared_ptr<Svg> svg) {
 }
 
 void DynamicSVGPort::step() {
-    if(mode != nullptr && *mode != oldMode) {
+    if(mode != NULL && *mode != oldMode) {
         sw->setSvg(frames[std::min(*mode, (int)(frames.size() - 1))]);
         oldMode = *mode;
-        //dirty = true;
+        fb->dirty = true;
     }
 	PortWidget::step();
 }
@@ -184,7 +175,7 @@ void DynamicSVGPort::step() {
 // Dynamic SVGSwitch
 
 DynamicSVGSwitch::DynamicSVGSwitch() {
-    mode = nullptr;
+    mode = NULL;
     oldMode = -1;
 	//SvgSwitch constructor automatically called
 }
@@ -198,7 +189,7 @@ void DynamicSVGSwitch::addFrameAll(std::shared_ptr<Svg> svg) {
 }
 
 void DynamicSVGSwitch::step() {
-    if(mode != nullptr && *mode != oldMode) {
+    if(mode != NULL && *mode != oldMode) {
         if ((*mode) == 0) {
 			frames[0]=framesAll[0];
 			frames[1]=framesAll[1];
@@ -209,8 +200,9 @@ void DynamicSVGSwitch::step() {
 		}
         oldMode = *mode;
 		onChange(*(new widget::ChangeEvent()));// required because of the way SVGSwitch changes images, we only change the frames above.
-		//dirty = true;// dirty is not sufficient when changing via frames assignments above (i.e. onChange() is required)
+		fb->dirty = true;// dirty is not sufficient when changing via frames assignments above (i.e. onChange() is required)
     }
+	SvgSwitch::step();
 }
 
 
@@ -218,7 +210,7 @@ void DynamicSVGSwitch::step() {
 // Dynamic SVGKnob
 
 DynamicSVGKnob::DynamicSVGKnob() {
-    mode = nullptr;
+    mode = NULL;
     oldMode = -1;
 	effect = new widget::SvgWidget();
 	//SvgKnob constructor automatically called
@@ -237,7 +229,7 @@ void DynamicSVGKnob::addEffect(std::shared_ptr<Svg> svg) {
 }
 
 void DynamicSVGKnob::step() {
-    if(mode != nullptr && *mode != oldMode) {
+    if(mode != NULL && *mode != oldMode) {
         if ((*mode) == 0) {
 			setSvg(framesAll[0]);
 			effect->visible = false;
@@ -247,7 +239,7 @@ void DynamicSVGKnob::step() {
 			effect->visible = true;
 		}
         oldMode = *mode;
-		// dirty = true;
+		fb->dirty = true;
     }
 	SvgKnob::step();
 }
@@ -265,7 +257,7 @@ DynamicIMTactile::DynamicIMTactile() {
 	box.size = Vec(padWidth, padHeight);
 }
 
-void DynamicIMTactile::step() {
+void DynamicIMTactile::process(const ProcessArgs &args) {
    if(wider != nullptr && *wider != oldWider) {
         if ((*wider) > 0.5f) {
 			box.size = Vec(padWidthWide, padHeight);

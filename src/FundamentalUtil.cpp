@@ -65,7 +65,7 @@ void VoltageControlledOscillator::process(float deltaTime, float syncValue) {
 		// Adjust pitch slew
 		if (++pitchSlewIndex > 32) {
 			const float pitchSlewTau = 100.0f; // Time constant for leaky integrator in seconds
-			pitchSlew += (randomNormal() - pitchSlew / pitchSlewTau) * engineGetSampleTime();
+			pitchSlew += (random::normal() - pitchSlew / pitchSlewTau) * args.sampleTime;
 			pitchSlewIndex = 0;
 		}
 	}

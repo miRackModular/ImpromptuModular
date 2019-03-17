@@ -67,11 +67,12 @@ struct Tact : Module {
 	PulseGenerator eocPulses[2];
 	
 	
-	inline bool isLinked(void) {return params[LINK_PARAM].value > 0.5f;}
-	inline bool isExpSliding(void) {return params[EXP_PARAM].value > 0.5f;}
+	inline bool isLinked(void) {return params[LINK_PARAM].getValue() > 0.5f;}
+	inline bool isExpSliding(void) {return params[EXP_PARAM].getValue() > 0.5f;}
 
 	
-	Tact() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	Tact() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		onReset();
 	}
 
@@ -89,7 +90,7 @@ struct Tact : Module {
 	
 	void onRandomize() override {
 		for (int i = 0; i < 2; i++) {
-			cv[i] = clamp(params[TACT_PARAMS + i].value, 0.0f, 10.0f);
+			cv[i] = clamp(params[TACT_PARAMS + i].getValue(), 0.0f, 10.0f);
 		}
 	}
 
@@ -153,16 +154,16 @@ struct Tact : Module {
 	}
 
 	
-	void step() override {		
-		float sampleRate = engineGetSampleRate();
-		float sampleTime = engineGetSampleTime();
+	void process(const ProcessArgs &args) override {		
+		float sampleRate = args.sampleRate;
+		float sampleTime = args.sampleTime;
 		static const float storeInfoTime = 0.5f;// seconds	
 	
 		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
 		
 			// store buttons
 			for (int i = 0; i < 2; i++) {
-				if (storeTriggers[i].process(params[STORE_PARAMS + i].value)) {
+				if (storeTriggers[i].process(params[STORE_PARAMS + i].getValue())) {
 					if ( !(i == 1 && isLinked()) ) {// ignore right channel store-button press when linked
 						storeCV[i] = cv[i];
 						infoStore = (long) (storeInfoTime * sampleRate / displayRefreshStepSkips) * (i == 0 ? 1l : -1l);
@@ -172,35 +173,35 @@ struct Tact : Module {
 			
 			// top/bot/recall CV inputs
 			for (int i = 0; i < 2; i++) {
-				if (topTriggers[i].process(inputs[TOP_INPUTS + i].value)) {
+				if (topTriggers[i].process(inputs[TOP_INPUTS + i].getVoltage())) {
 					if ( !(i == 1 && isLinked()) ) {// ignore right channel top cv in when linked
 						paramReadRequest[i] = 10.0f;
 						infoCVinLight[i] = 1.0f;
 					}
 				}
-				if (botTriggers[i].process(inputs[BOT_INPUTS + i].value)) {
+				if (botTriggers[i].process(inputs[BOT_INPUTS + i].getVoltage())) {
 					if ( !(i == 1 && isLinked()) ) {// ignore right channel bot cv in when linked
 						paramReadRequest[i] = 0.0f;
 						infoCVinLight[i] = 1.0f;
 					}				
 				}
-				if (topInvTriggers[i].process(1.0f - inputs[TOP_INPUTS + i].value)) {
+				if (topInvTriggers[i].process(1.0f - inputs[TOP_INPUTS + i].getVoltage())) {
 					if ( levelSensitiveTopBot && !(i == 1 && isLinked()) ) {// ignore right channel top cv in when linked
 						paramReadRequest[i] = cv[i];
 						infoCVinLight[i] = 1.0f;
 					}
 				}
-				if (botInvTriggers[i].process(1.0f - inputs[BOT_INPUTS + i].value)) {
+				if (botInvTriggers[i].process(1.0f - inputs[BOT_INPUTS + i].getVoltage())) {
 					if ( levelSensitiveTopBot && !(i == 1 && isLinked()) ) {// ignore right channel bot cv in when linked
 						paramReadRequest[i] = cv[i];
 						infoCVinLight[i] = 1.0f;
 					}				
 				}
-				if (recallTriggers[i].process(inputs[RECALL_INPUTS + i].value)) {// ignore right channel recall cv in when linked
+				if (recallTriggers[i].process(inputs[RECALL_INPUTS + i].getVoltage())) {// ignore right channel recall cv in when linked
 					if ( !(i == 1 && isLinked()) ) {
 						//tactWidgets[i]->changeValue(storeCV[i]);
 						paramReadRequest[i] = storeCV[i];
-						if (params[SLIDE_PARAMS + i].value < 0.5f) //if no slide
+						if (params[SLIDE_PARAMS + i].getValue() < 0.5f) //if no slide
 							cv[i]=storeCV[i];
 						infoCVinLight[i] = 1.0f;
 					}				
@@ -215,9 +216,9 @@ struct Tact : Module {
 		for (int i = 0; i < 2; i++) {
 			if (paramReadRequest[i] != -10.0f)
 				continue;			
-			float newParamValue = clamp(params[TACT_PARAMS + i].value, 0.0f, 10.0f);
+			float newParamValue = clamp(params[TACT_PARAMS + i].getValue(), 0.0f, 10.0f);
 			if (newParamValue != cv[i]) {
-				double transitionRate = params[RATE_PARAMS + i].value * rateMultiplier; // s/V
+				double transitionRate = params[RATE_PARAMS + i].getValue() * rateMultiplier; // s/V
 				double dt = sampleTime;
 				if ((newParamValue - cv[i]) > 0.001f && transitionRate > 0.001) {
 					double dV = expSliding ? (cv[i] + 1.0) * (pow(11.0, dt / (10.0 * transitionRate)) - 1.0) : dt/transitionRate;
@@ -253,8 +254,8 @@ struct Tact : Module {
 		bool eocValues[2] = {eocPulses[0].process((float)sampleTime), eocPulses[1].process((float)sampleTime)};
 		for (int i = 0; i < 2; i++) {
 			int readChan = isLinked() ? 0 : i;
-			outputs[CV_OUTPUTS + i].value = (float)cv[readChan] * params[ATTV_PARAMS + readChan].value;
-			outputs[EOC_OUTPUTS + i].value = eocValues[readChan];
+			outputs[CV_OUTPUTS + i].setVoltage((float)cv[readChan] * params[ATTV_PARAMS + readChan].getValue());
+			outputs[EOC_OUTPUTS + i].setVoltage(eocValues[readChan]);
 		}
 		
 		
@@ -287,7 +288,7 @@ struct Tact : Module {
 		}
 		
 		if (isLinked()) {
-			cv[1] = clamp(params[TACT_PARAMS + 1].value, 0.0f, 10.0f);
+			cv[1] = clamp(params[TACT_PARAMS + 1].getValue(), 0.0f, 10.0f);
 		}
 	}
 	
@@ -320,7 +321,7 @@ struct TactWidget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		Tact *module;
 		int theme;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -329,7 +330,7 @@ struct TactWidget : ModuleWidget {
 	};
 	struct ExtendRateItem : MenuItem {
 		Tact *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			if (module->rateMultiplier < 2.0f)
 				module->rateMultiplier = 3.0f;
 			else
@@ -338,7 +339,7 @@ struct TactWidget : ModuleWidget {
 	};
 	struct LevelSensitiveItem : MenuItem {
 		Tact *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->levelSensitiveTopBot = !module->levelSensitiveTopBot;
 		}
 	};
@@ -380,20 +381,21 @@ struct TactWidget : ModuleWidget {
 		menu->addChild(levelSensItem);
 	}	
 	
-	TactWidget(Tact *module) : ModuleWidget(module) {
+	TactWidget(Tact *module) {
+		setModule(module);
 		// Main panel from Inkscape
         DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/Tact.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/Tact_dark.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Tact.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Tact_dark.svg")));
         box.size = panel->box.size;
-        panel->mode = &module->panelTheme;
+        panel->mode = module ? &module->panelTheme : NULL;
         addChild(panel);
 
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 		
 		
 		static const int rowRuler0 = 34;
@@ -404,7 +406,7 @@ struct TactWidget : ModuleWidget {
 		// Right (no dynamic width, but must do first so that left will get mouse events when wider overlaps)
 		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1, -1.0f, 11.0f, 0.0f, nullptr, &module->paramReadRequest[1]));
 		// Left (with width dependant on Link value)	
-		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0, -1.0f, 11.0f, 0.0f,  &module->params[Tact::LINK_PARAM].value, &module->paramReadRequest[0]));
+		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0, -1.0f, 11.0f, 0.0f,  &module->params[Tact::LINK_PARAM].getValue(), &module->paramReadRequest[0]));
 			
 
 			
@@ -426,8 +428,8 @@ struct TactWidget : ModuleWidget {
 		static const int colRulerC3R = colRulerCenter + 101;
 		
 		// Recall CV inputs
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC3L, rowRuler2), true, module, Tact::RECALL_INPUTS + 0, &module->panelTheme));		
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC3R, rowRuler2), true, module, Tact::RECALL_INPUTS + 1, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC3L, rowRuler2), true, module, Tact::RECALL_INPUTS + 0, module ? &module->panelTheme : NULL));		
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC3R, rowRuler2), true, module, Tact::RECALL_INPUTS + 1, module ? &module->panelTheme : NULL));		
 		
 
 		static const int rowRuler1d = rowRuler2 - 54;
@@ -440,22 +442,22 @@ struct TactWidget : ModuleWidget {
 		static const int rowRuler1c = rowRuler1d - 46;
 
 		// Store buttons
-		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3L + offsetTL1105, rowRuler1c + offsetTL1105), module, Tact::STORE_PARAMS + 0, 0.0f, 1.0f, 0.0f, &module->panelTheme));
-		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3R + offsetTL1105, rowRuler1c + offsetTL1105), module, Tact::STORE_PARAMS + 1, 0.0f, 1.0f, 0.0f, &module->panelTheme));
+		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3L + offsetTL1105, rowRuler1c + offsetTL1105), module, Tact::STORE_PARAMS + 0, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3R + offsetTL1105, rowRuler1c + offsetTL1105), module, Tact::STORE_PARAMS + 1, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
 		
 		
 		static const int rowRuler1b = rowRuler1c - 59;
 		
 		// Attv knobs
-		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3L + offsetIMSmallKnob, rowRuler1b + offsetIMSmallKnob), module, Tact::ATTV_PARAMS + 0, -1.0f, 1.0f, 1.0f, &module->panelTheme));
-		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3R + offsetIMSmallKnob, rowRuler1b + offsetIMSmallKnob), module, Tact::ATTV_PARAMS + 1, -1.0f, 1.0f, 1.0f, &module->panelTheme));
+		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3L + offsetIMSmallKnob, rowRuler1b + offsetIMSmallKnob), module, Tact::ATTV_PARAMS + 0, -1.0f, 1.0f, 1.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3R + offsetIMSmallKnob, rowRuler1b + offsetIMSmallKnob), module, Tact::ATTV_PARAMS + 1, -1.0f, 1.0f, 1.0f, module ? &module->panelTheme : NULL));
 
 		
 		static const int rowRuler1a = rowRuler1b - 59;
 		
 		// Rate knobs
-		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3L + offsetIMSmallKnob, rowRuler1a + offsetIMSmallKnob), module, Tact::RATE_PARAMS + 0, 0.0f, 4.0f, 0.2f, &module->panelTheme));
-		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3R + offsetIMSmallKnob, rowRuler1a + offsetIMSmallKnob), module, Tact::RATE_PARAMS + 1, 0.0f, 4.0f, 0.2f, &module->panelTheme));
+		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3L + offsetIMSmallKnob, rowRuler1a + offsetIMSmallKnob), module, Tact::RATE_PARAMS + 0, 0.0f, 4.0f, 0.2f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3R + offsetIMSmallKnob, rowRuler1a + offsetIMSmallKnob), module, Tact::RATE_PARAMS + 1, 0.0f, 4.0f, 0.2f, module ? &module->panelTheme : NULL));
 		
 
 		static const int colRulerC1L = colRulerCenter - 30 - 1;
@@ -467,10 +469,10 @@ struct TactWidget : ModuleWidget {
 		addParam(createParam<CKSS>(Vec(colRulerCenter + hOffsetCKSS, rowRuler2 + vOffsetCKSS), module, Tact::EXP_PARAM, 0.0f, 1.0f, 0.0f));		
 
 		// Top/bot CV Inputs
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC2L, rowRuler2), true, module, Tact::TOP_INPUTS + 0, &module->panelTheme));		
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC1L, rowRuler2), true, module, Tact::BOT_INPUTS + 0, &module->panelTheme));		
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC1R, rowRuler2), true, module, Tact::BOT_INPUTS + 1, &module->panelTheme));	
-		addInput(createDynamicPort<IMPort>(Vec(colRulerC2R, rowRuler2), true, module, Tact::TOP_INPUTS + 1, &module->panelTheme));		
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC2L, rowRuler2), true, module, Tact::TOP_INPUTS + 0, module ? &module->panelTheme : NULL));		
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC1L, rowRuler2), true, module, Tact::BOT_INPUTS + 0, module ? &module->panelTheme : NULL));		
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC1R, rowRuler2), true, module, Tact::BOT_INPUTS + 1, module ? &module->panelTheme : NULL));	
+		addInput(createDynamicPort<IMPort>(Vec(colRulerC2R, rowRuler2), true, module, Tact::TOP_INPUTS + 1, module ? &module->panelTheme : NULL));		
 
 		
 		static const int rowRuler3 = rowRuler2 + 54;
@@ -479,12 +481,12 @@ struct TactWidget : ModuleWidget {
 		addParam(createParam<CKSS>(Vec(colRulerCenter + hOffsetCKSS, rowRuler3 + vOffsetCKSS), module, Tact::LINK_PARAM, 0.0f, 1.0f, 0.0f));		
 
 		// Outputs
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter - 49 - 1, rowRuler3), false, module, Tact::CV_OUTPUTS + 0, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter + 49, rowRuler3), false, module, Tact::CV_OUTPUTS + 1, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter - 49 - 1, rowRuler3), false, module, Tact::CV_OUTPUTS + 0, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter + 49, rowRuler3), false, module, Tact::CV_OUTPUTS + 1, module ? &module->panelTheme : NULL));
 		
 		// EOC
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter - 89 - 1, rowRuler3), false, module, Tact::EOC_OUTPUTS + 0, &module->panelTheme));
-		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter + 89, rowRuler3), false, module, Tact::EOC_OUTPUTS + 1, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter - 89 - 1, rowRuler3), false, module, Tact::EOC_OUTPUTS + 0, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter + 89, rowRuler3), false, module, Tact::EOC_OUTPUTS + 1, module ? &module->panelTheme : NULL));
 
 		
 		// Lights
@@ -527,10 +529,11 @@ struct Tact1 : Module {
 	// No need to save
 	unsigned int lightRefreshCounter = 0;	
 	
-	inline bool isExpSliding(void) {return params[EXP_PARAM].value > 0.5f;}
+	inline bool isExpSliding(void) {return params[EXP_PARAM].getValue() > 0.5f;}
 
 	
-	Tact1() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	Tact1() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		onReset();
 	}
 
@@ -542,7 +545,7 @@ struct Tact1 : Module {
 
 	
 	void onRandomize() override {
-		cv = clamp(params[TACT_PARAM].value, 0.0f, 10.0f);
+		cv = clamp(params[TACT_PARAM].getValue(), 0.0f, 10.0f);
 	}
 
 	
@@ -581,14 +584,14 @@ struct Tact1 : Module {
 	}
 
 	
-	void step() override {		
-		float sampleTime = engineGetSampleTime();
+	void process(const ProcessArgs &args) override {		
+		float sampleTime = args.sampleTime;
 		
 		// cv
 		bool expSliding = isExpSliding();
-		float newParamValue = clamp(params[TACT_PARAM].value, 0.0f, 10.0f);
+		float newParamValue = clamp(params[TACT_PARAM].getValue(), 0.0f, 10.0f);
 		if (newParamValue != cv) {
-			double transitionRate = params[RATE_PARAM].value * rateMultiplier; // s/V
+			double transitionRate = params[RATE_PARAM].getValue() * rateMultiplier; // s/V
 			double dt = sampleTime;
 			if ((newParamValue - cv) > 0.001f && transitionRate > 0.001) {
 				double dV = expSliding ? (cv + 1.0) * (pow(11.0, dt / (10.0 * transitionRate)) - 1.0) : dt/transitionRate;
@@ -614,7 +617,7 @@ struct Tact1 : Module {
 		
 	
 		// CV Output
-		outputs[CV_OUTPUT].value = (float)cv * params[ATTV_PARAM].value;
+		outputs[CV_OUTPUT].setVoltage((float)cv * params[ATTV_PARAM].getValue());
 		
 		
 		lightRefreshCounter++;
@@ -642,7 +645,7 @@ struct Tact1Widget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		Tact1 *module;
 		int theme;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -651,7 +654,7 @@ struct Tact1Widget : ModuleWidget {
 	};
 	struct ExtendRateItem : MenuItem {
 		Tact1 *module;
-		void onAction(EventAction &e) override {
+		void onAction(const widget::ActionEvent &e) override {
 			if (module->rateMultiplier < 2.0f)
 				module->rateMultiplier = 3.0f;
 			else
@@ -692,20 +695,21 @@ struct Tact1Widget : ModuleWidget {
 		menu->addChild(extRateItem);
 	}	
 	
-	Tact1Widget(Tact1 *module) : ModuleWidget(module) {
+	Tact1Widget(Tact1 *module) {
+		setModule(module);
 		// Main panel from Inkscape
         DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/Tact1.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/Tact1_dark.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Tact1.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Tact1_dark.svg")));
         box.size = panel->box.size;
-        panel->mode = &module->panelTheme;
+        panel->mode = module ? &module->panelTheme : NULL;
         addChild(panel);
 
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 		
 		
 		static const int rowRuler0 = 42;
@@ -726,13 +730,13 @@ struct Tact1Widget : ModuleWidget {
 		static const int rowRuler2 = 275;// rate and exp
 		static const int offsetFromSide2 = 25;
 		// Rate knob
-		addParam(createDynamicParamCentered<IMSmallKnob>(Vec(offsetFromSide2, rowRuler2), module, Tact1::RATE_PARAM, 0.0f, 4.0f, 0.2f, &module->panelTheme));
-		addParam(createDynamicParamCentered<IMSmallKnob>(Vec(box.size.x - offsetFromSide2, rowRuler2), module, Tact1::ATTV_PARAM, -1.0f, 1.0f, 1.0f, &module->panelTheme));
+		addParam(createDynamicParamCentered<IMSmallKnob>(Vec(offsetFromSide2, rowRuler2), module, Tact1::RATE_PARAM, 0.0f, 4.0f, 0.2f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParamCentered<IMSmallKnob>(Vec(box.size.x - offsetFromSide2, rowRuler2), module, Tact1::ATTV_PARAM, -1.0f, 1.0f, 1.0f, module ? &module->panelTheme : NULL));
 		
 		static const int rowRuler3 = 320;
 		
 		// Output
-		addOutput(createDynamicPort<IMPort>(Vec(18, rowRuler3), false, module, Tact1::CV_OUTPUT, &module->panelTheme));
+		addOutput(createDynamicPort<IMPort>(Vec(18, rowRuler3), false, module, Tact1::CV_OUTPUT, module ? &module->panelTheme : NULL));
 		// Exp switch
 		addParam(createParam<CKSS>(Vec(57 + hOffsetCKSS, rowRuler3 + vOffsetCKSS), module, Tact1::EXP_PARAM, 0.0f, 1.0f, 0.0f));		
 	}

@@ -133,7 +133,7 @@ void SequencerKernel::initSong() {
 void SequencerKernel::randomizeSequence() {
 	sequences[seqIndexEdit].randomize(MAX_STEPS, NUM_MODES);// code below uses lengths so this must be randomized first
 	for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
-		cv[seqIndexEdit][stepn] = ((float)(randomu32() % 7)) + ((float)(randomu32() % 12)) / 12.0f - 3.0f;
+		cv[seqIndexEdit][stepn] = ((float)(random::u32() % 7)) + ((float)(random::u32() % 12)) / 12.0f - 3.0f;
 		attributes[seqIndexEdit][stepn].randomize();
 		// if (attributes[seqIndexEdit][stepn].getTied()) {
 			// activateTiedStep(seqIndexEdit, stepn);
@@ -142,9 +142,9 @@ void SequencerKernel::randomizeSequence() {
 	dirty[seqIndexEdit] = 1;
 }
 DEPRECATED void SequencerKernel::randomizeSong() {// no longer used
-	runModeSong = randomu32() % NUM_MODES;
+	runModeSong = random::u32() % NUM_MODES;
 	songBeginIndex = 0;
-	songEndIndex = (randomu32() % MAX_PHRASES);
+	songEndIndex = (random::u32() % MAX_PHRASES);
 	for (int phrn = 0; phrn < MAX_PHRASES; phrn++) {
 		phrases[phrn].randomize(MAX_SEQS);
 	}
@@ -555,7 +555,7 @@ void SequencerKernel::calcGateCodeEx(bool editingSequence) {// uses stepIndexRun
 		gateType = attribute.getGateType();
 		
 		// -1 = gate off for whole step, 0 = gate off for current ppqn, 1 = gate on, 2 = clock high, 3 = trigger
-		if ( ppqnCount == 0 && attribute.getGateP() && !(randomUniform() < ((float)attribute.getGatePVal() / 100.0f)) ) {// randomUniform is [0.0, 1.0), see include/util/common.hpp
+		if ( ppqnCount == 0 && attribute.getGateP() && !(random::uniform() < ((float)attribute.getGatePVal() / 100.0f)) ) {// random::uniform is [0.0, 1.0), see include/util/common.hpp
 			gateCode = -1;// must do this first in this method since it will kill all remaining pulses of the step if prob turns off the step
 		}
 		else if (!attribute.getGate()) {
@@ -681,7 +681,7 @@ bool SequencerKernel::moveStepIndexRun(bool init, bool editingSequence) {
 			if (init)
 				stepIndexRun = 0;
 			else {
-				stepIndexRun += (randomu32() % 3) - 1;
+				stepIndexRun += (random::u32() % 3) - 1;
 				if (stepIndexRun > endStep)
 					stepIndexRun = 0;
 				if (stepIndexRun < 0)
@@ -698,7 +698,7 @@ bool SequencerKernel::moveStepIndexRun(bool init, bool editingSequence) {
 			if (init)
 				stepIndexRun = 0;
 			else {
-				stepIndexRun = (randomu32() % (endStep + 1));
+				stepIndexRun = (random::u32() % (endStep + 1));
 				stepIndexRunHistory--;
 				if (stepIndexRunHistory <= 0x6000)
 					crossBoundary = true;
@@ -857,12 +857,12 @@ void SequencerKernel::movePhraseIndexRun(bool init) {
 		
 		case MODE_BRN :// brownian random; history base is 0x5000
 			phraseIndexRunHistory = 0x5000;
-			moveSongIndexBrownian(init, randomu32());
+			moveSongIndexBrownian(init, random::u32());
 		break;
 		
 		case MODE_RND :// random; history base is 0x6000
 			phraseIndexRunHistory = 0x6000;
-			moveSongIndexRandom(init, randomu32());
+			moveSongIndexRandom(init, random::u32());
 		break;
 		
 		case MODE_TKA:// use track A's phraseIndexRun; base is 0x7000
