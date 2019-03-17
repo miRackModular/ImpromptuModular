@@ -620,6 +620,7 @@ struct WriteSeq32Widget : ModuleWidget {
 	
 	WriteSeq32Widget(WriteSeq32 *module) {
 		setModule(module);
+		
 		// Main panel from Inkscape
         DynamicSVGPanel *panel = new DynamicSVGPanel();
         panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/WriteSeq32.svg")));

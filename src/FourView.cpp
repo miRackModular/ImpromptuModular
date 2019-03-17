@@ -104,7 +104,7 @@ struct FourViewWidget : ModuleWidget {
 		}
 		
 		void cvToStr(int index2) {
-			if (module->inputs[FourView::CV_INPUTS + baseIndex + index2].isConnected()) {
+			if (module != NULL && module->inputs[FourView::CV_INPUTS + baseIndex + index2].isConnected()) {
 				float cvVal = module->inputs[FourView::CV_INPUTS + baseIndex + index2].getVoltage();
 				printNote(cvVal, text, module->showSharp);
 			}

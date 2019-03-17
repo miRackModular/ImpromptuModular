@@ -33,7 +33,7 @@ extern Model *modelTwelveKey;
 // extern Model *modelWriteSeq64;
 // extern Model *modelBigButtonSeq;
 // extern Model *modelBigButtonSeq2;
-// extern Model *modelFourView;
+extern Model *modelFourView;
 // extern Model *modelSemiModularSynth;
 extern Model *modelBlankPanel;
 
