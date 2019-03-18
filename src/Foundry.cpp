@@ -1510,7 +1510,7 @@ struct FoundryWidget : ModuleWidget {
 		darkItem->text = darkPanelID;// ImpromptuModular.hpp
 		darkItem->module = module;
 		darkItem->theme = 1;
-		//menu->addChild(darkItem);
+		menu->addChild(darkItem);
 
 		menu->addChild(new MenuLabel());// empty line
 		
