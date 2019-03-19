@@ -2,7 +2,7 @@
 
 Modules for [VCV Rack](https://vcvrack.com), available in the [plugin manager](https://vcvrack.com/plugins.html).
 
-Version 0.6.16
+Version 0.6.17
 
 [//]: # (!!!!!UPDATE VERSION NUMBER IN MAKEFILE ALSO!!!!!   120% Zoom for jpgs)
 
@@ -48,7 +48,6 @@ Details about each module are given in the links above, and a feature comparison
 | Gate types				| 2 				| 12			| 12			| 8					| 12			| 1				|
 | Probability				| No 				| Global		| Global		| Per step			| Per step		| No			|
 | Slide						| No 				| Global		| Global		| -					| Per step		| - / No		|
-| Sequence play				| - 				| Yes			| Yes			| Yes				| No			| -				|
 | Edit while runnning		| Gates only 		| Yes 			| Yes			| Yes				| Yes			| Yes			|
 
 \* Configuration is noted as follows: Channels/Tracks x Sequence-Length. The distinction between channels and tracks relates to clock inputs: when channles are separately clockable they are referred to as tracks.
@@ -89,7 +88,7 @@ A concept related to AutoStep, which is called "**AutoSeq** when writing via CV 
 
 Many modules feature an **Expansion panel** to provide additional CV inputs for the module (available in the right-click menu of the module). The expansion panel is added to the right side of the module, thus it is advisable to first make room in your Rack for this (4 to 7 HP depending on the module).
 
-Many sequencers feature a **SEQ# CV input**, which can be used to select the active sequence for editing; in all PhraseSeq and GateSeq sequencers it can even be used to externally control the playing order of the sequences. Three different modes are available for this input in the right click menu under **Seq CV in**. 
+Many sequencers feature a **SEQ# CV input**, which can be used to select the active sequence for editing and even to externally control the playing order of the sequences. Three different modes are available for this input in the right click menu under **Seq CV in**. 
 * 0-10V: a 0 to 10V input is proportionally mapped to the 1 to N sequence numbers (1 to 16 in the case of PhraseSeq16, for example);
 * C4-D5# (or other note intervals): CV levels corresponding to the note voltages are mapped to the 1 to N sequence numbers;
 * Trig-Incr: the input is trigger sensitive and moves to the next sequence number every time a trigger is received. A reset can be used to move back to the first sequence.
@@ -238,16 +237,11 @@ A 4-track phrase sequencer with 32 steps per sequence, 64 sequences per track, 9
 
 CVs can be entered into the sequencer via CV inputs when using an external keyboard controller or via the built-in controls on the module itself. When notes are entered with the **right mouse button** on the built-in keyboard (instead of the left mouse button), the sequencer automatically moves to the next step. Holding ctrl while right-clicking also copies the current note (or gate-type) over when moving to the next step. Right-click defaults are also supported on the three main knobs.
 
-Although this sequencer has many similarities to [PhraseSeq32](#phrase-seq-32), many differences must also be kept in mind for existing PhraseSeq users. Notably:
+Although this sequencer has many similarities to [PhraseSeq32](#phrase-seq-32), a few differences must also be kept in mind for existing PhraseSeq users. Notably:
 
-* No editing can be performed when attached is turned on.
 * Song phrases are now in a separate display/knob instead of in the steps at the top left.
 * The Copy/Paste ALL setting was replaced with an CUST setting (more details are given below).
 * The sequence repetitions are no longer in the run modes (formerly FW2, FW3, FW4), but are instead specified in the phrases. This allows the repetition of any run mode up to 99 times.
-* Only the song can be run. For example, when attached is turned off and the main switch is in SEQ mode, changing the sequence number will have no effect on the running sequencer; instead, it allows the selected sequence to be edited while the song is playing, a feature not offered in PhraseSeqs. Thus, the SEQ CV input (now located in the expansion panel) is only used for editing sequences (in other PhraseSeqs, the SEQ CV input can be used to actually control the playing of the phrases). The song BEG and END positions can be easily moved around in order to play only the part of the song being working on (even a single sequence if desired).
-
-
-the inability to directly play a sequence, it was a design choice given the multitrack nature of Foundry. If we were to have the previous behavior of the PhraseSeq, when we would move to a give sequence in one track, the same sequence number may not even be defined in another track, so those would play garbage. There is only one edit head that controls editing on all trakcs. I tried it with four editing heads, and it was hell! Also, , but agree that it might take some getting used to. It was also a personal design criteria of mine that this sequencer allow the editing of individual sequences while the song is playing, something not possible in the PS series.
 
 The following block diagram shows how the different sequencer elements are hierarchically related.
  
@@ -257,9 +251,9 @@ Here are some further details on the different functions of the sequencer. For a
 
 * **CLK**: The clock inputs for each track. When the input is unconnected in a track, the track automatically uses the clock source of the preceding track (indicated by arrows above each clock input). It is good practice that the clock for track A be connected as directly as possible to the main clock source, and when a chained series of clock modules are used, the clock input of track A should be connected to a clock output from the *first* clock module of the chain.
 
-* **SEQ / SONG**: This is the main mode switch for the sequencer. It is used to determine whether a sequence or the song are to be edited (attach must be turned off for editing, see next item).
+* **SEQ / SONG**: This is the main switch that controls the two major modes of the sequencer. Seq mode allows the currently selected sequence in each track to be played/edited. In this mode, all controls are available (run mode, transpose, rotate, copy-paste, gates, slide, octave, notes) and the content of a sequence can be modified even when the sequencer is running. Song mode allows the creation of a series of sequence numbers (called phrases). In this mode, the run mode and length of the song and the sequence index numbers themselves can be modified (whether the sequence is running or not); some of the other aforementioned controls are unavailable and the actual contents of the sequences cannot be modified.
 
-* **ATTACH**: The sequencer has one edit head, and four run heads. When attach is turned on, the sequencer is in view-only mode, and no editing can be performed. In this case the effect of the SEQ/SONG switch is limited to either hiding or showing the phrase number. When attach is turned off, editing becomes possible. In this case the edit head can be positioned to at any given step/sequence/phrase for editing, according to the SEQ/SONG switch.
+* **ATTACH**: Allows the edit heads to follow the run heads of all tracks (Attach on). For the current track, the position of the edit head is shown with a red LED, and when running, the position of the run head is shown with a green LED. When in Seq mode, the actual content of the step corresponding to the edit head position (i.e. note, oct, gates, slide) can be modified in real time, whether the sequencer is running or not. The edit heads automatically follow the run heads when Attach is on.
 
 * **BEG / END**: The BEG and END buttons set the endpoints of the song, such that when working on a long song, we can more easily work on a section of it, which is more practical.
 
@@ -282,7 +276,7 @@ Here are some further details on the different functions of the sequencer. For a
 	* 4/8: automatically copies 4/8 steps (in SEQ mode) or 4/8 phrases (in SONG mode) starting in the current edit position. 
 	* CUST: copies a user-selectable (custom) number of steps/phrases. The CUST setting, when properly used, allows insert and delete to be performed more efficiently. Using the CUST setting with SEL allows an arbitrary range of steps to be selected: when SEL is turned on, clicking steps to the right of the current position will reduce the length of the selection to the number of steps desired; when SEL is not used, CUST automatically selects all steps from the edit head (cursor) to the end. In SONG mode, copying a custom range of phrases is also a two step process: first move to the start phrase, then press COPY once, and then move to the end phrase and press COPY once more to copy that range of phrases.
 
-* **SEQ# input**: This CV input is located in the expansion panel. Please see [general concepts](#general-concepts) above.
+* **SEQ# input**: These CV inputs are located in the expansion panel. Please see [general concepts](#general-concepts) above for more information. In addition to allowing the selection of the sequence in each track, the SYNC SQ# switch, when activated, can be used to defer any selection change until the end of the sequence is reached.
 
 * **TRACK input**: This CV input is located in the expansion panel, and allows the selection of the track number. A 0-10V CV is linearly mapped to the following track selections: A, B, C, D, A\*, B\*, C\*, D\*, where the star denotes that any change will be done across all tracks. This applies to the CV and CV2 inputs as well (see "CV IN and CV2 IN" above).
 
