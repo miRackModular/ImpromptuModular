@@ -70,7 +70,6 @@ struct WriteSeq32 : Module {
 	bool resetOnRun;
 
 	// No need to save
-	int notesPos[8]; // used for rendering notes in LCD_24, 8 gate and 8 step LEDs 
 	float cvCPbuffer[32];// copy paste buffer for CVs
 	int gateCPbuffer[32];// copy paste buffer for gates
 	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
@@ -99,6 +98,28 @@ struct WriteSeq32 : Module {
 	
 	WriteSeq32() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+
+		params[AUTOSTEP_PARAM].config(0.0f, 1.0f, 1.0f, "Autostep");
+		params[SHARP_PARAM].config(0.0f, 1.0f, 1.0f, "Sharp notation");
+		params[QUANTIZE_PARAM].config(0.0f, 1.0f, 1.0f, "Quantize"); 
+		
+		for (int i = 0; i < 4; i++) {
+			params[WINDOW_PARAM + i].config(0.0f, 1.0f, 0.0f, "Window #" + i);
+		}
+		for (int i = 0; i < 8; i++) {
+			params[GATE_PARAM + i].config(0.0f, 1.0f, 0.0f, "Gate #" + i);
+		}
+		params[CHANNEL_PARAM].config(0.0f, 1.0f, 0.0f, "Channel");
+		params[COPY_PARAM].config(0.0f, 1.0f, 0.0f, "Copy");
+		params[PASTE_PARAM].config(0.0f, 1.0f, 0.0f, "Paste");
+		params[PASTESYNC_PARAM].config(0.0f, 2.0f, 0.0f, "Paste Sync");	
+		params[STEPL_PARAM].config(0.0f, 1.0f, 0.0f, "Step left");
+		params[RUN_PARAM].config(0.0f, 1.0f, 0.0f, "Run");
+		params[STEPR_PARAM].config(0.0f, 1.0f, 0.0f, "Step right");	
+		params[WRITE_PARAM].config(0.0f, 1.0f, 0.0f, "Write");
+		params[STEPS_PARAM].config(1.0f, 32.0f, 32.0f, "Number of steps");		
+		params[MONITOR_PARAM].config(0.0f, 1.0f, 0.0f, "Monitor");		
+		
 		onReset();
 	}
 	
@@ -118,23 +139,12 @@ struct WriteSeq32 : Module {
 		}
 		infoCopyPaste = 0l;
 		pendingPaste = 0;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * 96000);//args.sampleRate);
 		resetOnRun = false;
 	}
 
 	
 	void onRandomize() override {
-		// indexStep = 0;
-		// indexStepStage = 0;
-		// indexChannel = 0;
-		// for (int s = 0; s < 32; s++) {
-			// for (int c = 0; c < 4; c++) {
-				// cv[c][s] = quantize((random::uniform() *10.0f) - 4.0f, params[QUANTIZE_PARAM].getValue() > 0.5f);
-				// gates[c][s] = (random::uniform() > 0.5f) ? 1 : 0;
-			// }
-			// cvCPbuffer[s] = 0.0f;
-			// gateCPbuffer[s] = 1;
-		// }
 		for (int s = 0; s < 32; s++) {
 			cv[indexChannel][s] = quantize((random::uniform() *10.0f) - 4.0f, params[QUANTIZE_PARAM].getValue() > 0.5f);
 			gates[indexChannel][s] = (random::uniform() > 0.5f) ? 1 : 0;
@@ -486,18 +496,23 @@ struct WriteSeq32 : Module {
 
 
 struct WriteSeq32Widget : ModuleWidget {
+	int notesPos[8]; // used for rendering notes in LCD_24, 8 gate and 8 step LEDs 
 
 	struct NotesDisplayWidget : TransparentWidget {
 		WriteSeq32 *module;
 		std::shared_ptr<Font> font;
 		char text[4];
+		int* notesPosLocal;
 
 		NotesDisplayWidget() {
 			font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Segment14.ttf"));
 		}
 		
 		void cvToStr(int index8) {
-			if (module->infoCopyPaste != 0l) {
+			if (module == NULL) {
+				snprintf(text, 4, "C4 ");
+			}
+			else if (module->infoCopyPaste != 0l) {
 				if (index8 == 0) {
 					if (module->infoCopyPaste > 0l)
 						snprintf(text, 4, "COP");			
@@ -532,7 +547,7 @@ struct WriteSeq32Widget : ModuleWidget {
 			nvgTextLetterSpacing(args.vg, -1.5);
 
 			for (int i = 0; i < 8; i++) {
-				Vec textPos = Vec(module->notesPos[i], 24);
+				Vec textPos = Vec(notesPosLocal[i], 24);
 				nvgFillColor(args.vg, nvgTransRGBA(textColor, displayAlpha));
 				nvgText(args.vg, textPos.x, textPos.y, "~~~", NULL);
 				nvgFillColor(args.vg, textColor);
@@ -544,7 +559,7 @@ struct WriteSeq32Widget : ModuleWidget {
 
 
 	struct StepsDisplayWidget : TransparentWidget {
-		float *valueKnob;
+		WriteSeq32 *module;
 		std::shared_ptr<Font> font;
 		
 		StepsDisplayWidget() {
@@ -561,7 +576,8 @@ struct WriteSeq32Widget : ModuleWidget {
 			nvgText(args.vg, textPos.x, textPos.y, "~~", NULL);
 			nvgFillColor(args.vg, textColor);
 			char displayStr[3];
-			snprintf(displayStr, 3, "%2u", (unsigned) clamp(roundf(*valueKnob), 1.0f, 32.0f) );
+			float valueKnob = (module ? module->params[WriteSeq32::STEPS_PARAM].getValue() : 32.0f);
+			snprintf(displayStr, 3, "%2u", (unsigned) clamp(roundf(valueKnob), 1.0f, 32.0f) );
 			nvgText(args.vg, textPos.x, textPos.y, displayStr, NULL);
 		}
 	};
@@ -659,24 +675,24 @@ struct WriteSeq32Widget : ModuleWidget {
 		
 		// Autostep, sharp/flat and quantize switches
 		// Autostep	
-		addParam(createParam<CKSSNoRandom>(Vec(columnRuler0+3+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f));
+		addParam(createParam<CKSSNoRandom>(Vec(columnRuler0+3+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::AUTOSTEP_PARAM));
 		// Sharp/flat
-		addParam(createParam<CKSSNoRandom>(Vec(columnRuler4+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::SHARP_PARAM, 0.0f, 1.0f, 1.0f));
+		addParam(createParam<CKSSNoRandom>(Vec(columnRuler4+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::SHARP_PARAM));
 		// Quantize
-		addParam(createParam<CKSSNoRandom>(Vec(columnRuler5+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::QUANTIZE_PARAM, 0.0f, 1.0f, 1.0f));
+		addParam(createParam<CKSSNoRandom>(Vec(columnRuler5+hOffsetCKSS, yRulerTopSwitches+vOffsetCKSS), module, WriteSeq32::QUANTIZE_PARAM));
 
 		// Window LED buttons
 		static const float wLightsPosX = 140.0f;
 		static const float wLightsIntX = 35.0f;
 		for (int i = 0; i < 4; i++) {
-			addParam(createParam<LEDButtonWithRClick>(Vec(wLightsPosX + i * wLightsIntX, yRulerTopLEDs - 4.4f), module, WriteSeq32::WINDOW_PARAM + i, 0.0f, 1.0f, 0.0f));
+			addParam(createParam<LEDButtonWithRClick>(Vec(wLightsPosX + i * wLightsIntX, yRulerTopLEDs - 4.4f), module, WriteSeq32::WINDOW_PARAM + i));
 			addChild(createLight<MediumLight<GreenLight>>(Vec(wLightsPosX + 4.4f + i * wLightsIntX, yRulerTopLEDs), module, WriteSeq32::WINDOW_LIGHTS + i));
 		}
 		
 		// Prepare 8 positions for step lights, gate lights and notes display
-		module->notesPos[0] = 9;// this is also used to help line up LCD digits with LEDbuttons and avoid bad horizontal scaling with long str in display  
+		notesPos[0] = 9;// this is also used to help line up LCD digits with LEDbuttons and avoid bad horizontal scaling with long str in display  
 		for (int i = 1; i < 8; i++) {
-			module->notesPos[i] = module->notesPos[i-1] + 46;
+			notesPos[i] = notesPos[i-1] + 46;
 		}
 
 		// Notes display
@@ -684,19 +700,20 @@ struct WriteSeq32Widget : ModuleWidget {
 		displayNotes->box.pos = Vec(12, 76);
 		displayNotes->box.size = Vec(381, 30);
 		displayNotes->module = module;
+		displayNotes->notesPosLocal = notesPos;
 		addChild(displayNotes);
 
 		// Step LEDs (must be done after Notes display such that LED glow will overlay the notes display
 		static const int yRulerStepLEDs = 65;
 		for (int i = 0; i < 8; i++) {
-			addChild(createLight<SmallLight<GreenLight>>(Vec(module->notesPos[i]+25.0f+1.5f, yRulerStepLEDs), module, WriteSeq32::STEP_LIGHTS + i));
+			addChild(createLight<SmallLight<GreenLight>>(Vec(notesPos[i]+25.0f+1.5f, yRulerStepLEDs), module, WriteSeq32::STEP_LIGHTS + i));
 		}
 
 		// Gates LED buttons
 		static const int yRulerT2 = 119.0f;
 		for (int i = 0; i < 8; i++) {
-			addParam(createParam<LEDButtonWithRClick>(Vec(module->notesPos[i]+25.0f-4.4f, yRulerT2-4.4f), module, WriteSeq32::GATE_PARAM + i, 0.0f, 1.0f, 0.0f));
-			addChild(createLight<MediumLight<GreenRedLight>>(Vec(module->notesPos[i]+25.0f, yRulerT2), module, WriteSeq32::GATE_LIGHTS + i * 2));
+			addParam(createParam<LEDButtonWithRClick>(Vec(notesPos[i]+25.0f-4.4f, yRulerT2-4.4f), module, WriteSeq32::GATE_PARAM + i));
+			addChild(createLight<MediumLight<GreenRedLight>>(Vec(notesPos[i]+25.0f, yRulerT2), module, WriteSeq32::GATE_LIGHTS + i * 2));
 		}
 		
 		
@@ -704,7 +721,7 @@ struct WriteSeq32Widget : ModuleWidget {
 		
 		// Column 0
 		// Channel button
-		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRuler0+offsetCKD6b, rowRuler0+offsetCKD6b), module, WriteSeq32::CHANNEL_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRuler0+offsetCKD6b, rowRuler0+offsetCKD6b), module, WriteSeq32::CHANNEL_PARAM, module ? &module->panelTheme : NULL));
 		// Channel LEDS
 		static const int chanLEDoffsetX = 25;
 		static const int chanLEDoffsetY[4] = {-20, -8, 4, 16};
@@ -713,10 +730,10 @@ struct WriteSeq32Widget : ModuleWidget {
 		addChild(createLight<MediumLight<OrangeLight>>(Vec(columnRuler0 + chanLEDoffsetX + offsetMediumLight, rowRuler0 - 4 + chanLEDoffsetY[2] + offsetMediumLight), module, WriteSeq32::CHANNEL_LIGHTS + 2));
 		addChild(createLight<MediumLight<BlueLight>>(Vec(columnRuler0 + chanLEDoffsetX + offsetMediumLight, rowRuler0 - 4 + chanLEDoffsetY[3] + offsetMediumLight), module, WriteSeq32::CHANNEL_LIGHTS + 3));
 		// Copy/paste switches
-		addParam(createDynamicParam<IMPushButton>(Vec(columnRuler0-10, rowRuler1+offsetTL1105), module, WriteSeq32::COPY_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<IMPushButton>(Vec(columnRuler0+20, rowRuler1+offsetTL1105), module, WriteSeq32::PASTE_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMPushButton>(Vec(columnRuler0-10, rowRuler1+offsetTL1105), module, WriteSeq32::COPY_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMPushButton>(Vec(columnRuler0+20, rowRuler1+offsetTL1105), module, WriteSeq32::PASTE_PARAM, module ? &module->panelTheme : NULL));
 		// Paste sync (and light)
-		addParam(createParam<CKSSThreeInvNoRandom>(Vec(columnRuler0+hOffsetCKSS, rowRuler2+vOffsetCKSSThree), module, WriteSeq32::PASTESYNC_PARAM, 0.0f, 2.0f, 0.0f));	
+		addParam(createParam<CKSSThreeInvNoRandom>(Vec(columnRuler0+hOffsetCKSS, rowRuler2+vOffsetCKSSThree), module, WriteSeq32::PASTESYNC_PARAM));	
 		addChild(createLight<SmallLight<RedLight>>(Vec(columnRuler0 + 41, rowRuler2 + 14), module, WriteSeq32::PENDING_LIGHT));		
 		// Run CV input
 		addInput(createDynamicPort<IMPort>(Vec(columnRuler0, rowRuler3), true, module, WriteSeq32::RUNCV_INPUT, module ? &module->panelTheme : NULL));
@@ -724,9 +741,9 @@ struct WriteSeq32Widget : ModuleWidget {
 		
 		// Column 1
 		// Step L button
-		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRuler1+offsetCKD6b, rowRuler0+offsetCKD6b), module, WriteSeq32::STEPL_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRuler1+offsetCKD6b, rowRuler0+offsetCKD6b), module, WriteSeq32::STEPL_PARAM, module ? &module->panelTheme : NULL));
 		// Run LED bezel and light
-		addParam(createParam<LEDBezel>(Vec(columnRuler1+offsetLEDbezel, rowRuler1+offsetLEDbezel), module, WriteSeq32::RUN_PARAM, 0.0f, 1.0f, 0.0f));
+		addParam(createParam<LEDBezel>(Vec(columnRuler1+offsetLEDbezel, rowRuler1+offsetLEDbezel), module, WriteSeq32::RUN_PARAM));
 		addChild(createLight<MuteLight<GreenLight>>(Vec(columnRuler1+offsetLEDbezel+offsetLEDbezelLight, rowRuler1+offsetLEDbezel+offsetLEDbezelLight), module, WriteSeq32::RUN_LIGHT));
 		// Gate input
 		addInput(createDynamicPort<IMPort>(Vec(columnRuler1, rowRuler2), true, module, WriteSeq32::GATE_INPUT, module ? &module->panelTheme : NULL));		
@@ -736,9 +753,9 @@ struct WriteSeq32Widget : ModuleWidget {
 		
 		// Column 2
 		// Step R button
-		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRuler2+offsetCKD6b, rowRuler0+offsetCKD6b), module, WriteSeq32::STEPR_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));	
+		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRuler2+offsetCKD6b, rowRuler0+offsetCKD6b), module, WriteSeq32::STEPR_PARAM, module ? &module->panelTheme : NULL));	
 		// Write button and light
-		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRuler2+offsetCKD6b, rowRuler1+offsetCKD6b), module, WriteSeq32::WRITE_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRuler2+offsetCKD6b, rowRuler1+offsetCKD6b), module, WriteSeq32::WRITE_PARAM, module ? &module->panelTheme : NULL));
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(columnRuler2 -12, rowRuler1 - 12), module, WriteSeq32::WRITE_LIGHT));
 		// CV input
 		addInput(createDynamicPort<IMPort>(Vec(columnRuler2, rowRuler2), true, module, WriteSeq32::CV_INPUT, module ? &module->panelTheme : NULL));		
@@ -751,12 +768,12 @@ struct WriteSeq32Widget : ModuleWidget {
 		StepsDisplayWidget *displaySteps = new StepsDisplayWidget();
 		displaySteps->box.pos = Vec(columnRuler3-7, rowRuler0+vOffsetDisplay);
 		displaySteps->box.size = Vec(40, 30);// 2 characters
-		displaySteps->valueKnob = &module->params[WriteSeq32::STEPS_PARAM].getValue();
+		displaySteps->module = module;
 		addChild(displaySteps);
 		// Steps knob
-		addParam(createDynamicParam<IMBigSnapKnob>(Vec(columnRuler3+offsetIMBigKnob, rowRuler1+offsetIMBigKnob), module, WriteSeq32::STEPS_PARAM, 1.0f, 32.0f, 32.0f, module ? &module->panelTheme : NULL));		
+		addParam(createDynamicParam<IMBigSnapKnob>(Vec(columnRuler3+offsetIMBigKnob, rowRuler1+offsetIMBigKnob), module, WriteSeq32::STEPS_PARAM, module ? &module->panelTheme : NULL));		
 		// Monitor
-		addParam(createParam<CKSSHNoRandom>(Vec(columnRuler3+hOffsetCKSSH, rowRuler2+vOffsetCKSSH), module, WriteSeq32::MONITOR_PARAM, 0.0f, 1.0f, 0.0f));		
+		addParam(createParam<CKSSHNoRandom>(Vec(columnRuler3+hOffsetCKSSH, rowRuler2+vOffsetCKSSH), module, WriteSeq32::MONITOR_PARAM));		
 		// Write input
 		addInput(createDynamicPort<IMPort>(Vec(columnRuler3, rowRuler3), true, module, WriteSeq32::WRITE_INPUT, module ? &module->panelTheme : NULL));
 		

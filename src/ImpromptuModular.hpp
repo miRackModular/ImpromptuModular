@@ -29,7 +29,7 @@ extern Model *modelTwelveKey;
 // extern Model *modelGateSeq64;
 // extern Model *modelPhraseSeq16;
 // extern Model *modelPhraseSeq32;
-// extern Model *modelWriteSeq32;
+extern Model *modelWriteSeq32;
 // extern Model *modelWriteSeq64;
 // extern Model *modelBigButtonSeq;
 // extern Model *modelBigButtonSeq2;

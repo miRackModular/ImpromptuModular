@@ -376,6 +376,8 @@ struct Foundry : Module {
 				if (resetOnRun || clockIgnoreOnRun)
 					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			}
+			else
+				seq.initDelayedSeqNumberRequest();
 			displayState = DISP_NORMAL;
 		}
 
@@ -404,7 +406,7 @@ struct Foundry : Module {
 						newSeq = clamp(seq.getSeqIndexEdit(trkn) + 1, 0, SequencerKernel::MAX_SEQS - 1);
 					}
 					if (newSeq >= 0) {
-						if (params[SYNC_SEQCV_PARAM].getValue() > 0.5f)
+						if (params[SYNC_SEQCV_PARAM].getValue() > 0.5f && running)
 							seq.requestDelayedSeqChange(trkn, newSeq);
 						else
 							seq.setSeqIndexEdit(newSeq, trkn);				
