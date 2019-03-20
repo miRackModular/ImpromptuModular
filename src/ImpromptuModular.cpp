@@ -26,7 +26,7 @@ void init(rack::Plugin *p) {
 	// p->addModel(modelPhraseSeq16);
 	// p->addModel(modelPhraseSeq32);
 	p->addModel(modelWriteSeq32);
-	// p->addModel(modelWriteSeq64);
+	p->addModel(modelWriteSeq64);
 	// p->addModel(modelBigButtonSeq);
 	// p->addModel(modelBigButtonSeq2);
 	p->addModel(modelFourView);

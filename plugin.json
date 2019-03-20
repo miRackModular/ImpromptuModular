@@ -1,0 +1,42 @@
+{
+	"slug": "ImpromptuModular",
+	"name": "Impromptu Modular",
+	"version": "1.0.0",
+	"license": "BSD-3-Clause",
+	"author": "Impromptu Modular",
+	"authorEmail": "marc.boule@etsmtl.ca",
+	"authorUrl": "https://github.com/MarcBoule/ImpromptuModular",
+	"sourceUrl": "https://github.com/MarcBoule/ImpromptuModular",
+	"modules": [
+		{
+			"slug": "Blank-Panel",
+			"name": "MISC - BlankPanel",
+			"description": "Blank panel",
+			"tags": ["BLANK"]
+		},
+		{
+			"slug": "Write-Seq-32",
+			"name": "SEQ - WriteSeq32",
+			"description": "3-channel 32-step sequencer",
+			"tags": ["SEQUENCER"]
+		},
+		{
+			"slug": "Write-Seq-64",
+			"name": "SEQ - WriteSeq64",
+			"description": "4-channel 64-step sequencer",
+			"tags": ["SEQUENCER"]
+		},
+		{
+			"slug": "Four-View",
+			"name": "VIS - FourView",
+			"description": "Quad note number viewer with pass through",
+			"tags": ["VISUAL"]
+		},
+		{
+			"slug": "Twelve-Key",
+			"name": "CTRL - TwelveKey",
+			"description": "Chainable one octave keyboard controller",
+			"tags": ["CONTROLLER"]
+		}
+	]
+}

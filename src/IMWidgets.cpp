@@ -225,6 +225,7 @@ void DynamicSVGKnob::addFrameAll(std::shared_ptr<Svg> svg) {
 
 void DynamicSVGKnob::addEffect(std::shared_ptr<Svg> svg) {
     effect->setSvg(svg);
+	effect->visible = false;
 	addChild(effect);
 }
 
