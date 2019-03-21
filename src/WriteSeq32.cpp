@@ -103,11 +103,14 @@ struct WriteSeq32 : Module {
 		params[SHARP_PARAM].config(0.0f, 1.0f, 1.0f, "Sharp notation");
 		params[QUANTIZE_PARAM].config(0.0f, 1.0f, 1.0f, "Quantize"); 
 		
+		char strBuf[20];
 		for (int i = 0; i < 4; i++) {
-			params[WINDOW_PARAM + i].config(0.0f, 1.0f, 0.0f, "Window #" + i);
+			snprintf(strBuf, 20, "Window #%i", i);
+			params[WINDOW_PARAM + i].config(0.0f, 1.0f, 0.0f, strBuf);
 		}
 		for (int i = 0; i < 8; i++) {
-			params[GATE_PARAM + i].config(0.0f, 1.0f, 0.0f, "Gate #" + i);
+			snprintf(strBuf, 20, "Gate #%i", i);
+			params[GATE_PARAM + i].config(0.0f, 1.0f, 0.0f, strBuf);
 		}
 		params[CHANNEL_PARAM].config(0.0f, 1.0f, 0.0f, "Channel");
 		params[COPY_PARAM].config(0.0f, 1.0f, 0.0f, "Copy");
