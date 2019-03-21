@@ -31,8 +31,8 @@ extern Model *modelTwelveKey;
 // extern Model *modelPhraseSeq32;
 extern Model *modelWriteSeq32;
 extern Model *modelWriteSeq64;
-// extern Model *modelBigButtonSeq;
-// extern Model *modelBigButtonSeq2;
+extern Model *modelBigButtonSeq;
+extern Model *modelBigButtonSeq2;
 extern Model *modelFourView;
 // extern Model *modelSemiModularSynth;
 extern Model *modelBlankPanel;
@@ -171,8 +171,10 @@ struct IMPushButton : DynamicSVGSwitch {
 };
 
 struct LEDBezelBig : app::SvgSwitch {
-	TransformWidget *tw;
-	LEDBezelBig();
+	LEDBezelBig() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/LEDBezelBig.svg")));
+	}
 };
 
 

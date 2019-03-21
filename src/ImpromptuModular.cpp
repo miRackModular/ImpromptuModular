@@ -27,8 +27,8 @@ void init(rack::Plugin *p) {
 	// p->addModel(modelPhraseSeq32);
 	p->addModel(modelWriteSeq32);
 	p->addModel(modelWriteSeq64);
-	// p->addModel(modelBigButtonSeq);
-	// p->addModel(modelBigButtonSeq2);
+	p->addModel(modelBigButtonSeq);
+	p->addModel(modelBigButtonSeq2);
 	p->addModel(modelFourView);
 	// p->addModel(modelSemiModularSynth);
 	p->addModel(modelBlankPanel);
@@ -82,22 +82,6 @@ void IMBigPushButtonWithRClick::onButton(const widget::ButtonEvent &e) {
 }
 */
 
-
-LEDBezelBig::LEDBezelBig() {
-	momentary = true;
-	float ratio = 2.13f;
-	addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/LEDBezel.svg")));
-	sw->box.size = sw->box.size.mult(ratio);
-	box.size = sw->box.size;
-	tw = new TransformWidget();
-	removeChild(sw);
-	tw->addChild(sw);
-	
-	addChild(tw);
-	
-	tw->box.size = sw->box.size; 
-	tw->scale(Vec(ratio, ratio));
-}
 
 /*
 void InvisibleKeySmall::onMouseDown(EventMouseDown &e) {

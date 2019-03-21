@@ -27,6 +27,18 @@
 			"tags": ["SEQUENCER"]
 		},
 		{
+			"slug": "Big-Button-Seq",
+			"name": "SEQ - BigButtonSeq",
+			"description": "6-channel 64-step trigger sequencer",
+			"tags": ["SEQUENCER"]
+		},
+		{
+			"slug": "Big-Button-Seq2",
+			"name": "SEQ - BigButtonSeq2",
+			"description": "6-channel 128-step cv and gate sequencer",
+			"tags": ["SEQUENCER"]
+		},
+		{
 			"slug": "Four-View",
 			"name": "VIS - FourView",
 			"description": "Quad note number viewer with pass through",
