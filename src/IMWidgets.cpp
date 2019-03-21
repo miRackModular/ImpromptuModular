@@ -103,24 +103,14 @@ void PanelBorderWidget::draw(const DrawArgs &args) {  // first 6 lines were copi
     nvgStrokeColor(args.vg, borderColor);
     nvgStrokeWidth(args.vg, 1.0);
     nvgStroke(args.vg);
-	if (expWidth != NULL && *expWidth != NULL) {// add expansion division when pannel uses expansion area
-		int expW = **expWidth;
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, box.size.x - expW, 1);
-		nvgLineTo(args.vg, box.size.x - expW, box.size.y - 1.0);
-		nvgStrokeWidth(args.vg, 2.0);
-		nvgStroke(args.vg);
-	}
 }
 
 DynamicSVGPanel::DynamicSVGPanel() {
     mode = NULL;
     oldMode = -1;
-	expWidth = NULL;
     visiblePanel = new widget::SvgWidget();
     addChild(visiblePanel);
     border = new PanelBorderWidget();
-	border->expWidth = &expWidth;
     addChild(border);
 }
 

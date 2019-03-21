@@ -83,6 +83,24 @@ void IMBigPushButtonWithRClick::onButton(const widget::ButtonEvent &e) {
 */
 
 
+LEDBezelBig::LEDBezelBig() {
+	momentary = true;
+	float ratio = 2.13f;
+	addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/LEDBezel.svg")));
+	sw->box.size = sw->box.size.mult(ratio);
+	fb->box.size = sw->box.size;
+	tw = new TransformWidget();
+	fb->removeChild(sw);
+	tw->addChild(sw);
+
+	fb->addChild(tw);
+
+	tw->box.size = sw->box.size; 
+	box.size = sw->box.size; 
+	tw->scale(Vec(ratio, ratio));
+}
+
+
 /*
 void InvisibleKeySmall::onMouseDown(EventMouseDown &e) {
 	if (e.button == 1) {// if right button (see events.hpp)

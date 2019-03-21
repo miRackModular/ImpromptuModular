@@ -9,10 +9,16 @@
 	"sourceUrl": "https://github.com/MarcBoule/ImpromptuModular",
 	"modules": [
 		{
-			"slug": "Blank-Panel",
-			"name": "MISC - BlankPanel",
-			"description": "Blank panel",
-			"tags": ["BLANK"]
+			"slug": "Twelve-Key",
+			"name": "CTRL - TwelveKey",
+			"description": "Chainable one octave keyboard controller",
+			"tags": ["CONTROLLER"]
+		},
+		{
+			"slug": "Clocked",
+			"name": "CLK - Clocked",
+			"description": "Chainable one octave keyboard controller",
+			"tags": ["CLOCK"]
 		},
 		{
 			"slug": "Write-Seq-32",
@@ -45,10 +51,10 @@
 			"tags": ["VISUAL"]
 		},
 		{
-			"slug": "Twelve-Key",
-			"name": "CTRL - TwelveKey",
-			"description": "Chainable one octave keyboard controller",
-			"tags": ["CONTROLLER"]
+			"slug": "Blank-Panel",
+			"name": "MISC - BlankPanel",
+			"description": "Blank panel",
+			"tags": ["BLANK"]
 		}
 	]
 }

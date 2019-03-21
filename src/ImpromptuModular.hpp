@@ -170,11 +170,10 @@ struct IMPushButton : DynamicSVGSwitch {
 	}
 };
 
+
 struct LEDBezelBig : app::SvgSwitch {
-	LEDBezelBig() {
-		momentary = true;
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/LEDBezelBig.svg")));
-	}
+	TransformWidget *tw;
+	LEDBezelBig();
 };
 
 

@@ -52,14 +52,12 @@ struct DynamicSVGScrew : widget::FramebufferWidget {
 // Dynamic SVGPanel
 
 struct PanelBorderWidget : widget::TransparentWidget { // from app/SvgPanel.hpp
-	int** expWidth = NULL;
 	void draw(const DrawArgs &args) override;
 };
 
 struct DynamicSVGPanel : widget::FramebufferWidget { // like app/SvgPanel.hpp but with dynmically assignable resizable panel
     int* mode;
     int oldMode;
-	int* expWidth;
     std::vector<std::shared_ptr<Svg>> panels;
     widget::SvgWidget* visiblePanel;
     PanelBorderWidget* border;
