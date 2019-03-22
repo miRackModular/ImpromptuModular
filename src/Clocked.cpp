@@ -197,9 +197,7 @@ struct Clocked : Module {
 		RESET_PARAM,
 		RUN_PARAM,
 		ENUMS(DELAY_PARAMS, 4),// index 0 is unused
-		// -- 0.6.9 ^^
 		BPMMODE_DOWN_PARAM,
-		// -- 0.6.14 ^^
 		BPMMODE_UP_PARAM,
 		NUM_PARAMS
 	};
@@ -228,10 +226,10 @@ struct Clocked : Module {
 	
 	
 	// Expander
-	float inputsExp[8] = {};
-	float producerInputs[8] = {};
+	float consumerMessage[16] = {};// this module must read from here
+	float producerMessage[16] = {};// expander will write into here
 		
-	
+
 	// Constants
 	const float delayValues[8] = {0.0f,  0.0625f, 0.125f, 0.25f, 1.0f/3.0f, 0.5f , 2.0f/3.0f, 0.75f};
 	const float ratioValues[34] = {1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 23, 24, 29, 31, 32, 37, 41, 43, 47, 48, 53, 59, 61, 64};
@@ -241,6 +239,7 @@ struct Clocked : Module {
 	static constexpr float masterLengthMin = 120.0f / bpmMax;// a length is a double period
 	static constexpr float delayInfoTime = 3.0f;// seconds
 	static constexpr float swingInfoTime = 2.0f;// seconds
+	
 	
 	// Need to save
 	int panelTheme = 0;
@@ -315,15 +314,15 @@ struct Clocked : Module {
 		for (int i = 0; i < 4; i++) {
 			// Pulse Width
 			pulseWidth[i] = params[PW_PARAMS + i].getValue();
-			if (i < 3 && inputs[PW_INPUTS + i].isConnected()) {
-				pulseWidth[i] += (inputs[PW_INPUTS + i].getVoltage() / 10.0f) - 0.5f;
+			if (i < 3 && consumerMessage[i * 2 + 0] > 0.5f/*inputs[PW_INPUTS + i].isConnected()*/) {
+				pulseWidth[i] += (consumerMessage[i * 2 + 1]/*inputs[PW_INPUTS + i].getVoltage()*/ / 10.0f) - 0.5f;
 				pulseWidth[i] = clamp(pulseWidth[i], 0.0f, 1.0f);
 			}
 			
 			// Swing
 			swingAmount[i] = params[SWING_PARAMS + i].getValue();
-			if (i < 3 && inputs[SWING_INPUTS + i].isConnected()) {
-				swingAmount[i] += (inputs[SWING_INPUTS + i].getVoltage() / 5.0f) - 1.0f;
+			if (i < 3 && consumerMessage[(i + 4) * 2 + 0] > 0.5f/*inputs[SWING_INPUTS + i].isConnected()*/) {
+				swingAmount[i] += (consumerMessage[(i + 4) * 2 + 1]/*inputs[SWING_INPUTS + i].getVoltage()*/ / 5.0f) - 1.0f;
 				swingAmount[i] = clamp(swingAmount[i], -1.0f, 1.0f);
 			}
 		}
@@ -345,9 +344,9 @@ struct Clocked : Module {
 	Clocked() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		rightProducerMessage = producerInputs;
-		rightConsumerMessage = inputsExp;
-		
+		rightProducerMessage = producerMessage;
+		rightConsumerMessage = consumerMessage;
+
 		params[RATIO_PARAMS + 0].config((float)(bpmMin), (float)(bpmMax), 120.0f, "Main BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");
 		params[RUN_PARAM].config(0.0f, 1.0f, 0.0f, "Run");
@@ -501,7 +500,7 @@ struct Clocked : Module {
 	}		
 	
 
-	void process(const ProcessArgs &args) override {		
+	void process(const ProcessArgs &args) override {	
 		// Scheduled reset
 		if (scheduledReset) {
 			resetClocked(false);		
@@ -925,7 +924,7 @@ struct ClockedWidget : ModuleWidget {
         DynamicSVGPanel *panel = new DynamicSVGPanel();
         panel->mode = module ? &module->panelTheme : NULL;
         panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Clocked.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Clocked_dark.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Clocked.svg")));//dark/Clocked_dark.svg")));
         box.size = panel->box.size;
         addChild(panel);		
 		
@@ -934,8 +933,6 @@ struct ClockedWidget : ModuleWidget {
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-60, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-60, 365), module ? &module->panelTheme : NULL));
 
 
 		static const int rowRuler0 = 50;//reset,run inputs, master knob and bpm display

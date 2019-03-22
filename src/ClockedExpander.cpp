@@ -1,5 +1,5 @@
 //***********************************************************************************************
-//Expander module for Clocked by Marc Boulé
+//Expander module for Clocked, by Marc Boulé
 //
 //Based on code from the Fundamental and Audible Instruments plugins by Andrew Belt and graphics  
 //  from the Component Library by Wes Milholen. 
@@ -60,16 +60,14 @@ struct ClockedExpander : Module {
 
 
 	void process(const ProcessArgs &args) override {		
-		//if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
-			if (leftModule && leftModule->model == modelClocked) {
-				float *producerInputs = reinterpret_cast<float*>(leftModule->rightProducerMessage);
-				// Set producerInputs
-				for (int i = 0; i < 8; i++) {
-					producerInputs[i] = inputs[i].getVoltage();
-				}
+		if (leftModule && leftModule->model == modelClocked) {
+			float *producerMessage = reinterpret_cast<float*>(leftModule->rightProducerMessage);
+			for (int i = 0; i < 8; i++) {
+				producerMessage[i * 2 + 0] = (inputs[i].isConnected() ? 1.0f : 0.0f);
+				producerMessage[i * 2 + 1] = inputs[i].getVoltage();
 			}
-
-		//}// userInputs refresh
+		}
+		
 	}// process()
 };
 
@@ -123,12 +121,8 @@ struct ClockedExpanderWidget : ModuleWidget {
         addChild(panel);		
 		
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-60, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-60, 365), module ? &module->panelTheme : NULL));
 
 		// Expansion module
 		static const int rowRulerExpTop = 60;
