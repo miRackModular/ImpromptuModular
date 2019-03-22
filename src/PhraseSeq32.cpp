@@ -265,7 +265,7 @@ struct PhraseSeq32 : Module {
 		editingGateLength = 0l;
 		lastGateEdit = 1l;
 		editingPpqn = 0l;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 	}
 	
 	
@@ -1512,7 +1512,7 @@ struct PhraseSeq32 : Module {
 				
 		if (clockIgnoreOnReset > 0l)
 			clockIgnoreOnReset--;
-	}// step()
+	}// process()
 	
 
 	inline void setGreenRed(int id, float green, float red) {

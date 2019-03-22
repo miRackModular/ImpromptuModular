@@ -136,7 +136,7 @@ struct DynamicSVGSwitch : app::SvgSwitch {
 };
 
 // Dynamic SVGKnob (see app/SvgKnob.hpp)
-struct DynamicSVGKnob : SVGKnob {
+struct DynamicSVGKnob : app::SvgKnob {
     int* mode;
     int oldMode;
 	std::vector<std::shared_ptr<Svg>> framesAll;

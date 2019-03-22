@@ -227,6 +227,11 @@ struct Clocked : Module {
 	};
 	
 	
+	// Expander
+	float inputsExp[8] = {};
+	float producerInputs[8] = {};
+		
+	
 	// Constants
 	const float delayValues[8] = {0.0f,  0.0625f, 0.125f, 0.25f, 1.0f/3.0f, 0.5f , 2.0f/3.0f, 0.75f};
 	const float ratioValues[34] = {1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 23, 24, 29, 31, 32, 37, 41, 43, 47, 48, 53, 59, 61, 64};
@@ -261,8 +266,8 @@ struct Clocked : Module {
 	float pulseWidth[4];
 	float swingAmount[4];
 	long delaySamples[4];
-	double sampleRate = (double)44100; // only temporary until process() has a chance to get called
-	double sampleTime = 1.0 / sampleRate;
+	double sampleRate;
+	double sampleTime;
 	
 	bool scheduledReset = false;
 	int notifyingSource[4] = {-1, -1, -1, -1};
@@ -339,9 +344,9 @@ struct Clocked : Module {
 	// called from the main thread (step() can not be called until all modules created)
 	Clocked() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		for (int i = 1; i < 4; i++) {
-			clk[i].setup(&clk[0], &resetClockOutputsHigh);		
-		}
+
+		rightProducerMessage = producerInputs;
+		rightConsumerMessage = inputsExp;
 		
 		params[RATIO_PARAMS + 0].config((float)(bpmMin), (float)(bpmMax), 120.0f, "Main BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");
@@ -366,11 +371,16 @@ struct Clocked : Module {
 			params[DELAY_PARAMS + 1 + i].config(0.0f, 8.0f - 1.0f, 0.0f, strBuf);
 		}
 		
+		for (int i = 1; i < 4; i++) {
+			clk[i].setup(&clk[0], &resetClockOutputsHigh);		
+		}
 		onReset();
 	}
 	
 
 	void onReset() override {
+		sampleRate = (double)(APP->engine->getSampleRate());
+		sampleTime = 1.0 / sampleRate;
 		displayDelayNoteMode = true;
 		bpmDetectionMode = false;
 		emitResetOnStopRun = false;
@@ -492,9 +502,6 @@ struct Clocked : Module {
 	
 
 	void process(const ProcessArgs &args) override {		
-		sampleRate = (double)args.sampleRate;
-		sampleTime = 1.0 / sampleRate;
-
 		// Scheduled reset
 		if (scheduledReset) {
 			resetClocked(false);		
@@ -710,7 +717,7 @@ struct Clocked : Module {
 			if (editingBpmMode < 0l)
 				editingBpmMode = 0l;
 		}// lightRefreshCounter
-	}// step()
+	}// process()
 };
 
 
@@ -873,7 +880,7 @@ struct ClockedWidget : ModuleWidget {
 	
 	struct IMSmallKnobNotify : IMSmallKnob {
 		IMSmallKnobNotify() {};
-		void onDragMove(widget::DragMoveEvent &e) {
+		void onDragMove(const widget::DragMoveEvent &e) override {
 			Clocked *module = dynamic_cast<Clocked*>(this->paramQuantity->module);
 			int dispIndex = 0;
 			int paramId = paramQuantity->paramId;
@@ -1027,15 +1034,15 @@ struct ClockedWidget : ModuleWidget {
 		addOutput(createDynamicPort<IMPort>(Vec(colRulerT5, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 3, module ? &module->panelTheme : NULL));	
 
 		// Expansion module
-		static const int rowRulerExpTop = 60;
-		static const int rowSpacingExp = 50;
-		static const int colRulerExp = 497 - 30 -150;// Clocked is (2+10)HP less than PS32
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), true, module, Clocked::PW_INPUTS + 0, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), true, module, Clocked::PW_INPUTS + 1, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), true, module, Clocked::PW_INPUTS + 2, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, Clocked::SWING_INPUTS + 0, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, Clocked::SWING_INPUTS + 1, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), true, module, Clocked::SWING_INPUTS + 2, module ? &module->panelTheme : NULL));
+		// static const int rowRulerExpTop = 60;
+		// static const int rowSpacingExp = 50;
+		// static const int colRulerExp = 497 - 30 -150;// Clocked is (2+10)HP less than PS32
+		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), true, module, Clocked::PW_INPUTS + 0, module ? &module->panelTheme : NULL));
+		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), true, module, Clocked::PW_INPUTS + 1, module ? &module->panelTheme : NULL));
+		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), true, module, Clocked::PW_INPUTS + 2, module ? &module->panelTheme : NULL));
+		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, Clocked::SWING_INPUTS + 0, module ? &module->panelTheme : NULL));
+		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, Clocked::SWING_INPUTS + 1, module ? &module->panelTheme : NULL));
+		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), true, module, Clocked::SWING_INPUTS + 2, module ? &module->panelTheme : NULL));
 	}
 };
 

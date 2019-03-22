@@ -144,7 +144,7 @@ struct WriteSeq64 : Module {
 		stepsCPbuffer = 64;
 		infoCopyPaste = 0l;
 		pendingPaste = 0;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * 96000);//args.sampleRate);
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 		resetOnRun = false;
 	}
 

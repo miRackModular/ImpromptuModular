@@ -142,7 +142,7 @@ struct WriteSeq32 : Module {
 		}
 		infoCopyPaste = 0l;
 		pendingPaste = 0;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * 96000);//args.sampleRate);
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 		resetOnRun = false;
 	}
 

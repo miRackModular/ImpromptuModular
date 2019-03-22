@@ -217,7 +217,7 @@ struct GateSeq64 : Module {
 		blinkCount = 0l;
 		blinkNum = blinkNumInit;
 		editingPhraseSongRunning = 0l;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 	}
 
 	
@@ -1082,7 +1082,7 @@ struct GateSeq64 : Module {
 		if (clockIgnoreOnReset > 0l)
 			clockIgnoreOnReset--;
 
-	}// step()
+	}// process()
 	
 	inline void setGreenRed(int id, float green, float red) {
 		lights[id + 0].value = green;

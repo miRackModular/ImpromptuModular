@@ -21,6 +21,12 @@
 			"tags": ["CLOCK"]
 		},
 		{
+			"slug": "Clocked-Expander",
+			"name": "CLK - Clocked expander",
+			"description": "Expander for Clocked",
+			"tags": ["EXPANDER"]
+		},
+		{
 			"slug": "Write-Seq-32",
 			"name": "SEQ - WriteSeq32",
 			"description": "3-channel 32-step sequencer",

@@ -155,7 +155,7 @@ struct BigButtonSeq2 : Module {
 					writeCV(c, b, s, 0.0f);
 			}
 		}
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * 96000);//args.sampleRate);
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 		lastPeriod = 2.0;
 		clockTime = 0.0;
 		pendingOp = 0;
@@ -511,7 +511,7 @@ struct BigButtonSeq2 : Module {
 		
 		if (clockIgnoreOnReset > 0l)
 			clockIgnoreOnReset--;
-	}// step()
+	}// process()
 	
 	
 	inline void performPending(int chan, float lightTime) {

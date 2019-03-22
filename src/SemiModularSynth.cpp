@@ -383,7 +383,7 @@ struct SemiModularSynth : Module {
 		gate1Code = calcGate1Code(attributes[seq][stepIndexRun], 0, pulsesPerStep, params[GATE1_KNOB_PARAM].getValue());
 		gate2Code = calcGate2Code(attributes[seq][stepIndexRun], 0, pulsesPerStep);
 		slideStepsRemain = 0ul;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 	}
 	
 	
@@ -1585,7 +1585,7 @@ struct SemiModularSynth : Module {
 			outputs[LFO_TRI_OUTPUT].setVoltage(0.0f);
 		}			
 		
-	}// step()
+	}// process()
 	
 
 	inline void setGreenRed(int id, float green, float red) {

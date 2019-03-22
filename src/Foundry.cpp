@@ -207,7 +207,7 @@ struct Foundry : Module {
 		velEditMode = 0;
 		writeMode = 0;
 		seq.reset(isEditingSequence());
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 	}
 	
 	
@@ -1128,7 +1128,7 @@ struct Foundry : Module {
 		if (clockIgnoreOnReset > 0l)
 			clockIgnoreOnReset--;
 		
-	}// step()
+	}// process()
 	
 
 	inline void setGreenRed(int id, float green, float red) {
