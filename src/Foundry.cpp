@@ -1574,7 +1574,7 @@ struct FoundryWidget : ModuleWidget {
 	struct CKSSNotify : CKSS {// Not randomizable
 		CKSSNotify() {}
 		void randomize() override {}
-		void onChange(EventChange &e) override {
+		void onChange(const widget::ChangeEvent &e) override {
 			((Foundry*)(module))->displayState = Foundry::DISP_NORMAL;
 			((Foundry*)(module))->seq.initDelayedSeqNumberRequest();
 			if (paramId != Foundry::KEY_GATE_PARAM) {
@@ -1585,14 +1585,14 @@ struct FoundryWidget : ModuleWidget {
 	};
 	struct CKSSHThreeNotify : CKSSHThree {
 		CKSSHThreeNotify() {};
-		void onChange(EventChange &e) override {
+		void onChange(const widget::ChangeEvent &e) override {
 			((Foundry*)(module))->displayState = Foundry::DISP_NORMAL;
 			SVGSwitch::onChange(e);		
 		}
 	};
 	struct CPModeSwitch : CKSSThreeInvNoRandom {// Not randomizable
 		CPModeSwitch() {};
-		void onChange(EventChange &e) override {
+		void onChange(const widget::ChangeEvent &e) override {
 			SVGSwitch::onChange(e);	
 			Foundry* module = dynamic_cast<Foundry*>(this->module);			
 			module->cpSeqLength = module->getCPMode();

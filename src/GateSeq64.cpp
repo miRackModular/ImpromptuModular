@@ -1304,7 +1304,7 @@ struct GateSeq64Widget : ModuleWidget {
 
 	struct CKSSThreeInvNotify : CKSSThreeInvNoRandom {// Not randomizable
 		CKSSThreeInvNotify() {}
-		void onDragStart(EventDragStart &e) override {
+		void onDragStart(const widget::DragStartEvent &e) override {
 			ToggleSwitch::onDragStart(e);
 			((GateSeq64*)(module))->stepConfigSync = 2;// signal a sync from switch so that steps get initialized
 		}	

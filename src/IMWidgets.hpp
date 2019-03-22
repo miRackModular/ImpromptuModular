@@ -176,8 +176,8 @@ struct DynamicIMTactile : ParamWidget, widget::FramebufferWidget {
 	
 	DynamicIMTactile();
 	void process(const ProcessArgs &args) override;
-	//void onDragStart(EventDragStart &e) override; // TODO
-	//void onDragMove(EventDragMove &e) override; // TODO	
+	//void onDragStart(const widget::DragStartEvent &e) override; // TODO
+	//void onDragMove(const widget::DragMoveEvent &e) override; // TODO	
 	
 	//void onMouseDown(EventMouseDown &e) override; // replaced by onButton()
 	void onButton(const widget::ButtonEvent &e) override;// replaces onMouseDown() and onMouseUp()

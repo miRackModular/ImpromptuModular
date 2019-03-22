@@ -270,12 +270,12 @@ void DynamicIMTactile::process(const ProcessArgs &args) {
 */
 
 /*
-void DynamicIMTactile::onDragStart(EventDragStart &e) {
+void DynamicIMTactile::onDragStart(const widget::DragStartEvent &e) {
 	dragValue = value;
 	dragY = gRackWidget->lastMousePos.y;
 }
 
-void DynamicIMTactile::onDragMove(EventDragMove &e) {
+void DynamicIMTactile::onDragMove(const widget::DragMoveEvent &e) {
 	float rangeValue = maxValue - minValue;// infinite not supported (not relevant)
 	float newDragY = gRackWidget->lastMousePos.y;
 	float delta = -(newDragY - dragY) * rangeValue / box.size.y;

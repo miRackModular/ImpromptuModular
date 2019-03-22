@@ -20,7 +20,7 @@ void init(rack::Plugin *p) {
 	// p->addModel(modelTact);
 	// p->addModel(modelTact1);
 	p->addModel(modelTwelveKey);
-	// p->addModel(modelClocked);
+	p->addModel(modelClocked);
 	// p->addModel(modelFoundry);
 	// p->addModel(modelGateSeq64);
 	// p->addModel(modelPhraseSeq16);
@@ -88,16 +88,13 @@ LEDBezelBig::LEDBezelBig() {
 	float ratio = 2.13f;
 	addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/LEDBezel.svg")));
 	sw->box.size = sw->box.size.mult(ratio);
-	fb->box.size = sw->box.size;
-	tw = new TransformWidget();
 	fb->removeChild(sw);
+	tw = new TransformWidget();
 	tw->addChild(sw);
-
-	fb->addChild(tw);
-
-	tw->box.size = sw->box.size; 
-	box.size = sw->box.size; 
 	tw->scale(Vec(ratio, ratio));
+	tw->box.size = sw->box.size; 
+	fb->addChild(tw);
+	box.size = sw->box.size; 
 }
 
 

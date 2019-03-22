@@ -1799,7 +1799,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 	struct CKSSNotify : CKSS {// Not randomizable
 		CKSSNotify() {}
 		void randomize() override {}
-		void onDragStart(EventDragStart &e) override {
+		void onDragStart(const widget::DragStartEvent &e) override {
 			ToggleSwitch::onDragStart(e);
 			((PhraseSeq32*)(module))->stepConfigSync = 2;// signal a sync from switch so that steps get initialized
 		}	

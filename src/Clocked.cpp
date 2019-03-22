@@ -737,7 +737,13 @@ struct ClockedWidget : ModuleWidget {
 			nvgFillColor(args.vg, nvgTransRGBA(textColor, displayAlpha));
 			nvgText(args.vg, textPos.x, textPos.y, "~~~", NULL);
 			nvgFillColor(args.vg, textColor);
-			if (module->notifyInfo[knobIndex] > 0l)
+			if (module == NULL) {
+				if (knobIndex == 0)
+					snprintf(displayStr, 4, "120");
+				else
+					snprintf(displayStr, 4, "X 1");
+			}
+			else if (module->notifyInfo[knobIndex] > 0l)
 			{
 				int srcParam = module->notifyingSource[knobIndex];
 				if ( (srcParam >= Clocked::SWING_PARAMS + 0) && (srcParam <= Clocked::SWING_PARAMS + 3) ) {
@@ -867,9 +873,10 @@ struct ClockedWidget : ModuleWidget {
 	
 	struct IMSmallKnobNotify : IMSmallKnob {
 		IMSmallKnobNotify() {};
-		void onDragMove(EventDragMove &e) override {
-			Clocked *module = dynamic_cast<Clocked*>(this->module);
+		void onDragMove(widget::DragMoveEvent &e) {
+			Clocked *module = dynamic_cast<Clocked*>(this->paramQuantity->module);
 			int dispIndex = 0;
+			int paramId = paramQuantity->paramId;
 			if ( (paramId >= Clocked::SWING_PARAMS + 0) && (paramId <= Clocked::SWING_PARAMS + 3) )
 				dispIndex = paramId - Clocked::SWING_PARAMS;
 			else if ( (paramId >= Clocked::DELAY_PARAMS + 1) && (paramId <= Clocked::DELAY_PARAMS + 3) )
@@ -890,13 +897,15 @@ struct ClockedWidget : ModuleWidget {
 	struct IMBigSnapKnobNotify : IMBigSnapKnob {
 		IMBigSnapKnobNotify() {}
 		void randomize() override {ParamWidget::randomize();}
-		void onChange(EventChange &e) override {
+		void onChange(const widget::ChangeEvent &e) override {
+			Clocked *module = dynamic_cast<Clocked*>(this->paramQuantity->module);
 			int dispIndex = 0;
+			int paramId = paramQuantity->paramId;
 			if ( (paramId >= Clocked::RATIO_PARAMS + 1) && (paramId <= Clocked::RATIO_PARAMS + 3) ) {
 				dispIndex = paramId - Clocked::RATIO_PARAMS;
-				((Clocked*)(module))->syncRatios[dispIndex] = true;
+				module->syncRatios[dispIndex] = true;
 			}
-			((Clocked*)(module))->notifyInfo[dispIndex] = 0l;
+			module->notifyInfo[dispIndex] = 0l;
 			SVGKnob::onChange(e);		
 		}
 	};
