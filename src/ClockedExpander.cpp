@@ -116,7 +116,7 @@ struct ClockedExpanderWidget : ModuleWidget {
         DynamicSVGPanel *panel = new DynamicSVGPanel();
         panel->mode = module ? &module->panelTheme : NULL;
         panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/ClockedExpander.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/ClockedExpander.svg")));//dark/ClockedExpander_dark.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/ClockedExpander_dark.svg")));
         box.size = panel->box.size;
         addChild(panel);		
 		

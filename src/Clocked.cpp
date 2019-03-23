@@ -925,7 +925,7 @@ struct ClockedWidget : ModuleWidget {
         DynamicSVGPanel *panel = new DynamicSVGPanel();
         panel->mode = module ? &module->panelTheme : NULL;
         panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Clocked.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Clocked.svg")));//dark/Clocked_dark.svg")));
+        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Clocked_dark.svg")));
         box.size = panel->box.size;
         addChild(panel);		
 		

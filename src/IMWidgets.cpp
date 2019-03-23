@@ -96,27 +96,49 @@ void DynamicSVGScrew::step() {
 
 // Dynamic SVGPanel
 
+/*
+void SvgPanel::setBackground(std::shared_ptr<Svg> svg) {
+	widget::SvgWidget *sw = new widget::SvgWidget;
+	sw->setSvg(svg);
+	addChild(sw);
+
+	// Set size
+	box.size = sw->box.size.div(RACK_GRID_SIZE).round().mult(RACK_GRID_SIZE);
+
+	PanelBorder *pb = new PanelBorder;
+	pb->box.size = box.size;
+	addChild(pb);
+}
+*/
+
 DynamicSVGPanel::DynamicSVGPanel() {
     mode = NULL;
     oldMode = -1;
-    visiblePanel = new widget::SvgWidget();
-    addChild(visiblePanel);
-    border = new PanelBorder();
-    addChild(border);
+    sw = new widget::SvgWidget();
+    addChild(sw);
+    pb = new PanelBorder();
+    addChild(pb);
 }
 
 void DynamicSVGPanel::addPanel(std::shared_ptr<Svg> svg) {
     panels.push_back(svg);
-    if(!visiblePanel->svg) {
-        visiblePanel->setSvg(svg);
-        box.size = visiblePanel->box.size.div(RACK_GRID_SIZE).round().mult(RACK_GRID_SIZE);
-        border->box.size = box.size;
+    if(panels.size() == 1) {
+        sw->setSvg(svg);
+        box.size = sw->box.size.div(RACK_GRID_SIZE).round().mult(RACK_GRID_SIZE);
+        pb->box.size = box.size;
     }
 }
 
 void DynamicSVGPanel::step() { 
+	// if (math::isNear(APP->window->pixelRatio, 1.0)) {
+		// // Small details draw poorly at low DPI, so oversample when drawing to the framebuffer
+		// oversample = 2.0;
+	// }
+	// else {
+		// oversample = 1.0;
+	// }
     if(mode != NULL && *mode != oldMode) {
-        visiblePanel->setSvg(panels[*mode]);
+        sw->setSvg(panels[*mode]);
         oldMode = *mode;
         dirty = true;
     }

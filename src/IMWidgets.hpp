@@ -55,8 +55,8 @@ struct DynamicSVGPanel : widget::FramebufferWidget { // like app/SvgPanel.hpp bu
     int* mode;
     int oldMode;
     std::vector<std::shared_ptr<Svg>> panels;
-    widget::SvgWidget* visiblePanel;
-    PanelBorder* border;
+    widget::SvgWidget* sw;
+    PanelBorder* pb;
 	
     DynamicSVGPanel();
     void addPanel(std::shared_ptr<Svg> svg);
