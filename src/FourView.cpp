@@ -87,7 +87,8 @@ struct FourView : Module {
 
 
 struct FourViewWidget : ModuleWidget {
-	FourView* module;
+	SvgPanel* lightPanel;
+	SvgPanel* darkPanel;
 
 	struct NotesDisplayWidget : TransparentWidget {
 		FourView* module;
@@ -182,15 +183,16 @@ struct FourViewWidget : ModuleWidget {
 	
 	FourViewWidget(FourView *module) {
 		setModule(module);
-		this->module = module;
 		
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/FourView.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/FourView_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = module ? &module->panelTheme : NULL;
-        addChild(panel);
+		// Main panels from Inkscape
+        lightPanel = new SvgPanel();
+        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/FourView.svg")));
+        box.size = lightPanel->box.size;
+        addChild(lightPanel);
+        darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/FourView_dark.svg")));
+		darkPanel->visible = false;
+		addChild(darkPanel);
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
@@ -215,9 +217,16 @@ struct FourViewWidget : ModuleWidget {
 			addOutput(createDynamicPortCentered<IMPort>(Vec(centerX + portOffsetX, rowRulerPort + i * portSpacingY), false, module, FourView::CV_OUTPUTS + i, module ? &module->panelTheme : NULL));
 		}
 	}
+	
+	void step() override {
+		if (module) {
+			lightPanel->visible = ((((FourView*)module)->panelTheme) == 0);
+			darkPanel->visible  = ((((FourView*)module)->panelTheme) == 1);
+		}
+		Widget::step();
+	}
 };
 
-// Model *modelFourView = createModel<FourView, FourViewWidget>("Impromptu Modular", "Four-View", "VIS - FourView", VISUAL_TAG);
 Model *modelFourView = createModel<FourView, FourViewWidget>("Four-View");
 
 /*CHANGE LOG

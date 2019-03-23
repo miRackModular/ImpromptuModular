@@ -7,102 +7,30 @@
 
 
 struct BlankPanel : Module {
-
 	BlankPanel() {
 		config(0, 0, 0, 0);
-		onReset();
-	}
-
-	int panelTheme = 1;
-	
-
-	void onReset() override {
-	}
-
-	void onRandomize() override {
-	}
-
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
-
-		// panelTheme
-		// json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
-
-		return rootJ;
-	}
-
-	void dataFromJson(json_t *rootJ) override {
-		// panelTheme
-		// json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
-		// if (panelThemeJ)
-			// panelTheme = json_integer_value(panelThemeJ);
-	}
-
-	
-	// Advances the module by 1 audio frame with duration 1.0 / args.sampleRate
-	void process(const ProcessArgs &args) override {		
 	}
 };
 
 
 struct BlankPanelWidget : ModuleWidget {
-
-	// struct PanelThemeItem : MenuItem {
-		// BlankPanel *module;
-		// int theme;
-		// void onAction(const widget::ActionEvent &e) override {
-			// module->panelTheme = theme;
-		// }
-		// void step() override {
-			// rightText = (module->panelTheme == theme) ? "✔" : "";
-		// }
-	// };
-
-	void appendContextMenu(Menu *menu) override {
-		BlankPanel *module = dynamic_cast<BlankPanel*>(this->module);
-		assert(module);
-
-		// MenuLabel *spacerLabel = new MenuLabel();
-		// menu->addChild(spacerLabel);
-
-		// MenuLabel *themeLabel = new MenuLabel();
-		// themeLabel->text = "Panel Theme";
-		// menu->addChild(themeLabel);
-
-		// PanelThemeItem *lightItem = new PanelThemeItem();
-		// lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		// lightItem->module = module;
-		// lightItem->theme = 0;
-		// menu->addChild(lightItem);
-
-		// PanelThemeItem *darkItem = new PanelThemeItem();
-		// darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		// darkItem->module = module;
-		// darkItem->theme = 1;
-		// menu->addChild(darkItem);
-	}	
-
-
+	int screwType = 1;
+	
 	BlankPanelWidget(BlankPanel *module) {
 		setModule(module);
 		
 		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        //panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/BlankPanel.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BlankPanel_dark.svg")));
+        SvgPanel *panel = new SvgPanel();
+        panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BlankPanel_dark.svg")));
         box.size = panel->box.size;
-        //panel->mode = module ? &module->panelTheme : NULL;
         addChild(panel);
 
-
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
-		
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &screwType));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0),  &screwType));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 365),  &screwType));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365),  &screwType));
 	}
 };
 
-//Model *modelBlankPanel = createModel<BlankPanel, BlankPanelWidget>("Impromptu Modular", "Blank-Panel", "MISC - BlankPanel", BLANK_TAG);
 Model *modelBlankPanel = createModel<BlankPanel, BlankPanelWidget>("Blank-Panel");

@@ -10,7 +10,6 @@
 
 
 #include "rack.hpp"
-//#include "window.hpp"
 
 using namespace rack;
 
@@ -33,8 +32,8 @@ struct ScrewCircle : widget::TransparentWidget {
 	void draw(const DrawArgs &args) override;
 };
 struct DynamicSVGScrew : widget::FramebufferWidget {
-    int* mode;
-    int oldMode;
+    int* mode = NULL;
+    int oldMode = -1;
 	// for random rotated screw used in primary mode
 	widget::SvgWidget *sw;
 	TransformWidget *tw;
@@ -44,22 +43,6 @@ struct DynamicSVGScrew : widget::FramebufferWidget {
 	
     DynamicSVGScrew();
     void addSVGalt(std::shared_ptr<Svg> svg);
-    void step() override;
-};
-
-
-
-// Dynamic SVGPanel
-
-struct DynamicSVGPanel : widget::FramebufferWidget { // like app/SvgPanel.hpp but with dynmically assignable resizable panel
-    int* mode;
-    int oldMode;
-    std::vector<std::shared_ptr<Svg>> panels;
-    widget::SvgWidget* sw;
-    PanelBorder* pb;
-	
-    DynamicSVGPanel();
-    void addPanel(std::shared_ptr<Svg> svg);
     void step() override;
 };
 
@@ -80,21 +63,17 @@ TDynamicPort* createDynamicPort(Vec pos, bool isInput, Module *module, int portI
 template <class TDynamicPort>
 TDynamicPort* createDynamicPortCentered(Vec pos, bool isInput, Module *module, int portId,
                                                int* mode) {
-	TDynamicPort *dynPort = isInput ? 
-		createInput<TDynamicPort>(pos, module, portId) :
-		createOutput<TDynamicPort>(pos, module, portId);
-	dynPort->mode = mode;
+	TDynamicPort *dynPort = createDynamicPort<TDynamicPort>(pos, isInput, module, portId, mode);
 	dynPort->box.pos = dynPort->box.pos.minus(dynPort->box.size.div(2));// centering
 	return dynPort;
 }
 
 // Dynamic SVGPort (see SvgPort in app/SvgPort.hpp)
 struct DynamicSVGPort : SvgPort {
-    int* mode;
-    int oldMode;
+    int* mode = NULL;
+    int oldMode = -1;
     std::vector<std::shared_ptr<Svg>> frames;
 
-    DynamicSVGPort();
     void addFrame(std::shared_ptr<Svg> svg);
     void step() override;
 };
@@ -114,31 +93,28 @@ TDynamicParam* createDynamicParam(Vec pos, Module *module, int paramId,
 template <class TDynamicParam>
 TDynamicParam* createDynamicParamCentered(Vec pos, Module *module, int paramId,
                                                int* mode) {
-	TDynamicParam *dynParam = createParam<TDynamicParam>(pos, module, paramId);
-	dynParam->mode = mode;
+	TDynamicParam *dynParam = createDynamicParam<TDynamicParam>(pos, module, paramId, mode);
 	dynParam->box.pos = dynParam->box.pos.minus(dynParam->box.size.div(2));// centering
 	return dynParam;
 }
 
 // Dynamic SVGSwitch (see app/SvgSwitch.hpp)
 struct DynamicSVGSwitch : app::SvgSwitch {
-    int* mode;
-    int oldMode;
+    int* mode = NULL;
+    int oldMode = -1;
 	std::vector<std::shared_ptr<Svg>> framesAll;
 	
-    DynamicSVGSwitch();
 	void addFrameAll(std::shared_ptr<Svg> svg);
     void step() override;
 };
 
 // Dynamic SVGKnob (see app/SvgKnob.hpp)
 struct DynamicSVGKnob : app::SvgKnob {
-    int* mode;
-    int oldMode;
+    int* mode = NULL;
+    int oldMode = -1;
 	std::vector<std::shared_ptr<Svg>> framesAll;
 	widget::SvgWidget* effect;
 	
-    DynamicSVGKnob();
 	void addFrameAll(std::shared_ptr<Svg> svg);
 	void addEffect(std::shared_ptr<Svg> svg);// do this last
     void step() override;

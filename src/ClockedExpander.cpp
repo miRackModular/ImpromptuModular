@@ -28,19 +28,9 @@ struct ClockedExpander : Module {
 
 	ClockedExpander() {
 		config(0, NUM_INPUTS, 0, 0);
-	
-		onReset();
-	}
-	
-
-	void onReset() override {
-	}
-	
-	
-	void onRandomize() override {
 	}
 
-	
+
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		
@@ -67,12 +57,13 @@ struct ClockedExpander : Module {
 				producerMessage[i * 2 + 1] = inputs[i].getVoltage();
 			}
 		}
-		
 	}// process()
 };
 
 
 struct ClockedExpanderWidget : ModuleWidget {
+	SvgPanel* lightPanel;
+	SvgPanel* darkPanel;
 
 	struct PanelThemeItem : MenuItem {
 		ClockedExpander *module;
@@ -111,18 +102,20 @@ struct ClockedExpanderWidget : ModuleWidget {
 	
 	ClockedExpanderWidget(ClockedExpander *module) {
 		setModule(module);
-		
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->mode = module ? &module->panelTheme : NULL;
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/ClockedExpander.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/ClockedExpander_dark.svg")));
-        box.size = panel->box.size;
-        addChild(panel);		
-		
+	
+		// Main panels from Inkscape
+        lightPanel = new SvgPanel();
+        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/ClockedExpander.svg")));
+        box.size = lightPanel->box.size;
+        addChild(lightPanel);
+        darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/ClockedExpander_dark.svg")));
+		darkPanel->visible = false;
+		addChild(darkPanel);
+
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		// addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		// addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
 
 		// Expansion module
 		static const int rowRulerExpTop = 60;
@@ -134,6 +127,14 @@ struct ClockedExpanderWidget : ModuleWidget {
 		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, ClockedExpander::SWING_INPUTS + 0, module ? &module->panelTheme : NULL));
 		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, ClockedExpander::SWING_INPUTS + 1, module ? &module->panelTheme : NULL));
 		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), true, module, ClockedExpander::SWING_INPUTS + 2, module ? &module->panelTheme : NULL));
+	}
+	
+	void step() override {
+		if (module) {
+			lightPanel->visible = ((((ClockedExpander*)module)->panelTheme) == 0);
+			darkPanel->visible  = ((((ClockedExpander*)module)->panelTheme) == 1);
+		}
+		Widget::step();
 	}
 };
 

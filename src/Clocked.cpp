@@ -722,6 +722,9 @@ struct Clocked : Module {
 
 
 struct ClockedWidget : ModuleWidget {
+	SvgPanel* lightPanel;
+	SvgPanel* darkPanel;
+
 	struct RatioDisplayWidget : TransparentWidget {
 		Clocked *module;
 		int knobIndex;
@@ -921,20 +924,22 @@ struct ClockedWidget : ModuleWidget {
 	ClockedWidget(Clocked *module) {
 		setModule(module);
 		
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->mode = module ? &module->panelTheme : NULL;
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Clocked.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Clocked_dark.svg")));
-        box.size = panel->box.size;
-        addChild(panel);		
+		// Main panels from Inkscape
+        lightPanel = new SvgPanel();
+        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Clocked.svg")));
+        box.size = lightPanel->box.size;
+        addChild(lightPanel);
+        darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Clocked_dark.svg")));
+		darkPanel->visible = false;
+		addChild(darkPanel);
 		
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+/*		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
-
+*/
 
 		static const int rowRuler0 = 50;//reset,run inputs, master knob and bpm display
 		static const int rowRuler1 = rowRuler0 + 55;// reset,run switches
@@ -1030,21 +1035,17 @@ struct ClockedWidget : ModuleWidget {
 		addOutput(createDynamicPort<IMPort>(Vec(colRulerT3, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 1, module ? &module->panelTheme : NULL));	
 		addOutput(createDynamicPort<IMPort>(Vec(colRulerT4, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 2, module ? &module->panelTheme : NULL));	
 		addOutput(createDynamicPort<IMPort>(Vec(colRulerT5, rowRuler5), false, module, Clocked::CLK_OUTPUTS + 3, module ? &module->panelTheme : NULL));	
-
-		// Expansion module
-		// static const int rowRulerExpTop = 60;
-		// static const int rowSpacingExp = 50;
-		// static const int colRulerExp = 497 - 30 -150;// Clocked is (2+10)HP less than PS32
-		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), true, module, Clocked::PW_INPUTS + 0, module ? &module->panelTheme : NULL));
-		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), true, module, Clocked::PW_INPUTS + 1, module ? &module->panelTheme : NULL));
-		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), true, module, Clocked::PW_INPUTS + 2, module ? &module->panelTheme : NULL));
-		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, Clocked::SWING_INPUTS + 0, module ? &module->panelTheme : NULL));
-		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, Clocked::SWING_INPUTS + 1, module ? &module->panelTheme : NULL));
-		// addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), true, module, Clocked::SWING_INPUTS + 2, module ? &module->panelTheme : NULL));
+	}
+	
+	void step() override {
+		if (module) {
+			lightPanel->visible = ((((Clocked*)module)->panelTheme) == 0);
+			darkPanel->visible  = ((((Clocked*)module)->panelTheme) == 1);
+		}
+		Widget::step();
 	}
 };
 
-// Model *modelClocked = createModel<Clocked, ClockedWidget>("Impromptu Modular", "Clocked", "CLK - Clocked", CLOCK_TAG);
 Model *modelClocked = createModel<Clocked, ClockedWidget>("Clocked");
 
 /*CHANGE LOG

@@ -30,10 +30,10 @@ extern Model *modelClockedExpander;
 // extern Model *modelGateSeq64;
 // extern Model *modelPhraseSeq16;
 // extern Model *modelPhraseSeq32;
-extern Model *modelWriteSeq32;
+/*extern Model *modelWriteSeq32;
 extern Model *modelWriteSeq64;
 extern Model *modelBigButtonSeq;
-extern Model *modelBigButtonSeq2;
+extern Model *modelBigButtonSeq2;*/
 extern Model *modelFourView;
 // extern Model *modelSemiModularSynth;
 extern Model *modelBlankPanel;
@@ -325,20 +325,20 @@ struct LEDButtonWithRClick : LEDButton {// with right click that sets value to 2
 	// void onButton(const widget::ButtonEvent &e) override;// replaces onMouseDown() and onMouseUp()  // TODO redo this implementation
 };
 
-
+/*
 struct ScrewSilverRandomRot : FramebufferWidget {// location: include/app.hpp and src/app/SVGScrew.cpp [some code also from src/app/SVGKnob.cpp]
 	widget::SvgWidget *sw;
 	TransformWidget *tw;
 	ScrewCircle *sc;
 	ScrewSilverRandomRot();
 };
-
+*/
 
 
 // Other
 
 struct Trigger : dsp::SchmittTrigger {
-	// implements a 0.1V - 1.0V SchmittTrigger (include/dsp/digital.hpp) instead of 
+	// implements a 0.1V - 1.0V SchmittTrigger (see include/dsp/digital.hpp) instead of 
 	//   calling SchmittTriggerInstance.process(math::rescale(in, 0.1f, 1.f, 0.f, 1.f))
 	bool process(float in) {
 		switch (state) {

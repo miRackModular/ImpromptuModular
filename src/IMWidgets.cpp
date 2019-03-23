@@ -34,14 +34,11 @@ void ScrewCircle::draw(const DrawArgs &args) {
 }
 
 DynamicSVGScrew::DynamicSVGScrew() {
-    mode = NULL;
-    oldMode = -1;
- 
-	
 	// for random rotated screw used in primary mode (code copied from ImpromptuModular.cpp ScrewSilverRandomRot::ScrewSilverRandomRot())
 	// **********
-	float angle0_90 = random::uniform()*M_PI/2.0f;
+	//float angle0_90 = random::uniform()*M_PI/2.0f;
 	//float angle0_90 = random::uniform() > 0.5f ? M_PI/4.0f : 0.0f;// for testing
+	float angle0_90 = M_PI/4.0f;
 	
 	tw = new TransformWidget();
 	addChild(tw);
@@ -94,71 +91,12 @@ void DynamicSVGScrew::step() {
 
 
 
-// Dynamic SVGPanel
-
-/*
-void SvgPanel::setBackground(std::shared_ptr<Svg> svg) {
-	widget::SvgWidget *sw = new widget::SvgWidget;
-	sw->setSvg(svg);
-	addChild(sw);
-
-	// Set size
-	box.size = sw->box.size.div(RACK_GRID_SIZE).round().mult(RACK_GRID_SIZE);
-
-	PanelBorder *pb = new PanelBorder;
-	pb->box.size = box.size;
-	addChild(pb);
-}
-*/
-
-DynamicSVGPanel::DynamicSVGPanel() {
-    mode = NULL;
-    oldMode = -1;
-    sw = new widget::SvgWidget();
-    addChild(sw);
-    pb = new PanelBorder();
-    addChild(pb);
-}
-
-void DynamicSVGPanel::addPanel(std::shared_ptr<Svg> svg) {
-    panels.push_back(svg);
-    if(panels.size() == 1) {
-        sw->setSvg(svg);
-        box.size = sw->box.size.div(RACK_GRID_SIZE).round().mult(RACK_GRID_SIZE);
-        pb->box.size = box.size;
-    }
-}
-
-void DynamicSVGPanel::step() { 
-	// if (math::isNear(APP->window->pixelRatio, 1.0)) {
-		// // Small details draw poorly at low DPI, so oversample when drawing to the framebuffer
-		// oversample = 2.0;
-	// }
-	// else {
-		// oversample = 1.0;
-	// }
-    if(mode != NULL && *mode != oldMode) {
-        sw->setSvg(panels[*mode]);
-        oldMode = *mode;
-        dirty = true;
-    }
-	FramebufferWidget::step();
-}
-
-
-
 // Dynamic SVGPort
-
-DynamicSVGPort::DynamicSVGPort() {
-    mode = NULL;
-    oldMode = -1;
-	//SvgPort constructor automatically called
-}
 
 void DynamicSVGPort::addFrame(std::shared_ptr<Svg> svg) {
     frames.push_back(svg);
-    if(!sw->svg)
-        SVGPort::setSvg(svg);
+    if(frames.size() == 1)
+        SvgPort::setSvg(svg);
 }
 
 void DynamicSVGPort::step() {
@@ -173,12 +111,6 @@ void DynamicSVGPort::step() {
 
 
 // Dynamic SVGSwitch
-
-DynamicSVGSwitch::DynamicSVGSwitch() {
-    mode = NULL;
-    oldMode = -1;
-	//SvgSwitch constructor automatically called
-}
 
 void DynamicSVGSwitch::addFrameAll(std::shared_ptr<Svg> svg) {
     framesAll.push_back(svg);
@@ -209,13 +141,6 @@ void DynamicSVGSwitch::step() {
 
 // Dynamic SVGKnob
 
-DynamicSVGKnob::DynamicSVGKnob() {
-    mode = NULL;
-    oldMode = -1;
-	effect = new widget::SvgWidget();
-	//SvgKnob constructor automatically called
-}
-
 void DynamicSVGKnob::addFrameAll(std::shared_ptr<Svg> svg) {
     framesAll.push_back(svg);
 	if (framesAll.size() == 1) {
@@ -224,7 +149,8 @@ void DynamicSVGKnob::addFrameAll(std::shared_ptr<Svg> svg) {
 }
 
 void DynamicSVGKnob::addEffect(std::shared_ptr<Svg> svg) {
-    effect->setSvg(svg);
+    effect = new widget::SvgWidget();
+	effect->setSvg(svg);
 	effect->visible = false;
 	addChild(effect);
 }

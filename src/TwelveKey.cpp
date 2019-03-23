@@ -215,6 +215,8 @@ struct TwelveKey : Module {
 
 
 struct TwelveKeyWidget : ModuleWidget {
+	SvgPanel* lightPanel;
+	SvgPanel* darkPanel;
 
 	struct OctaveNumDisplayWidget : TransparentWidget {
 		int *octaveNum;
@@ -279,13 +281,15 @@ struct TwelveKeyWidget : ModuleWidget {
 	TwelveKeyWidget(TwelveKey *module) {
 		setModule(module);
 		
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/TwelveKey.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/TwelveKey_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = module ? &module->panelTheme : NULL;
-        addChild(panel);
+		// Main panels from Inkscape
+        lightPanel = new SvgPanel();
+        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/TwelveKey.svg")));
+        box.size = lightPanel->box.size;
+        addChild(lightPanel);
+        darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/TwelveKey_dark.svg")));
+		darkPanel->visible = false;
+		addChild(darkPanel);
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
@@ -368,9 +372,16 @@ struct TwelveKeyWidget : ModuleWidget {
 		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler1), false, module, TwelveKey::GATE_OUTPUT, module ? &module->panelTheme : NULL));
 		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler2), false, module, TwelveKey::OCT_OUTPUT, module ? &module->panelTheme : NULL));
 	}
+	
+	void step() override {
+		if (module) {
+			lightPanel->visible = ((((TwelveKey*)module)->panelTheme) == 0);
+			darkPanel->visible  = ((((TwelveKey*)module)->panelTheme) == 1);
+		}
+		Widget::step();
+	}
 };
 
-// Model *modelTwelveKey = createModel<TwelveKey, TwelveKeyWidget>("Impromptu Modular", "Twelve-Key", "CTRL - TwelveKey", CONTROLLER_TAG);
 Model *modelTwelveKey = createModel<TwelveKey, TwelveKeyWidget>("Twelve-Key");
 
 /*CHANGE LOG

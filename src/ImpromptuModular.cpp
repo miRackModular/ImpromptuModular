@@ -26,10 +26,10 @@ void init(rack::Plugin *p) {
 	// p->addModel(modelGateSeq64);
 	// p->addModel(modelPhraseSeq16);
 	// p->addModel(modelPhraseSeq32);
-	p->addModel(modelWriteSeq32);
+	/*p->addModel(modelWriteSeq32);
 	p->addModel(modelWriteSeq64);
 	p->addModel(modelBigButtonSeq);
-	p->addModel(modelBigButtonSeq2);
+	p->addModel(modelBigButtonSeq2);*/
 	p->addModel(modelFourView);
 	// p->addModel(modelSemiModularSynth);
 	p->addModel(modelBlankPanel);
@@ -192,7 +192,7 @@ void LEDButtonWithRClick::onButton(const widget::ButtonEvent &e) {
 	}
 }		
 */
-
+/*
 ScrewSilverRandomRot::ScrewSilverRandomRot() {
 	float angle0_90 = random::uniform()*M_PI/2.0f;
 	//float angle0_90 = random::uniform() > 0.5f ? M_PI/4.0f : 0.0f;// for testing
@@ -217,7 +217,7 @@ ScrewSilverRandomRot::ScrewSilverRandomRot() {
 	tw->translate(center);
 	tw->rotate(angle0_90);
 	tw->translate(center.neg());	
-}
+}*/
 
 
 NVGcolor prepareDisplay(NVGcontext *vg, Rect *box, int fontSize) {
