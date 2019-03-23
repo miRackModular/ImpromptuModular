@@ -16,7 +16,7 @@ inline float clip(float x) {
 };
 
 void LadderFilter::process(float input, float dt) {
-	ode::stepRK4(0.f, dt, state, 4, [&](float t, const float x[], float dxdt[]) {
+	dsp::stepRK4(0.f, dt, state, 4, [&](float t, const float x[], float dxdt[]) {
 		float inputc = clip(input - resonance * x[3]);
 		float yc0 = clip(x[0]);
 		float yc1 = clip(x[1]);
@@ -65,7 +65,7 @@ void VoltageControlledOscillator::process(float deltaTime, float syncValue) {
 		// Adjust pitch slew
 		if (++pitchSlewIndex > 32) {
 			const float pitchSlewTau = 100.0f; // Time constant for leaky integrator in seconds
-			pitchSlew += (random::normal() - pitchSlew / pitchSlewTau) * args.sampleTime;
+			pitchSlew += (random::normal() - pitchSlew / pitchSlewTau) * deltaTime;
 			pitchSlewIndex = 0;
 		}
 	}
@@ -145,7 +145,7 @@ void VoltageControlledOscillator::process(float deltaTime, float syncValue) {
 
 		// Advance phase
 		phase += deltaPhase / OVERSAMPLE;
-		phase = eucmod(phase, 1.0f);
+		phase = eucMod(phase, 1.0f);
 	}
 };
 

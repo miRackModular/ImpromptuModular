@@ -311,18 +311,19 @@ struct Clocked : Module {
 	}
 	
 	void updatePulseSwingDelay() {
+		bool expanderPresent = (rightModule && rightModule->model == modelClockedExpander);
 		for (int i = 0; i < 4; i++) {
 			// Pulse Width
 			pulseWidth[i] = params[PW_PARAMS + i].getValue();
-			if (i < 3 && consumerMessage[i * 2 + 0] > 0.5f/*inputs[PW_INPUTS + i].isConnected()*/) {
-				pulseWidth[i] += (consumerMessage[i * 2 + 1]/*inputs[PW_INPUTS + i].getVoltage()*/ / 10.0f) - 0.5f;
+			if (i < 3 && (expanderPresent && consumerMessage[i * 2 + 0] > 0.5f)) {
+				pulseWidth[i] += (consumerMessage[i * 2 + 1] / 10.0f) - 0.5f;
 				pulseWidth[i] = clamp(pulseWidth[i], 0.0f, 1.0f);
 			}
 			
 			// Swing
 			swingAmount[i] = params[SWING_PARAMS + i].getValue();
-			if (i < 3 && consumerMessage[(i + 4) * 2 + 0] > 0.5f/*inputs[SWING_INPUTS + i].isConnected()*/) {
-				swingAmount[i] += (consumerMessage[(i + 4) * 2 + 1]/*inputs[SWING_INPUTS + i].getVoltage()*/ / 5.0f) - 1.0f;
+			if (i < 3 && (expanderPresent && consumerMessage[(i + 4) * 2 + 0] > 0.5f)) {
+				swingAmount[i] += (consumerMessage[(i + 4) * 2 + 1] / 5.0f) - 1.0f;
 				swingAmount[i] = clamp(swingAmount[i], -1.0f, 1.0f);
 			}
 		}

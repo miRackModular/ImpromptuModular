@@ -12,55 +12,61 @@
 			"slug": "Twelve-Key",
 			"name": "CTRL - TwelveKey",
 			"description": "Chainable one octave keyboard controller",
-			"tags": ["CONTROLLER"]
+			"tags": ["Controller"]
 		},
 		{
 			"slug": "Clocked",
 			"name": "CLK - Clocked",
 			"description": "Chainable one octave keyboard controller",
-			"tags": ["CLOCK"]
+			"tags": ["Clock"]
 		},
 		{
 			"slug": "Clocked-Expander",
 			"name": "CLK - Clocked expander",
 			"description": "Expander for Clocked",
-			"tags": ["EXPANDER"]
+			"tags": ["Expander"]
 		},
 		{
 			"slug": "Write-Seq-32",
 			"name": "SEQ - WriteSeq32",
 			"description": "3-channel 32-step sequencer",
-			"tags": ["SEQUENCER"]
+			"tags": ["Sequencer"]
 		},
 		{
 			"slug": "Write-Seq-64",
 			"name": "SEQ - WriteSeq64",
 			"description": "4-channel 64-step sequencer",
-			"tags": ["SEQUENCER"]
+			"tags": ["Sequencer"]
 		},
 		{
 			"slug": "Big-Button-Seq",
 			"name": "SEQ - BigButtonSeq",
 			"description": "6-channel 64-step trigger sequencer",
-			"tags": ["SEQUENCER"]
+			"tags": ["Sequencer"]
 		},
 		{
 			"slug": "Big-Button-Seq2",
 			"name": "SEQ - BigButtonSeq2",
 			"description": "6-channel 128-step cv and gate sequencer",
-			"tags": ["SEQUENCER"]
+			"tags": ["Sequencer"]
 		},
 		{
 			"slug": "Four-View",
 			"name": "VIS - FourView",
 			"description": "Quad note number viewer with pass through",
-			"tags": ["VISUAL"]
+			"tags": ["Visual"]
+		},
+		{
+			"slug": "Semi-Modular Synth",
+			"name": "MISC - SemiModular Synth",
+			"description": "Semi-modular monophonic synthesizer with sequencer",
+			"tags": ["Sequencer", "Vco"]
 		},
 		{
 			"slug": "Blank-Panel",
 			"name": "MISC - BlankPanel",
 			"description": "Blank panel",
-			"tags": ["BLANK"]
+			"tags": ["Blank"]
 		}
 	]
 }

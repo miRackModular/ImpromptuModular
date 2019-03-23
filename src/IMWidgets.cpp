@@ -96,21 +96,12 @@ void DynamicSVGScrew::step() {
 
 // Dynamic SVGPanel
 
-void PanelBorderWidget::draw(const DrawArgs &args) {  // first 6 lines were copied from app/SvgPanel.cpp
-    NVGcolor borderColor = nvgRGBAf(0.5, 0.5, 0.5, 0.5);
-    nvgBeginPath(args.vg);
-    nvgRect(args.vg, 0.5, 0.5, box.size.x - 1.0, box.size.y - 1.0);// full rect of module (including expansion area if a module has one)
-    nvgStrokeColor(args.vg, borderColor);
-    nvgStrokeWidth(args.vg, 1.0);
-    nvgStroke(args.vg);
-}
-
 DynamicSVGPanel::DynamicSVGPanel() {
     mode = NULL;
     oldMode = -1;
     visiblePanel = new widget::SvgWidget();
     addChild(visiblePanel);
-    border = new PanelBorderWidget();
+    border = new PanelBorder();
     addChild(border);
 }
 
@@ -121,9 +112,6 @@ void DynamicSVGPanel::addPanel(std::shared_ptr<Svg> svg) {
         box.size = visiblePanel->box.size.div(RACK_GRID_SIZE).round().mult(RACK_GRID_SIZE);
         border->box.size = box.size;
     }
-}
-void DynamicSVGPanel::dupPanel() {
-    panels.push_back(panels[panels.size() - 1]);
 }
 
 void DynamicSVGPanel::step() { 
@@ -153,7 +141,7 @@ void DynamicSVGPort::addFrame(std::shared_ptr<Svg> svg) {
 
 void DynamicSVGPort::step() {
     if(mode != NULL && *mode != oldMode) {
-        sw->setSvg(frames[std::min(*mode, (int)(frames.size() - 1))]);
+        sw->setSvg(frames[*mode]);
         oldMode = *mode;
         fb->dirty = true;
     }

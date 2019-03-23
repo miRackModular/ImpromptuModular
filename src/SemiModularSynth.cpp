@@ -181,7 +181,7 @@ struct SemiModularSynth : Module {
 	enum DisplayStateIds {DISP_NORMAL, DISP_MODE, DISP_LENGTH, DISP_TRANSPOSE, DISP_ROTATE};
 
 	// Need to save
-	int panelTheme = 2;
+	int panelTheme = 1;
 	bool autoseq;
 	bool autostepLen;
 	bool holdTiedNotes;
@@ -290,16 +290,16 @@ struct SemiModularSynth : Module {
 		onReset();
 		
 		// VCO
-		oscillatorVco.soft = false;//params[VCO_SYNC_PARAM].getValue() <= 0.0f;
+		oscillatorVco.soft = false;
 		
 		// CLK 
-		oscillatorClk.offset = true;//(params[OFFSET_PARAM].getValue() > 0.0f);
-		oscillatorClk.invert = false;//(params[INVERT_PARAM].getValue() <= 0.0f);
+		oscillatorClk.offset = true;
+		oscillatorClk.invert = false;
 		
 		// LFO
-		oscillatorLfo.setPulseWidth(0.5f);//params[PW_PARAM].getValue() + params[PWM_PARAM].getValue() * inputs[PW_INPUT].getVoltage() / 10.0f);
-		oscillatorLfo.offset = false;//(params[OFFSET_PARAM].getValue() > 0.0f);
-		oscillatorLfo.invert = false;//(params[INVERT_PARAM].getValue() <= 0.0f);
+		oscillatorLfo.setPulseWidth(0.5f);
+		oscillatorLfo.offset = false;
+		oscillatorLfo.invert = false;
 	}
 	
 
@@ -463,8 +463,10 @@ struct SemiModularSynth : Module {
 	void dataFromJson(json_t *rootJ) override {
 		// panelTheme
 		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
-		if (panelThemeJ)
+		if (panelThemeJ) {
 			panelTheme = json_integer_value(panelThemeJ);
+			if (panelTheme > 1) panelTheme = 1;
+		}
 
 		// autostepLen
 		json_t *autostepLenJ = json_object_get(rootJ, "autostepLen");
@@ -1789,16 +1791,10 @@ struct SemiModularSynthWidget : ModuleWidget {
 		classicItem->panelTheme = 0;
 		menu->addChild(classicItem);
 
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = "Light";
-		lightItem->module = module;
-		lightItem->panelTheme = 1;
-		menu->addChild(lightItem);
-
 		PanelThemeItem *darkItem = new PanelThemeItem();
 		darkItem->text = darkPanelID;// ImpromptuModular.hpp
 		darkItem->module = module;
-		darkItem->panelTheme = 2;
+		darkItem->panelTheme = 1;
 		menu->addChild(darkItem);
 
 		menu->addChild(new MenuLabel());// empty line
@@ -1893,7 +1889,6 @@ struct SemiModularSynthWidget : ModuleWidget {
         panel = new DynamicSVGPanel();
         panel->mode = module ? &module->panelTheme : NULL;
         panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/SemiModular.svg")));
-		panel->dupPanel();
         panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/SemiModular_dark.svg")));
         box.size = panel->box.size;
         addChild(panel);		

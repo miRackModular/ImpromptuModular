@@ -9,11 +9,11 @@
 #define FUNDAMENTAL_UTIL_HPP
 
 
-#include "rack0.hpp"
-#include "dsp/functions.hpp"
-#include "dsp/resampler.hpp"
-#include "dsp/ode.hpp"
-#include "dsp/filter.hpp"
+#include "rack.hpp"
+// #include "dsp/functions.hpp"
+// #include "dsp/resampler.hpp"
+// #include "dsp/ode.hpp"
+// #include "dsp/filter.hpp"
 #include "ImpromptuModular.hpp"
 
 
@@ -61,11 +61,11 @@ struct VoltageControlledOscillator {
 	bool syncEnabled = false;
 	bool syncDirection = false;
 
-	Decimator<OVERSAMPLE, QUALITY> sinDecimator;
-	Decimator<OVERSAMPLE, QUALITY> triDecimator;
-	Decimator<OVERSAMPLE, QUALITY> sawDecimator;
-	Decimator<OVERSAMPLE, QUALITY> sqrDecimator;
-	RCFilter sqrFilter;
+	dsp::Decimator<OVERSAMPLE, QUALITY> sinDecimator;
+	dsp::Decimator<OVERSAMPLE, QUALITY> triDecimator;
+	dsp::Decimator<OVERSAMPLE, QUALITY> sawDecimator;
+	dsp::Decimator<OVERSAMPLE, QUALITY> sqrDecimator;
+	dsp::RCFilter sqrFilter;
 
 	// For analog detuning effect
 	float pitchSlew = 0.0f;
