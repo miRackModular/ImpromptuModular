@@ -22,7 +22,7 @@ void init(rack::Plugin *p) {
 	p->addModel(modelTwelveKey);
 	p->addModel(modelClocked);
 	p->addModel(modelClockedExpander);
-	// p->addModel(modelFoundry);
+	p->addModel(modelFoundry);
 	// p->addModel(modelGateSeq64);
 	// p->addModel(modelPhraseSeq16);
 	// p->addModel(modelPhraseSeq32);

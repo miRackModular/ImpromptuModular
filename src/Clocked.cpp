@@ -202,11 +202,10 @@ struct Clocked : Module {
 		NUM_PARAMS
 	};
 	enum InputIds {
-		ENUMS(PW_INPUTS, 4),// master is index 0
+		ENUMS(PW_INPUTS, 4),// unused
 		RESET_INPUT,
 		RUN_INPUT,
 		BPM_INPUT,
-		ENUMS(SWING_INPUTS, 4),// master is index 0
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -351,8 +350,8 @@ struct Clocked : Module {
 		params[RATIO_PARAMS + 0].config((float)(bpmMin), (float)(bpmMax), 120.0f, "Main BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");
 		params[RUN_PARAM].config(0.0f, 1.0f, 0.0f, "Run");
-		params[BPMMODE_DOWN_PARAM].config(0.0f, 1.0f, 0.0f, "Bpm mode left");
-		params[BPMMODE_UP_PARAM].config(0.0f, 1.0f, 0.0f,  "Bpm mode right");
+		params[BPMMODE_DOWN_PARAM].config(0.0f, 1.0f, 0.0f, "Bpm mode next");
+		params[BPMMODE_UP_PARAM].config(0.0f, 1.0f, 0.0f,  "Bpm mode prev");
 		params[SWING_PARAMS + 0].config(-1.0f, 1.0f, 0.0f, "Swing clk 0");
 		params[PW_PARAMS + 0].config(0.0f, 1.0f, 0.5f, "Pulse width clk 0");			
 		char strBuf[32];

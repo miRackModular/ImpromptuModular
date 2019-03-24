@@ -105,11 +105,11 @@ struct WriteSeq32 : Module {
 		
 		char strBuf[32];
 		for (int i = 0; i < 4; i++) {
-			snprintf(strBuf, 32, "Window #%i", i);
+			snprintf(strBuf, 32, "Window #%i", i + 1);
 			params[WINDOW_PARAM + i].config(0.0f, 1.0f, 0.0f, strBuf);
 		}
 		for (int i = 0; i < 8; i++) {
-			snprintf(strBuf, 32, "Gate #%i", i);
+			snprintf(strBuf, 32, "Gate #%i / 8", i + 1);
 			params[GATE_PARAM + i].config(0.0f, 1.0f, 0.0f, strBuf);
 		}
 		params[CHANNEL_PARAM].config(0.0f, 1.0f, 0.0f, "Channel");

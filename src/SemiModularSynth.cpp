@@ -325,7 +325,7 @@ struct SemiModularSynth : Module {
 		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");
 		params[COPY_PARAM].config(0.0f, 1.0f, 0.0f, "Copy");
 		params[PASTE_PARAM].config(0.0f, 1.0f, 0.0f, "Paste");
-		params[CPMODE_PARAM].config(0.0f, 2.0f, 2.0f, "Copy paste mode");	// 0.0f is top position
+		params[CPMODE_PARAM].config(0.0f, 2.0f, 2.0f, "Copy-paste mode");	// 0.0f is top position
 
 		params[GATE1_PARAM].config(0.0f, 1.0f, 0.0f, "Gate 1");
 		params[GATE2_PARAM].config(0.0f, 1.0f, 0.0f, "Gate 2");

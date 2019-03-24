@@ -33,6 +33,12 @@
 			"tags": ["Sequencer"]
 		},
 		{
+			"slug": "Foundry-Expander",
+			"name": "SEQ - Foundry expander",
+			"description": "Expander for Foundry",
+			"tags": ["Expander"]
+		},
+		{
 			"slug": "Write-Seq-32",
 			"name": "SEQ - WriteSeq32",
 			"description": "3-channel 32-step sequencer",
