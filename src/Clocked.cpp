@@ -225,8 +225,8 @@ struct Clocked : Module {
 	
 	
 	// Expander
-	float consumerMessage[16] = {};// this module must read from here
-	float producerMessage[16] = {};// expander will write into here
+	float consumerMessage[8] = {};// this module must read from here
+	float producerMessage[8] = {};// expander will write into here
 		
 
 	// Constants
@@ -314,15 +314,15 @@ struct Clocked : Module {
 		for (int i = 0; i < 4; i++) {
 			// Pulse Width
 			pulseWidth[i] = params[PW_PARAMS + i].getValue();
-			if (i < 3 && (expanderPresent && consumerMessage[i * 2 + 0] > 0.5f)) {
-				pulseWidth[i] += (consumerMessage[i * 2 + 1] / 10.0f) - 0.5f;
+			if (i < 3 && (expanderPresent && !std::isnan(consumerMessage[i]))) {
+				pulseWidth[i] += (consumerMessage[i] / 10.0f) - 0.5f;
 				pulseWidth[i] = clamp(pulseWidth[i], 0.0f, 1.0f);
 			}
 			
 			// Swing
 			swingAmount[i] = params[SWING_PARAMS + i].getValue();
-			if (i < 3 && (expanderPresent && consumerMessage[(i + 4) * 2 + 0] > 0.5f)) {
-				swingAmount[i] += (consumerMessage[(i + 4) * 2 + 1] / 5.0f) - 1.0f;
+			if (i < 3 && (expanderPresent && !std::isnan(consumerMessage[i + 4]))) {
+				swingAmount[i] += (consumerMessage[i + 4] / 5.0f) - 1.0f;
 				swingAmount[i] = clamp(swingAmount[i], -1.0f, 1.0f);
 			}
 		}
@@ -716,6 +716,7 @@ struct Clocked : Module {
 			if (editingBpmMode < 0l)
 				editingBpmMode = 0l;
 			
+			// To Expander
 			if (rightModule && rightModule->model == modelClockedExpander) {
 				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
 				producerMessage[0] = (float)panelTheme;

@@ -21,26 +21,28 @@ struct FoundryExpander : Module {
 		NUM_PARAMS
 	};
 	enum InputIds {
+		ENUMS(VEL_INPUTS, Sequencer::NUM_TRACKS),// needs connected
+		ENUMS(SEQCV_INPUTS, Sequencer::NUM_TRACKS),// needs connected
+		TRKCV_INPUT,// needs connected
 		GATECV_INPUT,
 		GATEPCV_INPUT,
 		TIEDCV_INPUT,
 		SLIDECV_INPUT,
-		ENUMS(VEL_INPUTS, Sequencer::NUM_TRACKS),
-		TRKCV_INPUT,
-		ENUMS(SEQCV_INPUTS, Sequencer::NUM_TRACKS),
 		WRITE_SRC_INPUT,
+		LEFTCV_INPUT,
+		RIGHTCV_INPUT,
 		NUM_INPUTS
 	};
 	
 	enum LightIds {
-		ENUMS(WRITECV2_LIGHTS, Sequencer::NUM_TRACKS),
 		ENUMS(WRITE_SEL_LIGHTS, 2),
+		ENUMS(WRITECV2_LIGHTS, Sequencer::NUM_TRACKS),
 		NUM_LIGHTS
 	};
 	
 	// Expander
-	float consumerMessage[1 + 4 + 2] = {};// this module must read from here
-	float producerMessage[1 + 4 + 2] = {};// mother will write into here (panelTheme, WRITECV2_LIGHTS, WRITE_SEL_LIGHTS)
+	float consumerMessage[1 + 2 + Sequencer::NUM_TRACKS] = {};// this module must read from here
+	float producerMessage[1 + 2 + Sequencer::NUM_TRACKS] = {};// mother will write into here (panelTheme, WRITE_SEL_LIGHTS (2), WRITECV2_LIGHTS (4))
 
 
 	// No need to save
@@ -59,15 +61,26 @@ struct FoundryExpander : Module {
 
 
 	void process(const ProcessArgs &args) override {		
-		if (leftModule && leftModule->model == modelClocked) {
+		if (leftModule && leftModule->model == modelFoundry) {
+			// To Mother
 			float *producerMessage = reinterpret_cast<float*>(leftModule->rightProducerMessage);
-			for (int i = 0; i < 8; i++) {
-				producerMessage[i * 2 + 0] = (inputs[i].isConnected() ? 1.0f : 0.0f);
-				producerMessage[i * 2 + 1] = inputs[i].getVoltage();
+			int i = 0;
+			for (; i < GATECV_INPUT; i++) {
+				producerMessage[i] = (inputs[i].isConnected() ? inputs[i].getVoltage() : std::numeric_limits<float>::quiet_NaN());
 			}
+			for (; i < NUM_INPUTS; i++) {
+				producerMessage[i] = inputs[i].getVoltage();
+			}
+			producerMessage[i++] = params[SYNC_SEQCV_PARAM].getValue();
+			producerMessage[i++] = params[WRITEMODE_PARAM].getValue();
 			
+			// From Mother
 			panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
-			// TODO read 6 lights from consumerMessage[]
+			lights[WRITE_SEL_LIGHTS + 0].value = consumerMessage[1];
+			lights[WRITE_SEL_LIGHTS + 1].value = consumerMessage[2];			
+			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
+				lights[WRITECV2_LIGHTS + trkn].value = consumerMessage[trkn + 3];
+			}	
 		}		
 	}// process()
 };
@@ -77,6 +90,11 @@ struct FoundryExpanderWidget : ModuleWidget {
 	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 	
+	struct CKSSNoRandom : CKSS {// Not randomizable
+		CKSSNoRandom() {}
+		void randomize() override {}
+	};
+
 	FoundryExpanderWidget(FoundryExpander *module) {
 		setModule(module);
 	
@@ -98,9 +116,15 @@ struct FoundryExpanderWidget : ModuleWidget {
 
 		// Expansion module
 		static const int rowSpacingExp = 49;
-		static const int colRulerExp = box.size.x - expWidth / 2;
+		static const int colRulerExp = box.size.x / 2;
 		static const int colOffsetX = 44;
 		static const int se = -10;
+		
+		static const int rowRulerBLow = 335;
+		static const int rowRulerBHigh = 286;
+		static const int writeLEDoffsetX = 16;
+		static const int writeLEDoffsetY = 18;
+
 		
 		// Seq A,B and track row
 		addInput(createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh - rowSpacingExp * 4 + 2*se), true, module, FoundryExpander::SEQCV_INPUTS + 0, module ? &module->panelTheme : NULL));
@@ -114,7 +138,7 @@ struct FoundryExpanderWidget : ModuleWidget {
 
 		addInput(createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh - rowSpacingExp * 3 + 2*se), true, module, FoundryExpander::SEQCV_INPUTS + 3, module ? &module->panelTheme : NULL));
 
-		addParam(createParamCentered<CKSSNotify>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 3 + 2*se), module, FoundryExpander::SYNC_SEQCV_PARAM));// 1.0f is top position
+		addParam(createParamCentered<CKSSNoRandom>(Vec(colRulerExp + colOffsetX, rowRulerBHigh - rowSpacingExp * 3 + 2*se), module, FoundryExpander::SYNC_SEQCV_PARAM));// 1.0f is top position
 
 		
 		// Gate, tied, slide
@@ -158,7 +182,7 @@ struct FoundryExpanderWidget : ModuleWidget {
 	}
 };
 
-Model *modelFoundryExpander = createModel<FoundryExpander, FoundryExpanderWidget>("Clocked-Expander");
+Model *modelFoundryExpander = createModel<FoundryExpander, FoundryExpanderWidget>("Foundry-Expander");
 
 /*CHANGE LOG
 

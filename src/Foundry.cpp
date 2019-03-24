@@ -82,6 +82,15 @@ struct Foundry : Module {
 		NUM_LIGHTS
 	};
 	
+	// Expander
+	static const int messageSize = 	Sequencer::NUM_TRACKS + // VEL_INPUTS with connected
+									Sequencer::NUM_TRACKS + // SEQCV_INPUTS with connected
+									1 + // TRKCV_INPUT with connected
+									7 + // GATECV_INPUT, GATEPCV_INPUT, TIEDCV_INPUT, SLIDECV_INPUT, WRITE_SRC_INPUT, LEFTCV_INPUT, RIGHTCV_INPUT
+									2; // SYNC_SEQCV_PARAM, WRITEMODE_PARAM
+	float consumerMessage[messageSize] = {};// this module must read from here
+	float producerMessage[messageSize] = {};// expander will write into here
+		
 	// Constants
 	enum EditPSDisplayStateIds {DISP_NORMAL, DISP_MODE_SEQ, DISP_MODE_SONG, DISP_LEN, DISP_REPS, DISP_TRANSPOSE, DISP_ROTATE, DISP_PPQN, DISP_DELAY, DISP_COPY_SEQ, DISP_PASTE_SEQ, DISP_COPY_SONG, DISP_PASTE_SONG, DISP_COPY_SONG_CUST};
 	static constexpr float warningTime = 0.7f;// seconds
@@ -166,6 +175,9 @@ struct Foundry : Module {
 	Foundry() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
+		rightProducerMessage = producerMessage;
+		rightConsumerMessage = consumerMessage;
+
 		char strBuf[32];
 		const int numX = SequencerKernel::MAX_STEPS / 2;
 		for (int x = 0; x < numX; x++) {
@@ -430,29 +442,31 @@ struct Foundry : Module {
 		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
 			
 			// Track CV input
-			if (inputs[TRKCV_INPUT].isConnected()) {
-				int newTrk = (int)( inputs[TRKCV_INPUT].getVoltage() * (2.0f * (float)Sequencer::NUM_TRACKS - 1.0f) / 10.0f + 0.5f );
+			float trkCVin = consumerMessage[Sequencer::NUM_TRACKS * 2 + 0];
+			if (!std::isnan(trkCVin)) {
+				int newTrk = (int)( trkCVin * (2.0f * (float)Sequencer::NUM_TRACKS - 1.0f) / 10.0f + 0.5f );
 				seq.setTrackIndexEdit(abs(newTrk));
 				multiTracks = (newTrk > 3);
 			}
 			
 			// Seq CV input
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-				if (inputs[SEQCV_INPUTS + trkn].isConnected()) {
+				float seqCVin = consumerMessage[Sequencer::NUM_TRACKS + trkn];
+				if (!std::isnan(seqCVin)) {
 					int newSeq = -1;
 					if (seqCVmethod == 0) {// 0-10 V
-						newSeq = (int)( inputs[SEQCV_INPUTS + trkn].getVoltage() * ((float)SequencerKernel::MAX_SEQS - 1.0f) / 10.0f + 0.5f );
+						newSeq = (int)(seqCVin * ((float)SequencerKernel::MAX_SEQS - 1.0f) / 10.0f + 0.5f );
 						newSeq = clamp(newSeq, 0, SequencerKernel::MAX_SEQS - 1);
 					}
 					else if (seqCVmethod == 1) {// C2-D7#
-						newSeq = (int)( (inputs[SEQCV_INPUTS + trkn].getVoltage() + 2.0f) * 12.0f + 0.5f );
+						newSeq = (int)( (seqCVin + 2.0f) * 12.0f + 0.5f );
 						newSeq = clamp(newSeq, 0, SequencerKernel::MAX_SEQS - 1);
 					}
-					else if (seqCVTriggers[trkn].process(inputs[SEQCV_INPUTS + trkn].getVoltage())) {// TrigIncr
+					else if (seqCVTriggers[trkn].process(seqCVin)) {// TrigIncr
 						newSeq = clamp(seq.getSeqIndexEdit(trkn) + 1, 0, SequencerKernel::MAX_SEQS - 1);
 					}
 					if (newSeq >= 0) {
-						if (params[SYNC_SEQCV_PARAM].getValue() > 0.5f && running)
+						if (consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 7] > 0.5f && running)
 							seq.requestDelayedSeqChange(trkn, newSeq);
 						else
 							seq.setSeqIndexEdit(newSeq, trkn);				
@@ -532,9 +546,10 @@ struct Foundry : Module {
 					int multiStepsCount = multiSteps ? cpSeqLength : 1;
 					for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 						if (trkn == seq.getTrackIndexEdit() || multiTracks) {
-							if (inputs[VEL_INPUTS + trkn].isConnected() && ((writeMode & 0x1) == 0)) {	// must be before seq.writeCV() below, so that editing CV2 can be grabbed
+							float velCVin = consumerMessage[0 + trkn];
+							if (!std::isnan(velCVin) && ((writeMode & 0x1) == 0)) {	// must be before seq.writeCV() below, so that editing CV2 can be grabbed
 								float maxVel = (velocityMode > 0 ? 127.0f : 200.0f);
-								float capturedCV = inputs[VEL_INPUTS + trkn].getVoltage() + (velocityBipol ? 5.0f : 0.0f);
+								float capturedCV = velCVin + (velocityBipol ? 5.0f : 0.0f);
 								int intVel = (int)(capturedCV * maxVel / 10.0f + 0.5f);
 								seq.setVelocityVal(trkn, clamp(intVel, 0, 200), multiStepsCount, false);
 							}
@@ -545,15 +560,15 @@ struct Foundry : Module {
 					}
 					seq.setEditingGateKeyLight(-1);
 					if (params[AUTOSTEP_PARAM].getValue() > 0.5f)
-						seq.autostep(autoseq && !inputs[SEQCV_INPUTS + seq.getTrackIndexEdit()].isConnected(), autostepLen, multiTracks);
+						seq.autostep(autoseq && std::isnan(consumerMessage[Sequencer::NUM_TRACKS + seq.getTrackIndexEdit()]), autostepLen, multiTracks);
 				}
 			}
 			// Left and right CV inputs
 			int delta = 0;
-			if (leftTrigger.process(inputs[LEFTCV_INPUT].getVoltage())) {
+			if (leftTrigger.process(consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 5])) {
 				delta = -1;
 			}
-			if (rightTrigger.process(inputs[RIGHTCV_INPUT].getVoltage())) {
+			if (rightTrigger.process(consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 6])) {
 				delta = +1;
 			}
 			if (delta != 0) {
@@ -677,18 +692,18 @@ struct Foundry : Module {
 
 			// Track Inc/Dec buttons
 			if (trackIncTrigger.process(params[TRACKUP_PARAM].getValue())) {
-				if (!inputs[TRKCV_INPUT].isConnected()) {
+				if (std::isnan(consumerMessage[Sequencer::NUM_TRACKS * 2 + 0])) {
 					seq.incTrackIndexEdit();
 				}
 			}
 			if (trackDeccTrigger.process(params[TRACKDOWN_PARAM].getValue())) {
-				if (!inputs[TRKCV_INPUT].isConnected()) {
+				if (std::isnan(consumerMessage[Sequencer::NUM_TRACKS * 2 + 0])) {
 					seq.decTrackIndexEdit();
 				}
 			}
 			// All button
 			if (allTrigger.process(params[ALLTRACKS_PARAM].getValue())) {
-				if (!inputs[TRKCV_INPUT].isConnected()) {
+				if (std::isnan(consumerMessage[Sequencer::NUM_TRACKS * 2 + 0])) {
 					if (!attached) {
 						multiTracks = !multiTracks;
 					}
@@ -721,7 +736,7 @@ struct Foundry : Module {
 			}
 			
 			// Write mode button
-			if (writeModeTrigger.process(params[WRITEMODE_PARAM].getValue() + inputs[WRITE_SRC_INPUT].getVoltage())) {
+			if (writeModeTrigger.process(consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 7 + 1] + consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 4])) {
 				if (editingSequence) {
 					if (++writeMode > 2)
 						writeMode =0;
@@ -781,13 +796,13 @@ struct Foundry : Module {
 					else {// DISP_NORMAL
 						if (editingSequence) {
 							int activeTrack = seq.getTrackIndexEdit();
-							if (!inputs[SEQCV_INPUTS + activeTrack].isConnected()) {
+							if (std::isnan(consumerMessage[Sequencer::NUM_TRACKS + activeTrack])) {
 								seq.moveSeqIndexEdit(deltaSeqKnob);
 								if (multiTracks) {
 									int newSeq = seq.getSeqIndexEdit();
 									for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 										if (trkn == activeTrack) continue;
-										if (!inputs[SEQCV_INPUTS + trkn].isConnected()) {
+										if (std::isnan(consumerMessage[Sequencer::NUM_TRACKS + trkn])) {
 											seq.setSeqIndexEdit(newSeq, trkn);
 										}
 									}
@@ -877,13 +892,13 @@ struct Foundry : Module {
 			}
 			
 			// Gate, GateProb, Slide and Tied buttons
-			if (gate1Trigger.process(params[GATE_PARAM].getValue() + inputs[GATECV_INPUT].getVoltage())) {
+			if (gate1Trigger.process(params[GATE_PARAM].getValue() + consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 0])) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					seq.toggleGate(multiSteps ? cpSeqLength : 1, multiTracks);
 				}
 			}		
-			if (gateProbTrigger.process(params[GATE_PROB_PARAM].getValue() + inputs[GATEPCV_INPUT].getVoltage())) {
+			if (gateProbTrigger.process(params[GATE_PROB_PARAM].getValue() + consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 1])) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (seq.toggleGateP(multiSteps ? cpSeqLength : 1, multiTracks)) 
@@ -892,7 +907,7 @@ struct Foundry : Module {
 						velEditMode = 1;
 				}
 			}		
-			if (slideTrigger.process(params[SLIDE_BTN_PARAM].getValue() + inputs[SLIDECV_INPUT].getVoltage())) {
+			if (slideTrigger.process(params[SLIDE_BTN_PARAM].getValue() + consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 2])) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (seq.toggleSlide(multiSteps ? cpSeqLength : 1, multiTracks))
@@ -901,7 +916,7 @@ struct Foundry : Module {
 						velEditMode = 2;
 				}
 			}		
-			if (tiedTrigger.process(params[TIE_PARAM].getValue() + inputs[TIEDCV_INPUT].getVoltage())) {
+			if (tiedTrigger.process(params[TIE_PARAM].getValue() + consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 3])) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					seq.toggleTied(multiSteps ? cpSeqLength : 1, multiTracks);// will clear other attribs if new state is on
@@ -936,7 +951,7 @@ struct Foundry : Module {
 			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 				clockTriggers[trkn].reset();	
-				if (inputs[SEQCV_INPUTS + trkn].isConnected() && seqCVmethod == 2)
+				if (!std::isnan(consumerMessage[Sequencer::NUM_TRACKS + trkn]) && seqCVmethod == 2)
 					seq.setSeqIndexEdit(0, trkn);
 			}
 		}
@@ -1145,19 +1160,12 @@ struct Foundry : Module {
 				lights[VEL_SLIDE_LIGHT].value = 0.0f;
 			}
 			
-			// CV writing lights
+			// CV writing lights (CV only, CV2 done below for exp panel)
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-				if (editingSequence) {
-					lights[WRITECV_LIGHTS + trkn].value = (((writeMode & 0x2) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
-					lights[WRITECV2_LIGHTS + trkn].value = (((writeMode & 0x1) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
-				}
-				else {
-					lights[WRITECV_LIGHTS + trkn].value = 0.0f;
-					lights[WRITECV2_LIGHTS + trkn].value = 0.0f;
-				}
+				lights[WRITECV_LIGHTS + trkn].value = (editingSequence && ((writeMode & 0x2) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
 			}	
-			lights[WRITE_SEL_LIGHTS + 0].value = (((writeMode & 0x2) == 0) && editingSequence) ? 1.0f : 0.0f;
-			lights[WRITE_SEL_LIGHTS + 1].value = (((writeMode & 0x1) == 0) && editingSequence) ? 1.0f : 0.0f;
+			
+			
 				
 			seq.stepEditingGate();// also steps editingType
 			if (tiedWarning > 0l)
@@ -1168,6 +1176,17 @@ struct Foundry : Module {
 				if (revertDisplay == 1)
 					displayState = DISP_NORMAL;
 				revertDisplay--;
+			}
+			
+			// To Expander
+			if (rightModule && rightModule->model == modelFoundryExpander) {
+				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
+				producerMessage[0] = (float)panelTheme;
+				producerMessage[1] = (((writeMode & 0x2) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 0].value
+				producerMessage[2] = (((writeMode & 0x1) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 1].value
+				for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
+					producerMessage[3 + trkn] = (editingSequence && ((writeMode & 0x1) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
+				}	
 			}
 		}// lightRefreshCounter
 				
@@ -1681,7 +1700,7 @@ struct FoundryWidget : ModuleWidget {
 			else {// DISP_NORMAL
 				if (module->isEditingSequence()) {
 					for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-						if (!module->inputs[Foundry::SEQCV_INPUTS + trkn].isConnected()) {
+						if (std::isnan(module->consumerMessage[Sequencer::NUM_TRACKS + trkn])) {
 							if (module->multiTracks || (trkn == module->seq.getTrackIndexEdit())) {
 								module->seq.setSeqIndexEdit(0, trkn);
 							}

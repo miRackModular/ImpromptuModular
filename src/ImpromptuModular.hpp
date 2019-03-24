@@ -27,6 +27,7 @@ extern Model *modelTwelveKey;
 extern Model *modelClocked;
 extern Model *modelClockedExpander;
 extern Model *modelFoundry;
+extern Model *modelFoundryExpander;
 extern Model *modelGateSeq64;
 extern Model *modelPhraseSeq16;
 extern Model *modelPhraseSeq32;

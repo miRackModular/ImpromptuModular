@@ -16,8 +16,8 @@
 
 struct ClockedExpander : Module {
 	enum InputIds {
-		ENUMS(PW_INPUTS, 4),// master is index 0
-		ENUMS(SWING_INPUTS, 4),// master is index 0
+		ENUMS(PW_INPUTS, 4),// needs connected
+		ENUMS(SWING_INPUTS, 4),// needs connected
 		NUM_INPUTS
 	};
 
@@ -41,12 +41,13 @@ struct ClockedExpander : Module {
 
 	void process(const ProcessArgs &args) override {		
 		if (leftModule && leftModule->model == modelClocked) {
+			// To Mother
 			float *producerMessage = reinterpret_cast<float*>(leftModule->rightProducerMessage);
 			for (int i = 0; i < 8; i++) {
-				producerMessage[i * 2 + 0] = (inputs[i].isConnected() ? 1.0f : 0.0f);
-				producerMessage[i * 2 + 1] = inputs[i].getVoltage();
+				producerMessage[i] = (inputs[i].isConnected() ? inputs[i].getVoltage() : std::numeric_limits<float>::quiet_NaN());
 			}
 			
+			// From Mother
 			panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
 		}		
 	}// process()
