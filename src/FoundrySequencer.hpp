@@ -196,7 +196,7 @@ class Sequencer {
 			velRet = velRet * 10.0f / 127.0f;
 		else
 			velRet = velRet / 12.0f;
-		return min(velRet, 10.0f);
+		return std::min(velRet, 10.0f);
 	}
 	inline float calcKeyLightWithEditing(int keyScanIndex, int keyLightIndex, float sampleRate) {
 		if (editingGate[trackIndexEdit] > 0ul && editingGateKeyLight != -1)
@@ -248,9 +248,9 @@ class Sequencer {
 
 	void clockStep(int trkn, bool editingSequence);
 	
-	inline void process(const ProcessArgs &args) {
+	inline void process() {
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
-			sek[trkn].step();
+			sek[trkn].process();
 	}
 	
 };// class Sequencer 

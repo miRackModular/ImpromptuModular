@@ -239,8 +239,8 @@ class SequencerKernel {
 	inline void setLength(int _length) {sequences[seqIndexEdit].setLength(_length);}
 	inline void setPhraseReps(int phrn, int _reps) {phrases[phrn].setReps(_reps);}
 	inline void setPhraseSeqNum(int phrn, int _seqn) {phrases[phrn].setSeqNum(_seqn);}
-	inline void setBegin(int phrn) {songBeginIndex = phrn; songEndIndex = max(phrn, songEndIndex);}
-	inline void setEnd(int phrn) {songEndIndex = phrn; songBeginIndex = min(phrn, songBeginIndex);}
+	inline void setBegin(int phrn) {songBeginIndex = phrn; songEndIndex = std::max(phrn, songEndIndex);}
+	inline void setEnd(int phrn) {songEndIndex = phrn; songBeginIndex = std::min(phrn, songBeginIndex);}
 	inline void setRunModeSong(int _runMode) {runModeSong = _runMode;}
 	inline void setRunModeSeq(int _runMode) {sequences[seqIndexEdit].setRunMode(_runMode);}
 	void setGate(int stepn, bool newGate, int count);
@@ -365,7 +365,7 @@ class SequencerKernel {
 	void dataFromJson(json_t *rootJ);
 	void initRun(bool editingSequence);
 	bool clockStep(bool editingSequence, int delayedSeqNumberRequest);
-	inline void process(const ProcessArgs &args) {
+	inline void process() {
 		clockPeriod++;
 	}
 	int keyIndexToGateTypeEx(int keyIndex);
