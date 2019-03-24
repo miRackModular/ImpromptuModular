@@ -27,7 +27,6 @@ struct BigButtonSeq : Module {
 		DEL_PARAM,
 		FILL_PARAM,
 		BIG_PARAM,
-		// -- 0.6.10 ^^
 		WRITEFILL_PARAM,
 		QUANTIZEBIG_PARAM,
 		NUM_PARAMS
@@ -54,7 +53,6 @@ struct BigButtonSeq : Module {
 		BIG_LIGHT,
 		BIGC_LIGHT,
 		ENUMS(METRONOME_LIGHT, 2),// Room for GreenRed
-		// -- 0.6.10 ^^
 		WRITEFILL_LIGHT,
 		QUANTIZEBIG_LIGHT,
 		NUM_LIGHTS

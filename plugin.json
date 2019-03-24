@@ -39,6 +39,30 @@
 			"tags": ["Expander"]
 		},
 		{
+			"slug": "Gate-Seq-64",
+			"name": "SEQ - GateSeq64",
+			"description": "64 step / 32 pattern gate sequencer",
+			"tags": ["Sequencer"]
+		},
+		{
+			"slug": "Phrase-Seq-16",
+			"name": "SEQ - PhraseSeq16",
+			"description": "16 step / 16 phrase sequencer",
+			"tags": ["Sequencer"]
+		},
+		{
+			"slug": "Phrase-Seq-32",
+			"name": "SEQ - PhraseSeq32",
+			"description": "32 step / 32 phrase sequencer",
+			"tags": ["Sequencer"]
+		},
+		{
+			"slug": "Phrase-Seq-Expander",
+			"name": "SEQ - PhraseSeq expander",
+			"description": "Expander for PhraseSeq16/32",
+			"tags": ["Expander"]
+		},
+		{
 			"slug": "Write-Seq-32",
 			"name": "SEQ - WriteSeq32",
 			"description": "3-channel 32-step sequencer",

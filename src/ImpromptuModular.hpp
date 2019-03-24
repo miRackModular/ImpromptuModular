@@ -31,6 +31,7 @@ extern Model *modelFoundryExpander;
 extern Model *modelGateSeq64;
 extern Model *modelPhraseSeq16;
 extern Model *modelPhraseSeq32;
+extern Model *modelPhraseSeqExpander;
 extern Model *modelWriteSeq32;
 extern Model *modelWriteSeq64;
 extern Model *modelBigButtonSeq;

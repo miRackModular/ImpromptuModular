@@ -28,10 +28,8 @@ struct GateSeq64 : Module {
 		EDIT_PARAM,
 		SEQUENCE_PARAM,
 		CPMODE_PARAM,
-		// -- 0.6.9 ^^
 		GMODELEFT_PARAM,// no longer used
 		GMODERIGHT_PARAM,// no longer used
-		// -- 0.6.11 ^^
 		ENUMS(GMODE_PARAMS, 8),
 		NUM_PARAMS
 	};
@@ -40,13 +38,11 @@ struct GateSeq64 : Module {
 		RESET_INPUT,
 		RUNCV_INPUT,
 		SEQCV_INPUT,
-		// -- 0.6.7 ^^
 		WRITE_INPUT,
 		GATE_INPUT,
 		PROB_INPUT,
 		WRITE1_INPUT,
 		WRITE0_INPUT,
-		// -- 0.6.10 ^^
 		STEPL_INPUT,
 		NUM_INPUTS
 	};
@@ -131,7 +127,7 @@ struct GateSeq64 : Module {
 	Trigger gModeTriggers[8];
 	Trigger probTrigger;
 	Trigger seqCVTrigger;
-	BooleanTrigger editingSequenceTrigger;
+	dsp::BooleanTrigger editingSequenceTrigger;
 	HoldDetect modeHoldDetect;
 	SeqAttributesGS seqAttribBuffer[MAX_SEQS];// buffer from Json for thread safety
 
@@ -175,6 +171,33 @@ struct GateSeq64 : Module {
 		
 	GateSeq64() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		
+		char strBuf[32];
+		// Step LED buttons and GateMode lights
+		for (int y = 0; y < 4; y++) {
+			for (int x = 0; x < 16; x++) {
+				snprintf(strBuf, 32, "Step/phrase %i", y * 16 + x + 1);
+				params[STEP_PARAMS + y * 16 + x].config(0.0f, 1.0f, 0.0f, strBuf);
+			}
+		}
+		params[GMODE_PARAMS + 2].config(0.0f, 1.0f, 0.0f, "Gate type 3");
+		params[GMODE_PARAMS + 1].config(0.0f, 1.0f, 0.0f, "Gate type 2");
+		params[GMODE_PARAMS + 0].config(0.0f, 1.0f, 0.0f, "Gate type 1");
+		for (int x = 1; x < 6; x++) {
+			snprintf(strBuf, 32, "Gate type %i", 2 + x + 1);
+			params[GMODE_PARAMS + 2 + x].config(0.0f, 1.0f, 0.0f, strBuf);
+		}
+		params[PROB_PARAM].config(0.0f, 1.0f, 0.0f, "Probability");
+		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");
+		params[SEQUENCE_PARAM].config(-INFINITY, INFINITY, 0.0f, "Sequence");		
+		params[RUN_PARAM].config(0.0f, 1.0f, 0.0f, "Run");
+		params[MODES_PARAM].config(0.0f, 1.0f, 0.0f, "Length / run mode");
+		params[COPY_PARAM].config(0.0f, 1.0f, 0.0f, "Copy");
+		params[PASTE_PARAM].config(0.0f, 1.0f, 0.0f, "Paste");
+		params[EDIT_PARAM].config(0.0f, 1.0f, 1.0f, "Seq/song mode");
+		params[CONFIG_PARAM].config(0.0f, 2.0f, CONFIG_PARAM_INIT_VALUE, "Configuration (1, 2, 4 chan)");// 0.0f is top position
+		params[CPMODE_PARAM].config(0.0f, 2.0f, 2.0f, "Copy-paste mode");		
+		
 		for (int i = 0; i < MAX_SEQS; i++)
 			seqAttribBuffer[i].init(16, MODE_FWD);
 		onReset();
@@ -579,9 +602,9 @@ struct GateSeq64 : Module {
 				if (params[CPMODE_PARAM].getValue() > 1.5f)// ALL
 					startCP = 0;			
 				else if (params[CPMODE_PARAM].getValue() < 0.5f)// 4
-					countCP = min(4, 64 - startCP);
+					countCP = std::min(4, 64 - startCP);
 				else// 8
-					countCP = min(8, 64 - startCP);
+					countCP = std::min(8, 64 - startCP);
 				if (editingSequence) {	
 					for (int i = 0, s = startCP; i < countCP; i++, s++)
 						attribCPbuffer[i] = attributes[sequence][s];
@@ -603,7 +626,7 @@ struct GateSeq64 : Module {
 				startCP = 0;
 				if (countCP <= 8) {
 					startCP = editingSequence ? stepIndexEdit : phraseIndexEdit;
-					countCP = min(countCP, 64 - startCP);
+					countCP = std::min(countCP, 64 - startCP);
 				}
 				// else nothing to do for ALL
 					
@@ -1096,11 +1119,8 @@ struct GateSeq64 : Module {
 };// GateSeq64 : module
 
 struct GateSeq64Widget : ModuleWidget {
-	GateSeq64 *module;
-	DynamicSVGPanel *panel;
-	int oldExpansion;
-	int expWidth = 60;
-	IMPort* expPorts[6];
+	SvgPanel* lightPanel;
+	SvgPanel* darkPanel;
 		
 	struct SequenceDisplayWidget : TransparentWidget {
 		GateSeq64 *module;
@@ -1119,76 +1139,81 @@ struct GateSeq64Widget : ModuleWidget {
 		void draw(const DrawArgs &args) override {
 			NVGcolor textColor = prepareDisplay(args.vg, &box, 18);
 			nvgFontFaceId(args.vg, font->handle);
-			bool editingSequence = module->isEditingSequence();
-
 			Vec textPos = Vec(6, 24);
 			nvgFillColor(args.vg, nvgTransRGBA(textColor, displayAlpha));
 			nvgText(args.vg, textPos.x, textPos.y, "~~~", NULL);
 			nvgFillColor(args.vg, textColor);				
-			if (module->infoCopyPaste != 0l) {
-				if (module->infoCopyPaste > 0l)// if copy display "CPY"
-					snprintf(displayStr, 4, "CPY");
-				else {
-					float cpMode = module->params[GateSeq64::CPMODE_PARAM].getValue();
-					if (editingSequence && !module->seqCopied) {// cross paste to seq
-						if (cpMode > 1.5f)// All = init
-							snprintf(displayStr, 4, "CLR");
-						else if (cpMode < 0.5f)// 4 = random gate
-							snprintf(displayStr, 4, "RGT");
-						else// 8 = random probs
-							snprintf(displayStr, 4, "RPR");
-					}
-					else if (!editingSequence && module->seqCopied) {// cross paste to song
-						if (cpMode > 1.5f)// All = init
-							snprintf(displayStr, 4, "CLR");
-						else if (cpMode < 0.5f)// 4 = increase by 1
-							snprintf(displayStr, 4, "INC");
-						else// 8 = random phrases
-							snprintf(displayStr, 4, "RPH");
-					}
-					else
-						snprintf(displayStr, 4, "PST");
-				}
-			}
-			else if (module->displayProbInfo != 0l) {
-				int prob = module->attributes[module->sequence][module->stepIndexEdit].getGatePVal();
-				if ( prob>= 100)
-					snprintf(displayStr, 4, "1,0");
-				else if (prob >= 1)
-					snprintf(displayStr, 4, ",%02u", (unsigned) prob);
-				else
-					snprintf(displayStr, 4, "  0");
-			}
-			else if (module->editingPpqn != 0ul) {
-				snprintf(displayStr, 4, "x%2u", (unsigned) module->pulsesPerStep);
-			}
-			else if (module->displayState == GateSeq64::DISP_LENGTH) {
-				if (editingSequence)
-					snprintf(displayStr, 4, "L%2u", (unsigned) module->sequences[module->sequence].getLength());
-				else
-					snprintf(displayStr, 4, "L%2u", (unsigned) module->phrases);
-			}
-			else if (module->displayState == GateSeq64::DISP_MODES) {
-				if (editingSequence)
-					runModeToStr(module->sequences[module->sequence].getRunMode());
-				else
-					runModeToStr(module->runModeSong);
+			
+			if (module == NULL) {
+				snprintf(displayStr, 4, "  1");
 			}
 			else {
-				int dispVal = 0;
-				char specialCode = ' ';
-				if (editingSequence)
-					dispVal = module->sequence;
-				else {
-					if (module->editingPhraseSongRunning > 0l || !module->running) {
-						dispVal = module->phrase[module->phraseIndexEdit];
-						if (module->editingPhraseSongRunning > 0l)
-							specialCode = '*';
+				bool editingSequence = module->isEditingSequence();
+				if (module->infoCopyPaste != 0l) {
+					if (module->infoCopyPaste > 0l)// if copy display "CPY"
+						snprintf(displayStr, 4, "CPY");
+					else {
+						float cpMode = module->params[GateSeq64::CPMODE_PARAM].getValue();
+						if (editingSequence && !module->seqCopied) {// cross paste to seq
+							if (cpMode > 1.5f)// All = init
+								snprintf(displayStr, 4, "CLR");
+							else if (cpMode < 0.5f)// 4 = random gate
+								snprintf(displayStr, 4, "RGT");
+							else// 8 = random probs
+								snprintf(displayStr, 4, "RPR");
+						}
+						else if (!editingSequence && module->seqCopied) {// cross paste to song
+							if (cpMode > 1.5f)// All = init
+								snprintf(displayStr, 4, "CLR");
+							else if (cpMode < 0.5f)// 4 = increase by 1
+								snprintf(displayStr, 4, "INC");
+							else// 8 = random phrases
+								snprintf(displayStr, 4, "RPH");
+						}
+						else
+							snprintf(displayStr, 4, "PST");
 					}
-					else
-						dispVal = module->phrase[module->phraseIndexRun];
 				}
-				snprintf(displayStr, 4, "%c%2u", specialCode, (unsigned)(dispVal) + 1 );
+				else if (module->displayProbInfo != 0l) {
+					int prob = module->attributes[module->sequence][module->stepIndexEdit].getGatePVal();
+					if ( prob>= 100)
+						snprintf(displayStr, 4, "1,0");
+					else if (prob >= 1)
+						snprintf(displayStr, 4, ",%02u", (unsigned) prob);
+					else
+						snprintf(displayStr, 4, "  0");
+				}
+				else if (module->editingPpqn != 0ul) {
+					snprintf(displayStr, 4, "x%2u", (unsigned) module->pulsesPerStep);
+				}
+				else if (module->displayState == GateSeq64::DISP_LENGTH) {
+					if (editingSequence)
+						snprintf(displayStr, 4, "L%2u", (unsigned) module->sequences[module->sequence].getLength());
+					else
+						snprintf(displayStr, 4, "L%2u", (unsigned) module->phrases);
+				}
+				else if (module->displayState == GateSeq64::DISP_MODES) {
+					if (editingSequence)
+						runModeToStr(module->sequences[module->sequence].getRunMode());
+					else
+						runModeToStr(module->runModeSong);
+				}
+				else {
+					int dispVal = 0;
+					char specialCode = ' ';
+					if (editingSequence)
+						dispVal = module->sequence;
+					else {
+						if (module->editingPhraseSongRunning > 0l || !module->running) {
+							dispVal = module->phrase[module->phraseIndexEdit];
+							if (module->editingPhraseSongRunning > 0l)
+								specialCode = '*';
+						}
+						else
+							dispVal = module->phrase[module->phraseIndexRun];
+					}
+					snprintf(displayStr, 4, "%c%2u", specialCode, (unsigned)(dispVal) + 1 );
+				}
 			}
 			nvgText(args.vg, textPos.x, textPos.y, displayStr, NULL);
 		}
@@ -1202,12 +1227,6 @@ struct GateSeq64Widget : ModuleWidget {
 		}
 		void step() override {
 			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
-	struct ExpansionItem : MenuItem {
-		GateSeq64 *module;
-		void onAction(const widget::ActionEvent &e) override {
-			module->expansion = module->expansion == 1 ? 0 : 1;
 		}
 	};
 	struct ResetOnRunItem : MenuItem {
@@ -1278,111 +1297,85 @@ struct GateSeq64Widget : ModuleWidget {
 		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in: ", "");
 		seqcvItem->module = module;
 		menu->addChild(seqcvItem);
-		
-		menu->addChild(new MenuLabel());// empty line
-		
-		MenuLabel *expansionLabel = new MenuLabel();
-		expansionLabel->text = "Expansion module";
-		menu->addChild(expansionLabel);
-
-		ExpansionItem *expItem = createMenuItem<ExpansionItem>(expansionMenuLabel, CHECKMARK(module->expansion != 0));
-		expItem->module = module;
-		menu->addChild(expItem);
 	}	
 	
-	void step() override {
-		if(module->expansion != oldExpansion) {
-			if (oldExpansion!= -1 && module->expansion == 0) {// if just removed expansion panel, disconnect wires to those jacks
-				for (int i = 0; i < 6; i++)
-					gRackWidget->wireContainer->removeAllWires(expPorts[i]);
-			}
-			oldExpansion = module->expansion;		
-		}
-		box.size.x = panel->box.size.x - (1 - module->expansion) * expWidth;
-		Widget::step();
-	}
-
 	struct CKSSThreeInvNotify : CKSSThreeInvNoRandom {// Not randomizable
 		CKSSThreeInvNotify() {}
 		void onDragStart(const widget::DragStartEvent &e) override {
-			ToggleSwitch::onDragStart(e);
-			((GateSeq64*)(module))->stepConfigSync = 2;// signal a sync from switch so that steps get initialized
+			Switch::onDragStart(e);
+			GateSeq64* module = dynamic_cast<GateSeq64*>(this->paramQuantity->module);
+			module->stepConfigSync = 2;// signal a sync from switch so that steps get initialized
 		}	
 	};
 	
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
-		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
+		void onDoubleClick(const widget::DoubleClickEvent &e) override {
 			GateSeq64* module = dynamic_cast<GateSeq64*>(this->paramQuantity->module);
-			if (e.button == 1) {// if right button (see events.hpp)
-				// same code structure below as in sequence knob in main step()
-				bool editingSequence = module->isEditingSequence();
-				if (module->displayProbInfo != 0l && editingSequence) {
+			// same code structure below as in sequence knob in main step()
+			bool editingSequence = module->isEditingSequence();
+			if (module->displayProbInfo != 0l && editingSequence) {
+				//blinkNum = blinkNumInit;
+				module->attributes[module->sequence][module->stepIndexEdit].setGatePVal(50);
+				//displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+			}
+			else if (module->editingPpqn != 0) {
+				module->pulsesPerStep = 1;
+				//editingPpqn = (long) (editingPpqnTime * sampleRate / displayRefreshStepSkips);
+			}
+			else if (module->displayState == GateSeq64::DISP_MODES) {
+				if (editingSequence) {
+					module->sequences[module->sequence].setRunMode(MODE_FWD);
+				}
+				else {
+					module->runModeSong = MODE_FWD;
+				}
+			}
+			else if (module->displayState == GateSeq64::DISP_LENGTH) {
+				if (editingSequence) {
+					module->sequences[module->sequence].setLength(16 * module->stepConfig);
+				}
+				else {
+					module->phrases = 4;
+				}
+			}
+			else {
+				if (editingSequence) {
 					//blinkNum = blinkNumInit;
-					module->attributes[module->sequence][module->stepIndexEdit].setGatePVal(50);
-					//displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
-				}
-				else if (module->editingPpqn != 0) {
-					module->pulsesPerStep = 1;
-					//editingPpqn = (long) (editingPpqnTime * sampleRate / displayRefreshStepSkips);
-				}
-				else if (module->displayState == GateSeq64::DISP_MODES) {
-					if (editingSequence) {
-						module->sequences[module->sequence].setRunMode(MODE_FWD);
-					}
-					else {
-						module->runModeSong = MODE_FWD;
-					}
-				}
-				else if (module->displayState == GateSeq64::DISP_LENGTH) {
-					if (editingSequence) {
-						module->sequences[module->sequence].setLength(16 * module->stepConfig);
-					}
-					else {
-						module->phrases = 4;
+					if (!module->inputs[GateSeq64::SEQCV_INPUT].isConnected()) {
+						module->sequence = 0;
 					}
 				}
 				else {
-					if (editingSequence) {
-						//blinkNum = blinkNumInit;
-						if (!module->inputs[GateSeq64::SEQCV_INPUT].isConnected()) {
-							module->sequence = 0;
-						}
+					if (module->editingPhraseSongRunning > 0l || !module->running) {
+						module->phrase[module->phraseIndexEdit] = 0;
+						// if (running)
+							// editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / displayRefreshStepSkips);
 					}
-					else {
-						if (module->editingPhraseSongRunning > 0l || !module->running) {
-							module->phrase[module->phraseIndexEdit] = 0;
-							// if (running)
-								// editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / displayRefreshStepSkips);
-						}
-					}	
-				}			
-			}
-			ParamWidget::onMouseDown(e);
+				}	
+			}			
+			ParamWidget::onDoubleClick(e);
 		}
 	};			
 
 	GateSeq64Widget(GateSeq64 *module) {
 		setModule(module);		
-		oldExpansion = -1;
-		
-		// Main panel from Inkscape
-        panel = new DynamicSVGPanel();
-        panel->mode = module ? &module->panelTheme : NULL;
-		panel->expWidth = &expWidth;
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/GateSeq64.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/GateSeq64_dark.svg")));
-        box.size = panel->box.size;
-		box.size.x = box.size.x - (1 - module->expansion) * expWidth;
-        addChild(panel);		
-		
+
+		// Main panels from Inkscape
+        lightPanel = new SvgPanel();
+        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/GateSeq64.svg")));
+        box.size = lightPanel->box.size;
+        addChild(lightPanel);
+        darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/GateSeq64_dark.svg")));
+		darkPanel->visible = false;
+		addChild(darkPanel);
+				
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30-expWidth, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30-expWidth, 365), module ? &module->panelTheme : NULL));
 		
 		
 		// ****** Top portion (LED button array and gate type LED buttons) ******
@@ -1398,7 +1391,7 @@ struct GateSeq64Widget : ModuleWidget {
 		for (int y = 0; y < 4; y++) {
 			int posX = colRulerSteps;
 			for (int x = 0; x < 16; x++) {
-				addParam(createParam<LEDButton>(Vec(posX, rowRuler0 + 8 + y * spacingRows - 4.4f), module, GateSeq64::STEP_PARAMS + y * 16 + x, 0.0f, 1.0f, 0.0f));
+				addParam(createParam<LEDButton>(Vec(posX, rowRuler0 + 8 + y * spacingRows - 4.4f), module, GateSeq64::STEP_PARAMS + y * 16 + x));
 				addChild(createLight<MediumLight<GreenRedWhiteLight>>(Vec(posX + 4.4f, rowRuler0 + 8 + y * spacingRows), module, GateSeq64::STEP_LIGHTS + (y * 16 + x) * 3));
 				posX += spacingSteps;
 				if ((x + 1) % 4 == 0)
@@ -1412,14 +1405,14 @@ struct GateSeq64Widget : ModuleWidget {
 		static const int colSpacingG = 56;
 		static const int colRulerG0 = 15 + 28;
 		
-		addParam(createParam<LEDButton>(Vec(colRulerG0, rowRulerG0 + rowSpacingG * 2 - 4.4f), module, GateSeq64::GMODE_PARAMS + 2, 0.0f, 1.0f, 0.0f));
+		addParam(createParam<LEDButton>(Vec(colRulerG0, rowRulerG0 + rowSpacingG * 2 - 4.4f), module, GateSeq64::GMODE_PARAMS + 2));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(colRulerG0 + 4.4f, rowRulerG0 + rowSpacingG * 2), module, GateSeq64::GMODE_LIGHTS + 2 * 2));
-		addParam(createParam<LEDButton>(Vec(colRulerG0, rowRulerG0 + rowSpacingG - 4.4f), module, GateSeq64::GMODE_PARAMS + 1, 0.0f, 1.0f, 0.0f));
+		addParam(createParam<LEDButton>(Vec(colRulerG0, rowRulerG0 + rowSpacingG - 4.4f), module, GateSeq64::GMODE_PARAMS + 1));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(colRulerG0 + 4.4f, rowRulerG0 + rowSpacingG), module, GateSeq64::GMODE_LIGHTS + 1 * 2));
-		addParam(createParam<LEDButton>(Vec(colRulerG0, rowRulerG0 - 4.4f), module, GateSeq64::GMODE_PARAMS + 0, 0.0f, 1.0f, 0.0f));
+		addParam(createParam<LEDButton>(Vec(colRulerG0, rowRulerG0 - 4.4f), module, GateSeq64::GMODE_PARAMS + 0));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(colRulerG0 + 4.4f, rowRulerG0), module, GateSeq64::GMODE_LIGHTS + 0 * 2));		
 		for (int x = 1; x < 6; x++) {
-			addParam(createParam<LEDButton>(Vec(colRulerG0 + colSpacingG * x, rowRulerG0 - 4.4f), module, GateSeq64::GMODE_PARAMS + 2 + x, 0.0f, 1.0f, 0.0f));
+			addParam(createParam<LEDButton>(Vec(colRulerG0 + colSpacingG * x, rowRulerG0 - 4.4f), module, GateSeq64::GMODE_PARAMS + 2 + x));
 			addChild(createLight<MediumLight<GreenRedLight>>(Vec(colRulerG0 + colSpacingG * x + 4.4f, rowRulerG0), module, GateSeq64::GMODE_LIGHTS + (2 + x) * 2));
 		}
 		
@@ -1446,17 +1439,17 @@ struct GateSeq64Widget : ModuleWidget {
 		
 				
 		// Prob button
-		addParam(createDynamicParam<IMBigPushButton>(Vec(colRulerC1 + offsetCKD6b, rowRulerC0 + offsetCKD6b), module, GateSeq64::PROB_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMBigPushButton>(Vec(colRulerC1 + offsetCKD6b, rowRulerC0 + offsetCKD6b), module, GateSeq64::PROB_PARAM, module ? &module->panelTheme : NULL));
 		// Reset LED bezel and light
-		addParam(createParam<LEDBezel>(Vec(colRulerC1 + offsetLEDbezel, rowRulerC1 + offsetLEDbezel), module, GateSeq64::RESET_PARAM, 0.0f, 1.0f, 0.0f));
+		addParam(createParam<LEDBezel>(Vec(colRulerC1 + offsetLEDbezel, rowRulerC1 + offsetLEDbezel), module, GateSeq64::RESET_PARAM));
 		addChild(createLight<MuteLight<GreenLight>>(Vec(colRulerC1 + offsetLEDbezel + offsetLEDbezelLight, rowRulerC1 + offsetLEDbezel + offsetLEDbezelLight), module, GateSeq64::RESET_LIGHT));
 		// Seq CV
 		addInput(createDynamicPort<IMPort>(Vec(colRulerC1, rowRulerC2), true, module, GateSeq64::SEQCV_INPUT, module ? &module->panelTheme : NULL));
 		
 		// Sequence knob
-		addParam(createDynamicParam<SequenceKnob>(Vec(colRulerC2 + 1 + offsetIMBigKnob, rowRulerC0 + offsetIMBigKnob), module, GateSeq64::SEQUENCE_PARAM, -INFINITY, INFINITY, 0.0f, module ? &module->panelTheme : NULL));		
+		addParam(createDynamicParam<SequenceKnob>(Vec(colRulerC2 + 1 + offsetIMBigKnob, rowRulerC0 + offsetIMBigKnob), module, GateSeq64::SEQUENCE_PARAM, module ? &module->panelTheme : NULL));		
 		// Run LED bezel and light
-		addParam(createParam<LEDBezel>(Vec(colRulerC2 + offsetLEDbezel, rowRulerC1 + offsetLEDbezel), module, GateSeq64::RUN_PARAM, 0.0f, 1.0f, 0.0f));
+		addParam(createParam<LEDBezel>(Vec(colRulerC2 + offsetLEDbezel, rowRulerC1 + offsetLEDbezel), module, GateSeq64::RUN_PARAM));
 		addChild(createLight<MuteLight<GreenLight>>(Vec(colRulerC2 + offsetLEDbezel + offsetLEDbezelLight, rowRulerC1 + offsetLEDbezel + offsetLEDbezelLight), module, GateSeq64::RUN_LIGHT));
 		// Run CV
 		addInput(createDynamicPort<IMPort>(Vec(colRulerC2, rowRulerC2), true, module, GateSeq64::RUNCV_INPUT, module ? &module->panelTheme : NULL));
@@ -1469,18 +1462,18 @@ struct GateSeq64Widget : ModuleWidget {
 		displaySequence->module = module;
 		addChild(displaySequence);
 		// Modes button
-		addParam(createDynamicParam<IMBigPushButton>(Vec(colRulerC3 + offsetCKD6b, rowRulerC1 + offsetCKD6b), module, GateSeq64::MODES_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMBigPushButton>(Vec(colRulerC3 + offsetCKD6b, rowRulerC1 + offsetCKD6b), module, GateSeq64::MODES_PARAM, module ? &module->panelTheme : NULL));
 		// Copy/paste buttons
-		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3 - 10, rowRulerC2 + offsetTL1105), module, GateSeq64::COPY_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3 + 20, rowRulerC2 + offsetTL1105), module, GateSeq64::PASTE_PARAM, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3 - 10, rowRulerC2 + offsetTL1105), module, GateSeq64::COPY_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3 + 20, rowRulerC2 + offsetTL1105), module, GateSeq64::PASTE_PARAM, module ? &module->panelTheme : NULL));
 		
 
 		// Seq/Song selector
-		addParam(createParam<CKSSNoRandom>(Vec(colRulerC4 + 2 + hOffsetCKSS, rowRulerC0 + vOffsetCKSS), module, GateSeq64::EDIT_PARAM, 0.0f, 1.0f, 1.0f));
+		addParam(createParam<CKSSNoRandom>(Vec(colRulerC4 + 2 + hOffsetCKSS, rowRulerC0 + vOffsetCKSS), module, GateSeq64::EDIT_PARAM));
 		// Config switch (3 position)
-		addParam(createParam<CKSSThreeInvNotify>(Vec(colRulerC4 + 2 + hOffsetCKSS, rowRulerC1 - 2 + vOffsetCKSSThree), module, GateSeq64::CONFIG_PARAM, 0.0f, 2.0f, GateSeq64::CONFIG_PARAM_INIT_VALUE));// 0.0f is top position
+		addParam(createParam<CKSSThreeInvNotify>(Vec(colRulerC4 + 2 + hOffsetCKSS, rowRulerC1 - 2 + vOffsetCKSSThree), module, GateSeq64::CONFIG_PARAM));// 0.0f is top position
 		// Copy paste mode
-		addParam(createParam<CKSSThreeInvNoRandom>(Vec(colRulerC4 + 2 + hOffsetCKSS, rowRulerC2 + vOffsetCKSSThree), module, GateSeq64::CPMODE_PARAM, 0.0f, 2.0f, 2.0f));
+		addParam(createParam<CKSSThreeInvNoRandom>(Vec(colRulerC4 + 2 + hOffsetCKSS, rowRulerC2 + vOffsetCKSSThree), module, GateSeq64::CPMODE_PARAM));
 
 		// Outputs
 		for (int iSides = 0; iSides < 4; iSides++)
@@ -1490,18 +1483,23 @@ struct GateSeq64Widget : ModuleWidget {
 		static const int rowRulerExpTop = 60;
 		static const int rowSpacingExp = 50;
 		static const int colRulerExp = 497 - 30 - 90;// GS64 is (2+6)HP less than PS32
-		addInput(expPorts[0] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), true, module, GateSeq64::WRITE_INPUT, module ? &module->panelTheme : NULL));
-		addInput(expPorts[1] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), true, module, GateSeq64::GATE_INPUT, module ? &module->panelTheme : NULL));
-		addInput(expPorts[2] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), true, module, GateSeq64::PROB_INPUT, module ? &module->panelTheme : NULL));
-		addInput(expPorts[3] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, GateSeq64::WRITE0_INPUT, module ? &module->panelTheme : NULL));
-		addInput(expPorts[4] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, GateSeq64::WRITE1_INPUT, module ? &module->panelTheme : NULL));
-		addInput(expPorts[5] = createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), true, module, GateSeq64::STEPL_INPUT, module ? &module->panelTheme : NULL));
-
+		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), true, module, GateSeq64::WRITE_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), true, module, GateSeq64::GATE_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), true, module, GateSeq64::PROB_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, GateSeq64::WRITE0_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, GateSeq64::WRITE1_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), true, module, GateSeq64::STEPL_INPUT, module ? &module->panelTheme : NULL));
+	}
+	
+	void step() override {
+		if (module) {
+			lightPanel->visible = ((((GateSeq64*)module)->panelTheme) == 0);
+			darkPanel->visible  = ((((GateSeq64*)module)->panelTheme) == 1);
+		}
+		Widget::step();
 	}
 };
 
-
-// Model *modelGateSeq64 = createModel<GateSeq64, GateSeq64Widget>("Impromptu Modular", "Gate-Seq-64", "SEQ - GateSeq64", SEQUENCER_TAG);
 Model *modelGateSeq64 = createModel<GateSeq64, GateSeq64Widget>("Gate-Seq-64");
 
 /*CHANGE LOG

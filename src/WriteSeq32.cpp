@@ -39,7 +39,6 @@ struct WriteSeq32 : Module {
 		STEPR_INPUT,
 		CLOCK_INPUT,
 		RESET_INPUT,
-		// -- 0.6.2
 		RUNCV_INPUT,
 		NUM_INPUTS
 	};

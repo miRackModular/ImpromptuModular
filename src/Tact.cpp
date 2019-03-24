@@ -22,7 +22,6 @@ struct Tact : Module {
 		LINK_PARAM,
 		ENUMS(SLIDE_PARAMS, 2),// slide switches
 		ENUMS(STORE_PARAMS, 2),// store buttons
-		// -- 0.6.7 ^^
 		EXP_PARAM,
 		NUM_PARAMS
 	};
@@ -34,7 +33,6 @@ struct Tact : Module {
 	};
 	enum OutputIds {
 		ENUMS(CV_OUTPUTS, 2),
-		// -- 0.6.7 ^^
 		ENUMS(EOC_OUTPUTS, 2),
 		NUM_OUTPUTS
 	};

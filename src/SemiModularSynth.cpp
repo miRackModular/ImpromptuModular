@@ -78,7 +78,6 @@ struct SemiModularSynth : Module {
 		LFO_OFFSET_PARAM,
 		
 		// ALL NEW
-		// -- 0.6.10 ^^
 		ENUMS(STEP_PHRASE_PARAMS, 16),
 				
 		NUM_PARAMS
@@ -288,8 +287,6 @@ struct SemiModularSynth : Module {
 	SemiModularSynth() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-
-
 		char strBuf[32];
 		for (int x = 0; x < 16; x++) {
 			snprintf(strBuf, 32, "Step/phrase %i", x + 1);

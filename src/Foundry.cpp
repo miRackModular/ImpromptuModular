@@ -907,7 +907,7 @@ struct Foundry : Module {
 						velEditMode = 1;
 				}
 			}		
-			if (slideTrigger.process(params[SLIDE_BTN_PARAM].getValue() + consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 2])) {
+			if (slideTrigger.process(params[SLIDE_BTN_PARAM].getValue() + consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 3])) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (seq.toggleSlide(multiSteps ? cpSeqLength : 1, multiTracks))
@@ -916,7 +916,7 @@ struct Foundry : Module {
 						velEditMode = 2;
 				}
 			}		
-			if (tiedTrigger.process(params[TIE_PARAM].getValue() + consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 3])) {
+			if (tiedTrigger.process(params[TIE_PARAM].getValue() + consumerMessage[Sequencer::NUM_TRACKS * 2 + 1 + 2])) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					seq.toggleTied(multiSteps ? cpSeqLength : 1, multiTracks);// will clear other attribs if new state is on
