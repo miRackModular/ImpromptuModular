@@ -1808,7 +1808,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
-			PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(this->module);
+			PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(this->paramQuantity->module);
 			if (e.button == 1) {// if right button (see events.hpp)
 				// same code structure below as in sequence knob in main step()
 				if (module->editingPpqn != 0) {
@@ -1855,7 +1855,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 	};		
 	
 	// void onHoverKey(EventHoverKey &e) override {// https://www.glfw.org/docs/latest/group__keys.html
-		// PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(this->module);
+		// PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(this->paramQuantity->module);
 		// if (e.key == GLFW_KEY_SPACE) {
 			// if (module->isEditingSequence()) {
 				// module->attributes[module->seqIndexEdit][module->stepIndexEdit].toggleGate1();
@@ -1868,7 +1868,6 @@ struct PhraseSeq32Widget : ModuleWidget {
 	
 	PhraseSeq32Widget(PhraseSeq32 *module) {
 		setModule(module);
-		this->module = module;
 		oldExpansion = -1;
 		
 		// Main panel from Inkscape
@@ -1884,10 +1883,10 @@ struct PhraseSeq32Widget : ModuleWidget {
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30-expWidth, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30-expWidth, 365), module ? &module->panelTheme : NULL));
 
 		
 		

@@ -12,7 +12,6 @@
 
 // Dynamic SVGScrew
 
-
 ScrewCircle::ScrewCircle(float _angle) {
 	static const float highRadius = 1.4f;// radius for 0 degrees (screw looks like a +)
 	static const float lowRadius = 1.1f;// radius for 45 degrees (screw looks like an x)

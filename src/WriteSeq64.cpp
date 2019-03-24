@@ -508,6 +508,8 @@ struct WriteSeq64 : Module {
 
 
 struct WriteSeq64Widget : ModuleWidget {
+	SvgPanel* lightPanel;
+	SvgPanel* darkPanel;
 
 	struct NoteDisplayWidget : TransparentWidget {
 		WriteSeq64 *module;
@@ -693,14 +695,17 @@ struct WriteSeq64Widget : ModuleWidget {
 	
 	WriteSeq64Widget(WriteSeq64 *module) {
 		setModule(module);
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/WriteSeq64.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/WriteSeq64_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = module ? &module->panelTheme : NULL;
-        addChild(panel);
-		
+
+		// Main panels from Inkscape
+        lightPanel = new SvgPanel();
+        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/WriteSeq64.svg")));
+        box.size = lightPanel->box.size;
+        addChild(lightPanel);
+        darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/WriteSeq64_dark.svg")));
+		darkPanel->visible = false;
+		addChild(darkPanel);
+
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
@@ -845,9 +850,16 @@ struct WriteSeq64Widget : ModuleWidget {
 		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler2), false, module, WriteSeq64::GATE_OUTPUTS + 2, module ? &module->panelTheme : NULL));
 		addOutput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler3), false, module, WriteSeq64::GATE_OUTPUTS + 3, module ? &module->panelTheme : NULL));
 	}
+	
+	void step() override {
+		if (module) {
+			lightPanel->visible = ((((WriteSeq64*)module)->panelTheme) == 0);
+			darkPanel->visible  = ((((WriteSeq64*)module)->panelTheme) == 1);
+		}
+		Widget::step();
+	}
 };
 
-// Model *modelWriteSeq64 = createModel<WriteSeq64, WriteSeq64Widget>("Impromptu Modular", "Write-Seq-64", "SEQ - WriteSeq64", SEQUENCER_TAG);
 Model *modelWriteSeq64 = createModel<WriteSeq64, WriteSeq64Widget>("Write-Seq-64");
 
 /*CHANGE LOG

@@ -532,7 +532,8 @@ struct BigButtonSeq2 : Module {
 
 
 struct BigButtonSeq2Widget : ModuleWidget {
-
+	SvgPanel* lightPanel;
+	SvgPanel* darkPanel;
 
 	struct ChanDisplayWidget : TransparentWidget {
 		BigButtonSeq2 *module;
@@ -664,13 +665,16 @@ struct BigButtonSeq2Widget : ModuleWidget {
 	
 	BigButtonSeq2Widget(BigButtonSeq2 *module) {
 		setModule(module);
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/BigButtonSeq2.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BigButtonSeq2_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = module ? &module->panelTheme : NULL;
-        addChild(panel);
+
+		// Main panels from Inkscape
+        lightPanel = new SvgPanel();
+        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/BigButtonSeq2.svg")));
+        box.size = lightPanel->box.size;
+        addChild(lightPanel);
+        darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BigButtonSeq2_dark.svg")));
+		darkPanel->visible = false;
+		addChild(darkPanel);
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
@@ -799,9 +803,16 @@ struct BigButtonSeq2Widget : ModuleWidget {
 		addParam(createParamCentered<LEDButton>(Vec(colRulerT6 + 2, rowRuler10 + gateOffsetY / 2), module, BigButtonSeq2::SAMPLEHOLD_PARAM));
 		addChild(createLightCentered<MediumLight<GreenLight>>(Vec(colRulerT6 + 2, rowRuler10 + gateOffsetY / 2), module, BigButtonSeq2::SAMPLEHOLD_LIGHT));
 	}
+	
+	void step() override {
+		if (module) {
+			lightPanel->visible = ((((BigButtonSeq2*)module)->panelTheme) == 0);
+			darkPanel->visible  = ((((BigButtonSeq2*)module)->panelTheme) == 1);
+		}
+		Widget::step();
+	}
 };
 
-// Model *modelBigButtonSeq2 = createModel<BigButtonSeq2, BigButtonSeq2Widget>("Impromptu Modular", "Big-Button-Seq2", "SEQ - BigButtonSeq2", SEQUENCER_TAG);
 Model *modelBigButtonSeq2 = createModel<BigButtonSeq2, BigButtonSeq2Widget>("Big-Button-Seq2");
 
 /*CHANGE LOG

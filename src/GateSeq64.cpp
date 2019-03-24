@@ -1313,7 +1313,7 @@ struct GateSeq64Widget : ModuleWidget {
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
-			GateSeq64* module = dynamic_cast<GateSeq64*>(this->module);
+			GateSeq64* module = dynamic_cast<GateSeq64*>(this->paramQuantity->module);
 			if (e.button == 1) {// if right button (see events.hpp)
 				// same code structure below as in sequence knob in main step()
 				bool editingSequence = module->isEditingSequence();
@@ -1364,7 +1364,6 @@ struct GateSeq64Widget : ModuleWidget {
 
 	GateSeq64Widget(GateSeq64 *module) {
 		setModule(module);		
-		this->module = module;
 		oldExpansion = -1;
 		
 		// Main panel from Inkscape
@@ -1380,10 +1379,10 @@ struct GateSeq64Widget : ModuleWidget {
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30-expWidth, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30-expWidth, 365), module ? &module->panelTheme : NULL));
 		
 		
 		// ****** Top portion (LED button array and gate type LED buttons) ******

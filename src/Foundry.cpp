@@ -1594,7 +1594,7 @@ struct FoundryWidget : ModuleWidget {
 		CPModeSwitch() {};
 		void onChange(const widget::ChangeEvent &e) override {
 			SVGSwitch::onChange(e);	
-			Foundry* module = dynamic_cast<Foundry*>(this->module);			
+			Foundry* module = dynamic_cast<Foundry*>(this->paramQuantity->module);			
 			module->cpSeqLength = module->getCPMode();
 			if (module->displayState == Foundry::DISP_COPY_SONG_CUST)
 				module->displayState = Foundry::DISP_NORMAL;
@@ -1604,7 +1604,7 @@ struct FoundryWidget : ModuleWidget {
 	struct VelocityKnob : IMMediumKnobInf {
 		VelocityKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
-			Foundry* module = dynamic_cast<Foundry*>(this->module);
+			Foundry* module = dynamic_cast<Foundry*>(this->paramQuantity->module);
 			if (e.button == 1) {// if right button (see events.hpp)
 				// same code structure below as in velocity knob in main step()
 				if (module->isEditingSequence()) {
@@ -1628,7 +1628,7 @@ struct FoundryWidget : ModuleWidget {
 	struct SequenceKnob : IMMediumKnobInf {
 		SequenceKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
-			Foundry* module = dynamic_cast<Foundry*>(this->module);
+			Foundry* module = dynamic_cast<Foundry*>(this->paramQuantity->module);
 			if (e.button == 1) {// if right button (see events.hpp)
 				// same code structure below as in sequence knob in main step()
 				if (module->displayState == Foundry::DISP_LEN) {
@@ -1668,7 +1668,7 @@ struct FoundryWidget : ModuleWidget {
 	struct PhraseKnob : IMMediumKnobInf {
 		PhraseKnob() {};		
 		void onMouseDown(EventMouseDown &e) override {// from ParamWidget.cpp
-			Foundry* module = dynamic_cast<Foundry*>(this->module);
+			Foundry* module = dynamic_cast<Foundry*>(this->paramQuantity->module);
 			if (e.button == 1) {// if right button (see events.hpp)
 				// same code structure below as in phrase knob in main step()
 				if (module->displayState == Foundry::DISP_MODE_SEQ) {
@@ -1719,12 +1719,12 @@ struct FoundryWidget : ModuleWidget {
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-expWidth + 15, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-expWidth + 15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30-expWidth, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30-expWidth, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-expWidth + 15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-expWidth + 15, 365), module ? &module->panelTheme : NULL));
 
 		
 		
@@ -1987,7 +1987,7 @@ struct FoundryWidget : ModuleWidget {
 		
 		// Expansion module
 		static const int rowSpacingExp = 49;
-		static const int colRulerExp = panel->box.size.x - expWidth / 2;
+		static const int colRulerExp = box.size.x - expWidth / 2;
 		static const int colOffsetX = 44;
 		static const int se = -10;
 		

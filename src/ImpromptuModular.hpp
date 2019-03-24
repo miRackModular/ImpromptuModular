@@ -21,21 +21,21 @@ extern Plugin *pluginInstance;
 
 
 // All modules that are part of pluginInstance go here
-// extern Model *modelTact;
-// extern Model *modelTact1;
+extern Model *modelTact;
+extern Model *modelTact1;
 extern Model *modelTwelveKey;
 extern Model *modelClocked;
 extern Model *modelClockedExpander;
-// extern Model *modelFoundry;
-// extern Model *modelGateSeq64;
-// extern Model *modelPhraseSeq16;
-// extern Model *modelPhraseSeq32;
-/*extern Model *modelWriteSeq32;
+extern Model *modelFoundry;
+extern Model *modelGateSeq64;
+extern Model *modelPhraseSeq16;
+extern Model *modelPhraseSeq32;
+extern Model *modelWriteSeq32;
 extern Model *modelWriteSeq64;
 extern Model *modelBigButtonSeq;
-extern Model *modelBigButtonSeq2;*/
+extern Model *modelBigButtonSeq2;
 extern Model *modelFourView;
-// extern Model *modelSemiModularSynth;
+extern Model *modelSemiModularSynth;
 extern Model *modelBlankPanel;
 
 

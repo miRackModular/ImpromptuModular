@@ -416,7 +416,8 @@ struct BigButtonSeq : Module {
 
 
 struct BigButtonSeqWidget : ModuleWidget {
-
+	SvgPanel* lightPanel;
+	SvgPanel* darkPanel;
 
 	struct ChanDisplayWidget : TransparentWidget {
 		BigButtonSeq *module;
@@ -546,13 +547,16 @@ struct BigButtonSeqWidget : ModuleWidget {
 	
 	BigButtonSeqWidget(BigButtonSeq *module) {
 		setModule(module);
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/BigButtonSeq.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BigButtonSeq_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = module ? &module->panelTheme : NULL;
-        addChild(panel);
+
+		// Main panels from Inkscape
+        lightPanel = new SvgPanel();
+        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/BigButtonSeq.svg")));
+        box.size = lightPanel->box.size;
+        addChild(lightPanel);
+        darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BigButtonSeq_dark.svg")));
+		darkPanel->visible = false;
+		addChild(darkPanel);
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? module ? &module->panelTheme : NULL : NULL));
@@ -668,11 +672,17 @@ struct BigButtonSeqWidget : ModuleWidget {
 		
 		// Metronome light
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(colRulerT0 + offsetMediumLight - 1, rowRulerExtras), module, BigButtonSeq::METRONOME_LIGHT + 0));
-
+	}
+	
+	void step() override {
+		if (module) {
+			lightPanel->visible = ((((BigButtonSeq*)module)->panelTheme) == 0);
+			darkPanel->visible  = ((((BigButtonSeq*)module)->panelTheme) == 1);
+		}
+		Widget::step();
 	}
 };
 
-// Model *modelBigButtonSeq = createModel<BigButtonSeq, BigButtonSeqWidget>("Impromptu Modular", "Big-Button-Seq", "SEQ - BigButtonSeq", SEQUENCER_TAG);
 Model *modelBigButtonSeq = createModel<BigButtonSeq, BigButtonSeqWidget>("Big-Button-Seq");
 
 /*CHANGE LOG

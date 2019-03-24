@@ -499,6 +499,8 @@ struct WriteSeq32 : Module {
 
 
 struct WriteSeq32Widget : ModuleWidget {
+	SvgPanel* lightPanel;
+	SvgPanel* darkPanel;
 	int notesPos[8]; // used for rendering notes in LCD_24, 8 gate and 8 step LEDs 
 
 	struct NotesDisplayWidget : TransparentWidget {
@@ -640,13 +642,15 @@ struct WriteSeq32Widget : ModuleWidget {
 	WriteSeq32Widget(WriteSeq32 *module) {
 		setModule(module);
 		
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/WriteSeq32.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/WriteSeq32_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = module ? &module->panelTheme : NULL;
-        addChild(panel);
+		// Main panels from Inkscape
+        lightPanel = new SvgPanel();
+        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/WriteSeq32.svg")));
+        box.size = lightPanel->box.size;
+        addChild(lightPanel);
+        darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/WriteSeq32_dark.svg")));
+		darkPanel->visible = false;
+		addChild(darkPanel);
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
@@ -798,9 +802,16 @@ struct WriteSeq32Widget : ModuleWidget {
 		// Clock
 		addInput(createDynamicPort<IMPort>(Vec(columnRuler5, rowRuler3), true, module, WriteSeq32::CLOCK_INPUT, module ? &module->panelTheme : NULL));			
 	}
+	
+	void step() override {
+		if (module) {
+			lightPanel->visible = ((((WriteSeq32*)module)->panelTheme) == 0);
+			darkPanel->visible  = ((((WriteSeq32*)module)->panelTheme) == 1);
+		}
+		Widget::step();
+	}
 };
 
-// Model *modelWriteSeq32 = createModel<WriteSeq32, WriteSeq32Widget>("Impromptu Modular", "Write-Seq-32", "SEQ - WriteSeq32", SEQUENCER_TAG);
 Model *modelWriteSeq32 = createModel<WriteSeq32, WriteSeq32Widget>("Write-Seq-32");
 
 /*CHANGE LOG

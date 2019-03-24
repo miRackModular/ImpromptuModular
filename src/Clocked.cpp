@@ -716,6 +716,11 @@ struct Clocked : Module {
 			editingBpmMode--;
 			if (editingBpmMode < 0l)
 				editingBpmMode = 0l;
+			
+			if (rightModule && rightModule->model == modelClockedExpander) {
+				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
+				producerMessage[0] = (float)panelTheme;
+			}
 		}// lightRefreshCounter
 	}// process()
 };
@@ -935,11 +940,11 @@ struct ClockedWidget : ModuleWidget {
 		addChild(darkPanel);
 		
 		// Screws
-/*		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
-*/
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
+
 
 		static const int rowRuler0 = 50;//reset,run inputs, master knob and bpm display
 		static const int rowRuler1 = rowRuler0 + 55;// reset,run switches

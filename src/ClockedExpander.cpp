@@ -22,30 +22,20 @@ struct ClockedExpander : Module {
 	};
 
 
-	// Need to save
+	// Expander
+	float consumerMessage[1] = {};// this module must read from here
+	float producerMessage[1] = {};// mother will write into here
+
+
+	// No need to save
 	int panelTheme = 0;
 
 
 	ClockedExpander() {
 		config(0, NUM_INPUTS, 0, 0);
-	}
-
-
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
 		
-		// panelTheme
-		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
-
-		return rootJ;
-	}
-
-
-	void dataFromJson(json_t *rootJ) override {
-		// panelTheme
-		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
-		if (panelThemeJ)
-			panelTheme = json_integer_value(panelThemeJ);
+		leftProducerMessage = producerMessage;
+		leftConsumerMessage = consumerMessage;
 	}
 
 
@@ -56,7 +46,9 @@ struct ClockedExpander : Module {
 				producerMessage[i * 2 + 0] = (inputs[i].isConnected() ? 1.0f : 0.0f);
 				producerMessage[i * 2 + 1] = inputs[i].getVoltage();
 			}
-		}
+			
+			panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
+		}		
 	}// process()
 };
 
@@ -64,41 +56,6 @@ struct ClockedExpander : Module {
 struct ClockedExpanderWidget : ModuleWidget {
 	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
-
-	struct PanelThemeItem : MenuItem {
-		ClockedExpander *module;
-		int theme;
-		void onAction(const widget::ActionEvent &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
-
-	void appendContextMenu(Menu *menu) override {
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
-
-		ClockedExpander *module = dynamic_cast<ClockedExpander*>(this->module);
-		assert(module);
-
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-	}	
 	
 	ClockedExpanderWidget(ClockedExpander *module) {
 		setModule(module);
@@ -114,8 +71,8 @@ struct ClockedExpanderWidget : ModuleWidget {
 		addChild(darkPanel);
 
 		// Screws
-		// addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		// addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 
 		// Expansion module
 		static const int rowRulerExpTop = 60;
