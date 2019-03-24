@@ -1127,13 +1127,13 @@ struct SemiModularSynth : Module {
 							if (newMode != -1) {
 								editingPpqn = 0l;
 								attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
-								// if (params[KEY_PARAMS + i].getValue() > 1.5f) {// if right-click
-									// stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
-									// editingType = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
-									// editingGateKeyLight = i;
+								if (params[KEY_PARAMS + i].maxValue > 1.5f) {// if double-click
+									stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
+									editingType = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+									editingGateKeyLight = i;
 									// if (windowIsModPressed())
 										// attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
-								// }
+								}
 							}
 							else
 								editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
@@ -1151,12 +1151,12 @@ struct SemiModularSynth : Module {
 							editingGate = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 							editingGateCV = cv[seqIndexEdit][stepIndexEdit];
 							editingGateKeyLight = -1;
-							// if (params[KEY_PARAMS + i].getValue() > 1.5f) {// if right-click
-								// stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
-								// editingGateKeyLight = i;
+							if (params[KEY_PARAMS + i].maxValue > 1.5f) {// if double-click
+								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
+								editingGateKeyLight = i;
 								// if (windowIsModPressed())
 									// cv[seqIndexEdit][stepIndexEdit] = newCV;
-							// }
+							}
 						}						
 					}
 				}
@@ -1906,48 +1906,46 @@ struct SemiModularSynthWidget : ModuleWidget {
 	
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
-		void onButton(const widget::ButtonEvent &e) override {// TODO fix this
-			/*SemiModularSynth* module = dynamic_cast<SemiModularSynth*>(this->module);
-			if (e.button == 1) {// if right button (see events.hpp)
-				// same code structure below as in sequence knob in main step()
-				if (module->editingPpqn != 0) {
-					module->pulsesPerStep = 1;
-					//editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
+		void onDoubleClick(const widget::DoubleClickEvent &e) override {
+			SemiModularSynth* module = dynamic_cast<SemiModularSynth*>(this->paramQuantity->module);
+			// same code structure below as in sequence knob in main step()
+			if (module->editingPpqn != 0) {
+				module->pulsesPerStep = 1;
+				//editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
+			}
+			else if (module->displayState == SemiModularSynth::DISP_MODE) {
+				if (module->isEditingSequence()) {
+					module->sequences[module->seqIndexEdit].setRunMode(MODE_FWD);
 				}
-				else if (module->displayState == SemiModularSynth::DISP_MODE) {
-					if (module->isEditingSequence()) {
-						module->sequences[module->seqIndexEdit].setRunMode(MODE_FWD);
-					}
-					else {
-						module->runModeSong = MODE_FWD;
-					}
+				else {
+					module->runModeSong = MODE_FWD;
 				}
-				else if (module->displayState == SemiModularSynth::DISP_LENGTH) {
-					if (module->isEditingSequence()) {
-						module->sequences[module->seqIndexEdit].setLength(16);
-					}
-					else {
-						module->phrases = 4;
-					}
+			}
+			else if (module->displayState == SemiModularSynth::DISP_LENGTH) {
+				if (module->isEditingSequence()) {
+					module->sequences[module->seqIndexEdit].setLength(16);
 				}
-				else if (module->displayState == SemiModularSynth::DISP_TRANSPOSE) {
-					// nothing
+				else {
+					module->phrases = 4;
 				}
-				else if (module->displayState == SemiModularSynth::DISP_ROTATE) {
-					// nothing			
-				}
-				else {// DISP_NORMAL
-					if (module->isEditingSequence()) {
-						if (!module->inputs[SemiModularSynth::SEQCV_INPUT].isConnected()) {
-							module->seqIndexEdit = 0;;
-						}
-					}
-					else {
-						module->phrase[module->phraseIndexEdit] = 0;
+			}
+			else if (module->displayState == SemiModularSynth::DISP_TRANSPOSE) {
+				// nothing
+			}
+			else if (module->displayState == SemiModularSynth::DISP_ROTATE) {
+				// nothing			
+			}
+			else {// DISP_NORMAL
+				if (module->isEditingSequence()) {
+					if (!module->inputs[SemiModularSynth::SEQCV_INPUT].isConnected()) {
+						module->seqIndexEdit = 0;;
 					}
 				}
-			}*/
-			ParamWidget::onButton(e);
+				else {
+					module->phrase[module->phraseIndexEdit] = 0;
+				}
+			}
+			ParamWidget::onDoubleClick(e);
 		}
 	};		
 	

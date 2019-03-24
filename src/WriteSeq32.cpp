@@ -692,7 +692,7 @@ struct WriteSeq32Widget : ModuleWidget {
 		static const float wLightsPosX = 140.0f;
 		static const float wLightsIntX = 35.0f;
 		for (int i = 0; i < 4; i++) {
-			addParam(createParam<LEDButtonWithRClick>(Vec(wLightsPosX + i * wLightsIntX, yRulerTopLEDs - 4.4f), module, WriteSeq32::WINDOW_PARAM + i));
+			addParam(createParam<LEDButton>(Vec(wLightsPosX + i * wLightsIntX, yRulerTopLEDs - 4.4f), module, WriteSeq32::WINDOW_PARAM + i));
 			addChild(createLight<MediumLight<GreenLight>>(Vec(wLightsPosX + 4.4f + i * wLightsIntX, yRulerTopLEDs), module, WriteSeq32::WINDOW_LIGHTS + i));
 		}
 		
@@ -719,7 +719,7 @@ struct WriteSeq32Widget : ModuleWidget {
 		// Gates LED buttons
 		static const int yRulerT2 = 119.0f;
 		for (int i = 0; i < 8; i++) {
-			addParam(createParam<LEDButtonWithRClick>(Vec(notesPos[i]+25.0f-4.4f, yRulerT2-4.4f), module, WriteSeq32::GATE_PARAM + i));
+			addParam(createParam<LEDButton>(Vec(notesPos[i]+25.0f-4.4f, yRulerT2-4.4f), module, WriteSeq32::GATE_PARAM + i));
 			addChild(createLight<MediumLight<GreenRedLight>>(Vec(notesPos[i]+25.0f, yRulerT2), module, WriteSeq32::GATE_LIGHTS + i * 2));
 		}
 		

@@ -155,12 +155,6 @@ struct IMBigPushButton : DynamicSVGSwitch {
 	}
 };
 
-struct IMBigPushButtonWithRClick : IMBigPushButton {// with right click that sets value to 2.0 instead of 1.0
-	// void onMouseDown(EventMouseDown &e) override; // replaced by onButton()
-	// void onMouseUp(EventMouseUp &e) override; // replaced by onButton()
-	// void onButton(const widget::ButtonEvent &e) override;// replaces onMouseDown() and onMouseUp()  // TODO redo this implementation
-};
-
 struct IMPushButton : DynamicSVGSwitch {
 	IMPushButton() {
 		momentary = true;
@@ -199,7 +193,6 @@ struct IMBigKnob : IMKnob {
 struct IMBigSnapKnob : IMBigKnob {
 	IMBigSnapKnob() {
 		snap = true;
-		smooth = false;
 	}
 	void randomize() override {}
 };
@@ -210,7 +203,6 @@ struct IMBigKnobInf : IMKnob {
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLarge.svg")));
 		addEffect(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLargeEffects.svg")));
 		speed = 0.9f;				
-		//smooth = false;
 	}
 };
 
@@ -226,7 +218,6 @@ struct IMSmallKnob : IMKnob {
 struct IMSmallSnapKnob : IMSmallKnob {
 	IMSmallSnapKnob() {
 		snap = true;
-		smooth = false;
 	}
 };
 
@@ -237,7 +228,6 @@ struct IMMediumKnobInf : IMKnob {
 		addEffect(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/RoundMediumBlackKnobNoMarkEffects.svg")));
 		shadow->box.pos = Vec(0.0, box.size.y * 0.15);
 		speed = 0.9f;				
-		//smooth = false;
 	}
 };
 
@@ -314,25 +304,18 @@ struct InvisibleKeySmall : app::SvgSwitch {
 		momentary = true;
 		box.size = Vec(23, 38);
 	}
-	// void onMouseDown(EventMouseDown &e) override;
-	// void onMouseUp(EventMouseUp &e) override;
-	// void onButton(const widget::ButtonEvent &e) override;// replaces onMouseDown() and onMouseUp()  // TODO redo this implementation
+	void onButton(const widget::ButtonEvent &e) override {
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT) {// see widget/event.hpp
+			paramQuantity->getParam()->maxValue = 1.0f;
+		}
+		SvgSwitch::onButton(e);
+	}
+	void onDoubleClick(const widget::DoubleClickEvent &e) override {
+		paramQuantity->getParam()->maxValue = 2.0f;
+		SvgSwitch::onDoubleClick(e);
+	}
 };
 
-struct LEDButtonWithRClick : LEDButton {// with right click that sets value to 2.0 instead of 1.0
-	// void onMouseDown(EventMouseDown &e) override;
-	// void onMouseUp(EventMouseUp &e) override;
-	// void onButton(const widget::ButtonEvent &e) override;// replaces onMouseDown() and onMouseUp()  // TODO redo this implementation
-};
-
-/*
-struct ScrewSilverRandomRot : FramebufferWidget {// location: include/app.hpp and src/app/SVGScrew.cpp [some code also from src/app/SVGKnob.cpp]
-	widget::SvgWidget *sw;
-	TransformWidget *tw;
-	ScrewCircle *sc;
-	ScrewSilverRandomRot();
-};
-*/
 
 
 // Other

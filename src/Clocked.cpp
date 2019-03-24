@@ -906,7 +906,6 @@ struct ClockedWidget : ModuleWidget {
 	struct IMSmallSnapKnobNotify : IMSmallKnobNotify {
 		IMSmallSnapKnobNotify() {
 			snap = true;
-			smooth = false;
 		}
 	};
 	struct IMBigSnapKnobNotify : IMBigSnapKnob {

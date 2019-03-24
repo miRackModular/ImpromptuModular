@@ -33,7 +33,7 @@ void ScrewCircle::draw(const DrawArgs &args) {
 }
 
 DynamicSVGScrew::DynamicSVGScrew() {
-	// for random rotated screw used in primary mode (code copied from ImpromptuModular.cpp ScrewSilverRandomRot::ScrewSilverRandomRot())
+	// for random rotated screw used in primary mode
 	// **********
 	//float angle0_90 = random::uniform()*M_PI/2.0f;
 	//float angle0_90 = random::uniform() > 0.5f ? M_PI/4.0f : 0.0f;// for testing
