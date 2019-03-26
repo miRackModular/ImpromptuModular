@@ -249,21 +249,106 @@ struct IMSixPosBigKnob : IMBigSnapKnob {
 	void randomize() override {}
 };
 
-/*struct IMTactile : DynamicIMTactile {
+struct IMTactile : DynamicIMTactile {
 	IMTactile() {
 		//smooth = false;// must be false or else DynamicIMTactile::changeValue() call from module will crash Rack // TODO commented for 1.0
 	}
 };
-*/
-struct IMTactile : app::SvgSlider {
-	IMTactile() {
-		math::Vec margin = math::Vec(3.5, 3.5);
-		maxHandlePos = math::Vec(-1, -2).plus(margin);
-		minHandlePos = math::Vec(-1, 87).plus(margin);
-		setBackgroundSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/BefacoSlidePot.svg")));
-		setHandleSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/BefacoSlidePotHandle.svg")));
-		background->box.pos = margin;
-		box.size = background->box.size.plus(margin.mult(2));
+
+
+
+static const float KNOB_SENSITIVITY = 0.0015f;
+
+struct IMTactileSimple : app::ParamWidget {// does not support INFINITE min/max values
+	float speed = 1.0;
+	float oldValue = 0.f;
+	static const int padWidth = 45;
+	static const int padHeight = 200;
+	static const int padInterSpace = 18;
+	static const int padWidthWide = padWidth * 2 + padInterSpace;
+
+	IMTactileSimple() {
+		box.size = Vec(padWidth, padHeight);
+	}
+	void onChange(const widget::ChangeEvent &e) override {
+		// if (paramQuantity) {
+			// float v = paramQuantity->getScaledValue();
+			// INFO("Param = %f", v);
+		// }
+		ParamWidget::onChange(e);
+	}	
+	// Bypass Knob's circular hitbox detection
+	void onHover(const widget::HoverEvent &e) override {
+		ParamWidget::onHover(e);
+	}
+	// Bypass Knob's circular hitbox detection
+	void onButton(const widget::ButtonEvent &e) override {
+		ParamWidget::onButton(e);
+	}
+	
+	void onDragStart(const widget::DragStartEvent &e) override {
+		if (paramQuantity) {
+			oldValue = paramQuantity->getSmoothValue();
+		}
+		//APP->window->cursorLock();
+		e.consume(this);
+	}
+
+	void onDragEnd(const widget::DragEndEvent &e) override {
+		//APP->window->cursorUnlock();
+		if (paramQuantity) {
+			float newValue = paramQuantity->getSmoothValue();
+			if (oldValue != newValue) {
+				// Push ParamChange history action
+				history::ParamChange *h = new history::ParamChange;
+				h->name = "move knob";
+				h->moduleId = paramQuantity->module->id;
+				h->paramId = paramQuantity->paramId;
+				h->oldValue = oldValue;
+				h->newValue = newValue;
+				APP->history->push(h);
+			}
+		}
+	}
+
+	void onDragMove(const widget::DragMoveEvent &e) override {
+		INFO("onDragMove() in IMTactileSimple");
+		if (paramQuantity) {
+			float range = paramQuantity->getRange();
+			float delta = -e.mouseDelta.y;
+			//INFO("Mouse delta = %f", delta);
+			
+			delta *= KNOB_SENSITIVITY;
+			delta *= speed;
+			delta *= range;
+
+			// Drag slower if mod is held
+			int mods = APP->window->getMods();
+			if ((mods & WINDOW_MOD_MASK) == WINDOW_MOD_CTRL) {
+				delta /= 16.f;
+			}
+			// Drag even slower if mod+shift is held
+			if ((mods & WINDOW_MOD_MASK) == (WINDOW_MOD_CTRL | GLFW_MOD_SHIFT)) {
+				delta /= 256.f;
+			}
+			paramQuantity->setValue(paramQuantity->getValue() + delta);
+		}
+		ParamWidget::onDragMove(e);
+	}
+
+	void reset() override {
+		if (paramQuantity && paramQuantity->isBounded()) {
+			paramQuantity->reset();
+			oldValue = paramQuantity->getValue();
+		}
+	}
+
+	void randomize() override {
+		if (paramQuantity && paramQuantity->isBounded()) {
+			float value = math::rescale(random::uniform(), 0.f, 1.f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
+			paramQuantity->setValue(value);
+			oldValue = paramQuantity->getValue();
+		}
 	}
 };
 

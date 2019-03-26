@@ -160,23 +160,21 @@ void DynamicSVGKnob::step() {
 
 
 // Dynamic IMTactile
-/*
+
 DynamicIMTactile::DynamicIMTactile() {
-	snap = false;
-	//smooth = false;// must be false or else DynamicIMTactile::changeValue() call from module will crash Rack
 	wider = nullptr;
 	paramReadRequest = nullptr;
 	oldWider = -1.0f;
-	ParamWidget::box.size = Vec(padWidth, padHeight);
+	box.size = Vec(padWidth, padHeight);
 }
 
 void DynamicIMTactile::step() {
    if(wider != nullptr && *wider != oldWider) {
         if ((*wider) > 0.5f) {
-			ParamWidget::box.size = Vec(padWidthWide, padHeight);
+			box.size = Vec(padWidthWide, padHeight);
 		}
 		else {
-			ParamWidget::box.size = Vec(padWidth, padHeight);
+			box.size = Vec(padWidth, padHeight);
 		}
         oldWider = *wider;
     }	
@@ -187,34 +185,35 @@ void DynamicIMTactile::step() {
 			*paramReadRequest = -10.0f;
 		}
 	}
-	FramebufferWidget::step();
+	ParamWidget::step();
 }
 
 void DynamicIMTactile::onDragStart(const widget::DragStartEvent &e) {
+	INFO("onDragStart() in DynamicIMTactile");
 	dragValue = paramQuantity->getValue();
-	dragY = gRackWidget->lastMousePos.y;
+	dragY = APP->window->mousePos.y;
+	ParamWidget::onDragStart(e);
 }
 
 void DynamicIMTactile::onDragMove(const widget::DragMoveEvent &e) {
+	INFO("onDragMove() in DynamicIMTactile");
 	float rangeValue = paramQuantity->getMaxValue() - paramQuantity->getMinValue();// infinite not supported (not relevant)
-	float newDragY = gRackWidget->lastMousePos.y;
+	float newDragY = APP->window->mousePos.y;
 	float delta = -(newDragY - dragY) * rangeValue / box.size.y;
 	dragY = newDragY;
 	dragValue += delta;
-	float dragValueClamped = clamp2(dragValue, minValue, maxValue);
-	if (snap)
-		dragValueClamped = roundf(dragValueClamped);
-	setValue(dragValueClamped);
+	float dragValueClamped = clampSafe(dragValue, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
+	INFO("Drag move set param %f", dragValueClamped);
+	paramQuantity->setValue(dragValueClamped);
+	ParamWidget::onDragMove(e);
 }
 
 
 void DynamicIMTactile::onButton(const widget::ButtonEvent &e) {
 	if (e.action == GLFW_PRESS) {
-		float val = rescale(e.pos.y, box.size.y, 0.0f , minValue, maxValue);
-		if (snap)
-			val = roundf(val);
-		setValue(val);
+		float val = rescale(e.pos.y, box.size.y, 0.0f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
+		paramQuantity->setValue(val);
 	}
 	ParamWidget::onButton(e);
 }
-*/
+

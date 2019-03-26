@@ -119,23 +119,21 @@ struct DynamicSVGKnob : app::SvgKnob {
 
 // General Dynamic Param creation version two with float* instead of one int*
 template <class TDynamicParam>
-TDynamicParam* createDynamicParam2(Vec pos, Module *module, int paramId, float minValue, float maxValue, float defaultValue,
-                                               float* wider, float* paramReadRequest) {
-	TDynamicParam *dynParam = createParam<TDynamicParam>(pos, module, paramId, minValue, maxValue, defaultValue);
+TDynamicParam* createDynamicParam2(Vec pos, Module *module, int paramId, float* wider, float* paramReadRequest) {
+	TDynamicParam *dynParam = createParam<TDynamicParam>(pos, module, paramId);
 	dynParam->wider = wider;
 	dynParam->paramReadRequest = paramReadRequest;
 	return dynParam;
 }
 
-/*
+
 // Dynamic Tactile pad (see Knob in app.hpp and Knob.cpp, and see SVGSlider in SVGSlider.cpp and app.hpp)
-struct DynamicIMTactile : ParamWidget, widget::FramebufferWidget {
+struct DynamicIMTactile : app::ParamWidget { // TODO add "if (paramQuantity)" checks in member functions
 	float* wider;// > 0.5f = true
 	float* paramReadRequest;
 	float oldWider;
 	float dragY;
 	float dragValue;
-	bool snap;
 	static const int padWidth = 45;
 	static const int padHeight = 200;
 	static const int padInterSpace = 18;
@@ -143,12 +141,10 @@ struct DynamicIMTactile : ParamWidget, widget::FramebufferWidget {
 	
 	DynamicIMTactile();
 	void step() override;
-	void onDragStart(const widget::DragStartEvent &e) override; // TODO
-	void onDragMove(const widget::DragMoveEvent &e) override; // TODO	
-	
-	//void onMouseDown(EventMouseDown &e) override; // replaced by onButton()
-	void onButton(const widget::ButtonEvent &e) override;// replaces onMouseDown() and onMouseUp()
+	void onDragStart(const widget::DragStartEvent &e) override; 
+	void onDragMove(const widget::DragMoveEvent &e) override;
+	void onButton(const widget::ButtonEvent &e) override;
 };
-*/
+
 
 #endif
