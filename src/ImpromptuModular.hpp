@@ -29,6 +29,7 @@ extern Model *modelClockedExpander;
 extern Model *modelFoundry;
 extern Model *modelFoundryExpander;
 extern Model *modelGateSeq64;
+extern Model *modelGateSeq64Expander;
 extern Model *modelPhraseSeq16;
 extern Model *modelPhraseSeq32;
 extern Model *modelPhraseSeqExpander;

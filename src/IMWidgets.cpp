@@ -12,19 +12,11 @@
 
 // Dynamic SVGScrew
 
-ScrewCircle::ScrewCircle(float _angle) {
-	static const float highRadius = 1.4f;// radius for 0 degrees (screw looks like a +)
-	static const float lowRadius = 1.1f;// radius for 45 degrees (screw looks like an x)
-	angle = _angle;
-	_angle = fabsf(angle - ((float)M_PI)/4.0f);
-	radius = ((highRadius - lowRadius)/(M_PI/4.0f)) * _angle + lowRadius;
-}
-
 void ScrewCircle::draw(const DrawArgs &args) {
 	NVGcolor backgroundColor = nvgRGB(0x72, 0x72, 0x72); 
 	NVGcolor borderColor = nvgRGB(0x72, 0x72, 0x72);
 	nvgBeginPath(args.vg);
-	nvgCircle(args.vg, box.size.x/2.0f, box.size.y/2.0f, radius);// box, radius
+	nvgCircle(args.vg, box.size.x/2.0f, box.size.y/2.0f, 1.2f);// box, radius
 	nvgFillColor(args.vg, backgroundColor);
 	nvgFill(args.vg);
 	nvgStrokeWidth(args.vg, 1.0);
@@ -33,30 +25,24 @@ void ScrewCircle::draw(const DrawArgs &args) {
 }
 
 DynamicSVGScrew::DynamicSVGScrew() {
-	// for random rotated screw used in primary mode
-	// **********
-	//float angle0_90 = random::uniform()*M_PI/2.0f;
-	//float angle0_90 = random::uniform() > 0.5f ? M_PI/4.0f : 0.0f;// for testing
-	float angle0_90 = M_PI/4.0f;
-	
-	tw = new TransformWidget();
-	addChild(tw);
-	
 	sw = new widget::SvgWidget();
-	tw->addChild(sw);
 	sw->setSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/ScrewSilver.svg")));
 	
-	sc = new ScrewCircle(angle0_90);
+	ScrewCircle *sc = new ScrewCircle();
 	sc->box.size = sw->box.size;
+	
+	TransformWidget *tw = new TransformWidget();
+	tw->addChild(sw);
 	tw->addChild(sc);
+	addChild(tw);
 	
 	box.size = sw->box.size;
 	tw->box.size = sw->box.size; 
-	tw->identity();
 	// Rotate SVG
 	Vec center = sw->box.getCenter();
+	tw->identity();
 	tw->translate(center);
-	tw->rotate(angle0_90);
+	tw->rotate(M_PI/4.0f);
 	tw->translate(center.neg());	
 
 	// for fixed svg screw used in alternate mode
@@ -94,8 +80,9 @@ void DynamicSVGScrew::step() {
 
 void DynamicSVGPort::addFrame(std::shared_ptr<Svg> svg) {
     frames.push_back(svg);
-    if(frames.size() == 1)
+    if(frames.size() == 1) {
         SvgPort::setSvg(svg);
+	}
 }
 
 void DynamicSVGPort::step() {
@@ -180,38 +167,36 @@ DynamicIMTactile::DynamicIMTactile() {
 	wider = nullptr;
 	paramReadRequest = nullptr;
 	oldWider = -1.0f;
-	box.size = Vec(padWidth, padHeight);
+	ParamWidget::box.size = Vec(padWidth, padHeight);
 }
 
-void DynamicIMTactile::process(const ProcessArgs &args) {
+void DynamicIMTactile::step() {
    if(wider != nullptr && *wider != oldWider) {
         if ((*wider) > 0.5f) {
-			box.size = Vec(padWidthWide, padHeight);
+			ParamWidget::box.size = Vec(padWidthWide, padHeight);
 		}
 		else {
-			box.size = Vec(padWidth, padHeight);
+			ParamWidget::box.size = Vec(padWidth, padHeight);
 		}
         oldWider = *wider;
     }	
 	if (paramReadRequest != nullptr) {
 		float readVal = *paramReadRequest;
 		if (readVal != -10.0f) {
-			setValue(readVal);
+			paramQuantity->setValue(readVal);
 			*paramReadRequest = -10.0f;
 		}
 	}
 	FramebufferWidget::step();
 }
-*/
 
-/*
 void DynamicIMTactile::onDragStart(const widget::DragStartEvent &e) {
-	dragValue = value;
+	dragValue = paramQuantity->getValue();
 	dragY = gRackWidget->lastMousePos.y;
 }
 
 void DynamicIMTactile::onDragMove(const widget::DragMoveEvent &e) {
-	float rangeValue = maxValue - minValue;// infinite not supported (not relevant)
+	float rangeValue = paramQuantity->getMaxValue() - paramQuantity->getMinValue();// infinite not supported (not relevant)
 	float newDragY = gRackWidget->lastMousePos.y;
 	float delta = -(newDragY - dragY) * rangeValue / box.size.y;
 	dragY = newDragY;
@@ -221,9 +206,8 @@ void DynamicIMTactile::onDragMove(const widget::DragMoveEvent &e) {
 		dragValueClamped = roundf(dragValueClamped);
 	setValue(dragValueClamped);
 }
-*/
 
-/*
+
 void DynamicIMTactile::onButton(const widget::ButtonEvent &e) {
 	if (e.action == GLFW_PRESS) {
 		float val = rescale(e.pos.y, box.size.y, 0.0f , minValue, maxValue);

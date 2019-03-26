@@ -26,9 +26,6 @@ TWidget* createDynamicScrew(Vec pos, int* mode) {
 }
 
 struct ScrewCircle : widget::TransparentWidget {
-	float angle = 0.0f;
-	float radius = 2.0f;
-	ScrewCircle(float _angle);
 	void draw(const DrawArgs &args) override;
 };
 struct DynamicSVGScrew : widget::FramebufferWidget {
@@ -36,8 +33,6 @@ struct DynamicSVGScrew : widget::FramebufferWidget {
     int oldMode = -1;
 	// for random rotated screw used in primary mode
 	widget::SvgWidget *sw;
-	TransformWidget *tw;
-	ScrewCircle *sc;
 	// for fixed svg screw used in alternate mode
     widget::SvgWidget* swAlt;
 	
@@ -147,9 +142,9 @@ struct DynamicIMTactile : ParamWidget, widget::FramebufferWidget {
 	static const int padWidthWide = padWidth * 2 + padInterSpace;
 	
 	DynamicIMTactile();
-	void process(const ProcessArgs &args) override;
-	//void onDragStart(const widget::DragStartEvent &e) override; // TODO
-	//void onDragMove(const widget::DragMoveEvent &e) override; // TODO	
+	void step() override;
+	void onDragStart(const widget::DragStartEvent &e) override; // TODO
+	void onDragMove(const widget::DragMoveEvent &e) override; // TODO	
 	
 	//void onMouseDown(EventMouseDown &e) override; // replaced by onButton()
 	void onButton(const widget::ButtonEvent &e) override;// replaces onMouseDown() and onMouseUp()

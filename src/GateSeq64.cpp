@@ -38,12 +38,6 @@ struct GateSeq64 : Module {
 		RESET_INPUT,
 		RUNCV_INPUT,
 		SEQCV_INPUT,
-		WRITE_INPUT,
-		GATE_INPUT,
-		PROB_INPUT,
-		WRITE1_INPUT,
-		WRITE0_INPUT,
-		STEPL_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -59,6 +53,12 @@ struct GateSeq64 : Module {
 		NUM_LIGHTS
 	};
 	
+	
+	// Expander
+	float consumerMessage[6] = {};// this module must read from here
+	float producerMessage[6] = {};// expander will write into here (GATE_INPUT needs connected, PROB_INPUT needs connected, WRITE_INPUT, WRITE1_INPUT, WRITE0_INPUT, STEPL_INPUT)
+		
+
 	// Constants
 	enum DisplayStateIds {DISP_GATE, DISP_LENGTH, DISP_MODES};
 	static const int MAX_SEQS = 32;
@@ -172,6 +172,9 @@ struct GateSeq64 : Module {
 	GateSeq64() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
+		rightProducerMessage = producerMessage;
+		rightConsumerMessage = consumerMessage;
+
 		char strBuf[32];
 		// Step LED buttons and GateMode lights
 		for (int y = 0; y < 4; y++) {
@@ -245,21 +248,6 @@ struct GateSeq64 : Module {
 
 	
 	void onRandomize() override {
-		// stepConfig = getStepConfig(params[CONFIG_PARAM].getValue());
-		// runModeSong = random::u32() % 5;
-		// stepIndexEdit = 0;
-		// phraseIndexEdit = 0;
-		// sequence = random::u32() % MAX_SEQS;
-		// phrases = 1 + (random::u32() % 64);
-		// for (int i = 0; i < MAX_SEQS; i++) {
-			// for (int s = 0; s < 64; s++) {
-				// attributes[i][s].randomize();
-			// }
-			// sequences[i].randomize(16 * stepConfig, NUM_MODES);
-		// }
-		// for (int i = 0; i < 64; i++)
-			// phrase[i] = random::u32() % MAX_SEQS;
-		// initRun();
 		if (isEditingSequence()) {
 			for (int s = 0; s < 64; s++) {
 				attributes[sequence][s].randomize();
@@ -689,22 +677,22 @@ struct GateSeq64 : Module {
 			}
 			
 			// Write CV inputs 
-			bool writeTrig = writeTrigger.process(inputs[WRITE_INPUT].getVoltage());
-			bool write0Trig = write0Trigger.process(inputs[WRITE0_INPUT].getVoltage());
-			bool write1Trig = write1Trigger.process(inputs[WRITE1_INPUT].getVoltage());
+			bool writeTrig = writeTrigger.process(consumerMessage[2]);
+			bool write0Trig = write0Trigger.process(consumerMessage[4]);
+			bool write1Trig = write1Trigger.process(consumerMessage[3]);
 			if (writeTrig || write0Trig || write1Trig) {
 				if (editingSequence) {
 					blinkNum = blinkNumInit;
 					if (writeTrig) {// higher priority than write0 and write1
-						if (inputs[PROB_INPUT].isConnected()) {
-							attributes[sequence][stepIndexEdit].setGatePVal(clamp( (int)round(inputs[PROB_INPUT].getVoltage() * 10.0f), 0, 100) );
+						if (!std::isnan(consumerMessage[1])) {
+							attributes[sequence][stepIndexEdit].setGatePVal(clamp( (int)round(consumerMessage[1] * 10.0f), 0, 100) );
 							attributes[sequence][stepIndexEdit].setGateP(true);
 						}
 						else{
 							attributes[sequence][stepIndexEdit].setGateP(false);
 						}
-						if (inputs[GATE_INPUT].isConnected())
-							attributes[sequence][stepIndexEdit].setGate(inputs[GATE_INPUT].getVoltage() >= 1.0f);
+						if (!std::isnan(consumerMessage[0]))
+							attributes[sequence][stepIndexEdit].setGate(consumerMessage[0] >= 1.0f);
 					}
 					else {// write1 or write0			
 						attributes[sequence][stepIndexEdit].setGate(write1Trig);
@@ -717,7 +705,7 @@ struct GateSeq64 : Module {
 			}
 
 			// Step left CV input
-			if (stepLTrigger.process(inputs[STEPL_INPUT].getVoltage())) {
+			if (stepLTrigger.process(consumerMessage[5])) {
 				if (editingSequence) {
 					blinkNum = blinkNumInit;
 					stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit - 1, 64);					
@@ -739,11 +727,12 @@ struct GateSeq64 : Module {
 					else if (displayState == DISP_MODES) {
 					}
 					else {
-						if (params[STEP_PARAMS + stepPressed].getValue() > 1.5f) {// right button click
-							attributes[sequence][stepPressed].setGate(false);
-							displayProbInfo = 0l;
-						}
-						else if (!attributes[sequence][stepPressed].getGate()) {// clicked inactive, so turn gate on
+						// if (params[STEP_PARAMS + stepPressed].getValue() > 1.5f) {// right button click
+							// attributes[sequence][stepPressed].setGate(false);
+							// displayProbInfo = 0l;
+						// }
+						// else 
+						if (!attributes[sequence][stepPressed].getGate()) {// clicked inactive, so turn gate on
 							attributes[sequence][stepPressed].setGate(true);
 							if (attributes[sequence][stepPressed].getGateP())
 								displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
@@ -1099,6 +1088,12 @@ struct GateSeq64 : Module {
 					blinkCount = 0l;
 					blinkNum--;
 				}
+			}
+			
+			// To Expander
+			if (rightModule && rightModule->model == modelGateSeq64Expander) {
+				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
+				producerMessage[0] = (float)panelTheme;
 			}
 		}// lightRefreshCounter
 
@@ -1478,17 +1473,6 @@ struct GateSeq64Widget : ModuleWidget {
 		// Outputs
 		for (int iSides = 0; iSides < 4; iSides++)
 			addOutput(createDynamicPort<IMPort>(Vec(311, rowRulerC0 + iSides * 40), false, module, GateSeq64::GATE_OUTPUTS + iSides, module ? &module->panelTheme : NULL));
-		
-		// Expansion module
-		static const int rowRulerExpTop = 60;
-		static const int rowSpacingExp = 50;
-		static const int colRulerExp = 497 - 30 - 90;// GS64 is (2+6)HP less than PS32
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 0), true, module, GateSeq64::WRITE_INPUT, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 1), true, module, GateSeq64::GATE_INPUT, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 2), true, module, GateSeq64::PROB_INPUT, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 3), true, module, GateSeq64::WRITE0_INPUT, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 4), true, module, GateSeq64::WRITE1_INPUT, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(colRulerExp, rowRulerExpTop + rowSpacingExp * 5), true, module, GateSeq64::STEPL_INPUT, module ? &module->panelTheme : NULL));
 	}
 	
 	void step() override {

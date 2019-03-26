@@ -45,6 +45,12 @@
 			"tags": ["Sequencer"]
 		},
 		{
+			"slug": "Gate-Seq-64-Expander",
+			"name": "SEQ - GateSeq64 expander",
+			"description": "Expander for GateSeq64",
+			"tags": ["Expander"]
+		},
+		{
 			"slug": "Phrase-Seq-16",
 			"name": "SEQ - PhraseSeq16",
 			"description": "16 step / 16 phrase sequencer",

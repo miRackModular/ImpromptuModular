@@ -25,6 +25,7 @@ void init(rack::Plugin *p) {
 	p->addModel(modelFoundry);
 	p->addModel(modelFoundryExpander);
 	p->addModel(modelGateSeq64);
+	p->addModel(modelGateSeq64Expander);
 	p->addModel(modelPhraseSeq16);
 	p->addModel(modelPhraseSeq32);
 	p->addModel(modelPhraseSeqExpander);
