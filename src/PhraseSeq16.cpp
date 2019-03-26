@@ -1750,61 +1750,52 @@ struct PhraseSeq16Widget : ModuleWidget {
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
 		void onDoubleClick(const widget::DoubleClickEvent &e) override {
-			PhraseSeq16* module = dynamic_cast<PhraseSeq16*>(this->paramQuantity->module);
-			// same code structure below as in sequence knob in main step()
-			if (module->editingPpqn != 0) {
-				module->pulsesPerStep = 1;
-				//editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
-			}
-			else if (module->displayState == PhraseSeq16::DISP_MODE) {
-				if (module->isEditingSequence()) {
-					if (std::isnan(module->consumerMessage[4])) {
-						module->sequences[module->seqIndexEdit].setRunMode(MODE_FWD);
+			if (paramQuantity) {
+				PhraseSeq16* module = dynamic_cast<PhraseSeq16*>(paramQuantity->module);
+				// same code structure below as in sequence knob in main step()
+				if (module->editingPpqn != 0) {
+					module->pulsesPerStep = 1;
+					//editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
+				}
+				else if (module->displayState == PhraseSeq16::DISP_MODE) {
+					if (module->isEditingSequence()) {
+						if (std::isnan(module->consumerMessage[4])) {
+							module->sequences[module->seqIndexEdit].setRunMode(MODE_FWD);
+						}
+					}
+					else {
+						module->runModeSong = MODE_FWD;
 					}
 				}
-				else {
-					module->runModeSong = MODE_FWD;
-				}
-			}
-			else if (module->displayState == PhraseSeq16::DISP_LENGTH) {
-				if (module->isEditingSequence()) {
-					module->sequences[module->seqIndexEdit].setLength(16);
-				}
-				else {
-					module->phrases = 4;
-				}
-			}
-			else if (module->displayState == PhraseSeq16::DISP_TRANSPOSE) {
-				// nothing
-			}
-			else if (module->displayState == PhraseSeq16::DISP_ROTATE) {
-				// nothing			
-			}
-			else {// DISP_NORMAL
-				if (module->isEditingSequence()) {
-					if (!module->inputs[PhraseSeq16::SEQCV_INPUT].isConnected()) {
-						module->seqIndexEdit = 0;
+				else if (module->displayState == PhraseSeq16::DISP_LENGTH) {
+					if (module->isEditingSequence()) {
+						module->sequences[module->seqIndexEdit].setLength(16);
+					}
+					else {
+						module->phrases = 4;
 					}
 				}
-				else {
-					module->phrase[module->phraseIndexEdit] = 0;
+				else if (module->displayState == PhraseSeq16::DISP_TRANSPOSE) {
+					// nothing
+				}
+				else if (module->displayState == PhraseSeq16::DISP_ROTATE) {
+					// nothing			
+				}
+				else {// DISP_NORMAL
+					if (module->isEditingSequence()) {
+						if (!module->inputs[PhraseSeq16::SEQCV_INPUT].isConnected()) {
+							module->seqIndexEdit = 0;
+						}
+					}
+					else {
+						module->phrase[module->phraseIndexEdit] = 0;
+					}
 				}
 			}
 			ParamWidget::onDoubleClick(e);
 		}
 	};	
 	
-	// void onHoverKey(EventHoverKey &e) override {// https://www.glfw.org/docs/latest/group__keys.html
-		// PhraseSeq16* module = dynamic_cast<PhraseSeq16*>(this->paramQuantity->module);
-		// if (e.key == GLFW_KEY_SPACE) {
-			// if (module->isEditingSequence()) {
-				// module->attributes[module->seqIndexEdit][module->stepIndexEdit].toggleGate1();
-			// }			
-			// e.consumed = true;
-		// }
-		// else
-			// ModuleWidget::onHoverKey(e);
-	// }
 	
 	PhraseSeq16Widget(PhraseSeq16 *module) {
 		setModule(module);

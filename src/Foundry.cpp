@@ -1628,11 +1628,13 @@ struct FoundryWidget : ModuleWidget {
 		CKSSNotify() {}
 		void randomize() override {}
 		void onChange(const widget::ChangeEvent &e) override {
-			Foundry* module = dynamic_cast<Foundry*>(this->paramQuantity->module);
-			module->displayState = Foundry::DISP_NORMAL;
-			module->seq.initDelayedSeqNumberRequest();
-			if (this->paramQuantity->paramId != Foundry::KEY_GATE_PARAM) {
-				module->multiSteps = false;
+			if (paramQuantity) {
+				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);
+				module->displayState = Foundry::DISP_NORMAL;
+				module->seq.initDelayedSeqNumberRequest();
+				if (paramQuantity->paramId != Foundry::KEY_GATE_PARAM) {
+					module->multiSteps = false;
+				}
 			}
 			SVGSwitch::onChange(e);		
 		}
@@ -1640,8 +1642,10 @@ struct FoundryWidget : ModuleWidget {
 	struct CKSSHThreeNotify : CKSSHThree {
 		CKSSHThreeNotify() {};
 		void onChange(const widget::ChangeEvent &e) override {
-			Foundry* module = dynamic_cast<Foundry*>(this->paramQuantity->module);
-			module->displayState = Foundry::DISP_NORMAL;
+			if (paramQuantity) {
+				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);
+				module->displayState = Foundry::DISP_NORMAL;
+			}
 			SVGSwitch::onChange(e);		
 		}
 	};
@@ -1649,29 +1653,33 @@ struct FoundryWidget : ModuleWidget {
 		CPModeSwitch() {};
 		void onChange(const widget::ChangeEvent &e) override {
 			SVGSwitch::onChange(e);	
-			Foundry* module = dynamic_cast<Foundry*>(this->paramQuantity->module);			
-			module->cpSeqLength = module->getCPMode();
-			if (module->displayState == Foundry::DISP_COPY_SONG_CUST)
-				module->displayState = Foundry::DISP_NORMAL;
+			if (paramQuantity) {
+				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);			
+				module->cpSeqLength = module->getCPMode();
+				if (module->displayState == Foundry::DISP_COPY_SONG_CUST)
+					module->displayState = Foundry::DISP_NORMAL;
+			}
 		}
 	};
 	// Velocity edit knob
 	struct VelocityKnob : IMMediumKnobInf {
 		VelocityKnob() {};		
 		void onDoubleClick(const widget::DoubleClickEvent &e) override {
-			Foundry* module = dynamic_cast<Foundry*>(this->paramQuantity->module);
-			// same code structure below as in velocity knob in main step()
-			if (module->isEditingSequence()) {
-				module->displayState = Foundry::DISP_NORMAL;
-				int multiStepsCount = module->multiSteps ? module->getCPMode() : 1;
-				if (module->velEditMode == 2) {
-					module->seq.initSlideVal(multiStepsCount, module->multiTracks);
-				}
-				else if (module->velEditMode == 1) {
-					module->seq.initGatePVal(multiStepsCount, module->multiTracks);
-				}
-				else {
-					module->seq.initVelocityVal(multiStepsCount, module->multiTracks);
+			if (paramQuantity) {
+				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);
+				// same code structure below as in velocity knob in main step()
+				if (module->isEditingSequence()) {
+					module->displayState = Foundry::DISP_NORMAL;
+					int multiStepsCount = module->multiSteps ? module->getCPMode() : 1;
+					if (module->velEditMode == 2) {
+						module->seq.initSlideVal(multiStepsCount, module->multiTracks);
+					}
+					else if (module->velEditMode == 1) {
+						module->seq.initGatePVal(multiStepsCount, module->multiTracks);
+					}
+					else {
+						module->seq.initVelocityVal(multiStepsCount, module->multiTracks);
+					}
 				}
 			}
 			ParamWidget::onDoubleClick(e);
@@ -1681,37 +1689,39 @@ struct FoundryWidget : ModuleWidget {
 	struct SequenceKnob : IMMediumKnobInf {
 		SequenceKnob() {};		
 		void onDoubleClick(const widget::DoubleClickEvent &e) override {
-			Foundry* module = dynamic_cast<Foundry*>(this->paramQuantity->module);
-			// same code structure below as in sequence knob in main step()
-			if (module->displayState == Foundry::DISP_LEN) {
-				module->seq.initLength(module->multiTracks);
-			}
-			else if (module->displayState == Foundry::DISP_TRANSPOSE) {
-				module->seq.unTransposeSeq(module->multiTracks);
-			}
-			else if (module->displayState == Foundry::DISP_ROTATE) {
-				module->seq.unRotateSeq(module->multiTracks);
-			}							
-			else if (module->displayState == Foundry::DISP_REPS) {
-				module->seq.initPhraseReps(module->multiTracks);
-			}
-			else if (module->displayState == Foundry::DISP_PPQN || module->displayState == Foundry::DISP_DELAY) {
-			}
-			else {// DISP_NORMAL
-				if (module->isEditingSequence()) {
-					for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-						if (std::isnan(module->consumerMessage[Sequencer::NUM_TRACKS + trkn])) {
-							if (module->multiTracks || (trkn == module->seq.getTrackIndexEdit())) {
-								module->seq.setSeqIndexEdit(0, trkn);
+			if (paramQuantity) {
+				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);
+				// same code structure below as in sequence knob in main step()
+				if (module->displayState == Foundry::DISP_LEN) {
+					module->seq.initLength(module->multiTracks);
+				}
+				else if (module->displayState == Foundry::DISP_TRANSPOSE) {
+					module->seq.unTransposeSeq(module->multiTracks);
+				}
+				else if (module->displayState == Foundry::DISP_ROTATE) {
+					module->seq.unRotateSeq(module->multiTracks);
+				}							
+				else if (module->displayState == Foundry::DISP_REPS) {
+					module->seq.initPhraseReps(module->multiTracks);
+				}
+				else if (module->displayState == Foundry::DISP_PPQN || module->displayState == Foundry::DISP_DELAY) {
+				}
+				else {// DISP_NORMAL
+					if (module->isEditingSequence()) {
+						for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
+							if (std::isnan(module->consumerMessage[Sequencer::NUM_TRACKS + trkn])) {
+								if (module->multiTracks || (trkn == module->seq.getTrackIndexEdit())) {
+									module->seq.setSeqIndexEdit(0, trkn);
+								}
 							}
 						}
 					}
-				}
-				else {// editing song
-					if (!module->attached || (module->attached && !module->running))
-						module->seq.initPhraseSeqNum(module->multiTracks);
-				}
-			}	
+					else {// editing song
+						if (!module->attached || (module->attached && !module->running))
+							module->seq.initPhraseSeqNum(module->multiTracks);
+					}
+				}	
+			}
 			ParamWidget::onDoubleClick(e);
 		}
 	};
@@ -1719,30 +1729,32 @@ struct FoundryWidget : ModuleWidget {
 	struct PhraseKnob : IMMediumKnobInf {
 		PhraseKnob() {};		
 		void onDoubleClick(const widget::DoubleClickEvent &e) override {
-			Foundry* module = dynamic_cast<Foundry*>(this->paramQuantity->module);
-			// same code structure below as in phrase knob in main step()
-			if (module->displayState == Foundry::DISP_MODE_SEQ) {
-				module->seq.initRunModeSeq(module->multiTracks);
-			}
-			else if (module->displayState == Foundry::DISP_PPQN) {
-				module->seq.initPulsesPerStep(module->multiTracks);
-			}
-			else if (module->displayState == Foundry::DISP_DELAY) {
-				module->seq.initDelay(module->multiTracks);
-			}
-			else if (module->displayState == Foundry::DISP_MODE_SONG) {
-				module->seq.initRunModeSong(module->multiTracks);
-			}
-			else {
-				if (!module->attached || !module->running) {
-					if (!module->isEditingSequence()) {
-						if (module->displayState != Foundry::DISP_PPQN && module->displayState != Foundry::DISP_DELAY) {
-							module->seq.setPhraseIndexEdit(0);
-							if (module->displayState != Foundry::DISP_REPS && module->displayState != Foundry::DISP_COPY_SONG_CUST)
-								module->displayState = Foundry::DISP_NORMAL;
-							if (!module->running)
-								module->seq.bringPhraseIndexRunToEdit();							
-						}	
+			if (paramQuantity) {
+				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);
+				// same code structure below as in phrase knob in main step()
+				if (module->displayState == Foundry::DISP_MODE_SEQ) {
+					module->seq.initRunModeSeq(module->multiTracks);
+				}
+				else if (module->displayState == Foundry::DISP_PPQN) {
+					module->seq.initPulsesPerStep(module->multiTracks);
+				}
+				else if (module->displayState == Foundry::DISP_DELAY) {
+					module->seq.initDelay(module->multiTracks);
+				}
+				else if (module->displayState == Foundry::DISP_MODE_SONG) {
+					module->seq.initRunModeSong(module->multiTracks);
+				}
+				else {
+					if (!module->attached || !module->running) {
+						if (!module->isEditingSequence()) {
+							if (module->displayState != Foundry::DISP_PPQN && module->displayState != Foundry::DISP_DELAY) {
+								module->seq.setPhraseIndexEdit(0);
+								if (module->displayState != Foundry::DISP_REPS && module->displayState != Foundry::DISP_COPY_SONG_CUST)
+									module->displayState = Foundry::DISP_NORMAL;
+								if (!module->running)
+									module->seq.bringPhraseIndexRunToEdit();							
+							}	
+						}
 					}
 				}
 			}

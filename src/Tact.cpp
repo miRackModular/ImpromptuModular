@@ -62,7 +62,7 @@ struct Tact : Module {
 	Trigger botInvTriggers[2];
 	Trigger storeTriggers[2];
 	Trigger recallTriggers[2];
-	PulseGenerator eocPulses[2];
+	dsp::PulseGenerator eocPulses[2];
 	
 	
 	inline bool isLinked(void) {return params[LINK_PARAM].getValue() > 0.5f;}
@@ -71,6 +71,20 @@ struct Tact : Module {
 	
 	Tact() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		
+		params[TACT_PARAMS + 1].config(-1.0f, 11.0f, 0.0f, "Tact pad (right)");
+		params[TACT_PARAMS + 0].config(-1.0f, 11.0f, 0.0f, "Tact pad (left)");
+		params[SLIDE_PARAMS + 0].config(0.0f, 1.0f, 0.0f, "Slide (left)");		
+		params[SLIDE_PARAMS + 1].config(0.0f, 1.0f, 0.0f, "Slide (right)");		
+		params[STORE_PARAMS + 0].config(0.0f, 1.0f, 0.0f, "Store (left)");
+		params[STORE_PARAMS + 1].config(0.0f, 1.0f, 0.0f, "Store (right)");
+		params[ATTV_PARAMS + 0].config(-1.0f, 1.0f, 1.0f, "Attenuverter (left)");
+		params[ATTV_PARAMS + 1].config(-1.0f, 1.0f, 1.0f, "Attenuverter (right)");
+		params[RATE_PARAMS + 0].config(0.0f, 4.0f, 0.2f, "Rate (left)");
+		params[RATE_PARAMS + 1].config(0.0f, 4.0f, 0.2f, "Rate (right)");
+		params[EXP_PARAM].config(0.0f, 1.0f, 0.0f, "Exponential");			
+		params[LINK_PARAM].config(0.0f, 1.0f, 0.0f, "Link");		
+		
 		onReset();
 	}
 
@@ -315,6 +329,8 @@ struct Tact : Module {
 
 
 struct TactWidget : ModuleWidget {
+	SvgPanel* lightPanel;
+	SvgPanel* darkPanel;
 
 	struct PanelThemeItem : MenuItem {
 		Tact *module;
@@ -381,13 +397,16 @@ struct TactWidget : ModuleWidget {
 	
 	TactWidget(Tact *module) {
 		setModule(module);
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Tact.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Tact_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = module ? &module->panelTheme : NULL;
-        addChild(panel);
+
+		// Main panels from Inkscape
+        lightPanel = new SvgPanel();
+        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Tact.svg")));
+        box.size = lightPanel->box.size;
+        addChild(lightPanel);
+        darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Tact_dark.svg")));
+		darkPanel->visible = false;
+		addChild(darkPanel);
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
@@ -402,9 +421,11 @@ struct TactWidget : ModuleWidget {
 		
 		// Tactile touch pads
 		// Right (no dynamic width, but must do first so that left will get mouse events when wider overlaps)
-		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1, -1.0f, 11.0f, 0.0f, nullptr, &module->paramReadRequest[1]));
+		// addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1, nullptr, &module->paramReadRequest[1]));
+		addParam(createParam<IMTactile>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1));//, nullptr, &module->paramReadRequest[1]));
 		// Left (with width dependant on Link value)	
-		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0, -1.0f, 11.0f, 0.0f,  &module->params[Tact::LINK_PARAM].getValue(), &module->paramReadRequest[0]));
+		// addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0, &module->params[Tact::LINK_PARAM].getValue(), &module->paramReadRequest[0]));
+		addParam(createParam<IMTactile>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0));//, &module->params[Tact::LINK_PARAM].getValue(), &module->paramReadRequest[0]));
 			
 
 			
@@ -433,29 +454,29 @@ struct TactWidget : ModuleWidget {
 		static const int rowRuler1d = rowRuler2 - 54;
 		
 		// Slide switches
-		addParam(createParam<CKSS>(Vec(colRulerC3L + hOffsetCKSS, rowRuler1d + vOffsetCKSS), module, Tact::SLIDE_PARAMS + 0, 0.0f, 1.0f, 0.0f));		
-		addParam(createParam<CKSS>(Vec(colRulerC3R + hOffsetCKSS, rowRuler1d + vOffsetCKSS), module, Tact::SLIDE_PARAMS + 1, 0.0f, 1.0f, 0.0f));		
+		addParam(createParam<CKSS>(Vec(colRulerC3L + hOffsetCKSS, rowRuler1d + vOffsetCKSS), module, Tact::SLIDE_PARAMS + 0));		
+		addParam(createParam<CKSS>(Vec(colRulerC3R + hOffsetCKSS, rowRuler1d + vOffsetCKSS), module, Tact::SLIDE_PARAMS + 1));		
 
 
 		static const int rowRuler1c = rowRuler1d - 46;
 
 		// Store buttons
-		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3L + offsetTL1105, rowRuler1c + offsetTL1105), module, Tact::STORE_PARAMS + 0, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3R + offsetTL1105, rowRuler1c + offsetTL1105), module, Tact::STORE_PARAMS + 1, 0.0f, 1.0f, 0.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3L + offsetTL1105, rowRuler1c + offsetTL1105), module, Tact::STORE_PARAMS + 0, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMPushButton>(Vec(colRulerC3R + offsetTL1105, rowRuler1c + offsetTL1105), module, Tact::STORE_PARAMS + 1, module ? &module->panelTheme : NULL));
 		
 		
 		static const int rowRuler1b = rowRuler1c - 59;
 		
 		// Attv knobs
-		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3L + offsetIMSmallKnob, rowRuler1b + offsetIMSmallKnob), module, Tact::ATTV_PARAMS + 0, -1.0f, 1.0f, 1.0f, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3R + offsetIMSmallKnob, rowRuler1b + offsetIMSmallKnob), module, Tact::ATTV_PARAMS + 1, -1.0f, 1.0f, 1.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3L + offsetIMSmallKnob, rowRuler1b + offsetIMSmallKnob), module, Tact::ATTV_PARAMS + 0, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3R + offsetIMSmallKnob, rowRuler1b + offsetIMSmallKnob), module, Tact::ATTV_PARAMS + 1, module ? &module->panelTheme : NULL));
 
 		
 		static const int rowRuler1a = rowRuler1b - 59;
 		
 		// Rate knobs
-		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3L + offsetIMSmallKnob, rowRuler1a + offsetIMSmallKnob), module, Tact::RATE_PARAMS + 0, 0.0f, 4.0f, 0.2f, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3R + offsetIMSmallKnob, rowRuler1a + offsetIMSmallKnob), module, Tact::RATE_PARAMS + 1, 0.0f, 4.0f, 0.2f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3L + offsetIMSmallKnob, rowRuler1a + offsetIMSmallKnob), module, Tact::RATE_PARAMS + 0, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParam<IMSmallKnob>(Vec(colRulerC3R + offsetIMSmallKnob, rowRuler1a + offsetIMSmallKnob), module, Tact::RATE_PARAMS + 1, module ? &module->panelTheme : NULL));
 		
 
 		static const int colRulerC1L = colRulerCenter - 30 - 1;
@@ -464,7 +485,7 @@ struct TactWidget : ModuleWidget {
 		static const int colRulerC2R = colRulerCenter + 65 + 1; 
 
 		// Exp switch
-		addParam(createParam<CKSS>(Vec(colRulerCenter + hOffsetCKSS, rowRuler2 + vOffsetCKSS), module, Tact::EXP_PARAM, 0.0f, 1.0f, 0.0f));		
+		addParam(createParam<CKSS>(Vec(colRulerCenter + hOffsetCKSS, rowRuler2 + vOffsetCKSS), module, Tact::EXP_PARAM));		
 
 		// Top/bot CV Inputs
 		addInput(createDynamicPort<IMPort>(Vec(colRulerC2L, rowRuler2), true, module, Tact::TOP_INPUTS + 0, module ? &module->panelTheme : NULL));		
@@ -476,7 +497,7 @@ struct TactWidget : ModuleWidget {
 		static const int rowRuler3 = rowRuler2 + 54;
 
 		// Link switch
-		addParam(createParam<CKSS>(Vec(colRulerCenter + hOffsetCKSS, rowRuler3 + vOffsetCKSS), module, Tact::LINK_PARAM, 0.0f, 1.0f, 0.0f));		
+		addParam(createParam<CKSS>(Vec(colRulerCenter + hOffsetCKSS, rowRuler3 + vOffsetCKSS), module, Tact::LINK_PARAM));		
 
 		// Outputs
 		addOutput(createDynamicPort<IMPort>(Vec(colRulerCenter - 49 - 1, rowRuler3), false, module, Tact::CV_OUTPUTS + 0, module ? &module->panelTheme : NULL));
@@ -490,7 +511,14 @@ struct TactWidget : ModuleWidget {
 		// Lights
 		addChild(createLight<SmallLight<GreenLight>>(Vec(colRulerCenter - 47 - 1 + offsetMediumLight, rowRuler2 - 24 + offsetMediumLight), module, Tact::CVIN_LIGHTS + 0 * 2));		
 		addChild(createLight<SmallLight<GreenLight>>(Vec(colRulerCenter + 47 + 1 + offsetMediumLight, rowRuler2 - 24 + offsetMediumLight), module, Tact::CVIN_LIGHTS + 1 * 2));		
-
+	}
+	
+	void step() override {
+		if (module) {
+			lightPanel->visible = ((((Tact*)module)->panelTheme) == 0);
+			darkPanel->visible  = ((((Tact*)module)->panelTheme) == 1);
+		}
+		Widget::step();
 	}
 };
 
@@ -532,6 +560,12 @@ struct Tact1 : Module {
 	
 	Tact1() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		
+		params[TACT_PARAM].config(-1.0f, 11.0f, 0.0f, "Tact pad");
+		params[ATTV_PARAM].config(-1.0f, 1.0f, 1.0f, "Attenuverter");
+		params[RATE_PARAM].config(0.0f, 4.0f, 0.2f, "Rate");
+		params[EXP_PARAM].config(0.0f, 1.0f, 0.0f, "Exponential");			
+		
 		onReset();
 	}
 
@@ -639,6 +673,8 @@ struct Tact1 : Module {
 };
 
 struct Tact1Widget : ModuleWidget {
+	SvgPanel* lightPanel;
+	SvgPanel* darkPanel;
 
 	struct PanelThemeItem : MenuItem {
 		Tact1 *module;
@@ -695,13 +731,16 @@ struct Tact1Widget : ModuleWidget {
 	
 	Tact1Widget(Tact1 *module) {
 		setModule(module);
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Tact1.svg")));
-        panel->addPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Tact1_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = module ? &module->panelTheme : NULL;
-        addChild(panel);
+
+		// Main panels from Inkscape
+        lightPanel = new SvgPanel();
+        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Tact1.svg")));
+        box.size = lightPanel->box.size;
+        addChild(lightPanel);
+        darkPanel = new SvgPanel();
+		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Tact1_dark.svg")));
+		darkPanel->visible = false;
+		addChild(darkPanel);
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
@@ -714,7 +753,8 @@ struct Tact1Widget : ModuleWidget {
 		static const int colRulerPad = 14;
 		
 		// Tactile touch pad
-		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM, -1.0f, 11.0f, 0.0f, nullptr, nullptr));
+		//addParam(createDynamicParam2<IMTactile>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM, nullptr, nullptr));
+		addParam(createParam<IMTactile>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM));//, nullptr, nullptr));
 			
 		static const int colRulerLed = colRulerPad + 56;
 		static const int lightsOffsetY = 19;
@@ -728,25 +768,31 @@ struct Tact1Widget : ModuleWidget {
 		static const int rowRuler2 = 275;// rate and exp
 		static const int offsetFromSide2 = 25;
 		// Rate knob
-		addParam(createDynamicParamCentered<IMSmallKnob>(Vec(offsetFromSide2, rowRuler2), module, Tact1::RATE_PARAM, 0.0f, 4.0f, 0.2f, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParamCentered<IMSmallKnob>(Vec(box.size.x - offsetFromSide2, rowRuler2), module, Tact1::ATTV_PARAM, -1.0f, 1.0f, 1.0f, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParamCentered<IMSmallKnob>(Vec(offsetFromSide2, rowRuler2), module, Tact1::RATE_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParamCentered<IMSmallKnob>(Vec(box.size.x - offsetFromSide2, rowRuler2), module, Tact1::ATTV_PARAM, module ? &module->panelTheme : NULL));
 		
 		static const int rowRuler3 = 320;
 		
 		// Output
 		addOutput(createDynamicPort<IMPort>(Vec(18, rowRuler3), false, module, Tact1::CV_OUTPUT, module ? &module->panelTheme : NULL));
 		// Exp switch
-		addParam(createParam<CKSS>(Vec(57 + hOffsetCKSS, rowRuler3 + vOffsetCKSS), module, Tact1::EXP_PARAM, 0.0f, 1.0f, 0.0f));		
+		addParam(createParam<CKSS>(Vec(57 + hOffsetCKSS, rowRuler3 + vOffsetCKSS), module, Tact1::EXP_PARAM));		
+	}
+	
+	void step() override {
+		if (module) {
+			lightPanel->visible = ((((Tact1*)module)->panelTheme) == 0);
+			darkPanel->visible  = ((((Tact1*)module)->panelTheme) == 1);
+		}
+		Widget::step();
 	}
 };
 
 
 //*****************************************************************************
 
-// Model *modelTact = createModel<Tact, TactWidget>("Impromptu Modular", "Tact", "CTRL - Tact", CONTROLLER_TAG);
 Model *modelTact = createModel<Tact, TactWidget>("Tact");
 
-// Model *modelTact1 = createModel<Tact1, Tact1Widget>("Impromptu Modular", "Tact1", "CTRL - Tact1", CONTROLLER_TAG);
 Model *modelTact1 = createModel<Tact1, Tact1Widget>("Tact1");
 
 /*CHANGE LOG

@@ -889,17 +889,19 @@ struct ClockedWidget : ModuleWidget {
 	struct IMSmallKnobNotify : IMSmallKnob {
 		IMSmallKnobNotify() {};
 		void onDragMove(const widget::DragMoveEvent &e) override {
-			Clocked *module = dynamic_cast<Clocked*>(this->paramQuantity->module);
-			int dispIndex = 0;
-			int paramId = paramQuantity->paramId;
-			if ( (paramId >= Clocked::SWING_PARAMS + 0) && (paramId <= Clocked::SWING_PARAMS + 3) )
-				dispIndex = paramId - Clocked::SWING_PARAMS;
-			else if ( (paramId >= Clocked::DELAY_PARAMS + 1) && (paramId <= Clocked::DELAY_PARAMS + 3) )
-				dispIndex = paramId - Clocked::DELAY_PARAMS;
-			else if ( (paramId >= Clocked::PW_PARAMS + 0) && (paramId <= Clocked::PW_PARAMS + 3) )
-				dispIndex = paramId - Clocked::PW_PARAMS;
-			module->notifyingSource[dispIndex] = paramId;
-			module->notifyInfo[dispIndex] = (long) (Clocked::delayInfoTime * module->sampleRate / displayRefreshStepSkips);
+			if (paramQuantity) {
+				Clocked *module = dynamic_cast<Clocked*>(paramQuantity->module);
+				int dispIndex = 0;
+				int paramId = paramQuantity->paramId;
+				if ( (paramId >= Clocked::SWING_PARAMS + 0) && (paramId <= Clocked::SWING_PARAMS + 3) )
+					dispIndex = paramId - Clocked::SWING_PARAMS;
+				else if ( (paramId >= Clocked::DELAY_PARAMS + 1) && (paramId <= Clocked::DELAY_PARAMS + 3) )
+					dispIndex = paramId - Clocked::DELAY_PARAMS;
+				else if ( (paramId >= Clocked::PW_PARAMS + 0) && (paramId <= Clocked::PW_PARAMS + 3) )
+					dispIndex = paramId - Clocked::PW_PARAMS;
+				module->notifyingSource[dispIndex] = paramId;
+				module->notifyInfo[dispIndex] = (long) (Clocked::delayInfoTime * module->sampleRate / displayRefreshStepSkips);
+			}
 			Knob::onDragMove(e);
 		}
 	};
@@ -912,14 +914,16 @@ struct ClockedWidget : ModuleWidget {
 		IMBigSnapKnobNotify() {}
 		void randomize() override {ParamWidget::randomize();}
 		void onChange(const widget::ChangeEvent &e) override {
-			Clocked *module = dynamic_cast<Clocked*>(this->paramQuantity->module);
-			int dispIndex = 0;
-			int paramId = paramQuantity->paramId;
-			if ( (paramId >= Clocked::RATIO_PARAMS + 1) && (paramId <= Clocked::RATIO_PARAMS + 3) ) {
-				dispIndex = paramId - Clocked::RATIO_PARAMS;
-				module->syncRatios[dispIndex] = true;
+			if (paramQuantity) {
+				Clocked *module = dynamic_cast<Clocked*>(paramQuantity->module);
+				int dispIndex = 0;
+				int paramId = paramQuantity->paramId;
+				if ( (paramId >= Clocked::RATIO_PARAMS + 1) && (paramId <= Clocked::RATIO_PARAMS + 3) ) {
+					dispIndex = paramId - Clocked::RATIO_PARAMS;
+					module->syncRatios[dispIndex] = true;
+				}
+				module->notifyInfo[dispIndex] = 0l;
 			}
-			module->notifyInfo[dispIndex] = 0l;
 			SVGKnob::onChange(e);		
 		}
 	};

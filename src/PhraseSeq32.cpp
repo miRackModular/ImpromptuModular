@@ -1837,69 +1837,62 @@ struct PhraseSeq32Widget : ModuleWidget {
 		void randomize() override {}
 		void onDragStart(const widget::DragStartEvent &e) override {
 			Switch::onDragStart(e);
-			PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(this->paramQuantity->module);
-			module->stepConfigSync = 2;// signal a sync from switch so that steps get initialized
+			if (paramQuantity) {
+				PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(paramQuantity->module);
+				module->stepConfigSync = 2;// signal a sync from switch so that steps get initialized
+			}
 		}	
 	};
 	
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
 		void onDoubleClick(const widget::DoubleClickEvent &e) override {
-			PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(this->paramQuantity->module);
-			// same code structure below as in sequence knob in main step()
-			if (module->editingPpqn != 0) {
-				module->pulsesPerStep = 1;
-				//editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
-			}
-			else if (module->displayState == PhraseSeq32::DISP_MODE) {
-				if (module->isEditingSequence()) {
-					if (std::isnan(module->consumerMessage[4])) {
-						module->sequences[module->seqIndexEdit].setRunMode(MODE_FWD);
+			if (paramQuantity) {
+				PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(paramQuantity->module);
+				// same code structure below as in sequence knob in main step()
+				if (module->editingPpqn != 0) {
+					module->pulsesPerStep = 1;
+					//editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
+				}
+				else if (module->displayState == PhraseSeq32::DISP_MODE) {
+					if (module->isEditingSequence()) {
+						if (std::isnan(module->consumerMessage[4])) {
+							module->sequences[module->seqIndexEdit].setRunMode(MODE_FWD);
+						}
+					}
+					else {
+						module->runModeSong = MODE_FWD;
 					}
 				}
-				else {
-					module->runModeSong = MODE_FWD;
-				}
-			}
-			else if (module->displayState == PhraseSeq32::DISP_LENGTH) {
-				if (module->isEditingSequence()) {
-					module->sequences[module->seqIndexEdit].setLength(16 * module->stepConfig);
-				}
-				else {
-					module->phrases = 4;
-				}
-			}
-			else if (module->displayState == PhraseSeq32::DISP_TRANSPOSE) {
-				// nothing
-			}
-			else if (module->displayState == PhraseSeq32::DISP_ROTATE) {
-				// nothing			
-			}
-			else {// DISP_NORMAL
-				if (module->isEditingSequence()) {
-					if (!module->inputs[PhraseSeq32::SEQCV_INPUT].isConnected()) {
-						module->seqIndexEdit = 0;
+				else if (module->displayState == PhraseSeq32::DISP_LENGTH) {
+					if (module->isEditingSequence()) {
+						module->sequences[module->seqIndexEdit].setLength(16 * module->stepConfig);
+					}
+					else {
+						module->phrases = 4;
 					}
 				}
-				else {
-					module->phrase[module->phraseIndexEdit] = 0;
+				else if (module->displayState == PhraseSeq32::DISP_TRANSPOSE) {
+					// nothing
+				}
+				else if (module->displayState == PhraseSeq32::DISP_ROTATE) {
+					// nothing			
+				}
+				else {// DISP_NORMAL
+					if (module->isEditingSequence()) {
+						if (!module->inputs[PhraseSeq32::SEQCV_INPUT].isConnected()) {
+							module->seqIndexEdit = 0;
+						}
+					}
+					else {
+						module->phrase[module->phraseIndexEdit] = 0;
+					}
 				}
 			}
 			ParamWidget::onDoubleClick(e);
 		}
 	};		
 	
-	// void onHoverKey(EventHoverKey &e) override {// https://www.glfw.org/docs/latest/group__keys.html
-		// PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(this->paramQuantity->module);
-		// if (e.key == GLFW_KEY_SPACE) {
-			// if (module->isEditingSequence()) {
-				// module->attributes[module->seqIndexEdit][module->stepIndexEdit].toggleGate1();
-			// }			
-			// e.consumed = true;
-		// }
-		// else
-			// ModuleWidget::onHoverKey(e);
-	// }
 	
 	PhraseSeq32Widget(PhraseSeq32 *module) {
 		setModule(module);

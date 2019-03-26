@@ -17,8 +17,8 @@ Plugin *pluginInstance;
 void init(rack::Plugin *p) {
 	pluginInstance = p;
 
-	// p->addModel(modelTact);
-	// p->addModel(modelTact1);
+	p->addModel(modelTact);
+	p->addModel(modelTact1);
 	p->addModel(modelTwelveKey);
 	p->addModel(modelClocked);
 	p->addModel(modelClockedExpander);

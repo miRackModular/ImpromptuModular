@@ -9,6 +9,18 @@
 	"sourceUrl": "https://github.com/MarcBoule/ImpromptuModular",
 	"modules": [
 		{
+			"slug": "Tact",
+			"name": "CTRL - Tact",
+			"description": "Tactile-inspired controller, dual channel",
+			"tags": ["Controller"]
+		},
+		{
+			"slug": "Tact1",
+			"name": "CTRL - Tact1",
+			"description": "Tactile-inspired controller",
+			"tags": ["Controller"]
+		},
+		{
 			"slug": "Twelve-Key",
 			"name": "CTRL - TwelveKey",
 			"description": "Chainable one octave keyboard controller",

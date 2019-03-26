@@ -255,6 +255,17 @@ struct IMSixPosBigKnob : IMBigSnapKnob {
 	}
 };
 */
+struct IMTactile : app::SvgSlider {
+	IMTactile() {
+		math::Vec margin = math::Vec(3.5, 3.5);
+		maxHandlePos = math::Vec(-1, -2).plus(margin);
+		minHandlePos = math::Vec(-1, 87).plus(margin);
+		setBackgroundSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/BefacoSlidePot.svg")));
+		setHandleSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/BefacoSlidePotHandle.svg")));
+		background->box.pos = margin;
+		box.size = background->box.size.plus(margin.mult(2));
+	}
+};
 
 
 // Lights
@@ -308,13 +319,15 @@ struct InvisibleKeySmall : app::SvgSwitch {
 		box.size = Vec(23, 38);
 	}
 	void onButton(const widget::ButtonEvent &e) override {
-		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT) {// see widget/event.hpp
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT && paramQuantity) {// see widget/event.hpp
 			paramQuantity->getParam()->maxValue = 1.0f;
 		}
 		SvgSwitch::onButton(e);
 	}
 	void onDoubleClick(const widget::DoubleClickEvent &e) override {
-		paramQuantity->getParam()->maxValue = 2.0f;
+		if (paramQuantity) {
+			paramQuantity->getParam()->maxValue = 2.0f;
+		}
 		SvgSwitch::onDoubleClick(e);
 	}
 };

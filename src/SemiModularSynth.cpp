@@ -1904,59 +1904,50 @@ struct SemiModularSynthWidget : ModuleWidget {
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
 		void onDoubleClick(const widget::DoubleClickEvent &e) override {
-			SemiModularSynth* module = dynamic_cast<SemiModularSynth*>(this->paramQuantity->module);
-			// same code structure below as in sequence knob in main step()
-			if (module->editingPpqn != 0) {
-				module->pulsesPerStep = 1;
-				//editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
-			}
-			else if (module->displayState == SemiModularSynth::DISP_MODE) {
-				if (module->isEditingSequence()) {
-					module->sequences[module->seqIndexEdit].setRunMode(MODE_FWD);
+			if (paramQuantity) {
+				SemiModularSynth* module = dynamic_cast<SemiModularSynth*>(paramQuantity->module);
+				// same code structure below as in sequence knob in main step()
+				if (module->editingPpqn != 0) {
+					module->pulsesPerStep = 1;
+					//editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
 				}
-				else {
-					module->runModeSong = MODE_FWD;
-				}
-			}
-			else if (module->displayState == SemiModularSynth::DISP_LENGTH) {
-				if (module->isEditingSequence()) {
-					module->sequences[module->seqIndexEdit].setLength(16);
-				}
-				else {
-					module->phrases = 4;
-				}
-			}
-			else if (module->displayState == SemiModularSynth::DISP_TRANSPOSE) {
-				// nothing
-			}
-			else if (module->displayState == SemiModularSynth::DISP_ROTATE) {
-				// nothing			
-			}
-			else {// DISP_NORMAL
-				if (module->isEditingSequence()) {
-					if (!module->inputs[SemiModularSynth::SEQCV_INPUT].isConnected()) {
-						module->seqIndexEdit = 0;;
+				else if (module->displayState == SemiModularSynth::DISP_MODE) {
+					if (module->isEditingSequence()) {
+						module->sequences[module->seqIndexEdit].setRunMode(MODE_FWD);
+					}
+					else {
+						module->runModeSong = MODE_FWD;
 					}
 				}
-				else {
-					module->phrase[module->phraseIndexEdit] = 0;
+				else if (module->displayState == SemiModularSynth::DISP_LENGTH) {
+					if (module->isEditingSequence()) {
+						module->sequences[module->seqIndexEdit].setLength(16);
+					}
+					else {
+						module->phrases = 4;
+					}
+				}
+				else if (module->displayState == SemiModularSynth::DISP_TRANSPOSE) {
+					// nothing
+				}
+				else if (module->displayState == SemiModularSynth::DISP_ROTATE) {
+					// nothing			
+				}
+				else {// DISP_NORMAL
+					if (module->isEditingSequence()) {
+						if (!module->inputs[SemiModularSynth::SEQCV_INPUT].isConnected()) {
+							module->seqIndexEdit = 0;;
+						}
+					}
+					else {
+						module->phrase[module->phraseIndexEdit] = 0;
+					}
 				}
 			}
 			ParamWidget::onDoubleClick(e);
 		}
 	};		
 	
-	// void onHoverKey(EventHoverKey &e) override {// https://www.glfw.org/docs/latest/group__keys.html
-		// SemiModularSynth* module = dynamic_cast<SemiModularSynth*>(this->module);
-		// if (e.key == GLFW_KEY_SPACE) {
-			// if (module->isEditingSequence()) {
-				// module->attributes[module->seqIndexEdit][module->stepIndexEdit].toggleGate1();
-			// }			
-			// e.consumed = true;
-		// }
-		// else
-			// ModuleWidget::onHoverKey(e);
-	// }
 	
 	SemiModularSynthWidget(SemiModularSynth *module) {
 		setModule(module);

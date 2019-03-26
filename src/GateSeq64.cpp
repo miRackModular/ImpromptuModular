@@ -1298,57 +1298,61 @@ struct GateSeq64Widget : ModuleWidget {
 		CKSSThreeInvNotify() {}
 		void onDragStart(const widget::DragStartEvent &e) override {
 			Switch::onDragStart(e);
-			GateSeq64* module = dynamic_cast<GateSeq64*>(this->paramQuantity->module);
-			module->stepConfigSync = 2;// signal a sync from switch so that steps get initialized
+			if (paramQuantity) {
+				GateSeq64* module = dynamic_cast<GateSeq64*>(paramQuantity->module);
+				module->stepConfigSync = 2;// signal a sync from switch so that steps get initialized
+			}
 		}	
 	};
 	
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
 		void onDoubleClick(const widget::DoubleClickEvent &e) override {
-			GateSeq64* module = dynamic_cast<GateSeq64*>(this->paramQuantity->module);
-			// same code structure below as in sequence knob in main step()
-			bool editingSequence = module->isEditingSequence();
-			if (module->displayProbInfo != 0l && editingSequence) {
-				//blinkNum = blinkNumInit;
-				module->attributes[module->sequence][module->stepIndexEdit].setGatePVal(50);
-				//displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
-			}
-			else if (module->editingPpqn != 0) {
-				module->pulsesPerStep = 1;
-				//editingPpqn = (long) (editingPpqnTime * sampleRate / displayRefreshStepSkips);
-			}
-			else if (module->displayState == GateSeq64::DISP_MODES) {
-				if (editingSequence) {
-					module->sequences[module->sequence].setRunMode(MODE_FWD);
-				}
-				else {
-					module->runModeSong = MODE_FWD;
-				}
-			}
-			else if (module->displayState == GateSeq64::DISP_LENGTH) {
-				if (editingSequence) {
-					module->sequences[module->sequence].setLength(16 * module->stepConfig);
-				}
-				else {
-					module->phrases = 4;
-				}
-			}
-			else {
-				if (editingSequence) {
+			if (paramQuantity) {
+				GateSeq64* module = dynamic_cast<GateSeq64*>(paramQuantity->module);
+				// same code structure below as in sequence knob in main step()
+				bool editingSequence = module->isEditingSequence();
+				if (module->displayProbInfo != 0l && editingSequence) {
 					//blinkNum = blinkNumInit;
-					if (!module->inputs[GateSeq64::SEQCV_INPUT].isConnected()) {
-						module->sequence = 0;
+					module->attributes[module->sequence][module->stepIndexEdit].setGatePVal(50);
+					//displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+				}
+				else if (module->editingPpqn != 0) {
+					module->pulsesPerStep = 1;
+					//editingPpqn = (long) (editingPpqnTime * sampleRate / displayRefreshStepSkips);
+				}
+				else if (module->displayState == GateSeq64::DISP_MODES) {
+					if (editingSequence) {
+						module->sequences[module->sequence].setRunMode(MODE_FWD);
+					}
+					else {
+						module->runModeSong = MODE_FWD;
+					}
+				}
+				else if (module->displayState == GateSeq64::DISP_LENGTH) {
+					if (editingSequence) {
+						module->sequences[module->sequence].setLength(16 * module->stepConfig);
+					}
+					else {
+						module->phrases = 4;
 					}
 				}
 				else {
-					if (module->editingPhraseSongRunning > 0l || !module->running) {
-						module->phrase[module->phraseIndexEdit] = 0;
-						// if (running)
-							// editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / displayRefreshStepSkips);
+					if (editingSequence) {
+						//blinkNum = blinkNumInit;
+						if (!module->inputs[GateSeq64::SEQCV_INPUT].isConnected()) {
+							module->sequence = 0;
+						}
 					}
-				}	
-			}			
+					else {
+						if (module->editingPhraseSongRunning > 0l || !module->running) {
+							module->phrase[module->phraseIndexEdit] = 0;
+							// if (running)
+								// editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / displayRefreshStepSkips);
+						}
+					}	
+				}			
+			}
 			ParamWidget::onDoubleClick(e);
 		}
 	};			
