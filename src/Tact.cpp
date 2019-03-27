@@ -54,7 +54,6 @@ struct Tact : Module {
 	
 	
 	float infoCVinLight[2] = {0.0f, 0.0f};
-	float paramReadRequest[2] = {-10.0f, -10.0f}; 
 	unsigned int lightRefreshCounter = 0;
 	Trigger topTriggers[2];
 	Trigger botTriggers[2];
@@ -187,32 +186,31 @@ struct Tact : Module {
 			for (int i = 0; i < 2; i++) {
 				if (topTriggers[i].process(inputs[TOP_INPUTS + i].getVoltage())) {
 					if ( !(i == 1 && isLinked()) ) {// ignore right channel top cv in when linked
-						paramReadRequest[i] = 10.0f;
+						params[TACT_PARAMS + i].setValue(10.0f);
 						infoCVinLight[i] = 1.0f;
 					}
 				}
 				if (botTriggers[i].process(inputs[BOT_INPUTS + i].getVoltage())) {
 					if ( !(i == 1 && isLinked()) ) {// ignore right channel bot cv in when linked
-						paramReadRequest[i] = 0.0f;
+						params[TACT_PARAMS + i].setValue(0.0f);
 						infoCVinLight[i] = 1.0f;
 					}				
 				}
 				if (topInvTriggers[i].process(1.0f - inputs[TOP_INPUTS + i].getVoltage())) {
 					if ( levelSensitiveTopBot && !(i == 1 && isLinked()) ) {// ignore right channel top cv in when linked
-						paramReadRequest[i] = cv[i];
+						params[TACT_PARAMS + i].setValue(cv[i]);
 						infoCVinLight[i] = 1.0f;
 					}
 				}
 				if (botInvTriggers[i].process(1.0f - inputs[BOT_INPUTS + i].getVoltage())) {
 					if ( levelSensitiveTopBot && !(i == 1 && isLinked()) ) {// ignore right channel bot cv in when linked
-						paramReadRequest[i] = cv[i];
+						params[TACT_PARAMS + i].setValue(cv[i]);
 						infoCVinLight[i] = 1.0f;
 					}				
 				}
 				if (recallTriggers[i].process(inputs[RECALL_INPUTS + i].getVoltage())) {// ignore right channel recall cv in when linked
 					if ( !(i == 1 && isLinked()) ) {
-						//tactWidgets[i]->changeValue(storeCV[i]);
-						paramReadRequest[i] = storeCV[i];
+						params[TACT_PARAMS + i].setValue(storeCV[i]);
 						if (params[SLIDE_PARAMS + i].getValue() < 0.5f) //if no slide
 							cv[i]=storeCV[i];
 						infoCVinLight[i] = 1.0f;
@@ -226,8 +224,6 @@ struct Tact : Module {
 		// cv
 		bool expSliding = isExpSliding();
 		for (int i = 0; i < 2; i++) {
-			if (paramReadRequest[i] != -10.0f)
-				continue;			
 			float newParamValue = clamp(params[TACT_PARAMS + i].getValue(), 0.0f, 10.0f);
 			if (newParamValue != cv[i]) {
 				double transitionRate = params[RATE_PARAMS + i].getValue() * rateMultiplier; // s/V
@@ -395,6 +391,24 @@ struct TactWidget : ModuleWidget {
 		menu->addChild(levelSensItem);
 	}	
 	
+	struct IMTactile2 : IMTactile {
+		static const int padInterSpace = 18;
+		static const int padWidthWide = padWidth * 2 + padInterSpace;
+
+		void step() override {
+			if (paramQuantity) {
+				Tact* module = dynamic_cast<Tact*>(paramQuantity->module);
+				if ((module->params[Tact::LINK_PARAM].getValue()) > 0.5f) {
+					box.size = Vec(padWidthWide, padHeight);
+				}
+				else {
+					box.size = Vec(padWidth, padHeight);
+				}
+			}
+			ParamWidget::step();
+		}
+	};
+	
 	TactWidget(Tact *module) {
 		setModule(module);
 
@@ -421,9 +435,9 @@ struct TactWidget : ModuleWidget {
 		
 		// Tactile touch pads
 		// Right (no dynamic width, but must do first so that left will get mouse events when wider overlaps)
-		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1, nullptr, &module->paramReadRequest[1]));
+		addParam(createParam<IMTactile2>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1));
 		// Left (with width dependant on Link value)	
-		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0, nullptr/*&module->params[Tact::LINK_PARAM].getValue()*/, &module->paramReadRequest[0]));
+		addParam(createParam<IMTactile2>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0));
 			
 
 			
@@ -751,9 +765,7 @@ struct Tact1Widget : ModuleWidget {
 		static const int colRulerPad = 14;
 		
 		// Tactile touch pad
-		addParam(createParam<DynamicIMTactile>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM));//, nullptr, nullptr));
-		// addParam(createDynamicParam2<IMTactile>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM, nullptr, nullptr));
-		// addParam(createParam<IMTactileSimple>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM));//, nullptr, nullptr));
+		addParam(createParam<IMTactile>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM));
 			
 		static const int colRulerLed = colRulerPad + 56;
 		static const int lightsOffsetY = 19;

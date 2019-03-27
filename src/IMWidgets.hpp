@@ -117,34 +117,20 @@ struct DynamicSVGKnob : app::SvgKnob {
 
 
 
-// General Dynamic Param creation version two with float* instead of one int*
-template <class TDynamicParam>
-TDynamicParam* createDynamicParam2(Vec pos, Module *module, int paramId, float* wider, float* paramReadRequest) {
-	TDynamicParam *dynParam = createParam<TDynamicParam>(pos, module, paramId);
-	dynParam->wider = wider;
-	dynParam->paramReadRequest = paramReadRequest;
-	return dynParam;
-}
+// Tactile pad
 
-
-// Dynamic Tactile pad
-
-struct DynamicIMTactile : app::ParamWidget { // TODO add "if (paramQuantity)" checks in member functions
-	float* wider;// > 0.5f = true
-	float* paramReadRequest;// TODO remove this since can write params directly?
-	float oldWider;
+struct IMTactile : app::ParamWidget { // Note: double-click initialize doesn't work because onDragMove() gets calls after onDoubleClick()
 	float dragY;
 	float dragValue;
 	static const int padWidth = 45;
 	static const int padHeight = 200;
-	static const int padInterSpace = 18;
-	static const int padWidthWide = padWidth * 2 + padInterSpace;
 	
-	DynamicIMTactile();
-	void step() override;
-	void onDragStart(const widget::DragStartEvent &e) override; 
+	IMTactile();
+	void onDragStart(const widget::DragStartEvent &e) override;
 	void onDragMove(const widget::DragMoveEvent &e) override;
 	void onButton(const widget::ButtonEvent &e) override;
+	void reset() override;
+	void randomize() override;
 };
 
 #endif

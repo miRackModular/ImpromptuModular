@@ -1,5 +1,5 @@
 //***********************************************************************************************
-//Impromptu Modular: Modules for VCV Rack by Marc Boulé 
+//Impromptu Modular: Modules for VCV Rack by Marc Boulé
 //
 //Based on code from Valley Rack Free by Dale Johnson
 //See ./LICENSE.txt for all licenses
@@ -159,114 +159,51 @@ void DynamicSVGKnob::step() {
 
 
 
-// Dynamic IMTactile
+// IMTactile pad
 
-DynamicIMTactile::DynamicIMTactile() {
-	wider = nullptr;
-	paramReadRequest = nullptr;
-	oldWider = -1.0f;
+IMTactile::IMTactile() {
 	box.size = Vec(padWidth, padHeight);
 }
 
-void DynamicIMTactile::step() {
-   if(wider != nullptr && *wider != oldWider) {
-        if ((*wider) > 0.5f) {
-			box.size = Vec(padWidthWide, padHeight);
-		}
-		else {
-			box.size = Vec(padWidth, padHeight);
-		}
-        oldWider = *wider;
-    }	
-	if (paramReadRequest != nullptr) {
-		float readVal = *paramReadRequest;
-		if (readVal != -10.0f) {
-			paramQuantity->setValue(readVal);
-			*paramReadRequest = -10.0f;
-		}
+void IMTactile::onDragStart(const widget::DragStartEvent &e) {
+	if (paramQuantity) {
+		dragValue = paramQuantity->getValue();
+		dragY = APP->scene->rack->mousePos.y;
 	}
-	ParamWidget::step();
-}
-
-void DynamicIMTactile::onDragStart(const widget::DragStartEvent &e) {
-	dragValue = paramQuantity->getValue();
-	dragY = APP->scene->rack->mousePos.y;
 	e.consume(this);// Must consume to set the widget as dragged
 }
 
-void DynamicIMTactile::onDragMove(const widget::DragMoveEvent &e) {
-	float rangeValue = paramQuantity->getMaxValue() - paramQuantity->getMinValue();// infinite not supported (not relevant)
-	float newDragY = APP->scene->rack->mousePos.y;
-	float delta = -(newDragY - dragY) * rangeValue / box.size.y;
-	dragY = newDragY;
-	dragValue += delta;
-	float dragValueClamped = clampSafe(dragValue, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
-	paramQuantity->setValue(dragValueClamped);
+void IMTactile::onDragMove(const widget::DragMoveEvent &e) {
+	if (paramQuantity) {
+		float rangeValue = paramQuantity->getMaxValue() - paramQuantity->getMinValue();// infinite not supported (not relevant)
+		float newDragY = APP->scene->rack->mousePos.y;
+		float delta = -(newDragY - dragY) * rangeValue / box.size.y;
+		dragY = newDragY;
+		dragValue += delta;
+		float dragValueClamped = clampSafe(dragValue, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
+		paramQuantity->setValue(dragValueClamped);
+	}
 	e.consume(this);
-	//ParamWidget::onDragMove(e);
 }
 
 
-void DynamicIMTactile::onButton(const widget::ButtonEvent &e) {
-	if (e.action == GLFW_PRESS) {
+void IMTactile::onButton(const widget::ButtonEvent &e) {
+	if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT && paramQuantity) {
 		float val = rescale(e.pos.y, box.size.y, 0.0f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
 		paramQuantity->setValue(val);
 	}
 	ParamWidget::onButton(e);
 }
 
-/*
-DynamicIMTactile::DynamicIMTactile() {
-	snap = false;
-	smooth = false;// must be false or else DynamicIMTactile::changeValue() call from module will crash Rack
-	wider = nullptr;
-	paramReadRequest = nullptr;
-	oldWider = -1.0f;
-	box.size = Vec(padWidth, padHeight);
-}
-
-void DynamicIMTactile::step() {
-   if(wider != nullptr && *wider != oldWider) {
-        if ((*wider) > 0.5f) {
-			box.size = Vec(padWidthWide, padHeight);
-		}
-		else {
-			box.size = Vec(padWidth, padHeight);
-		}
-        oldWider = *wider;
-    }	
-	if (paramReadRequest != nullptr) {
-		float readVal = *paramReadRequest;
-		if (readVal != -10.0f) {
-			setValue(readVal);
-			*paramReadRequest = -10.0f;
-		}
+void IMTactile::reset() {
+	if (paramQuantity) {
+		paramQuantity->reset();
 	}
-	FramebufferWidget::step();
 }
 
-void DynamicIMTactile::onDragStart(EventDragStart &e) {
-	dragValue = value;
-	dragY = gRackWidget->lastMousePos.y;
+void IMTactile::randomize() {
+	if (paramQuantity) {
+		float value = math::rescale(random::uniform(), 0.f, 1.f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
+		paramQuantity->setValue(value);
+	}
 }
-
-void DynamicIMTactile::onDragMove(EventDragMove &e) {
-	float rangeValue = maxValue - minValue;// infinite not supported (not relevant)
-	float newDragY = gRackWidget->lastMousePos.y;
-	float delta = -(newDragY - dragY) * rangeValue / box.size.y;
-	dragY = newDragY;
-	dragValue += delta;
-	float dragValueClamped = clamp2(dragValue, minValue, maxValue);
-	if (snap)
-		dragValueClamped = roundf(dragValueClamped);
-	setValue(dragValueClamped);
-}
-
-void DynamicIMTactile::onMouseDown(EventMouseDown &e) {
-	float val = rescale(e.pos.y, box.size.y, 0.0f , minValue, maxValue);
-	if (snap)
-		val = roundf(val);
-	setValue(val);
-	ParamWidget::onMouseDown(e);
-}
-*/

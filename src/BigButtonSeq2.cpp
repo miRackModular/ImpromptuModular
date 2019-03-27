@@ -1,12 +1,13 @@
 //***********************************************************************************************
-//Six channel 128-step sequencer module for VCV Rack by Marc Boulé
+//Six channel 128-step sequencer module for VCV Rack by Marc Boulé 
 //
 //Based on code from the Fundamental and AudibleInstruments plugins by Andrew Belt 
 //and graphics from the Component Library by Wes Milholen 
 //See ./LICENSE.txt for all licenses
 //See ./res/fonts/ for font licenses
 //
-//Based on the BigButton sequencer by Look-Mum-No-Computer
+//Based on the BigButton sequencer by Look-Mum-No-Computer, with modifications 
+//  by Marc Boulé and Jean-Sébastien Monzani
 //https://www.youtube.com/watch?v=6ArDGcUqiWM
 //https://www.lookmumnocomputer.com/projects/#/big-button/
 //
@@ -418,7 +419,7 @@ struct BigButtonSeq2 : Module {
 				fillPressed = (params[FILL_PARAM].getValue() + inputs[FILL_INPUT].getVoltage()) > 0.5f;// used in clock block and others
 				if (fillPressed && writeFillsToMemory) {
 					setGate(channel);// bank and indexStep are global
-					writeCV(channel, sampleHoldBuf[channel]);
+					writeCV(channel, inputs[CV_INPUT].getVoltage());//sampleHoldBuf[channel]);
 				}
 				
 				//outPulse.trigger(0.001f);
@@ -470,7 +471,9 @@ struct BigButtonSeq2 : Module {
 			if (internalSHTriggers[i].process(outGateValue))
 				sampleOutput(i);
 			outputs[CHAN_OUTPUTS + i].setVoltage((retriggingOnReset ? 0.0f : outGateValue));
-			outputs[CV_OUTPUTS + i].setVoltage(sampleAndHold ? sampleHoldBuf[i] : cv[i][bank[i]][indexStep]);
+			float cvOut = (i == channel && fillPressed && !writeFillsToMemory && inputs[CV_INPUT].isConnected()) ? inputs[CV_INPUT].getVoltage() : 
+							(sampleAndHold ? sampleHoldBuf[i] : cv[i][bank[i]][indexStep]);
+			outputs[CV_OUTPUTS + i].setVoltage(cvOut);
 		}
 
 		

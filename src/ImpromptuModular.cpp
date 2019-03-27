@@ -19,23 +19,23 @@ void init(rack::Plugin *p) {
 
 	p->addModel(modelTact);
 	p->addModel(modelTact1);
-	// p->addModel(modelTwelveKey);
-	// p->addModel(modelClocked);
-	// p->addModel(modelClockedExpander);
-	// p->addModel(modelFoundry);
-	// p->addModel(modelFoundryExpander);
-	// p->addModel(modelGateSeq64);
-	// p->addModel(modelGateSeq64Expander);
-	// p->addModel(modelPhraseSeq16);
-	// p->addModel(modelPhraseSeq32);
-	// p->addModel(modelPhraseSeqExpander);
-	// p->addModel(modelWriteSeq32);
-	// p->addModel(modelWriteSeq64);
-	// p->addModel(modelBigButtonSeq);
-	// p->addModel(modelBigButtonSeq2);
-	// p->addModel(modelFourView);
-	// p->addModel(modelSemiModularSynth);
-	// p->addModel(modelBlankPanel);
+	p->addModel(modelTwelveKey);
+	p->addModel(modelClocked);
+	p->addModel(modelClockedExpander);
+	p->addModel(modelFoundry);
+	p->addModel(modelFoundryExpander);
+	p->addModel(modelGateSeq64);
+	p->addModel(modelGateSeq64Expander);
+	p->addModel(modelPhraseSeq16);
+	p->addModel(modelPhraseSeq32);
+	p->addModel(modelPhraseSeqExpander);
+	p->addModel(modelWriteSeq32);
+	p->addModel(modelWriteSeq64);
+	p->addModel(modelBigButtonSeq);
+	p->addModel(modelBigButtonSeq2);
+	p->addModel(modelFourView);
+	p->addModel(modelSemiModularSynth);
+	p->addModel(modelBlankPanel);
 }
 
 
