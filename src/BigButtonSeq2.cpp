@@ -410,7 +410,7 @@ struct BigButtonSeq2 : Module {
 				fillPressed = (params[FILL_PARAM].value + inputs[FILL_INPUT].value) > 0.5f;// used in clock block and others
 				if (fillPressed && writeFillsToMemory) {
 					setGate(channel);// bank and indexStep are global
-					writeCV(channel, sampleHoldBuf[channel]);
+					writeCV(channel, inputs[CV_INPUT].value);//sampleHoldBuf[channel]);
 				}
 				
 				//outPulse.trigger(0.001f);
