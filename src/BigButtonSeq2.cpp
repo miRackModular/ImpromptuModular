@@ -462,7 +462,7 @@ struct BigButtonSeq2 : Module {
 			if (internalSHTriggers[i].process(outGateValue))
 				sampleOutput(i);
 			outputs[CHAN_OUTPUTS + i].value = (retriggingOnReset ? 0.0f : outGateValue);
-			outputs[CV_OUTPUTS + i].value = sampleAndHold ? sampleHoldBuf[i] : cv[i][bank[i]][indexStep];
+			outputs[CV_OUTPUTS + i].value = (i == channel && fillPressed && !writeFillsToMemory && inputs[CV_INPUT].active) ? inputs[CV_INPUT].value : (sampleAndHold ? sampleHoldBuf[i] : cv[i][bank[i]][indexStep]);
 		}
 
 		
