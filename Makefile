@@ -12,8 +12,7 @@ LDFLAGS +=
 
 # Add .cpp files to the build
 #SOURCES += $(wildcard src/*.cpp)
-SOURCES += src/IMWidgets.cpp src/ImpromptuModular.cpp src/BlankPanel.cpp src/FourView.cpp src/TwelveKey.cpp src/Clocked.cpp src/ClockedExpander.cpp src/BigButtonSeq.cpp src/BigButtonSeq2.cpp src/WriteSeq32.cpp src/WriteSeq64.cpp src/FundamentalUtil.cpp src/PhraseSeqUtil.cpp src/SemiModularSynth.cpp src/FoundrySequencerKernel.cpp src/FoundrySequencer.cpp src/FoundryExpander.cpp src/Foundry.cpp src/PhraseSeq16.cpp src/PhraseSeq32.cpp src/PhraseSeqExpander.cpp src/GateSeq64.cpp src/GateSeq64Expander.cpp src/Tact.cpp
-# src/IMWidgets.cpp src/ImpromptuModular.cpp src/Tact.cpp
+SOURCES += src/IMWidgets.cpp src/ImpromptuModular.cpp src/Tact.cpp src/BlankPanel.cpp src/FourView.cpp src/TwelveKey.cpp src/Clocked.cpp src/ClockedExpander.cpp src/BigButtonSeq.cpp src/BigButtonSeq2.cpp src/WriteSeq32.cpp src/WriteSeq64.cpp src/FundamentalUtil.cpp src/PhraseSeqUtil.cpp src/SemiModularSynth.cpp src/FoundrySequencerKernel.cpp src/FoundrySequencer.cpp src/FoundryExpander.cpp src/Foundry.cpp src/PhraseSeq16.cpp src/PhraseSeq32.cpp src/PhraseSeqExpander.cpp src/GateSeq64.cpp src/GateSeq64Expander.cpp
 
 # Add files to the ZIP package when running `make dist`
 # The compiled plugin and "plugin.json" are automatically added.

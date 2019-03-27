@@ -421,11 +421,9 @@ struct TactWidget : ModuleWidget {
 		
 		// Tactile touch pads
 		// Right (no dynamic width, but must do first so that left will get mouse events when wider overlaps)
-		// addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1, nullptr, &module->paramReadRequest[1]));
-		addParam(createParam<IMTactileSimple>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1));//, nullptr, &module->paramReadRequest[1]));
+		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1, nullptr, &module->paramReadRequest[1]));
 		// Left (with width dependant on Link value)	
-		// addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0, nullptr/*&module->params[Tact::LINK_PARAM].getValue()*/, &module->paramReadRequest[0]));
-		addParam(createParam<IMTactileSimple>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0));//, &module->params[Tact::LINK_PARAM].getValue(), &module->paramReadRequest[0]));
+		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0, nullptr/*&module->params[Tact::LINK_PARAM].getValue()*/, &module->paramReadRequest[0]));
 			
 
 			
@@ -753,7 +751,8 @@ struct Tact1Widget : ModuleWidget {
 		static const int colRulerPad = 14;
 		
 		// Tactile touch pad
-		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM, nullptr, nullptr));
+		addParam(createParam<DynamicIMTactile>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM));//, nullptr, nullptr));
+		// addParam(createDynamicParam2<IMTactile>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM, nullptr, nullptr));
 		// addParam(createParam<IMTactileSimple>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM));//, nullptr, nullptr));
 			
 		static const int colRulerLed = colRulerPad + 56;

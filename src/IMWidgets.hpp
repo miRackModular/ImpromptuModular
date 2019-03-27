@@ -127,10 +127,11 @@ TDynamicParam* createDynamicParam2(Vec pos, Module *module, int paramId, float* 
 }
 
 
-// Dynamic Tactile pad (see Knob in app.hpp and Knob.cpp, and see SVGSlider in SVGSlider.cpp and app.hpp)
+// Dynamic Tactile pad
+
 struct DynamicIMTactile : app::ParamWidget { // TODO add "if (paramQuantity)" checks in member functions
 	float* wider;// > 0.5f = true
-	float* paramReadRequest;
+	float* paramReadRequest;// TODO remove this since can write params directly?
 	float oldWider;
 	float dragY;
 	float dragValue;
@@ -145,6 +146,5 @@ struct DynamicIMTactile : app::ParamWidget { // TODO add "if (paramQuantity)" ch
 	void onDragMove(const widget::DragMoveEvent &e) override;
 	void onButton(const widget::ButtonEvent &e) override;
 };
-
 
 #endif

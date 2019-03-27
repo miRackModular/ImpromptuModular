@@ -264,8 +264,6 @@ struct IMTactileSimple : app::ParamWidget {// does not support INFINITE min/max 
 	float oldValue = 0.f;
 	static const int padWidth = 45;
 	static const int padHeight = 200;
-	static const int padInterSpace = 18;
-	static const int padWidthWide = padWidth * 2 + padInterSpace;
 
 	IMTactileSimple() {
 		box.size = Vec(padWidth, padHeight);
@@ -277,38 +275,13 @@ struct IMTactileSimple : app::ParamWidget {// does not support INFINITE min/max 
 		// }
 		ParamWidget::onChange(e);
 	}	
-	// Bypass Knob's circular hitbox detection
-	void onHover(const widget::HoverEvent &e) override {
-		ParamWidget::onHover(e);
-	}
-	// Bypass Knob's circular hitbox detection
-	void onButton(const widget::ButtonEvent &e) override {
-		ParamWidget::onButton(e);
-	}
-	
+
 	void onDragStart(const widget::DragStartEvent &e) override {
 		if (paramQuantity) {
 			oldValue = paramQuantity->getSmoothValue();
 		}
 		//APP->window->cursorLock();
 		e.consume(this);
-	}
-
-	void onDragEnd(const widget::DragEndEvent &e) override {
-		//APP->window->cursorUnlock();
-		if (paramQuantity) {
-			float newValue = paramQuantity->getSmoothValue();
-			if (oldValue != newValue) {
-				// Push ParamChange history action
-				history::ParamChange *h = new history::ParamChange;
-				h->name = "move knob";
-				h->moduleId = paramQuantity->module->id;
-				h->paramId = paramQuantity->paramId;
-				h->oldValue = oldValue;
-				h->newValue = newValue;
-				APP->history->push(h);
-			}
-		}
 	}
 
 	void onDragMove(const widget::DragMoveEvent &e) override {
