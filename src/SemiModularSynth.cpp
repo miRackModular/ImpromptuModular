@@ -342,7 +342,7 @@ struct SemiModularSynth : Module {
 		params[VCO_MODE_PARAM].config(0.0f, 1.0f, 1.0f, "VCO mode");
 		params[VCO_OCT_PARAM].config(-2.0f, 2.0f, 0.0f, "VCO octave");
 		
-		params[CLK_FREQ_PARAM].config(-2.0f, 4.0f, 1.0f, "CLK freq", 1, 60);// 120 BMP when default value
+		params[CLK_FREQ_PARAM].config(-2.0f, 4.0f, 1.0f, "CLK freq");// 120 BMP when default value
 		params[CLK_PW_PARAM].config(0.0f, 1.0f, 0.5f, "CLK PW");
 		
 		params[VCA_LEVEL1_PARAM].config(0.0f, 1.0f, 1.0f, "VCA level");
