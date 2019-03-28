@@ -35,7 +35,7 @@ Each module is available in light (Classic) or dark (Dark-valor) panels, selecta
 
 * Four-View: Small chord viewer module that shows the note names of up to 4 CVs. Sharp or flat notation is selectable in the right-click menu.
 
-Details about each module are given in the links above, and a feature comparison table is given below for the sequencers. Feedback and bug reports (and [donations!](https://www.paypal.me/marcboule)) are always appreciated!
+Details about each module are given in the links above, and a feature comparison table is given below for the sequencers. Feedback and bug reports (and [donations](https://www.paypal.me/marcboule)) are always appreciated!
 
 | \-		      			| WriteSeq32/64 	| PhraseSeq16	| PhraseSeq32	| GateSeq64			| Foundry		| BigButton1/2 	|
 | ----------- 				| ----------- 		| ----------- 	| ----------- 	| ----------- 		| -----------	| -----------  	|
@@ -86,7 +86,7 @@ When **AUTOSTEP** is activated, the sequencer automatically advances one step ri
 
 A concept related to AutoStep, which is called "**AutoSeq** when writing via CV inputs", can be used to automatically change to the next sequence when a write operation reaches the end of the current sequence. Without this, the writing operations loop back over to the start of the current sequence (default behavior). This can be used to turn the sequencers into very long stepped CV recorders (1024 steps in the case of PhraseSeq32 and GateSeq64).
 
-Many modules feature an **Expansion panel** to provide additional CV inputs for the module (available in the right-click menu of the module). The expansion panel is added to the right side of the module, thus it is advisable to first make room in your Rack for this (4 to 7 HP depending on the module).
+Many modules feature an **Expansion module** to provide additional CV inputs. The expansion module must be added to the _right_ side of the mother module with no space between the two modules.
 
 Many sequencers feature a **SEQ# CV input**, which can be used to select the active sequence for editing and even to externally control the playing order of the sequences. Three different modes are available for this input in the right click menu under **Seq CV in**. 
 * 0-10V: a 0 to 10V input is proportionally mapped to the 1 to N sequence numbers (1 to 16 in the case of PhraseSeq16, for example);
@@ -207,7 +207,7 @@ For a tutorial on Clocked regarding chaining, clock multiplications and division
 
 In place of a detailed explanation of these three main controls, it is recommended to connect the outputs to a scope or a logic analyzer, such as the Fundamental Scope (pictured above) or the SubmarineFree LA-108, to observe the effects of the different controls.
 
-PW and Swing CV inputs are aso avaialable in the **expansion panel** (see right-click menu). These inputs are 0-10V signals, and when using these inputs, the corresponding knobs should be in their default position. When this is the case, no-swing and normal-pulse-width correspond to 5V on the CV inputs.
+PW and Swing CV inputs are aso avaialable in the Clocked **expansion module** (this is a separate module labeled \"CLK-X\"). These inputs are 0-10V signals, and when using these inputs, the corresponding knobs should be in their default position. When this is the case, no-swing and normal-pulse-width correspond to 5V on the CV inputs.
 
 
 ### External synchronization <a id="clocked-sync"></a>
@@ -235,7 +235,7 @@ When using external clock synchronization, Clocked syncs itself to the incoming 
 
 A 4-track phrase sequencer with 32 steps per sequence, 64 sequences per track, 99 phrases per song. A phrase is a sequence number and a repetition count. Each track holds one song and can be independently clocked and edited. The SEL and ALL buttons allow the selection and simultaneous editing across multiple steps and tracks respectively. 
 
-CVs can be entered into the sequencer via CV inputs when using an external keyboard controller or via the built-in controls on the module itself. When notes are entered with the **right mouse button** on the built-in keyboard (instead of the left mouse button), the sequencer automatically moves to the next step. Holding ctrl while right-clicking also copies the current note (or gate-type) over when moving to the next step. Right-click defaults are also supported on the three main knobs.
+CVs can be entered into the sequencer via CV inputs when using an external keyboard controller or via the built-in controls on the module itself. When notes are entered on the builtin keyboard using double-clicks instead of single clicks of the mouse, the sequencer automatically moves to the next step. Holding ctrl while double-clicking also copies the current note/gate-type over when moving to the next step. Right-click defaults are also supported on the three main knobs.
 
 Although this sequencer has many similarities to [PhraseSeq32](#phrase-seq-32), a few differences must also be kept in mind for existing PhraseSeq users. Notably:
 
@@ -266,7 +266,7 @@ Here are some further details on the different functions of the sequencer. For a
     * 0-127: midi-like numbered levels, mapped to 0V to 10V or -5V to 5V on the CV2 outputs;
     * Notes: same as 0-127 but rescales the CV2 outputs to semitones.
 	
-* **CV IN and CV2 IN**: These inputs can be used for programming the sequencer from external sources. The CV2 IN inputs are located in the expansion panel (see right click menu). When a trigger is sent to the WRITE input, the states of the inputs is written into the sequencer at the current step/sequence. Unconnected inputs are ignored. When planning a project, all sequences that are to hold chords must have the same sequence numbers across all tracks. AUTOSTEP automatically moves to the next step in the sequence when a write occurs. The TRACK CV input has been extended to allow ALL tracks to be selected, and unless all tracks are selected, writing via CV inputs is now only done in the currently selected track. A button located in the expansion panel allows the writing of CV IN only, CV2 IN only, or both.
+* **CV IN and CV2 IN**: These inputs can be used for programming the sequencer from external sources. The CV2 IN inputs are located in the Foundry **expansion module** (this is a separate module labeled \"FOUNDRY-X\"). When a trigger is sent to the WRITE input, the states of the inputs is written into the sequencer at the current step/sequence. Unconnected inputs are ignored. When planning a project, all sequences that are to hold chords must have the same sequence numbers across all tracks. AUTOSTEP automatically moves to the next step in the sequence when a write occurs. The TRACK CV input has been extended to allow ALL tracks to be selected, and unless all tracks are selected, writing via CV inputs is now only done in the currently selected track. A button located in the expansion module allows the writing of CV IN only, CV2 IN only, or both.
 
 * **CLK RES / DELAY**: Settings for clock resolution and clock delay. The clock resolution allows [advanced gate types](#advanced-gate-mode-ps) to be used, and functions similarly to that found in the PhraseSequencers. In Foundry however, when using only one clock source, clock resolution also effectively functions as a clock divider, provided the gate types required are compatible with the multiple chosen; clock resolution can thus be used to slow down the clocks of certain tracks compared to others. Clock delay is used to delay the clock of a track by a given number of clock pulses (0 to 99). When clock resolutions above 1 are used, the clock can be delayed by fractions of a step. For example, with a clock resolution of 4 and a clock delay of 1, a track will be delayed by one quarter of a step. A reset must be performed in order for a new clock delay value to take effect. Clock delay should not be used in conjuction with the TKA run modes in sequences and songs.
 
@@ -276,9 +276,9 @@ Here are some further details on the different functions of the sequencer. For a
 	* 4/8: automatically copies 4/8 steps (in SEQ mode) or 4/8 phrases (in SONG mode) starting in the current edit position. 
 	* CUST: copies a user-selectable (custom) number of steps/phrases. The CUST setting, when properly used, allows insert and delete to be performed more efficiently. Using the CUST setting with SEL allows an arbitrary range of steps to be selected: when SEL is turned on, clicking steps to the right of the current position will reduce the length of the selection to the number of steps desired; when SEL is not used, CUST automatically selects all steps from the edit head (cursor) to the end. In SONG mode, copying a custom range of phrases is also a two step process: first move to the start phrase, then press COPY once, and then move to the end phrase and press COPY once more to copy that range of phrases.
 
-* **SEQ# input**: These CV inputs are located in the expansion panel. Please see [general concepts](#general-concepts) above for more information. In addition to allowing the selection of the sequence in each track, the SYNC SQ# switch, when activated, can be used to defer any selection change until the end of the sequence is reached.
+* **SEQ# input**: These CV inputs are located in the Foundry **expansion module** (this is a separate module labeled \"FOUNDRY-X\"). Please see [general concepts](#general-concepts) above for more information. In addition to allowing the selection of the sequence in each track, the SYNC SQ# switch, when activated, can be used to defer any selection change until the end of the sequence is reached.
 
-* **TRACK input**: This CV input is located in the expansion panel, and allows the selection of the track number. A 0-10V CV is linearly mapped to the following track selections: A, B, C, D, A\*, B\*, C\*, D\*, where the star denotes that any change will be done across all tracks. This applies to the CV and CV2 inputs as well (see "CV IN and CV2 IN" above).
+* **TRACK input**: This CV input is located in the Foundry **expansion module**, and allows the selection of the track number. A 0-10V CV is linearly mapped to the following track selections: A, B, C, D, A\*, B\*, C\*, D\*, where the star denotes that any change will be done across all tracks. This applies to the CV and CV2 inputs as well (see "CV IN and CV2 IN" above).
 
 * **TIED**: Please see [PhraseSeq16](#phrase-seq-16)'s section on [tied steps](#tied-ps).
 
@@ -300,9 +300,9 @@ Here are some further details on the different functions of the sequencer. For a
 
 ![IM](res/img/PhraseSeq16.jpg)
 
-A 16 phrase sequencer module, where each phrase is an index into a set of 16 sequences of 16 steps (maximum). CVs can be entered via a CV input when using an external keyboard controller or via the built-in keyboard on the module itself. If you need a 256-step sequence in a single module, this is the sequencer for you! With two separate gates per step, gate 2 is perfect for using as an accent if desired. When notes are entered with the **right mouse button** instead of the left button, the sequencer automatically moves to the next step. Holding ctrl while right clicking also copies the current note/gate-type over when moving to the next step.
+A 16 phrase sequencer module, where each phrase is an index into a set of 16 sequences of 16 steps (maximum). CVs can be entered via a CV input when using an external keyboard controller or via the built-in keyboard on the module itself. Using the song mode, a 256-step sequence can be created. With two separate gates per step, gate 2 is perfect for use as an accent if desired. When notes are entered on the builtin keyboard using double-clicks instead of single clicks of the mouse, the sequencer automatically moves to the next step. Holding ctrl while double-clicking also copies the current note/gate-type over when moving to the next step. Right-click defaults are also supported on the main knob.
 
-The following block diagram shows how sequences and phrases relate to each other to create a song. In the diagram, a 12-bar blues pattern is created by setting the song length to 12, the step lengths to 8 (not visible in the figure), and then creating 4 sequences. The 12 phrases are indexes into the 4 sequences that were created. (Not sure anyone plays blues in a modular synth, but it shows the idea at least!)
+The following block diagram shows how sequences and phrases relate to each other to create a song. In the diagram, a 12-bar blues pattern is created by setting the song length to 12, the step lengths to 8 (not visible in the figure), and then creating 4 sequences. The 12 phrases are indexes into the 4 sequences that were created.
 
 ![IM](res/img/PhraseSeq16BlockDiag.jpg)
 
@@ -339,7 +339,7 @@ Familiarity with the Fundamental SEQ-3 sequencer is recommended, as some operati
 
 ### Tied steps<a id="tied-ps"></a>
 
-When CVs are intended to be held across subsequent steps, this button can be used to tie the CV of the current step to the CV of the previous step. When tied, any changes to the CV of the head note will be propagated to all consecutive contiguous tied notes automatically. Two different *gate 1 behaviors* are available and can be toggled in the right-click menu. All gate types are adjusted automatically when tying and untying notes, and in all cases, manual inspection of the gate types will reveal what has been done in the sequencer. Any change to this option will only take effect on subsequent edits in the sequencer.
+When CVs are intended to be held across subsequent steps, this button can be used to tie the CV of the current step to the CV of the previous step. When tied, any changes to the CV of the head note will be propagated to all consecutive contiguous tied notes automatically. Two different *gate 1 behaviors* are available and can be toggled in the right-click menu. All gate types are adjusted automatically when tying and untying notes, and in all cases, manual inspection of the gate types will reveal what has been done in the sequencer. Any change to this option will only take effect on subsequent edits in the sequencer, such that currently entered tied notes are not automatically changed.
 
 * When the **Held tied notes** option is activated (default behavior), then the gate 1 output is sustained (held high) across a series of contiguous tied steps, and the initial gate type of the head note will be propagated to last step's gate type.
 
@@ -359,7 +359,7 @@ Gate:  -_ __ __ __
 Step:  s1 s2 s3 s4
 ```
 
-Extra CV inputs are also available in the **expansion panel** (can be activated in the right-click menu). Only the bottom-most input is level sensitive, the other four are trigger inputs. The expansion CV inputs can only be used in Seq mode.
+Extra CV inputs are also available via the PhraseSeq **expansion module** (this is a separate module labeled \"PS-X\"). Only the bottom-most input is level sensitive, the other four are trigger inputs. The expansion CV inputs can only be used in Seq mode.
 
 
 ### Advanced gate mode<a id="advanced-gate-mode-ps"></a>
@@ -411,7 +411,7 @@ When running in the 2x16 configuration and in Seq mode, the following details be
 1. Only the row corresponding to the edit head's position will be transposed or rotated when the **TRAN/ROT** button is used.
 1. One extra run mode is also available for sequences, called **RN2**. This run mode allows the two sequences to play randomly but separately, as opposed to RND which plays them randomly but together.
 
-Other than these characteristics, the rest of PhraseSeq32's functionality is identical to that of PhraseSeq16.
+Other than these characteristics, the rest of PhraseSeq32's functionality is identical to that of PhraseSeq16, including the use of the expansion module.
 
 ([Back to module list](#modules))
 
@@ -421,9 +421,9 @@ Other than these characteristics, the rest of PhraseSeq32's functionality is ide
 
 ![IM](res/img/GateSeq64.jpg)
 
-A 64 step gate sequencer with the ability to define **probabilities** for each step. A configuration switch allows the sequencer to output quad 16 step sequences, dual 32 step sequences or single 64 step sequences. To see the sequencer in action and for a tutorial on how it works, please see [this segment](https://www.youtube.com/watch?v=bjqWwTKqERQ&t=6111s) of Nigel Sixsmith's Talking Rackheads episode 10. It is also recommended to see the section above on [resets, clocks and run states](#clk_rst_run). 
+A 64 step gate sequencer with the ability to define **probabilities** for each step. A configuration switch allows the sequencer to output quad 16 step sequences, dual 32 step sequences or single 64 step sequences. To see the sequencer in action and for a tutorial on how it works, please see [this segment](https://www.youtube.com/watch?v=bjqWwTKqERQ&t=6111s) of Nigel Sixsmith's Talking Rackheads episode 10. It is also recommended to see the section above on [resets, clocks and run states](#clk_rst_run).
 
-When running in the 4x16 configuration, each of the four rows is sent to the four **GATE** output jacks (jacks 1 to 4, with jack 1 being the top-most jack). In the 2x32 configuration, jacks 1 and 3 are used, and in the 1x64 configuration, only jack 1 is used (top-most jack). When activating a given step by clicking it once, it will turn green showing that the step is on. Clicking the _"p"_ button turns it yellow, and the main display shows the probability associated with this step. While the probability remains shown, the probability can be adjusted with the main knob, in 0.02 increments, between 0 and 1. When a yellow step is selected, clicking the _"p"_ button again will turn it off. Clicking steps with the **right mouse button** can also be used to more quiclkly turn steps off.
+When running in the 4x16 configuration, each of the four rows is sent to the four **GATE** output jacks (jacks 1 to 4, with jack 1 being the top-most jack). In the 2x32 configuration, jacks 1 and 3 are used, and in the 1x64 configuration, only jack 1 is used (top-most jack). When activating a given step by clicking it once, it will turn green showing that the step is on. Clicking the _"p"_ button turns it yellow, and the main display shows the probability associated with this step. While the probability remains shown, the probability can be adjusted with the main knob, in 0.02 increments, between 0 and 1. When a yellow step is selected, clicking the _"p"_ button again will turn it off.
 
 This sequencer also features the song mode found in [PhraseSeq16](#phrase-seq-16); 64 phrases can be defined, where a phrase is an index into a set of 32 sequences. In GateSeq64, the song steps are shown using the entire grid of steps, overlapped with the actual sequence progression in lighter shades in the lights. The actual content of the sequences is shown in white in Song mode. Here are a few more points regarding Song mode:
 
@@ -433,7 +433,7 @@ This sequencer also features the song mode found in [PhraseSeq16](#phrase-seq-16
 
 Copy-pasting ALL also copies the run mode and length of a given sequence, along with gate states and probabilities, whereas only gates and probabilities are copied when 4 or ROW are selected. More advanced copy-paste shortcuts are also available when clicking copy in Seq mode and then paste in Song mode (and vice versa); see [cross paste](#cross-paste-gs) below. The **SEQ** CV input, sequence length selection, run **MODES**, **Reset on Run** and **AutoSeq** features are all identical to those found in PhraseSeq16.
 
-Although no **Write** capabilities appear in the main part of the module, automatically storing patterns into the sequencer can be performed using the CV inputs in the **expansion panel** (see right-click menu). The cursor is stepped forward on each write, and can be repositioned at the first step by pressing the reset button, or at an arbitrary step by simply clicking that given step. When the cursor is not flashing, clicking any step will make it appear. The Write-gate (full circle) and Write-empty (empty circle) inputs (2nd and 3rd from the bottom) can be used to enter on-gates and off-gates in succession with separate external triggers (buttons). The bottom-most input is used to move the cursor to the left, whereas the Write input at the top can be used to move the cursor to the right when Gate In and Prob are unconnected. When either of these inputs is connected, the values are used to program the sequencer gates and probabilities. The extra CV inputs only have an effect in Seq mode.
+Although no **Write** capabilities appear in the main part of the module, automatically storing patterns into the sequencer can be performed using the CV inputs in the GateSeq64 **expansion module** (this is a separate module labeled \"GS-X\"). The cursor is stepped forward on each write, and can be repositioned at the first step by pressing the reset button, or at an arbitrary step by simply clicking that given step. When the cursor is not flashing, clicking any step will make it appear. The Write-gate (full circle) and Write-empty (empty circle) inputs (2nd and 3rd from the bottom) can be used to enter on-gates and off-gates in succession with separate external triggers (buttons). The bottom-most input is used to move the cursor to the left, whereas the Write input at the top can be used to move the cursor to the right when Gate In and Prob are unconnected. When either of these inputs is connected, the values are used to program the sequencer gates and probabilities. The extra CV inputs only have an effect in Seq mode.
 
 
 ### Advanced gate mode<a id="advanced-gate-mode-gs"></a>
@@ -481,7 +481,7 @@ A 6-channel 64-step trigger sequencer based on the infamous [BigButton](https://
 
 * [lookmom](https://www.youtube.com/watch?v=Jcdok8jJ5hQ) and [bbs](https://www.youtube.com/watch?v=j5ejGH5XgFg) by Clément Foulc.
 
-Here are a few more details on some of the uses of the buttons. The sequencer uses has two types of pushbuttons, namely trigger buttons and state buttons. Trigger buttons react to the change in a button's state as it's being pressed, while state buttons react to the position of the push-button, i.e. pressed or not pressed.
+Here are a few more details on some of the uses of the buttons. The sequencer uses has two types of push-buttons, namely trigger buttons and state buttons. Trigger buttons react to the change in a button's state as it's being pressed, while state buttons react to the position of the push-button, i.e. pressed or not pressed.
 
 * **CHAN**: channel select button (can be changed in real time). All state buttons will have an effect immediately when the channel is changed.
 
@@ -553,7 +553,7 @@ WriteSeq32 is a three-channel 32-step writable sequencer module. Although the di
 
 * **Main display**: Shows the note names for the 8 steps corresponding to the active window. When a stored pitch CV has not been quantized, the display shows the closest such note name. For example, 0.03 Volts is shown as C4, whereas 0.05 Volts is shown as C4 sharp or D4 flat. Octaves above 9 or below 0 are shown with a top bar and an underscore respectively.
 
-* **GATES**: LED buttons to show/modify the gates for the 8 steps in the current window. Gates can be toggled whether the sequencer is running or not. Two gate modes are available: standard gates (that use the clock pulse) and full gates (that hold the note across the whole step and ties it to the next one). Clicking a gate alternates between the following three states: normal, held (full), off. Right-clicking the gate can also be used to turn it off without having to cycling through the choices.
+* **GATES**: LED buttons to show/modify the gates for the 8 steps in the current window. Gates can be toggled whether the sequencer is running or not. Two gate modes are available: standard gates (that use the clock pulse) and full gates (that hold the note across the whole step and ties it to the next one). Clicking a gate alternates between the following three states: normal, held (full), off.
 
 * **CHAN**: Selects the channel that is to be displayed/edited in the top part of the module. Even though this is a three-channel sequencer, a fourth channel is available for staging a sequence while the sequencer is running (or not).
 
@@ -561,11 +561,11 @@ WriteSeq32 is a three-channel 32-step writable sequencer module. Although the di
 
 * **PASTE SYNC**: Determines whether to paste in real time (RT), on the next clock (CLK), or at the start of the next sequence (SEQ). Pending pastes are shown by a red LED beside CLK/SEQ, and if the selected channel changes, the paste operation will be performed in the channel that was selected when the paste button was pressed. Paste operations into the staging area (channel 4) are always done in real time, irrespective of the state of the paste sync switch. To cancel a pending paste, press the Copy button again.
 
-* **<, >**: These buttons step the sequencer one step left or right. No effect on channels 1 to 3 when the sequencer is running. A rising edge on the </> control voltage inputs triggered at 1V will also step the sequencer left/right by one step.
+* **<, >**: These buttons step the sequencer one step left or right. No effect on channels 1 to 3 when the sequencer is running. A rising edge on the \"<\" or \">\" control voltage inputs triggered at 1V will also step the sequencer left/right by one step.
 
 * **RUN 1-3**: Start/stop the sequencer. When running, the sequencer responds to rising edges of the clock input and will step all channels except the staging area (channel 4). A rising edge on the RUN input will also toggle the run mode.
 
-* **GATE IN**: Allows the gate of the current step/channel to also be written during a Write (see [General Concepts](#general-concepts) above). If no wire is connected, the input is ignored and the currently stored gate is unaffected. No effect on channels 1 to 3 when the sequencer is running.
+* **GATE IN**: Can be used to also set/clear the gate of the current step/channel during a Write (see [General Concepts](#general-concepts) above). If no wire is connected, the input is ignored and the currently stored gate is unaffected. No effect on channels 1 to 3 when the sequencer is running.
 
 * **STEPS**: Sets the number of steps for all the sequences (sequence length).
 
@@ -575,7 +575,7 @@ WriteSeq64 is a four-channel 64-step writable sequencer module. This sequencer i
 
 WriteSeq64 has dual clock inputs, where each controls a pair of channels. When no wire is connected to **CLOCK 3,4**, the **CLOCK 1,2** signal is used internally as the clock for channels 3 and 4. 
 
-Ideas: The first part of the famous [Piano Phase](https://en.wikipedia.org/wiki/Piano_Phase) piece by Steve Reich can be easily programmed into WriteSeq64 by entering the twelve notes into channel 1 with a keyboard, setting STEPS to 12, copy-pasting channel 1 into channel 3, and then driving each clock input with two LFOs that have slightly different frequencies. Exercise left to the reader!
+Ideas: The first part of the famous [Piano Phase](https://en.wikipedia.org/wiki/Piano_Phase) piece by Steve Reich can be easily programmed into WriteSeq64 by entering the twelve notes into channel 1 with a keyboard, setting STEPS to 12, copy-pasting channel 1 into channel 3, and then driving each clock input with two LFOs that have slightly different frequencies.
 
 ([Back to module list](#modules))
 

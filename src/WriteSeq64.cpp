@@ -326,14 +326,9 @@ struct WriteSeq64 : Module {
 				
 			// Gate button
 			if (gateTrigger.process(params[GATE_PARAM].getValue())) {
-				if (params[GATE_PARAM].getValue() > 1.5f) {// right button click
+				gates[indexChannel][indexStep[indexChannel]]++;
+				if (gates[indexChannel][indexStep[indexChannel]] > 2)
 					gates[indexChannel][indexStep[indexChannel]] = 0;
-				}
-				else {
-					gates[indexChannel][indexStep[indexChannel]]++;
-					if (gates[indexChannel][indexStep[indexChannel]] > 2)
-						gates[indexChannel][indexStep[indexChannel]] = 0;
-				}
 			}
 			
 			// Steps knob
@@ -706,10 +701,10 @@ struct WriteSeq64Widget : ModuleWidget {
 		addChild(darkPanel);
 
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 
 		
 		// ****** Top portion ******

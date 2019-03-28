@@ -1136,7 +1136,7 @@ struct SemiModularSynth : Module {
 								editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
 						}
 						else if (attributes[seqIndexEdit][stepIndexEdit].getTied()) {
-							if (params[KEY_PARAMS + i].getValue() > 1.5f)// if right-click
+							if (params[KEY_PARAMS + i].maxValue > 1.5f)// if double-click
 								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
 							else
 								tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
@@ -1963,14 +1963,14 @@ struct SemiModularSynthWidget : ModuleWidget {
 		addChild(darkPanel);
 
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec((box.size.x - 90) * 1 / 3 + 30 , 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec((box.size.x - 90) * 1 / 3 + 30 , 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec((box.size.x - 90) * 2 / 3 + 45 , 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec((box.size.x - 90) * 2 / 3 + 45 , 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec((box.size.x - 90) * 1 / 3 + 30 , 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec((box.size.x - 90) * 1 / 3 + 30 , 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec((box.size.x - 90) * 2 / 3 + 45 , 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec((box.size.x - 90) * 2 / 3 + 45 , 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 
 
 		// SEQUENCER 

@@ -39,6 +39,19 @@ void init(rack::Plugin *p) {
 }
 
 
+// Screws
+
+// nothing
+
+
+
+// Ports
+
+// nothing
+
+
+
+// Buttons and switches
 
 LEDBezelBig::LEDBezelBig() {
 	momentary = true;
@@ -56,6 +69,132 @@ LEDBezelBig::LEDBezelBig() {
 
 
 
+// Knobs
+
+// nothing
+
+
+
+// Lights
+
+// nothing
+
+
+
+// Other widgets
+
+// Invisible key
+
+void InvisibleKeySmall::onButton(const ButtonEvent &e) {
+	if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT && paramQuantity) {// see widget/event.hpp
+		paramQuantity->getParam()->maxValue = 1.0f;
+	}
+	Switch::onButton(e);
+}
+void InvisibleKeySmall::onDoubleClick(const DoubleClickEvent &e) {
+	if (paramQuantity) {
+		paramQuantity->getParam()->maxValue = 2.0f;
+	}
+	Switch::onDoubleClick(e);
+}
+
+
+// Tactile pad
+
+IMTactile::IMTactile() {
+	box.size = Vec(padWidth, padHeight);
+}
+
+void IMTactile::onDragStart(const DragStartEvent &e) {
+	if (paramQuantity) {
+		dragValue = paramQuantity->getValue();
+		dragY = APP->scene->rack->mousePos.y;
+	}
+	e.consume(this);// Must consume to set the widget as dragged
+}
+
+void IMTactile::onDragMove(const DragMoveEvent &e) {
+	if (paramQuantity) {
+		float rangeValue = paramQuantity->getMaxValue() - paramQuantity->getMinValue();// infinite not supported (not relevant)
+		float newDragY = APP->scene->rack->mousePos.y;
+		float delta = -(newDragY - dragY) * rangeValue / box.size.y;
+		dragY = newDragY;
+		dragValue += delta;
+		float dragValueClamped = clampSafe(dragValue, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
+		paramQuantity->setValue(dragValueClamped);
+	}
+	e.consume(this);
+}
+
+void IMTactile::onButton(const ButtonEvent &e) {
+	if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT && paramQuantity) {
+		float val = rescale(e.pos.y, box.size.y, 0.0f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
+		paramQuantity->setValue(val);
+	}
+	ParamWidget::onButton(e);
+}
+
+void IMTactile::reset() {
+	if (paramQuantity) {
+		paramQuantity->reset();
+	}
+}
+
+void IMTactile::randomize() {
+	if (paramQuantity) {
+		float value = math::rescale(random::uniform(), 0.f, 1.f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
+		paramQuantity->setValue(value);
+	}
+}
+
+
+
+// Other objects
+
+bool Trigger::process(float in) {
+	switch (state) {
+		case LOW:
+			if (in >= 1.0f) {
+				state = HIGH;
+				return true;
+			}
+			break;
+		case HIGH:
+			if (in <= 0.1f) {
+				state = LOW;
+			}
+			break;
+		default:
+			if (in >= 1.0f) {
+				state = HIGH;
+			}
+			else if (in <= 0.1f) {
+				state = LOW;
+			}
+			break;
+	}
+	return false;
+}	
+
+bool HoldDetect::process(float paramValue) {
+	bool ret = false;
+	if (modeHoldDetect > 0l) {
+		if (paramValue < 0.5f)
+			modeHoldDetect = 0l;
+		else {
+			if (modeHoldDetect == 1l) {
+				ret = true;
+			}
+			modeHoldDetect--;
+		}
+	}
+	return ret;
+}
+
+
+
+// Other functions
+
 NVGcolor prepareDisplay(NVGcontext *vg, Rect *box, int fontSize) {
 	NVGcolor backgroundColor = nvgRGB(0x38, 0x38, 0x38); 
 	NVGcolor borderColor = nvgRGB(0x10, 0x10, 0x10);
@@ -70,24 +209,6 @@ NVGcolor prepareDisplay(NVGcontext *vg, Rect *box, int fontSize) {
 	NVGcolor textColor = nvgRGB(0xaf, 0xd2, 0x2c);
 	return textColor;
 }
-
-
-// void InvisibleKeySmall::onButton(const widget::ButtonEvent &e) {
-	// INFO("InvisibleKeySmall::onButton");
-	// if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT && paramQuantity) {// see widget/event.hpp
-		// paramQuantity->getParam()->maxValue = 1.0f;
-	// }
-	// Switch::onButton(e);
-// }
-// void InvisibleKeySmall::onDoubleClick(const widget::DoubleClickEvent &e) {
-	// INFO("InvisibleKeySmall::onDoubleClick");
-	// if (paramQuantity) {
-		// paramQuantity->getParam()->maxValue = 2.0f;
-	// }
-	// // Switch::onDoubleClick(e);
-	// e.consume(this);
-// }
-
 
 void printNote(float cvVal, char* text, bool sharp) {// text must be at least 4 chars long (three displayed chars plus end of string)
 	static const char noteLettersSharp[12] = {'C', 'C', 'D', 'D', 'E', 'F', 'F', 'G', 'G', 'A', 'A', 'B'};

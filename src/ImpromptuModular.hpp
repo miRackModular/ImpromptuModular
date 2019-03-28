@@ -50,7 +50,6 @@ static const float lightLambda = 0.075f;
 static const int displayAlpha = 23;
 static const std::string lightPanelID = "Classic";
 static const std::string darkPanelID = "Dark-valor";
-static const std::string expansionMenuLabel = "Extra CVs (requires +4HP to the right!)";// note: Foundry has a copy of this string also since bigger HP
 static const unsigned int displayRefreshStepSkips = 256;
 static const unsigned int userInputsStepSkipMask = 0xF;// sub interval of displayRefreshStepSkips, since inputs should be more responsive than lights
 // above value should make it such that inputs are sampled > 1kHz so as to not miss 1ms triggers
@@ -82,6 +81,7 @@ static const int offsetTrimpot = 3;//does both h and v
 // Variations on existing knobs, lights, etc
 
 
+
 // Screws
 
 struct IMScrew : DynamicSVGScrew {
@@ -89,6 +89,7 @@ struct IMScrew : DynamicSVGScrew {
 		addSVGalt(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/ScrewSilver.svg")));
 	}
 };
+
 
 
 // Ports
@@ -102,6 +103,7 @@ struct IMPort : DynamicSVGPort {
 		shadow->opacity = 0.8;
 	}
 };
+
 
 
 // Buttons and switches
@@ -169,10 +171,11 @@ struct IMPushButton : DynamicSVGSwitch {
 };
 
 
-struct LEDBezelBig : app::SvgSwitch {
+struct LEDBezelBig : SvgSwitch {
 	TransformWidget *tw;
 	LEDBezelBig();
 };
+
 
 
 // Knobs
@@ -236,6 +239,7 @@ struct IMMediumKnobInf : IMKnob {
 
 struct IMFivePosSmallKnob : IMSmallSnapKnob {
 	IMFivePosSmallKnob() {
+		speed = 1.6f;
 		minAngle = -0.5*M_PI;
 		maxAngle = 0.5*M_PI;
 	}
@@ -243,11 +247,13 @@ struct IMFivePosSmallKnob : IMSmallSnapKnob {
 
 struct IMSixPosBigKnob : IMBigSnapKnob {
 	IMSixPosBigKnob() {
+		speed = 1.3f;
 		minAngle = -0.4*M_PI;
 		maxAngle = 0.4*M_PI;
 	}
 	void randomize() override {}
 };
+
 
 
 // Lights
@@ -286,55 +292,48 @@ struct GiantLight2 : BASE {
 	}
 };
 
+
+
 // Other widgets
 
-struct InvisibleKey : app::Switch {
+struct InvisibleKey : Switch {
 	InvisibleKey() {
 		momentary = true;
 		box.size = Vec(34, 72);
 	}
 };
 
-struct InvisibleKeySmall : app::Switch {
+struct InvisibleKeySmall : Switch {
 	InvisibleKeySmall() {
 		momentary = true;
 		box.size = Vec(23, 38);
 	}
-	// void onButton(const widget::ButtonEvent &e) override;
-	// void onDoubleClick(const widget::DoubleClickEvent &e) override;
+	void onButton(const ButtonEvent &e) override;
+	void onDoubleClick(const DoubleClickEvent &e) override;
+};
+
+struct IMTactile : ParamWidget {
+	// Note: double-click initialize doesn't work in this setup because onDragMove() gets calls after onDoubleClick()
+	float dragY;
+	float dragValue;
+	static const int padWidth = 45;
+	static const int padHeight = 200;
+	
+	IMTactile();
+	void onDragStart(const DragStartEvent &e) override;
+	void onDragMove(const DragMoveEvent &e) override;
+	void onButton(const ButtonEvent &e) override;
+	void reset() override;
+	void randomize() override;
 };
 
 
-
-// Other
+// Other objects
 
 struct Trigger : dsp::SchmittTrigger {
 	// implements a 0.1V - 1.0V SchmittTrigger (see include/dsp/digital.hpp) instead of 
 	//   calling SchmittTriggerInstance.process(math::rescale(in, 0.1f, 1.f, 0.f, 1.f))
-	bool process(float in) {
-		switch (state) {
-			case LOW:
-				if (in >= 1.0f) {
-					state = HIGH;
-					return true;
-				}
-				break;
-			case HIGH:
-				if (in <= 0.1f) {
-					state = LOW;
-				}
-				break;
-			default:
-				if (in >= 1.0f) {
-					state = HIGH;
-				}
-				else if (in <= 0.1f) {
-					state = LOW;
-				}
-				break;
-		}
-		return false;
-	}	
+	bool process(float in);
 };	
 
 struct HoldDetect {
@@ -348,21 +347,12 @@ struct HoldDetect {
 		modeHoldDetect = startValue;
 	}
 
-	bool process(float paramValue) {
-		bool ret = false;
-		if (modeHoldDetect > 0l) {
-			if (paramValue < 0.5f)
-				modeHoldDetect = 0l;
-			else {
-				if (modeHoldDetect == 1l) {
-					ret = true;
-				}
-				modeHoldDetect--;
-			}
-		}
-		return ret;
-	}
+	bool process(float paramValue);
 };
+
+
+
+// Other functions
 
 inline bool calcWarningFlash(long count, long countInit) {
 	if ( (count > (countInit * 2l / 4l) && count < (countInit * 3l / 4l)) || (count < (countInit * 1l / 4l)) )
@@ -370,10 +360,10 @@ inline bool calcWarningFlash(long count, long countInit) {
 	return true;
 }	
 
-
-
 NVGcolor prepareDisplay(NVGcontext *vg, Rect *box, int fontSize);
+
 void printNote(float cvVal, char* text, bool sharp);
+
 int moveIndex(int index, int indexNext, int numSteps);
 
 

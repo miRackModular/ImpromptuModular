@@ -878,7 +878,7 @@ struct Foundry : Module {
 				if (keyTriggers[keyn].process(params[KEY_PARAMS + keyn].getValue())) {
 					if (editingSequence) {
 						displayState = DISP_NORMAL;
-						bool autostepClick = params[KEY_PARAMS + keyn].getValue() > 1.5f;// if right-click
+						bool autostepClick = params[KEY_PARAMS + keyn].maxValue > 1.5f;// if double-click
 						if (isEditingGates()) {
 							if (!seq.setGateType(keyn, multiSteps ? cpSeqLength : 1, sampleRate, autostepClick, multiTracks))
 								displayState = DISP_PPQN;
@@ -1776,10 +1776,10 @@ struct FoundryWidget : ModuleWidget {
 		addChild(darkPanel);
 
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 
 		
 		

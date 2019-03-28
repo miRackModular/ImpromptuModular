@@ -104,11 +104,11 @@ struct WriteSeq32 : Module {
 		
 		char strBuf[32];
 		for (int i = 0; i < 4; i++) {
-			snprintf(strBuf, 32, "Window #%i", i + 1);
+			snprintf(strBuf, 32, "Window #%i of 4", i + 1);
 			params[WINDOW_PARAM + i].config(0.0f, 1.0f, 0.0f, strBuf);
 		}
 		for (int i = 0; i < 8; i++) {
-			snprintf(strBuf, 32, "Gate #%i / 8", i + 1);
+			snprintf(strBuf, 32, "Gate #%i of 8", i + 1);
 			params[GATE_PARAM + i].config(0.0f, 1.0f, 0.0f, strBuf);
 		}
 		params[CHANNEL_PARAM].config(0.0f, 1.0f, 0.0f, "Channel");
@@ -313,14 +313,9 @@ struct WriteSeq32 : Module {
 				if (gateTriggers[index8].process(params[GATE_PARAM + index8].getValue())) {
 					iGate = ( (indexChannel == 3 ? indexStepStage : indexStep) & 0x18) | index8;
 					if (iGate < numSteps) {// don't toggle gates beyond steps
-						if (params[GATE_PARAM + index8].getValue() > 1.5f) {// right button click
+						gates[indexChannel][iGate]++;
+						if (gates[indexChannel][iGate] > 2)
 							gates[indexChannel][iGate] = 0;
-						}
-						else {
-							gates[indexChannel][iGate]++;
-							if (gates[indexChannel][iGate] > 2)
-								gates[indexChannel][iGate] = 0;
-						}
 					}
 				}
 			}
@@ -652,10 +647,10 @@ struct WriteSeq32Widget : ModuleWidget {
 		addChild(darkPanel);
 
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 
 		// Column rulers (horizontal positions)
 		static const int columnRuler0 = 25;

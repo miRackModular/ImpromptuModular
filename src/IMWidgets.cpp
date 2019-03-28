@@ -25,7 +25,7 @@ void ScrewCircle::draw(const DrawArgs &args) {
 }
 
 DynamicSVGScrew::DynamicSVGScrew() {
-	sw = new widget::SvgWidget();
+	sw = new SvgWidget();
 	sw->setSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/ScrewSilver.svg")));
 	
 	ScrewCircle *sc = new ScrewCircle();
@@ -47,7 +47,7 @@ DynamicSVGScrew::DynamicSVGScrew() {
 
 	// for fixed svg screw used in alternate mode
 	// **********
-	swAlt = new widget::SvgWidget();
+	swAlt = new SvgWidget();
 	swAlt->visible = false;
     addChild(swAlt);
 }
@@ -117,7 +117,7 @@ void DynamicSVGSwitch::step() {
 			frames[1]=framesAll[3];
 		}
         oldMode = *mode;
-		onChange(*(new widget::ChangeEvent()));// required because of the way SVGSwitch changes images, we only change the frames above.
+		onChange(*(new ChangeEvent()));// required because of the way SVGSwitch changes images, we only change the frames above.
 		fb->dirty = true;// dirty is not sufficient when changing via frames assignments above (i.e. onChange() is required)
     }
 	SvgSwitch::step();
@@ -135,7 +135,7 @@ void DynamicSVGKnob::addFrameAll(std::shared_ptr<Svg> svg) {
 }
 
 void DynamicSVGKnob::addEffect(std::shared_ptr<Svg> svg) {
-    effect = new widget::SvgWidget();
+    effect = new SvgWidget();
 	effect->setSvg(svg);
 	effect->visible = false;
 	addChild(effect);
@@ -157,53 +157,3 @@ void DynamicSVGKnob::step() {
 	SvgKnob::step();
 }
 
-
-
-// IMTactile pad
-
-IMTactile::IMTactile() {
-	box.size = Vec(padWidth, padHeight);
-}
-
-void IMTactile::onDragStart(const widget::DragStartEvent &e) {
-	if (paramQuantity) {
-		dragValue = paramQuantity->getValue();
-		dragY = APP->scene->rack->mousePos.y;
-	}
-	e.consume(this);// Must consume to set the widget as dragged
-}
-
-void IMTactile::onDragMove(const widget::DragMoveEvent &e) {
-	if (paramQuantity) {
-		float rangeValue = paramQuantity->getMaxValue() - paramQuantity->getMinValue();// infinite not supported (not relevant)
-		float newDragY = APP->scene->rack->mousePos.y;
-		float delta = -(newDragY - dragY) * rangeValue / box.size.y;
-		dragY = newDragY;
-		dragValue += delta;
-		float dragValueClamped = clampSafe(dragValue, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
-		paramQuantity->setValue(dragValueClamped);
-	}
-	e.consume(this);
-}
-
-
-void IMTactile::onButton(const widget::ButtonEvent &e) {
-	if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT && paramQuantity) {
-		float val = rescale(e.pos.y, box.size.y, 0.0f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
-		paramQuantity->setValue(val);
-	}
-	ParamWidget::onButton(e);
-}
-
-void IMTactile::reset() {
-	if (paramQuantity) {
-		paramQuantity->reset();
-	}
-}
-
-void IMTactile::randomize() {
-	if (paramQuantity) {
-		float value = math::rescale(random::uniform(), 0.f, 1.f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
-		paramQuantity->setValue(value);
-	}
-}

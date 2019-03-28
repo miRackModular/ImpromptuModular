@@ -1099,7 +1099,7 @@ struct PhraseSeq32 : Module {
 							if (newMode != -1) {
 								editingPpqn = 0l;
 								attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
-								if (params[KEY_PARAMS + i].getValue() > 1.5f) {// if right-click
+								if (params[KEY_PARAMS + i].maxValue > 1.5f) {// if double-click
 									stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
 									editingType = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 									editingGateKeyLight = i;
@@ -1111,7 +1111,7 @@ struct PhraseSeq32 : Module {
 								editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
 						}
 						else if (attributes[seqIndexEdit][stepIndexEdit].getTied()) {
-							if (params[KEY_PARAMS + i].getValue() > 1.5f)// if right-click
+							if (params[KEY_PARAMS + i].maxValue > 1.5f)// if double-click
 								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
 							else
 								tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
@@ -1124,7 +1124,7 @@ struct PhraseSeq32 : Module {
 							editingGateCV = cv[seqIndexEdit][stepIndexEdit];
 							editingGateKeyLight = -1;
 							editingChannel = (stepIndexEdit >= 16 * stepConfig) ? 1 : 0;
-							if (params[KEY_PARAMS + i].getValue() > 1.5f) {// if right-click
+							if (params[KEY_PARAMS + i].maxValue > 1.5f) {// if double-click
 								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
 								editingGateKeyLight = i;
 								if ((APP->window->getMods() & WINDOW_MOD_MASK) == WINDOW_MOD_CTRL)
@@ -1908,10 +1908,10 @@ struct PhraseSeq32Widget : ModuleWidget {
 		addChild(darkPanel);
 
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 365), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 
 		
 		

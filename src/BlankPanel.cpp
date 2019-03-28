@@ -26,10 +26,10 @@ struct BlankPanelWidget : ModuleWidget {
         addChild(panel);
 
 		// Screws
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &screwType));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 0),  &screwType));
-		addChild(createDynamicScrew<IMScrew>(Vec(15, 365),  &screwType));
-		addChild(createDynamicScrew<IMScrew>(Vec(box.size.x-30, 365),  &screwType));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 0), &screwType));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 0),  &screwType));
+		addChild(createDynamicWidget<IMScrew>(Vec(15, 365),  &screwType));
+		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 365),  &screwType));
 	}
 };
 
