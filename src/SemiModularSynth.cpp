@@ -334,15 +334,15 @@ struct SemiModularSynth : Module {
 		params[SLIDE_KNOB_PARAM].config(0.0f, 2.0f, 0.2f, "Slide rate");
 		params[AUTOSTEP_PARAM].config(0.0f, 1.0f, 1.0f, "Autostep");		
 		
-		params[VCO_FREQ_PARAM].config(-54.0f, 54.0f, 0.0f, "VCO freq");
+		params[VCO_FREQ_PARAM].config(-54.0f, 54.0f, 0.0f, "VCO freq", "Hz", std::pow(2, 1/12.f), dsp::FREQ_C4);
 		params[VCO_FINE_PARAM].config(-1.0f, 1.0f, 0.0f, "VCO freq fine");
-		params[VCO_PW_PARAM].config(0.0f, 1.0f, 0.5f, "VCO pulse width");
+		params[VCO_PW_PARAM].config(0.0f, 1.0f, 0.5f, "VCO pulse width", "%", 0.f, 100.f);
 		params[VCO_FM_PARAM].config(0.0f, 1.0f, 0.0f, "VCO FM");
-		params[VCO_PWM_PARAM].config(0.0f, 1.0f, 0.0f, "VCP PWM");
+		params[VCO_PWM_PARAM].config(0.0f, 1.0f, 0.0f, "VCO PWM", "%", 0.f, 100.f);
 		params[VCO_MODE_PARAM].config(0.0f, 1.0f, 1.0f, "VCO mode");
 		params[VCO_OCT_PARAM].config(-2.0f, 2.0f, 0.0f, "VCO octave");
 		
-		params[CLK_FREQ_PARAM].config(-2.0f, 4.0f, 1.0f, "CLK freq");// 120 BMP when default value
+		params[CLK_FREQ_PARAM].config(-2.0f, 4.0f, 1.0f, "CLK freq", 1, 60);// 120 BMP when default value
 		params[CLK_PW_PARAM].config(0.0f, 1.0f, 0.5f, "CLK PW");
 		
 		params[VCA_LEVEL1_PARAM].config(0.0f, 1.0f, 1.0f, "VCA level");
@@ -2268,5 +2268,8 @@ struct SemiModularSynthWidget : ModuleWidget {
 Model *modelSemiModularSynth = createModel<SemiModularSynth, SemiModularSynthWidget>("Semi-Modular Synth");
 
 /*CHANGE LOG
+
+1.0.0:
+right-click keys to autostep replaced by double click
 
 */

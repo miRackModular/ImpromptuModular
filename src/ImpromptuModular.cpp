@@ -86,7 +86,7 @@ LEDBezelBig::LEDBezelBig() {
 // Invisible key
 
 void InvisibleKeySmall::onButton(const ButtonEvent &e) {
-	if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT && paramQuantity) {// see widget/event.hpp
+	if (e.action == GLFW_PRESS && paramQuantity) {
 		paramQuantity->getParam()->maxValue = 1.0f;
 	}
 	Switch::onButton(e);

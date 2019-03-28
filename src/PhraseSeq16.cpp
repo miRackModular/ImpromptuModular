@@ -2019,4 +2019,8 @@ Model *modelPhraseSeq16 = createModel<PhraseSeq16, PhraseSeq16Widget>("Phrase-Se
 
 /*CHANGE LOG
 
+1.0.0:
+expansion panel replaced by a separate expander module
+right-click keys to autostep replaced by double click
+
 */

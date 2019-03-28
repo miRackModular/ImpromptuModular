@@ -810,4 +810,7 @@ Model *modelWriteSeq32 = createModel<WriteSeq32, WriteSeq32Widget>("Write-Seq-32
 
 /*CHANGE LOG
 
+1.0.0:
+removed right-click of gate buttons to clear gates
+
 */

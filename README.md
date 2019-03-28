@@ -86,10 +86,13 @@ When **AUTOSTEP** is activated, the sequencer automatically advances one step ri
 
 A concept related to AutoStep, which is called "**AutoSeq** when writing via CV inputs", can be used to automatically change to the next sequence when a write operation reaches the end of the current sequence. Without this, the writing operations loop back over to the start of the current sequence (default behavior). This can be used to turn the sequencers into very long stepped CV recorders (1024 steps in the case of PhraseSeq32 and GateSeq64).
 
-Many modules feature an **Expansion module** to provide additional CV inputs. The expansion module must be added to the _right_ side of the mother module with no space between the two modules.
+Many modules feature an **Expander module** to provide additional CV inputs. The expander module must be added to the _right_ side of the mother module with no space between the two modules.
 
 Many sequencers feature a **SEQ# CV input**, which can be used to select the active sequence for editing and even to externally control the playing order of the sequences. Three different modes are available for this input in the right click menu under **Seq CV in**. 
-* 0-10V: a 0 to 10V input is proportionally mapped to the 1 to N sequence numbers (1 to 16 in the case of PhraseSeq16, for example);
+* 0-10V: a 0 to 10V input is proportionally mapped to the 1 to N sequence numbers; for example:
+    * In PhraseSeq16 and SemiModularSynth16, the mapping is `SEQ# 1-16 <-> 0-10 V`
+    * In PhraseSeq32 and GateSeq64, the mapping is `SEQ# 1-32 <-> 0-10 V`
+    * In Foundry, the mapping is `SEQ# 1-64 <-> 0-10 V`
 * C4-D5# (or other note intervals): CV levels corresponding to the note voltages are mapped to the 1 to N sequence numbers;
 * Trig-Incr: the input is trigger sensitive and moves to the next sequence number every time a trigger is received. A reset can be used to move back to the first sequence.
 
@@ -207,7 +210,7 @@ For a tutorial on Clocked regarding chaining, clock multiplications and division
 
 In place of a detailed explanation of these three main controls, it is recommended to connect the outputs to a scope or a logic analyzer, such as the Fundamental Scope (pictured above) or the SubmarineFree LA-108, to observe the effects of the different controls.
 
-PW and Swing CV inputs are aso avaialable in the Clocked **expansion module** (this is a separate module labeled \"CLK-X\"). These inputs are 0-10V signals, and when using these inputs, the corresponding knobs should be in their default position. When this is the case, no-swing and normal-pulse-width correspond to 5V on the CV inputs.
+PW and Swing CV inputs are aso avaialable in the Clocked **expander module** (this is a separate module labeled \"CLK-X\"). These inputs are 0-10V signals, and when using these inputs, the corresponding knobs should be in their default position. When this is the case, no-swing and normal-pulse-width correspond to 5V on the CV inputs.
 
 
 ### External synchronization <a id="clocked-sync"></a>
@@ -247,7 +250,7 @@ The following block diagram shows how the different sequencer elements are hiera
  
 ![IM](res/img/FoundryBlockDiag.jpg)
 
-Here are some further details on the different functions of the sequencer. For an overview of the sequencer's functionality, please see Omri Cohen's [Foundry tutorial](https://www.youtube.com/watch?v=56w_mlNlKE4). It is also recommended to see the section above on [resets, clocks and run states](#clk_rst_run).
+Here are some further details on the different functions of the sequencer. For an overview of the sequencer's functionality, please see Omri Cohen's [Foundry tutorial](https://www.youtube.com/watch?v=56w_mlNlKE4) (the tutorial was made with a previous version of Foundry wherein the main SEQ/SONG switch had an alternate behavior). It is also recommended to see the section above on [resets, clocks and run states](#clk_rst_run).
 
 * **CLK**: The clock inputs for each track. When the input is unconnected in a track, the track automatically uses the clock source of the preceding track (indicated by arrows above each clock input). It is good practice that the clock for track A be connected as directly as possible to the main clock source, and when a chained series of clock modules are used, the clock input of track A should be connected to a clock output from the *first* clock module of the chain.
 
@@ -266,7 +269,7 @@ Here are some further details on the different functions of the sequencer. For a
     * 0-127: midi-like numbered levels, mapped to 0V to 10V or -5V to 5V on the CV2 outputs;
     * Notes: same as 0-127 but rescales the CV2 outputs to semitones.
 	
-* **CV IN and CV2 IN**: These inputs can be used for programming the sequencer from external sources. The CV2 IN inputs are located in the Foundry **expansion module** (this is a separate module labeled \"FOUNDRY-X\"). When a trigger is sent to the WRITE input, the states of the inputs is written into the sequencer at the current step/sequence. Unconnected inputs are ignored. When planning a project, all sequences that are to hold chords must have the same sequence numbers across all tracks. AUTOSTEP automatically moves to the next step in the sequence when a write occurs. The TRACK CV input has been extended to allow ALL tracks to be selected, and unless all tracks are selected, writing via CV inputs is now only done in the currently selected track. A button located in the expansion module allows the writing of CV IN only, CV2 IN only, or both.
+* **CV IN and CV2 IN**: These inputs can be used for programming the sequencer from external sources. The CV2 IN inputs are located in the Foundry **expander module** (this is a separate module labeled \"FOUNDRY-X\"). When a trigger is sent to the WRITE input, the states of the inputs is written into the sequencer at the current step/sequence. Unconnected inputs are ignored. When planning a project, all sequences that are to hold chords must have the same sequence numbers across all tracks. AUTOSTEP automatically moves to the next step in the sequence when a write occurs. The TRACK CV input has been extended to allow ALL tracks to be selected, and unless all tracks are selected, writing via CV inputs is now only done in the currently selected track. A button located in the expander module allows the writing of CV IN only, CV2 IN only, or both.
 
 * **CLK RES / DELAY**: Settings for clock resolution and clock delay. The clock resolution allows [advanced gate types](#advanced-gate-mode-ps) to be used, and functions similarly to that found in the PhraseSequencers. In Foundry however, when using only one clock source, clock resolution also effectively functions as a clock divider, provided the gate types required are compatible with the multiple chosen; clock resolution can thus be used to slow down the clocks of certain tracks compared to others. Clock delay is used to delay the clock of a track by a given number of clock pulses (0 to 99). When clock resolutions above 1 are used, the clock can be delayed by fractions of a step. For example, with a clock resolution of 4 and a clock delay of 1, a track will be delayed by one quarter of a step. A reset must be performed in order for a new clock delay value to take effect. Clock delay should not be used in conjuction with the TKA run modes in sequences and songs.
 
@@ -276,9 +279,9 @@ Here are some further details on the different functions of the sequencer. For a
 	* 4/8: automatically copies 4/8 steps (in SEQ mode) or 4/8 phrases (in SONG mode) starting in the current edit position. 
 	* CUST: copies a user-selectable (custom) number of steps/phrases. The CUST setting, when properly used, allows insert and delete to be performed more efficiently. Using the CUST setting with SEL allows an arbitrary range of steps to be selected: when SEL is turned on, clicking steps to the right of the current position will reduce the length of the selection to the number of steps desired; when SEL is not used, CUST automatically selects all steps from the edit head (cursor) to the end. In SONG mode, copying a custom range of phrases is also a two step process: first move to the start phrase, then press COPY once, and then move to the end phrase and press COPY once more to copy that range of phrases.
 
-* **SEQ# input**: These CV inputs are located in the Foundry **expansion module** (this is a separate module labeled \"FOUNDRY-X\"). Please see [general concepts](#general-concepts) above for more information. In addition to allowing the selection of the sequence in each track, the SYNC SQ# switch, when activated, can be used to defer any selection change until the end of the sequence is reached.
+* **SEQ# input**: These CV inputs are located in the Foundry **expander module** (this is a separate module labeled \"FOUNDRY-X\"). Please see [general concepts](#general-concepts) above for more information. In addition to allowing the selection of the sequence in each track, the SYNC SQ# switch, when activated, can be used to defer any selection change until the end of the sequence is reached.
 
-* **TRACK input**: This CV input is located in the Foundry **expansion module**, and allows the selection of the track number. A 0-10V CV is linearly mapped to the following track selections: A, B, C, D, A\*, B\*, C\*, D\*, where the star denotes that any change will be done across all tracks. This applies to the CV and CV2 inputs as well (see "CV IN and CV2 IN" above).
+* **TRACK input**: This CV input is located in the Foundry **expander module**, and allows the selection of the track number. A 0-10V CV is linearly mapped to the following track selections: A, B, C, D, A\*, B\*, C\*, D\*, where the star denotes that any change will be done across all tracks. This applies to the CV and CV2 inputs as well (see "CV IN and CV2 IN" above).
 
 * **TIED**: Please see [PhraseSeq16](#phrase-seq-16)'s section on [tied steps](#tied-ps).
 
@@ -359,7 +362,7 @@ Gate:  -_ __ __ __
 Step:  s1 s2 s3 s4
 ```
 
-Extra CV inputs are also available via the PhraseSeq **expansion module** (this is a separate module labeled \"PS-X\"). Only the bottom-most input is level sensitive, the other four are trigger inputs. The expansion CV inputs can only be used in Seq mode.
+Extra CV inputs are also available via the PhraseSeq **expander module** (this is a separate module labeled \"PS-X\"). Only the bottom-most input is level sensitive, the other four are trigger inputs. The expander CV inputs can only be used in Seq mode.
 
 
 ### Advanced gate mode<a id="advanced-gate-mode-ps"></a>
@@ -411,7 +414,7 @@ When running in the 2x16 configuration and in Seq mode, the following details be
 1. Only the row corresponding to the edit head's position will be transposed or rotated when the **TRAN/ROT** button is used.
 1. One extra run mode is also available for sequences, called **RN2**. This run mode allows the two sequences to play randomly but separately, as opposed to RND which plays them randomly but together.
 
-Other than these characteristics, the rest of PhraseSeq32's functionality is identical to that of PhraseSeq16, including the use of the expansion module.
+Other than these characteristics, the rest of PhraseSeq32's functionality is identical to that of PhraseSeq16, including the use of the expander module.
 
 ([Back to module list](#modules))
 
@@ -433,7 +436,7 @@ This sequencer also features the song mode found in [PhraseSeq16](#phrase-seq-16
 
 Copy-pasting ALL also copies the run mode and length of a given sequence, along with gate states and probabilities, whereas only gates and probabilities are copied when 4 or ROW are selected. More advanced copy-paste shortcuts are also available when clicking copy in Seq mode and then paste in Song mode (and vice versa); see [cross paste](#cross-paste-gs) below. The **SEQ** CV input, sequence length selection, run **MODES**, **Reset on Run** and **AutoSeq** features are all identical to those found in PhraseSeq16.
 
-Although no **Write** capabilities appear in the main part of the module, automatically storing patterns into the sequencer can be performed using the CV inputs in the GateSeq64 **expansion module** (this is a separate module labeled \"GS-X\"). The cursor is stepped forward on each write, and can be repositioned at the first step by pressing the reset button, or at an arbitrary step by simply clicking that given step. When the cursor is not flashing, clicking any step will make it appear. The Write-gate (full circle) and Write-empty (empty circle) inputs (2nd and 3rd from the bottom) can be used to enter on-gates and off-gates in succession with separate external triggers (buttons). The bottom-most input is used to move the cursor to the left, whereas the Write input at the top can be used to move the cursor to the right when Gate In and Prob are unconnected. When either of these inputs is connected, the values are used to program the sequencer gates and probabilities. The extra CV inputs only have an effect in Seq mode.
+Although no **Write** capabilities appear in the main part of the module, automatically storing patterns into the sequencer can be performed using the CV inputs in the GateSeq64 **expander module** (this is a separate module labeled \"GS-X\"). The cursor is stepped forward on each write, and can be repositioned at the first step by pressing the reset button, or at an arbitrary step by simply clicking that given step. When the cursor is not flashing, clicking any step will make it appear. The Write-gate (full circle) and Write-empty (empty circle) inputs (2nd and 3rd from the bottom) can be used to enter on-gates and off-gates in succession with separate external triggers (buttons). The bottom-most input is used to move the cursor to the left, whereas the Write input at the top can be used to move the cursor to the right when Gate In and Prob are unconnected. When either of these inputs is connected, the values are used to program the sequencer gates and probabilities. The extra CV inputs only have an effect in Seq mode.
 
 
 ### Advanced gate mode<a id="advanced-gate-mode-gs"></a>

@@ -1492,4 +1492,8 @@ Model *modelGateSeq64 = createModel<GateSeq64, GateSeq64Widget>("Gate-Seq-64");
 
 /*CHANGE LOG
 
+1.0.0:
+removed right-click of step buttons to clear gates
+expansion panel replaced by a separate expander module
+
 */

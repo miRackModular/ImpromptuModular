@@ -1058,4 +1058,7 @@ Model *modelClocked = createModel<Clocked, ClockedWidget>("Clocked");
 
 /*CHANGE LOG
 
+1.0.0:
+expansion panel replaced by a separate expander module
+
 */

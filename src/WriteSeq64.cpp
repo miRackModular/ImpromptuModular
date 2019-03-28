@@ -858,4 +858,7 @@ Model *modelWriteSeq64 = createModel<WriteSeq64, WriteSeq64Widget>("Write-Seq-64
 
 /*CHANGE LOG
 
+1.0.0:
+removed right-click of gate button to clear gate
+
 */
