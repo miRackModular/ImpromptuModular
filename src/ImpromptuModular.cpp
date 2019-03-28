@@ -71,6 +71,24 @@ NVGcolor prepareDisplay(NVGcontext *vg, Rect *box, int fontSize) {
 	return textColor;
 }
 
+
+// void InvisibleKeySmall::onButton(const widget::ButtonEvent &e) {
+	// INFO("InvisibleKeySmall::onButton");
+	// if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT && paramQuantity) {// see widget/event.hpp
+		// paramQuantity->getParam()->maxValue = 1.0f;
+	// }
+	// Switch::onButton(e);
+// }
+// void InvisibleKeySmall::onDoubleClick(const widget::DoubleClickEvent &e) {
+	// INFO("InvisibleKeySmall::onDoubleClick");
+	// if (paramQuantity) {
+		// paramQuantity->getParam()->maxValue = 2.0f;
+	// }
+	// // Switch::onDoubleClick(e);
+	// e.consume(this);
+// }
+
+
 void printNote(float cvVal, char* text, bool sharp) {// text must be at least 4 chars long (three displayed chars plus end of string)
 	static const char noteLettersSharp[12] = {'C', 'C', 'D', 'D', 'E', 'F', 'F', 'G', 'G', 'A', 'A', 'B'};
 	static const char noteLettersFlat [12] = {'C', 'D', 'D', 'E', 'E', 'F', 'G', 'G', 'A', 'A', 'B', 'B'};

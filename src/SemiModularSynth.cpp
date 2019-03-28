@@ -1128,8 +1128,8 @@ struct SemiModularSynth : Module {
 									stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
 									editingType = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 									editingGateKeyLight = i;
-									// if (windowIsModPressed())
-										// attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
+									if ((APP->window->getMods() & WINDOW_MOD_MASK) == WINDOW_MOD_CTRL)
+										attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
 								}
 							}
 							else
@@ -1151,8 +1151,8 @@ struct SemiModularSynth : Module {
 							if (params[KEY_PARAMS + i].maxValue > 1.5f) {// if double-click
 								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
 								editingGateKeyLight = i;
-								// if (windowIsModPressed())
-									// cv[seqIndexEdit][stepIndexEdit] = newCV;
+								if ((APP->window->getMods() & WINDOW_MOD_MASK) == WINDOW_MOD_CTRL)
+									cv[seqIndexEdit][stepIndexEdit] = newCV;
 							}
 						}						
 					}

@@ -119,7 +119,8 @@ struct DynamicSVGKnob : app::SvgKnob {
 
 // Tactile pad
 
-struct IMTactile : app::ParamWidget { // Note: double-click initialize doesn't work because onDragMove() gets calls after onDoubleClick()
+struct IMTactile : app::ParamWidget { 
+	// Note: double-click initialize doesn't work in this setup because onDragMove() gets calls after onDoubleClick()
 	float dragY;
 	float dragValue;
 	static const int padWidth = 45;

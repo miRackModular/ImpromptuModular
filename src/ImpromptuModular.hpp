@@ -288,30 +288,20 @@ struct GiantLight2 : BASE {
 
 // Other widgets
 
-struct InvisibleKey : app::SvgSwitch {
+struct InvisibleKey : app::Switch {
 	InvisibleKey() {
 		momentary = true;
 		box.size = Vec(34, 72);
 	}
 };
 
-struct InvisibleKeySmall : app::SvgSwitch {
+struct InvisibleKeySmall : app::Switch {
 	InvisibleKeySmall() {
 		momentary = true;
 		box.size = Vec(23, 38);
 	}
-	void onButton(const widget::ButtonEvent &e) override {
-		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT && paramQuantity) {// see widget/event.hpp
-			paramQuantity->getParam()->maxValue = 1.0f;
-		}
-		SvgSwitch::onButton(e);
-	}
-	void onDoubleClick(const widget::DoubleClickEvent &e) override {
-		if (paramQuantity) {
-			paramQuantity->getParam()->maxValue = 2.0f;
-		}
-		SvgSwitch::onDoubleClick(e);
-	}
+	// void onButton(const widget::ButtonEvent &e) override;
+	// void onDoubleClick(const widget::DoubleClickEvent &e) override;
 };
 
 
