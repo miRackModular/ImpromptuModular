@@ -1639,16 +1639,6 @@ struct FoundryWidget : ModuleWidget {
 			SVGSwitch::onChange(e);		
 		}
 	};
-	struct CKSSHThreeNotify : CKSSHThree {
-		CKSSHThreeNotify() {};
-		void onChange(const widget::ChangeEvent &e) override {
-			if (paramQuantity) {
-				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);
-				module->displayState = Foundry::DISP_NORMAL;
-			}
-			SVGSwitch::onChange(e);		
-		}
-	};
 	struct CPModeSwitch : CKSSThreeInvNoRandom {// Not randomizable
 		CPModeSwitch() {};
 		void onChange(const widget::ChangeEvent &e) override {

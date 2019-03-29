@@ -109,32 +109,14 @@ struct IMPort : DynamicSVGPort {
 // Buttons and switches
 
 struct CKSSNoRandom : CKSS {
-	CKSSNoRandom() {}
 	void randomize() override {}
 };
 
-struct CKSSH : app::SvgSwitch {
-	CKSSH() {
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/CKSSH_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/CKSSH_1.svg")));
-		sw->wrap();
-		box.size = sw->box.size;
-	}
+struct CKSSH : CKSS {
+	CKSSH();
 };
-
 struct CKSSHNoRandom : CKSSH {
-	CKSSHNoRandom() {}
 	void randomize() override {}
-};
-
-struct CKSSHThree : app::SvgSwitch {
-	CKSSHThree() {
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/CKSSHThree_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/CKSSHThree_1.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/comp/CKSSHThree_2.svg")));
-		sw->wrap();
-		box.size = sw->box.size;
-	}
 };
 
 struct CKSSThreeInv : app::SvgSwitch {
@@ -146,7 +128,6 @@ struct CKSSThreeInv : app::SvgSwitch {
 };
 
 struct CKSSThreeInvNoRandom : CKSSThreeInv {
-	CKSSThreeInvNoRandom() {}
 	void randomize() override {}
 };
 

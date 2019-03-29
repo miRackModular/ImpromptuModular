@@ -53,6 +53,24 @@ void init(rack::Plugin *p) {
 
 // Buttons and switches
 
+
+CKSSH::CKSSH() {
+	fb->removeChild(sw);
+	
+	TransformWidget *tw = new TransformWidget();
+	tw->addChild(sw);
+	fb->addChild(tw);
+
+	Vec center = sw->box.getCenter();
+	tw->translate(center);
+	tw->rotate(M_PI/2.0f);
+	tw->translate(Vec(center.y, sw->box.size.x).neg());
+	
+	tw->box.size = sw->box.size.flip();
+	box.size = tw->box.size;
+}
+
+
 LEDBezelBig::LEDBezelBig() {
 	momentary = true;
 	float ratio = 2.13f;
