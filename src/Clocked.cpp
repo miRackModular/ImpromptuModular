@@ -314,15 +314,15 @@ struct Clocked : Module {
 		for (int i = 0; i < 4; i++) {
 			// Pulse Width
 			pulseWidth[i] = params[PW_PARAMS + i].getValue();
-			if (i < 3 && (expanderPresent && !std::isnan(consumerMessage[i]))) {
-				pulseWidth[i] += (consumerMessage[i] / 10.0f) - 0.5f;
+			if (i < 3 && (expanderPresent)) {
+				pulseWidth[i] += (consumerMessage[i] / 10.0f);
 				pulseWidth[i] = clamp(pulseWidth[i], 0.0f, 1.0f);
 			}
 			
 			// Swing
 			swingAmount[i] = params[SWING_PARAMS + i].getValue();
-			if (i < 3 && (expanderPresent && !std::isnan(consumerMessage[i + 4]))) {
-				swingAmount[i] += (consumerMessage[i + 4] / 5.0f) - 1.0f;
+			if (i < 3 && (expanderPresent)) {
+				swingAmount[i] += (consumerMessage[i + 4] / 5.0f);
 				swingAmount[i] = clamp(swingAmount[i], -1.0f, 1.0f);
 			}
 		}
@@ -347,7 +347,7 @@ struct Clocked : Module {
 		rightProducerMessage = producerMessage;
 		rightConsumerMessage = consumerMessage;
 
-		params[RATIO_PARAMS + 0].config((float)(bpmMin), (float)(bpmMax), 120.0f, "Main BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
+		params[RATIO_PARAMS + 0].config((float)(bpmMin), (float)(bpmMax), 120.0f, "Master clock", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");
 		params[RUN_PARAM].config(0.0f, 1.0f, 0.0f, "Run");
 		params[BPMMODE_DOWN_PARAM].config(0.0f, 1.0f, 0.0f, "Bpm mode next");
@@ -500,7 +500,7 @@ struct Clocked : Module {
 	}		
 	
 
-	void process(const ProcessArgs &args) override {	
+	void process(const ProcessArgs &args) override {
 		// Scheduled reset
 		if (scheduledReset) {
 			resetClocked(false);		
@@ -1060,5 +1060,6 @@ Model *modelClocked = createModel<Clocked, ClockedWidget>("Clocked");
 
 1.0.0:
 expansion panel replaced by a separate expander module
+change cv levels in expansion panel (now 0V for no effect instead of 5V)
 
 */

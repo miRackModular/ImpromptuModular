@@ -184,6 +184,7 @@ struct SemiModularSynth : Module {
 	bool autoseq;
 	bool autostepLen;
 	bool holdTiedNotes;
+	int seqCVmethod;// 0 is 0-10V, 1 is C4-D5#, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
 	SeqAttributes sequences[16];
@@ -273,6 +274,7 @@ struct SemiModularSynth : Module {
 	Trigger stepTriggers[16];
 	Trigger keyNoteTrigger;
 	Trigger keyGateTrigger;
+	Trigger seqCVTrigger;
 	HoldDetect modeHoldDetect;
 	
 	
@@ -334,7 +336,7 @@ struct SemiModularSynth : Module {
 		params[SLIDE_KNOB_PARAM].config(0.0f, 2.0f, 0.2f, "Slide rate");
 		params[AUTOSTEP_PARAM].config(0.0f, 1.0f, 1.0f, "Autostep");		
 		
-		params[VCO_FREQ_PARAM].config(-54.0f, 54.0f, 0.0f, "VCO freq", "Hz", std::pow(2, 1/12.f), dsp::FREQ_C4);
+		params[VCO_FREQ_PARAM].config(-54.0f, 54.0f, 0.0f, "VCO freq", " Hz", std::pow(2, 1/12.f), dsp::FREQ_C4);// https://community.vcvrack.com/t/rack-v1-development-blog/1149/230
 		params[VCO_FINE_PARAM].config(-1.0f, 1.0f, 0.0f, "VCO freq fine");
 		params[VCO_PW_PARAM].config(0.0f, 1.0f, 0.5f, "VCO pulse width", "%", 0.f, 100.f);
 		params[VCO_FM_PARAM].config(0.0f, 1.0f, 0.0f, "VCO FM");
@@ -342,7 +344,7 @@ struct SemiModularSynth : Module {
 		params[VCO_MODE_PARAM].config(0.0f, 1.0f, 1.0f, "VCO mode");
 		params[VCO_OCT_PARAM].config(-2.0f, 2.0f, 0.0f, "VCO octave");
 		
-		params[CLK_FREQ_PARAM].config(-2.0f, 4.0f, 1.0f, "CLK freq");// 120 BMP when default value
+		params[CLK_FREQ_PARAM].config(-2.0f, 4.0f, 1.0f, "CLK freq", " BPM", 2.0f, 60.0f);// 120 BMP when default value  (120 = 60*2^1) diplay params are: base, mult, offset
 		params[CLK_PW_PARAM].config(0.0f, 1.0f, 0.5f, "CLK PW");
 		
 		params[VCA_LEVEL1_PARAM].config(0.0f, 1.0f, 1.0f, "VCA level");
@@ -383,6 +385,7 @@ struct SemiModularSynth : Module {
 		autoseq = false;
 		autostepLen = false;
 		holdTiedNotes = true;
+		seqCVmethod = 0;
 		pulsesPerStep = 1;
 		running = true;
 		runModeSong = MODE_FWD;
@@ -477,6 +480,9 @@ struct SemiModularSynth : Module {
 		// holdTiedNotes
 		json_object_set_new(rootJ, "holdTiedNotes", json_boolean(holdTiedNotes));
 		
+		// seqCVmethod
+		json_object_set_new(rootJ, "seqCVmethod", json_integer(seqCVmethod));
+
 		// pulsesPerStep
 		json_object_set_new(rootJ, "pulsesPerStep", json_integer(pulsesPerStep));
 
@@ -560,6 +566,11 @@ struct SemiModularSynth : Module {
 		else
 			holdTiedNotes = false;// legacy
 		
+		// seqCVmethod
+		json_t *seqCVmethodJ = json_object_get(rootJ, "seqCVmethod");
+		if (seqCVmethodJ)
+			seqCVmethod = json_integer_value(seqCVmethodJ);
+
 		// pulsesPerStep
 		json_t *pulsesPerStepJ = json_object_get(rootJ, "pulsesPerStep");
 		if (pulsesPerStepJ)
@@ -778,7 +789,18 @@ struct SemiModularSynth : Module {
 
 			// Seq CV input
 			if (inputs[SEQCV_INPUT].isConnected()) {
-				seqIndexEdit = (int) clamp( round(inputs[SEQCV_INPUT].getVoltage() * (16.0f - 1.0f) / 10.0f), 0.0f, (16.0f - 1.0f) );
+				if (seqCVmethod == 0) {// 0-10 V
+					int newSeq = (int)( inputs[SEQCV_INPUT].getVoltage() * (16.0f - 1.0f) / 10.0f + 0.5f );
+					seqIndexEdit = clamp(newSeq, 0, 16 - 1);
+				}
+				else if (seqCVmethod == 1) {// C4-D5#
+					int newSeq = (int)( (inputs[SEQCV_INPUT].getVoltage()) * 12.0f + 0.5f );
+					seqIndexEdit = clamp(newSeq, 0, 16 - 1);
+				}
+				else {// TrigIncr
+					if (seqCVTrigger.process(inputs[SEQCV_INPUT].getVoltage()))
+						seqIndexEdit = clamp(seqIndexEdit + 1, 0, 16 - 1);
+				}	
 			}
 			
 			// Attach button
@@ -1274,6 +1296,8 @@ struct SemiModularSynth : Module {
 			initRun();// must be after sequence reset
 			resetLight = 1.0f;
 			displayState = DISP_NORMAL;
+			if (inputs[SEQCV_INPUT].isConnected() && seqCVmethod == 2)
+				seqIndexEdit = 0;
 		}
 		
 		
@@ -1855,7 +1879,22 @@ struct SemiModularSynthWidget : ModuleWidget {
 			module->holdTiedNotes = !module->holdTiedNotes;
 		}
 	};
-	void appendContextMenu(Menu *menu) override {
+	struct SeqCVmethodItem : MenuItem {
+		SemiModularSynth *module;
+		void onAction(const widget::ActionEvent &e) override {
+			module->seqCVmethod++;
+			if (module->seqCVmethod > 2)
+				module->seqCVmethod = 0;
+		}
+		void step() override {
+			if (module->seqCVmethod == 0)
+				text = "Seq CV in: <0-10V>,  C4-D5#,  Trig-Incr";
+			else if (module->seqCVmethod == 1)
+				text = "Seq CV in: 0-10V,  <C4-D5#>,  Trig-Incr";
+			else
+				text = "Seq CV in: 0-10V,  C4-D5#,  <Trig-Incr>";
+		}	
+	};	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
 
@@ -1899,6 +1938,10 @@ struct SemiModularSynthWidget : ModuleWidget {
 		HoldTiedItem *holdItem = createMenuItem<HoldTiedItem>("Hold tied notes", CHECKMARK(module->holdTiedNotes));
 		holdItem->module = module;
 		menu->addChild(holdItem);
+
+		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in: ", "");
+		seqcvItem->module = module;
+		menu->addChild(seqcvItem);
 	}	
 	
 	struct SequenceKnob : IMBigKnobInf {
