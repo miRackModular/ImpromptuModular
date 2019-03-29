@@ -1905,11 +1905,11 @@ struct SemiModularSynthWidget : ModuleWidget {
 		themeLabel->text = "Panel Theme";
 		menu->addChild(themeLabel);
 
-		PanelThemeItem *classicItem = new PanelThemeItem();
-		classicItem->text = lightPanelID;// ImpromptuModular.hpp
-		classicItem->module = module;
-		classicItem->panelTheme = 0;
-		menu->addChild(classicItem);
+		PanelThemeItem *lightItem = new PanelThemeItem();
+		lightItem->text = lightPanelID;// ImpromptuModular.hpp
+		lightItem->module = module;
+		lightItem->panelTheme = 0;
+		menu->addChild(lightItem);
 
 		PanelThemeItem *darkItem = new PanelThemeItem();
 		darkItem->text = darkPanelID;// ImpromptuModular.hpp

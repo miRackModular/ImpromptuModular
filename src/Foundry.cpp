@@ -96,7 +96,7 @@ struct Foundry : Module {
 	static constexpr float warningTime = 0.7f;// seconds
 
 	// Need to save
-	int panelTheme = 0;// 0 = classic, 1 = metal (deprected), 2 = dark
+	int panelTheme = 0;// 0 = classic, 1 = dark
 	int expansion = 0;
 	int velocityMode;
 	bool velocityBipol;

@@ -722,7 +722,7 @@ struct PhraseSeq32 : Module {
 			if (attachedTrigger.process(params[ATTACH_PARAM].getValue())) {
 				attached = !attached;
 				if (running && attached && editingSequence && stepConfig == 1 ) 
-					attachedChanB = stepIndexEdit >= 16;
+					attachedChanB = (stepIndexEdit >= 16);
 				displayState = DISP_NORMAL;			
 			}
 			if (running && attached) {
