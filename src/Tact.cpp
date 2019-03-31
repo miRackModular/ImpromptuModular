@@ -71,18 +71,18 @@ struct Tact : Module {
 	Tact() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		params[TACT_PARAMS + 1].config(-1.0f, 11.0f, 0.0f, "Tact pad (right)");
-		params[TACT_PARAMS + 0].config(-1.0f, 11.0f, 0.0f, "Tact pad (left)");
-		params[SLIDE_PARAMS + 0].config(0.0f, 1.0f, 0.0f, "Slide (left)");		
-		params[SLIDE_PARAMS + 1].config(0.0f, 1.0f, 0.0f, "Slide (right)");		
-		params[STORE_PARAMS + 0].config(0.0f, 1.0f, 0.0f, "Store (left)");
-		params[STORE_PARAMS + 1].config(0.0f, 1.0f, 0.0f, "Store (right)");
-		params[ATTV_PARAMS + 0].config(-1.0f, 1.0f, 1.0f, "Attenuverter (left)");
-		params[ATTV_PARAMS + 1].config(-1.0f, 1.0f, 1.0f, "Attenuverter (right)");
-		params[RATE_PARAMS + 0].config(0.0f, 4.0f, 0.2f, "Rate (left)");
-		params[RATE_PARAMS + 1].config(0.0f, 4.0f, 0.2f, "Rate (right)");
-		params[EXP_PARAM].config(0.0f, 1.0f, 0.0f, "Exponential");			
-		params[LINK_PARAM].config(0.0f, 1.0f, 0.0f, "Link");		
+		configParam(TACT_PARAMS + 1, -1.0f, 11.0f, 0.0f, "Tact pad (right)");
+		configParam(TACT_PARAMS + 0, -1.0f, 11.0f, 0.0f, "Tact pad (left)");
+		configParam(SLIDE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Slide (left)");		
+		configParam(SLIDE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Slide (right)");		
+		configParam(STORE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Store (left)");
+		configParam(STORE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Store (right)");
+		configParam(ATTV_PARAMS + 0, -1.0f, 1.0f, 1.0f, "Attenuverter (left)");
+		configParam(ATTV_PARAMS + 1, -1.0f, 1.0f, 1.0f, "Attenuverter (right)");
+		configParam(RATE_PARAMS + 0, 0.0f, 4.0f, 0.2f, "Rate (left)");
+		configParam(RATE_PARAMS + 1, 0.0f, 4.0f, 0.2f, "Rate (right)");
+		configParam(EXP_PARAM, 0.0f, 1.0f, 0.0f, "Exponential");			
+		configParam(LINK_PARAM, 0.0f, 1.0f, 0.0f, "Link");		
 		
 		onReset();
 	}
@@ -573,10 +573,10 @@ struct Tact1 : Module {
 	Tact1() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		params[TACT_PARAM].config(-1.0f, 11.0f, 0.0f, "Tact pad");
-		params[ATTV_PARAM].config(-1.0f, 1.0f, 1.0f, "Attenuverter");
-		params[RATE_PARAM].config(0.0f, 4.0f, 0.2f, "Rate");
-		params[EXP_PARAM].config(0.0f, 1.0f, 0.0f, "Exponential");			
+		configParam(TACT_PARAM, -1.0f, 11.0f, 0.0f, "Tact pad");
+		configParam(ATTV_PARAM, -1.0f, 1.0f, 1.0f, "Attenuverter");
+		configParam(RATE_PARAM, 0.0f, 4.0f, 0.2f, "Rate");
+		configParam(EXP_PARAM, 0.0f, 1.0f, 0.0f, "Exponential");			
 		
 		onReset();
 	}

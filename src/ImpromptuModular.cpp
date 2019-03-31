@@ -105,13 +105,13 @@ LEDBezelBig::LEDBezelBig() {
 
 void InvisibleKeySmall::onButton(const ButtonEvent &e) {
 	if (e.action == GLFW_PRESS && paramQuantity) {
-		paramQuantity->getParam()->maxValue = 1.0f;
+		paramQuantity->maxValue = 1.0f;
 	}
 	Switch::onButton(e);
 }
 void InvisibleKeySmall::onDoubleClick(const DoubleClickEvent &e) {
 	if (paramQuantity) {
-		paramQuantity->getParam()->maxValue = 2.0f;
+		paramQuantity->maxValue = 2.0f;
 	}
 	Switch::onDoubleClick(e);
 }

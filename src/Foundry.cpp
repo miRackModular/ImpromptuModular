@@ -183,56 +183,56 @@ struct Foundry : Module {
 		for (int x = 0; x < numX; x++) {
 			// First row
 			snprintf(strBuf, 32, "Step %i", x + 1);
-			params[STEP_PHRASE_PARAMS + x].config(0.0f, 1.0f, 0.0f, strBuf);
+			configParam(STEP_PHRASE_PARAMS + x, 0.0f, 1.0f, 0.0f, strBuf);
 			// Second row
 			snprintf(strBuf, 32, "Step %i", x + numX + 1);
-			params[STEP_PHRASE_PARAMS + x + numX].config(0.0f, 1.0f, 0.0f, strBuf);
+			configParam(STEP_PHRASE_PARAMS + x + numX, 0.0f, 1.0f, 0.0f, strBuf);
 		}
-		params[SEL_PARAM].config(0.0f, 1.0f, 0.0f, "Select multi steps");
-		params[CPMODE_PARAM].config(0.0f, 2.0f, 0.0f, "Copy-paste mode");	// 0.0f is top position
-		params[EDIT_PARAM].config(0.0f, 1.0f, 1.0f, "Seq/song mode");// 1.0f is top position
+		configParam(SEL_PARAM, 0.0f, 1.0f, 0.0f, "Select multi steps");
+		configParam(CPMODE_PARAM, 0.0f, 2.0f, 0.0f, "Copy-paste mode");	// 0.0f is top position
+		configParam(EDIT_PARAM, 0.0f, 1.0f, 1.0f, "Seq/song mode");// 1.0f is top position
 		for (int i = 0; i < 7; i++) {
 			snprintf(strBuf, 32, "Octave %i", i + 1);
-			params[OCTAVE_PARAM + i].config(0.0f, 1.0f, 0.0f, strBuf);
+			configParam(OCTAVE_PARAM + i, 0.0f, 1.0f, 0.0f, strBuf);
 		}
-		params[KEY_PARAMS + 1].config(0.0, 1.0, 0.0, "C# key");
-		params[KEY_PARAMS + 3].config(0.0, 1.0, 0.0, "D# key");
-		params[KEY_PARAMS + 6].config(0.0, 1.0, 0.0, "F# key");
-		params[KEY_PARAMS + 8].config(0.0, 1.0, 0.0, "G# key");
-		params[KEY_PARAMS + 10].config(0.0, 1.0, 0.0, "A# key");
+		configParam(KEY_PARAMS + 1, 0.0, 1.0, 0.0, "C# key");
+		configParam(KEY_PARAMS + 3, 0.0, 1.0, 0.0, "D# key");
+		configParam(KEY_PARAMS + 6, 0.0, 1.0, 0.0, "F# key");
+		configParam(KEY_PARAMS + 8, 0.0, 1.0, 0.0, "G# key");
+		configParam(KEY_PARAMS + 10, 0.0, 1.0, 0.0, "A# key");
 
-		params[KEY_PARAMS + 0].config(0.0, 1.0, 0.0, "C key");
-		params[KEY_PARAMS + 2].config(0.0, 1.0, 0.0, "D key");
-		params[KEY_PARAMS + 4].config(0.0, 1.0, 0.0, "E key");
-		params[KEY_PARAMS + 5].config(0.0, 1.0, 0.0, "F key");
-		params[KEY_PARAMS + 7].config(0.0, 1.0, 0.0, "G key");
-		params[KEY_PARAMS + 9].config(0.0, 1.0, 0.0, "A key");
-		params[KEY_PARAMS + 11].config(0.0, 1.0, 0.0, "B key");
+		configParam(KEY_PARAMS + 0, 0.0, 1.0, 0.0, "C key");
+		configParam(KEY_PARAMS + 2, 0.0, 1.0, 0.0, "D key");
+		configParam(KEY_PARAMS + 4, 0.0, 1.0, 0.0, "E key");
+		configParam(KEY_PARAMS + 5, 0.0, 1.0, 0.0, "F key");
+		configParam(KEY_PARAMS + 7, 0.0, 1.0, 0.0, "G key");
+		configParam(KEY_PARAMS + 9, 0.0, 1.0, 0.0, "A key");
+		configParam(KEY_PARAMS + 11, 0.0, 1.0, 0.0, "B key");
 
-		params[VEL_KNOB_PARAM].config(-INFINITY, INFINITY, 0.0f, "CV2/p/r knob");	
-		params[VEL_EDIT_PARAM].config(0.0f, 1.0f, 0.0f, "CV2/p/r select");
-		params[SEQUENCE_PARAM].config(-INFINITY, INFINITY, 0.0f, "Sequence");		
-		params[TRAN_ROT_PARAM].config(0.0f, 1.0f, 0.0f, "Transpose / rotate");
-		params[PHRASE_PARAM].config(-INFINITY, INFINITY, 0.0f, "Phrase");		
-		params[BEGIN_PARAM].config(0.0f, 1.0f, 0.0f, "Begin");
-		params[END_PARAM].config(0.0f, 1.0f, 0.0f, "End");
-		params[TRACKUP_PARAM].config(0.0f, 1.0f, 0.0f, "Track next");
-		params[TRACKDOWN_PARAM].config(0.0f, 1.0f, 0.0f, "Track prev");
-		params[ALLTRACKS_PARAM].config(0.0f, 1.0f, 0.0f, "All tracks");
-		params[COPY_PARAM].config(0.0f, 1.0f, 0.0f, "Copy");
-		params[PASTE_PARAM].config(0.0f, 1.0f, 0.0f, "Paste");
-		params[ATTACH_PARAM].config(0.0f, 1.0f, 0.0f, "Attach");
-		params[KEY_GATE_PARAM].config(0.0f, 1.0f, 1.0f, "Keyboard mode");
-		params[GATE_PARAM].config(0.0f, 1.0f, 0.0f, "Gate");
-		params[TIE_PARAM].config(0.0f, 1.0f, 0.0f, "Tied");
-		params[GATE_PROB_PARAM].config(0.0f, 1.0f, 0.0f, "Gate probability");
-		params[SLIDE_BTN_PARAM].config(0.0f, 1.0f, 0.0f, "CV Slide");
-		params[MODE_PARAM].config(0.0f, 1.0f, 0.0f, "Run mode");
-		params[REP_LEN_PARAM].config(0.0f, 1.0f, 0.0f, "Repetition / length");
-		params[CLKRES_PARAM].config(0.0f, 1.0f, 0.0f, "Clock resolution / delay");
-		params[RUN_PARAM].config(0.0f, 1.0f, 0.0f, "Run");
-		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");
-		params[AUTOSTEP_PARAM].config(0.0f, 1.0f, 1.0f, "Autostep");		
+		configParam(VEL_KNOB_PARAM, -INFINITY, INFINITY, 0.0f, "CV2/p/r knob");	
+		configParam(VEL_EDIT_PARAM, 0.0f, 1.0f, 0.0f, "CV2/p/r select");
+		configParam(SEQUENCE_PARAM, -INFINITY, INFINITY, 0.0f, "Sequence");		
+		configParam(TRAN_ROT_PARAM, 0.0f, 1.0f, 0.0f, "Transpose / rotate");
+		configParam(PHRASE_PARAM, -INFINITY, INFINITY, 0.0f, "Phrase");		
+		configParam(BEGIN_PARAM, 0.0f, 1.0f, 0.0f, "Begin");
+		configParam(END_PARAM, 0.0f, 1.0f, 0.0f, "End");
+		configParam(TRACKUP_PARAM, 0.0f, 1.0f, 0.0f, "Track next");
+		configParam(TRACKDOWN_PARAM, 0.0f, 1.0f, 0.0f, "Track prev");
+		configParam(ALLTRACKS_PARAM, 0.0f, 1.0f, 0.0f, "All tracks");
+		configParam(COPY_PARAM, 0.0f, 1.0f, 0.0f, "Copy");
+		configParam(PASTE_PARAM, 0.0f, 1.0f, 0.0f, "Paste");
+		configParam(ATTACH_PARAM, 0.0f, 1.0f, 0.0f, "Attach");
+		configParam(KEY_GATE_PARAM, 0.0f, 1.0f, 1.0f, "Keyboard mode");
+		configParam(GATE_PARAM, 0.0f, 1.0f, 0.0f, "Gate");
+		configParam(TIE_PARAM, 0.0f, 1.0f, 0.0f, "Tied");
+		configParam(GATE_PROB_PARAM, 0.0f, 1.0f, 0.0f, "Gate probability");
+		configParam(SLIDE_BTN_PARAM, 0.0f, 1.0f, 0.0f, "CV Slide");
+		configParam(MODE_PARAM, 0.0f, 1.0f, 0.0f, "Run mode");
+		configParam(REP_LEN_PARAM, 0.0f, 1.0f, 0.0f, "Repetition / length");
+		configParam(CLKRES_PARAM, 0.0f, 1.0f, 0.0f, "Clock resolution / delay");
+		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");
+		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
+		configParam(AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f, "Autostep");		
 		
 		seq.construct(&holdTiedNotes, &velocityMode);
 		onReset();
@@ -878,7 +878,7 @@ struct Foundry : Module {
 				if (keyTriggers[keyn].process(params[KEY_PARAMS + keyn].getValue())) {
 					if (editingSequence) {
 						displayState = DISP_NORMAL;
-						bool autostepClick = params[KEY_PARAMS + keyn].maxValue > 1.5f;// if double-click
+						bool autostepClick = paramQuantities[KEY_PARAMS + keyn]->getMaxValue() > 1.5f;// if double-click
 						if (isEditingGates()) {
 							if (!seq.setGateType(keyn, multiSteps ? cpSeqLength : 1, sampleRate, autostepClick, multiTracks))
 								displayState = DISP_PPQN;

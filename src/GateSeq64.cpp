@@ -180,26 +180,26 @@ struct GateSeq64 : Module {
 		for (int y = 0; y < 4; y++) {
 			for (int x = 0; x < 16; x++) {
 				snprintf(strBuf, 32, "Step/phrase %i", y * 16 + x + 1);
-				params[STEP_PARAMS + y * 16 + x].config(0.0f, 1.0f, 0.0f, strBuf);
+				configParam(STEP_PARAMS + y * 16 + x, 0.0f, 1.0f, 0.0f, strBuf);
 			}
 		}
-		params[GMODE_PARAMS + 2].config(0.0f, 1.0f, 0.0f, "Gate type 3");
-		params[GMODE_PARAMS + 1].config(0.0f, 1.0f, 0.0f, "Gate type 2");
-		params[GMODE_PARAMS + 0].config(0.0f, 1.0f, 0.0f, "Gate type 1");
+		configParam(GMODE_PARAMS + 2, 0.0f, 1.0f, 0.0f, "Gate type 3");
+		configParam(GMODE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Gate type 2");
+		configParam(GMODE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Gate type 1");
 		for (int x = 1; x < 6; x++) {
 			snprintf(strBuf, 32, "Gate type %i", 2 + x + 1);
-			params[GMODE_PARAMS + 2 + x].config(0.0f, 1.0f, 0.0f, strBuf);
+			configParam(GMODE_PARAMS + 2 + x, 0.0f, 1.0f, 0.0f, strBuf);
 		}
-		params[PROB_PARAM].config(0.0f, 1.0f, 0.0f, "Probability");
-		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");
-		params[SEQUENCE_PARAM].config(-INFINITY, INFINITY, 0.0f, "Sequence");		
-		params[RUN_PARAM].config(0.0f, 1.0f, 0.0f, "Run");
-		params[MODES_PARAM].config(0.0f, 1.0f, 0.0f, "Length / run mode");
-		params[COPY_PARAM].config(0.0f, 1.0f, 0.0f, "Copy");
-		params[PASTE_PARAM].config(0.0f, 1.0f, 0.0f, "Paste");
-		params[EDIT_PARAM].config(0.0f, 1.0f, 1.0f, "Seq/song mode");
-		params[CONFIG_PARAM].config(0.0f, 2.0f, CONFIG_PARAM_INIT_VALUE, "Configuration (1, 2, 4 chan)");// 0.0f is top position
-		params[CPMODE_PARAM].config(0.0f, 2.0f, 2.0f, "Copy-paste mode");		
+		configParam(PROB_PARAM, 0.0f, 1.0f, 0.0f, "Probability");
+		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
+		configParam(SEQUENCE_PARAM, -INFINITY, INFINITY, 0.0f, "Sequence");		
+		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");
+		configParam(MODES_PARAM, 0.0f, 1.0f, 0.0f, "Length / run mode");
+		configParam(COPY_PARAM, 0.0f, 1.0f, 0.0f, "Copy");
+		configParam(PASTE_PARAM, 0.0f, 1.0f, 0.0f, "Paste");
+		configParam(EDIT_PARAM, 0.0f, 1.0f, 1.0f, "Seq/song mode");
+		configParam(CONFIG_PARAM, 0.0f, 2.0f, CONFIG_PARAM_INIT_VALUE, "Configuration (1, 2, 4 chan)");// 0.0f is top position
+		configParam(CPMODE_PARAM, 0.0f, 2.0f, 2.0f, "Copy-paste mode");		
 		
 		for (int i = 0; i < MAX_SEQS; i++)
 			seqAttribBuffer[i].init(16, MODE_FWD);
@@ -726,12 +726,8 @@ struct GateSeq64 : Module {
 					}
 					else if (displayState == DISP_MODES) {
 					}
-					else {
-						// if (params[STEP_PARAMS + stepPressed].getValue() > 1.5f) {// right button click
-							// attributes[sequence][stepPressed].setGate(false);
-							// displayProbInfo = 0l;
-						// }
-						// else 
+					else {						
+						// version 1
 						if (!attributes[sequence][stepPressed].getGate()) {// clicked inactive, so turn gate on
 							attributes[sequence][stepPressed].setGate(true);
 							if (attributes[sequence][stepPressed].getGateP())
@@ -751,6 +747,20 @@ struct GateSeq64 : Module {
 									displayProbInfo = 0l;
 							}
 						}
+						
+						// version 2
+						/*if (!attributes[sequence][stepPressed].getGate()) {// clicked inactive, so turn gate on
+							attributes[sequence][stepPressed].setGate(true);
+							if (attributes[sequence][stepPressed].getGateP())
+								displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+							else
+								displayProbInfo = 0l;
+						}
+						else {// clicked active
+							attributes[sequence][stepPressed].setGate(false);
+							displayProbInfo = 0l;
+						}	*/					
+						
 						stepIndexEdit = stepPressed;
 					}
 					blinkNum = blinkNumInit;
@@ -791,6 +801,8 @@ struct GateSeq64 : Module {
 			// Prob button
 			if (probTrigger.process(params[PROB_PARAM].getValue())) {
 				blinkNum = blinkNumInit;
+				
+				// version 1
 				if (editingSequence && attributes[sequence][stepIndexEdit].getGate()) {
 					if (attributes[sequence][stepIndexEdit].getGateP()) {
 						displayProbInfo = 0l;
@@ -801,6 +813,26 @@ struct GateSeq64 : Module {
 						attributes[sequence][stepIndexEdit].setGateP(true);
 					}
 				}
+				
+				// version 2
+				/*if (editingSequence) {
+					if (attributes[sequence][stepIndexEdit].getGate()) {// gate is on and pressed gatep
+						if (attributes[sequence][stepIndexEdit].getGateP()) {
+							displayProbInfo = 0l;
+							attributes[sequence][stepIndexEdit].setGateP(false);
+						}
+						else {
+							displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+							attributes[sequence][stepIndexEdit].setGateP(true);							
+						}
+					}
+					else {// gate is off and pressed gatep button
+						attributes[sequence][stepIndexEdit].setGate(true);
+						displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+						attributes[sequence][stepIndexEdit].setGateP(true);
+					}
+				}*/
+				
 			}
 			
 			// GateMode buttons

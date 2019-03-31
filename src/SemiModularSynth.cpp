@@ -292,76 +292,76 @@ struct SemiModularSynth : Module {
 		char strBuf[32];
 		for (int x = 0; x < 16; x++) {
 			snprintf(strBuf, 32, "Step/phrase %i", x + 1);
-			params[STEP_PHRASE_PARAMS + x].config(0.0f, 1.0f, 0.0f, strBuf);
+			configParam(STEP_PHRASE_PARAMS + x, 0.0f, 1.0f, 0.0f, strBuf);
 		}
-		params[ATTACH_PARAM].config(0.0f, 1.0f, 0.0f, "Attach");
-		params[KEYNOTE_PARAM].config(0.0f, 1.0f, 0.0f, "Keyboard note mode");
-		params[KEYGATE_PARAM].config(0.0f, 1.0f, 0.0f, "Keyboard gate-type mode");
+		configParam(ATTACH_PARAM, 0.0f, 1.0f, 0.0f, "Attach");
+		configParam(KEYNOTE_PARAM, 0.0f, 1.0f, 0.0f, "Keyboard note mode");
+		configParam(KEYGATE_PARAM, 0.0f, 1.0f, 0.0f, "Keyboard gate-type mode");
 		for (int i = 0; i < 7; i++) {
 			snprintf(strBuf, 32, "Octave %i", i + 1);
-			params[OCTAVE_PARAM + i].config(0.0f, 1.0f, 0.0f, strBuf);
+			configParam(OCTAVE_PARAM + i, 0.0f, 1.0f, 0.0f, strBuf);
 		}
-		params[KEY_PARAMS + 1].config(0.0, 1.0, 0.0, "C# key");
-		params[KEY_PARAMS + 3].config(0.0, 1.0, 0.0, "D# key");
-		params[KEY_PARAMS + 6].config(0.0, 1.0, 0.0, "F# key");
-		params[KEY_PARAMS + 8].config(0.0, 1.0, 0.0, "G# key");
-		params[KEY_PARAMS + 10].config(0.0, 1.0, 0.0, "A# key");
+		configParam(KEY_PARAMS + 1, 0.0, 1.0, 0.0, "C# key");
+		configParam(KEY_PARAMS + 3, 0.0, 1.0, 0.0, "D# key");
+		configParam(KEY_PARAMS + 6, 0.0, 1.0, 0.0, "F# key");
+		configParam(KEY_PARAMS + 8, 0.0, 1.0, 0.0, "G# key");
+		configParam(KEY_PARAMS + 10, 0.0, 1.0, 0.0, "A# key");
 
-		params[KEY_PARAMS + 0].config(0.0, 1.0, 0.0, "C key");
-		params[KEY_PARAMS + 2].config(0.0, 1.0, 0.0, "D key");
-		params[KEY_PARAMS + 4].config(0.0, 1.0, 0.0, "E key");
-		params[KEY_PARAMS + 5].config(0.0, 1.0, 0.0, "F key");
-		params[KEY_PARAMS + 7].config(0.0, 1.0, 0.0, "G key");
-		params[KEY_PARAMS + 9].config(0.0, 1.0, 0.0, "A key");
-		params[KEY_PARAMS + 11].config(0.0, 1.0, 0.0, "B key");
+		configParam(KEY_PARAMS + 0, 0.0, 1.0, 0.0, "C key");
+		configParam(KEY_PARAMS + 2, 0.0, 1.0, 0.0, "D key");
+		configParam(KEY_PARAMS + 4, 0.0, 1.0, 0.0, "E key");
+		configParam(KEY_PARAMS + 5, 0.0, 1.0, 0.0, "F key");
+		configParam(KEY_PARAMS + 7, 0.0, 1.0, 0.0, "G key");
+		configParam(KEY_PARAMS + 9, 0.0, 1.0, 0.0, "A key");
+		configParam(KEY_PARAMS + 11, 0.0, 1.0, 0.0, "B key");
 		
-		params[EDIT_PARAM].config(0.0f, 1.0f, 1.0f, "Seq/song mode");
-		params[RUNMODE_PARAM].config(0.0f, 1.0f, 0.0f, "Length / run mode");
-		params[RUN_PARAM].config(0.0f, 1.0f, 0.0f, "Run");
-		params[SEQUENCE_PARAM].config(-INFINITY, INFINITY, 0.0f, "Sequence");		
-		params[TRAN_ROT_PARAM].config(0.0f, 1.0f, 0.0f, "Transpose / rotate");
+		configParam(EDIT_PARAM, 0.0f, 1.0f, 1.0f, "Seq/song mode");
+		configParam(RUNMODE_PARAM, 0.0f, 1.0f, 0.0f, "Length / run mode");
+		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");
+		configParam(SEQUENCE_PARAM, -INFINITY, INFINITY, 0.0f, "Sequence");		
+		configParam(TRAN_ROT_PARAM, 0.0f, 1.0f, 0.0f, "Transpose / rotate");
 		
-		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");
-		params[COPY_PARAM].config(0.0f, 1.0f, 0.0f, "Copy");
-		params[PASTE_PARAM].config(0.0f, 1.0f, 0.0f, "Paste");
-		params[CPMODE_PARAM].config(0.0f, 2.0f, 2.0f, "Copy-paste mode");	// 0.0f is top position
+		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
+		configParam(COPY_PARAM, 0.0f, 1.0f, 0.0f, "Copy");
+		configParam(PASTE_PARAM, 0.0f, 1.0f, 0.0f, "Paste");
+		configParam(CPMODE_PARAM, 0.0f, 2.0f, 2.0f, "Copy-paste mode");	// 0.0f is top position
 
-		params[GATE1_PARAM].config(0.0f, 1.0f, 0.0f, "Gate 1");
-		params[GATE2_PARAM].config(0.0f, 1.0f, 0.0f, "Gate 2");
-		params[TIE_PARAM].config(0.0f, 1.0f, 0.0f, "Tied");
+		configParam(GATE1_PARAM, 0.0f, 1.0f, 0.0f, "Gate 1");
+		configParam(GATE2_PARAM, 0.0f, 1.0f, 0.0f, "Gate 2");
+		configParam(TIE_PARAM, 0.0f, 1.0f, 0.0f, "Tied");
 
-		params[GATE1_PROB_PARAM].config(0.0f, 1.0f, 0.0f, "Gate 1 probability");
-		params[GATE1_KNOB_PARAM].config(0.0f, 1.0f, 1.0f, "Probability");
-		params[SLIDE_BTN_PARAM].config(0.0f, 1.0f, 0.0f, "CV slide");
-		params[SLIDE_KNOB_PARAM].config(0.0f, 2.0f, 0.2f, "Slide rate");
-		params[AUTOSTEP_PARAM].config(0.0f, 1.0f, 1.0f, "Autostep");		
+		configParam(GATE1_PROB_PARAM, 0.0f, 1.0f, 0.0f, "Gate 1 probability");
+		configParam(GATE1_KNOB_PARAM, 0.0f, 1.0f, 1.0f, "Probability");
+		configParam(SLIDE_BTN_PARAM, 0.0f, 1.0f, 0.0f, "CV slide");
+		configParam(SLIDE_KNOB_PARAM, 0.0f, 2.0f, 0.2f, "Slide rate");
+		configParam(AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f, "Autostep");		
 		
-		params[VCO_FREQ_PARAM].config(-54.0f, 54.0f, 0.0f, "VCO freq", " Hz", std::pow(2, 1/12.f), dsp::FREQ_C4);// https://community.vcvrack.com/t/rack-v1-development-blog/1149/230
-		params[VCO_FINE_PARAM].config(-1.0f, 1.0f, 0.0f, "VCO freq fine");
-		params[VCO_PW_PARAM].config(0.0f, 1.0f, 0.5f, "VCO pulse width", "%", 0.f, 100.f);
-		params[VCO_FM_PARAM].config(0.0f, 1.0f, 0.0f, "VCO FM");
-		params[VCO_PWM_PARAM].config(0.0f, 1.0f, 0.0f, "VCO PWM", "%", 0.f, 100.f);
-		params[VCO_MODE_PARAM].config(0.0f, 1.0f, 1.0f, "VCO mode");
-		params[VCO_OCT_PARAM].config(-2.0f, 2.0f, 0.0f, "VCO octave");
+		configParam(VCO_FREQ_PARAM, -54.0f, 54.0f, 0.0f, "VCO freq", " Hz", std::pow(2, 1/12.f), dsp::FREQ_C4);// https://community.vcvrack.com/t/rack-v1-development-blog/1149/230
+		configParam(VCO_FINE_PARAM, -1.0f, 1.0f, 0.0f, "VCO freq fine");
+		configParam(VCO_PW_PARAM, 0.0f, 1.0f, 0.5f, "VCO pulse width", "%", 0.f, 100.f);
+		configParam(VCO_FM_PARAM, 0.0f, 1.0f, 0.0f, "VCO FM");
+		configParam(VCO_PWM_PARAM, 0.0f, 1.0f, 0.0f, "VCO PWM", "%", 0.f, 100.f);
+		configParam(VCO_MODE_PARAM, 0.0f, 1.0f, 1.0f, "VCO mode");
+		configParam(VCO_OCT_PARAM, -2.0f, 2.0f, 0.0f, "VCO octave");
 		
-		params[CLK_FREQ_PARAM].config(-2.0f, 4.0f, 1.0f, "CLK freq", " BPM", 2.0f, 60.0f);// 120 BMP when default value  (120 = 60*2^1) diplay params are: base, mult, offset
-		params[CLK_PW_PARAM].config(0.0f, 1.0f, 0.5f, "CLK PW");
+		configParam(CLK_FREQ_PARAM, -2.0f, 4.0f, 1.0f, "CLK freq", " BPM", 2.0f, 60.0f);// 120 BMP when default value  (120 = 60*2^1) diplay params are: base, mult, offset
+		configParam(CLK_PW_PARAM, 0.0f, 1.0f, 0.5f, "CLK PW");
 		
-		params[VCA_LEVEL1_PARAM].config(0.0f, 1.0f, 1.0f, "VCA level");
+		configParam(VCA_LEVEL1_PARAM, 0.0f, 1.0f, 1.0f, "VCA level");
 	
-		params[ADSR_ATTACK_PARAM].config(0.0f, 1.0f, 0.1f, "ADSR attack");
-		params[ADSR_DECAY_PARAM].config( 0.0f, 1.0f, 0.5f, "ADSR decay");
-		params[ADSR_SUSTAIN_PARAM].config(0.0f, 1.0f, 0.5f, "ADSR sustain");
-		params[ADSR_RELEASE_PARAM].config(0.0f, 1.0f, 0.5f, "ADSR release");
+		configParam(ADSR_ATTACK_PARAM, 0.0f, 1.0f, 0.1f, "ADSR attack");
+		configParam(ADSR_DECAY_PARAM,  0.0f, 1.0f, 0.5f, "ADSR decay");
+		configParam(ADSR_SUSTAIN_PARAM, 0.0f, 1.0f, 0.5f, "ADSR sustain");
+		configParam(ADSR_RELEASE_PARAM, 0.0f, 1.0f, 0.5f, "ADSR release");
 		
-		params[VCF_FREQ_PARAM].config(0.0f, 1.0f, 0.666f, "VCF freq");
-		params[VCF_RES_PARAM].config(0.0f, 1.0f, 0.0f, "VCF res");
-		params[VCF_FREQ_CV_PARAM].config(-1.0f, 1.0f, 0.0f, "VCF freq cv");
-		params[VCF_DRIVE_PARAM].config(0.0f, 1.0f, 0.0f, "VCF drive");
+		configParam(VCF_FREQ_PARAM, 0.0f, 1.0f, 0.666f, "VCF freq");
+		configParam(VCF_RES_PARAM, 0.0f, 1.0f, 0.0f, "VCF res");
+		configParam(VCF_FREQ_CV_PARAM, -1.0f, 1.0f, 0.0f, "VCF freq cv");
+		configParam(VCF_DRIVE_PARAM, 0.0f, 1.0f, 0.0f, "VCF drive");
 		
-		params[LFO_FREQ_PARAM].config(-8.0f, 6.0f, -1.0f, "LFO freq");
-		params[LFO_GAIN_PARAM].config(0.0f, 1.0f, 0.5f, "LFO gain");
-		params[LFO_OFFSET_PARAM].config(-1.0f, 1.0f, 0.0f, "LFO offset");
+		configParam(LFO_FREQ_PARAM, -8.0f, 6.0f, -1.0f, "LFO freq");
+		configParam(LFO_GAIN_PARAM, 0.0f, 1.0f, 0.5f, "LFO gain");
+		configParam(LFO_OFFSET_PARAM, -1.0f, 1.0f, 0.0f, "LFO offset");
 
 		
 		onReset();
@@ -1146,7 +1146,7 @@ struct SemiModularSynth : Module {
 							if (newMode != -1) {
 								editingPpqn = 0l;
 								attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
-								if (params[KEY_PARAMS + i].maxValue > 1.5f) {// if double-click
+								if (paramQuantities[KEY_PARAMS + i]->getMaxValue() > 1.5f) {// if double-click
 									stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
 									editingType = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 									editingGateKeyLight = i;
@@ -1158,7 +1158,7 @@ struct SemiModularSynth : Module {
 								editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
 						}
 						else if (attributes[seqIndexEdit][stepIndexEdit].getTied()) {
-							if (params[KEY_PARAMS + i].maxValue > 1.5f)// if double-click
+							if (paramQuantities[KEY_PARAMS + i]->getMaxValue() > 1.5f)// if double-click
 								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
 							else
 								tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
@@ -1170,7 +1170,7 @@ struct SemiModularSynth : Module {
 							editingGate = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 							editingGateCV = cv[seqIndexEdit][stepIndexEdit];
 							editingGateKeyLight = -1;
-							if (params[KEY_PARAMS + i].maxValue > 1.5f) {// if double-click
+							if (paramQuantities[KEY_PARAMS + i]->getMaxValue() > 1.5f) {// if double-click
 								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
 								editingGateKeyLight = i;
 								if ((APP->window->getMods() & WINDOW_MOD_MASK) == WINDOW_MOD_CTRL)

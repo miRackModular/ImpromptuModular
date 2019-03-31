@@ -347,27 +347,27 @@ struct Clocked : Module {
 		rightProducerMessage = producerMessage;
 		rightConsumerMessage = consumerMessage;
 
-		params[RATIO_PARAMS + 0].config((float)(bpmMin), (float)(bpmMax), 120.0f, "Master clock", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
-		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");
-		params[RUN_PARAM].config(0.0f, 1.0f, 0.0f, "Run");
-		params[BPMMODE_DOWN_PARAM].config(0.0f, 1.0f, 0.0f, "Bpm mode next");
-		params[BPMMODE_UP_PARAM].config(0.0f, 1.0f, 0.0f,  "Bpm mode prev");
-		params[SWING_PARAMS + 0].config(-1.0f, 1.0f, 0.0f, "Swing clk 0");
-		params[PW_PARAMS + 0].config(0.0f, 1.0f, 0.5f, "Pulse width clk 0");			
+		configParam(RATIO_PARAMS + 0, (float)(bpmMin), (float)(bpmMax), 120.0f, "Master clock", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
+		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
+		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");
+		configParam(BPMMODE_DOWN_PARAM, 0.0f, 1.0f, 0.0f, "Bpm mode next");
+		configParam(BPMMODE_UP_PARAM, 0.0f, 1.0f, 0.0f,  "Bpm mode prev");
+		configParam(SWING_PARAMS + 0, -1.0f, 1.0f, 0.0f, "Swing clk 0");
+		configParam(PW_PARAMS + 0, 0.0f, 1.0f, 0.5f, "Pulse width clk 0");			
 		char strBuf[32];
 		for (int i = 0; i < 3; i++) {// Row 2-4 (sub clocks)
 			// Ratio1 knob
 			snprintf(strBuf, 32, "Ratio clk %i", i);
-			params[RATIO_PARAMS + 1 + i].config((34.0f - 1.0f)*-1.0f, 34.0f - 1.0f, 0.0f, strBuf);		
+			configParam(RATIO_PARAMS + 1 + i, (34.0f - 1.0f)*-1.0f, 34.0f - 1.0f, 0.0f, strBuf);		
 			// Swing knobs
 			snprintf(strBuf, 32, "Swing clk %i", i);
-			params[SWING_PARAMS + 1 + i].config(-1.0f, 1.0f, 0.0f, strBuf);
+			configParam(SWING_PARAMS + 1 + i, -1.0f, 1.0f, 0.0f, strBuf);
 			// PW knobs
 			snprintf(strBuf, 32, "Pulse width clk %i", i);
-			params[PW_PARAMS + 1 + i].config(0.0f, 1.0f, 0.5f,strBuf);
+			configParam(PW_PARAMS + 1 + i, 0.0f, 1.0f, 0.5f,strBuf);
 			// Delay knobs
 			snprintf(strBuf, 32, "Delay clk %i", i);
-			params[DELAY_PARAMS + 1 + i].config(0.0f, 8.0f - 1.0f, 0.0f, strBuf);
+			configParam(DELAY_PARAMS + 1 + i, 0.0f, 8.0f - 1.0f, 0.0f, strBuf);
 		}
 		
 		for (int i = 1; i < 4; i++) {

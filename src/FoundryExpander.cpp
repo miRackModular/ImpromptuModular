@@ -52,8 +52,8 @@ struct FoundryExpander : Module {
 	FoundryExpander() {
 		config(NUM_PARAMS, NUM_INPUTS, 0, NUM_LIGHTS);
 	
-		params[SYNC_SEQCV_PARAM].config(0.0f, 1.0f, 0.0f, "Sync Seq#");// 1.0f is top position
-		params[WRITEMODE_PARAM].config(0.0f, 1.0f, 0.0f, "Write mode");
+		configParam(SYNC_SEQCV_PARAM, 0.0f, 1.0f, 0.0f, "Sync Seq#");// 1.0f is top position
+		configParam(WRITEMODE_PARAM, 0.0f, 1.0f, 0.0f, "Write mode");
 	
 		leftProducerMessage = producerMessage;
 		leftConsumerMessage = consumerMessage;

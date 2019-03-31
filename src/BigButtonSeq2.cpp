@@ -124,20 +124,20 @@ struct BigButtonSeq2 : Module {
 	BigButtonSeq2() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);		
 		
-		params[RND_PARAM].config(0.0f, 100.0f, 0.0f, "Random");
-		params[CHAN_PARAM].config(0.0f, 6.0f - 1.0f, 0.0f, "Channel");	
-		params[LEN_PARAM].config(0.0f, 128.0f - 1.0f, 32.0f - 1.0f, "Length");
-		params[DISPMODE_PARAM].config(0.0f, 1.0f, 0.0f, "Display mode");		
-		params[WRITEFILL_PARAM].config(0.0f, 1.0f, 0.0f, "Write fill");
-		params[BANK_PARAM].config(0.0f, 1.0f, 0.0f, "Bank");	
-		params[CLOCK_PARAM].config(0.0f, 1.0f, 0.0f, "Clock step");	
-		params[DEL_PARAM].config(0.0f, 1.0f, 0.0f, "Delete");	
-		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");	
-		params[FILL_PARAM].config(0.0f, 1.0f, 0.0f, "Fill");	
-		params[BIG_PARAM].config(0.0f, 1.0f, 0.0f, "Big button");
-		params[QUANTIZEBIG_PARAM].config(0.0f, 1.0f, 0.0f, "Quantize big button");
-		params[CLEAR_PARAM].config(0.0f, 1.0f, 0.0f, "Clear");	
-		params[SAMPLEHOLD_PARAM].config(0.0f, 1.0f, 0.0f, "Sample & hold");
+		configParam(RND_PARAM, 0.0f, 100.0f, 0.0f, "Random");
+		configParam(CHAN_PARAM, 0.0f, 6.0f - 1.0f, 0.0f, "Channel");	
+		configParam(LEN_PARAM, 0.0f, 128.0f - 1.0f, 32.0f - 1.0f, "Length");
+		configParam(DISPMODE_PARAM, 0.0f, 1.0f, 0.0f, "Display mode");		
+		configParam(WRITEFILL_PARAM, 0.0f, 1.0f, 0.0f, "Write fill");
+		configParam(BANK_PARAM, 0.0f, 1.0f, 0.0f, "Bank");	
+		configParam(CLOCK_PARAM, 0.0f, 1.0f, 0.0f, "Clock step");	
+		configParam(DEL_PARAM, 0.0f, 1.0f, 0.0f, "Delete");	
+		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");	
+		configParam(FILL_PARAM, 0.0f, 1.0f, 0.0f, "Fill");	
+		configParam(BIG_PARAM, 0.0f, 1.0f, 0.0f, "Big button");
+		configParam(QUANTIZEBIG_PARAM, 0.0f, 1.0f, 0.0f, "Quantize big button");
+		configParam(CLEAR_PARAM, 0.0f, 1.0f, 0.0f, "Clear");	
+		configParam(SAMPLEHOLD_PARAM, 0.0f, 1.0f, 0.0f, "Sample & hold");
 		
 		onReset();
 	}

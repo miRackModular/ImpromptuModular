@@ -104,22 +104,22 @@ struct WriteSeq64 : Module {
 	WriteSeq64() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		params[SHARP_PARAM].config(0.0f, 2.0f, 1.0f, "Sharp notation");
-		params[CHANNEL_PARAM].config(0.0f, 4.0f, 0.0f, "Channel");
-		params[STEP_PARAM].config(-INFINITY, INFINITY, 0.0f, "Step");		
-		params[GATE_PARAM].config(0.0f, 1.0f, 0.0f, "Gate");
-		params[AUTOSTEP_PARAM].config(0.0f, 1.0f, 1.0f, "Autostep");
-		params[QUANTIZE_PARAM].config(0.0f, 1.0f, 1.0f, "Quantize");
-		params[RESET_PARAM].config(0.0f, 1.0f, 0.0f, "Reset");
-		params[STEPS_PARAM].config(-INFINITY, INFINITY, 0.0f, "Number of steps");		
-		params[COPY_PARAM].config(0.0f, 1.0f, 0.0f, "Copy");
-		params[PASTE_PARAM].config(0.0f, 1.0f, 0.0f, "Paste");
-		params[PASTESYNC_PARAM].config(0.0f, 2.0f, 0.0f, "Paste sync");	
-		params[STEPL_PARAM].config(0.0f, 1.0f, 0.0f, "Step left");
-		params[RUN_PARAM].config(0.0f, 1.0f, 0.0f, "Run");
-		params[STEPR_PARAM].config(0.0f, 1.0f, 0.0f, "Step right");	
-		params[WRITE_PARAM].config(0.0f, 1.0f, 0.0f, "Write");
-		params[MONITOR_PARAM].config(0.0f, 1.0f, 0.0f, "Monitor");	
+		configParam(SHARP_PARAM, 0.0f, 2.0f, 1.0f, "Sharp notation");
+		configParam(CHANNEL_PARAM, 0.0f, 4.0f, 0.0f, "Channel");
+		configParam(STEP_PARAM, -INFINITY, INFINITY, 0.0f, "Step");		
+		configParam(GATE_PARAM, 0.0f, 1.0f, 0.0f, "Gate");
+		configParam(AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f, "Autostep");
+		configParam(QUANTIZE_PARAM, 0.0f, 1.0f, 1.0f, "Quantize");
+		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
+		configParam(STEPS_PARAM, -INFINITY, INFINITY, 0.0f, "Number of steps");		
+		configParam(COPY_PARAM, 0.0f, 1.0f, 0.0f, "Copy");
+		configParam(PASTE_PARAM, 0.0f, 1.0f, 0.0f, "Paste");
+		configParam(PASTESYNC_PARAM, 0.0f, 2.0f, 0.0f, "Paste sync");	
+		configParam(STEPL_PARAM, 0.0f, 1.0f, 0.0f, "Step left");
+		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");
+		configParam(STEPR_PARAM, 0.0f, 1.0f, 0.0f, "Step right");	
+		configParam(WRITE_PARAM, 0.0f, 1.0f, 0.0f, "Write");
+		configParam(MONITOR_PARAM, 0.0f, 1.0f, 0.0f, "Monitor");	
 		
 		onReset();
 	}

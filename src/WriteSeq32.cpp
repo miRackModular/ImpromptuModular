@@ -98,29 +98,29 @@ struct WriteSeq32 : Module {
 	WriteSeq32() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		params[AUTOSTEP_PARAM].config(0.0f, 1.0f, 1.0f, "Autostep");
-		params[SHARP_PARAM].config(0.0f, 1.0f, 1.0f, "Sharp notation");
-		params[QUANTIZE_PARAM].config(0.0f, 1.0f, 1.0f, "Quantize"); 
+		configParam(AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f, "Autostep");
+		configParam(SHARP_PARAM, 0.0f, 1.0f, 1.0f, "Sharp notation");
+		configParam(QUANTIZE_PARAM, 0.0f, 1.0f, 1.0f, "Quantize"); 
 		
 		char strBuf[32];
 		for (int i = 0; i < 4; i++) {
 			snprintf(strBuf, 32, "Window #%i of 4", i + 1);
-			params[WINDOW_PARAM + i].config(0.0f, 1.0f, 0.0f, strBuf);
+			configParam(WINDOW_PARAM + i, 0.0f, 1.0f, 0.0f, strBuf);
 		}
 		for (int i = 0; i < 8; i++) {
 			snprintf(strBuf, 32, "Gate #%i of 8", i + 1);
-			params[GATE_PARAM + i].config(0.0f, 1.0f, 0.0f, strBuf);
+			configParam(GATE_PARAM + i, 0.0f, 1.0f, 0.0f, strBuf);
 		}
-		params[CHANNEL_PARAM].config(0.0f, 1.0f, 0.0f, "Channel");
-		params[COPY_PARAM].config(0.0f, 1.0f, 0.0f, "Copy");
-		params[PASTE_PARAM].config(0.0f, 1.0f, 0.0f, "Paste");
-		params[PASTESYNC_PARAM].config(0.0f, 2.0f, 0.0f, "Paste Sync");	
-		params[STEPL_PARAM].config(0.0f, 1.0f, 0.0f, "Step left");
-		params[RUN_PARAM].config(0.0f, 1.0f, 0.0f, "Run");
-		params[STEPR_PARAM].config(0.0f, 1.0f, 0.0f, "Step right");	
-		params[WRITE_PARAM].config(0.0f, 1.0f, 0.0f, "Write");
-		params[STEPS_PARAM].config(1.0f, 32.0f, 32.0f, "Number of steps");		
-		params[MONITOR_PARAM].config(0.0f, 1.0f, 0.0f, "Monitor");		
+		configParam(CHANNEL_PARAM, 0.0f, 1.0f, 0.0f, "Channel");
+		configParam(COPY_PARAM, 0.0f, 1.0f, 0.0f, "Copy");
+		configParam(PASTE_PARAM, 0.0f, 1.0f, 0.0f, "Paste");
+		configParam(PASTESYNC_PARAM, 0.0f, 2.0f, 0.0f, "Paste Sync");	
+		configParam(STEPL_PARAM, 0.0f, 1.0f, 0.0f, "Step left");
+		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");
+		configParam(STEPR_PARAM, 0.0f, 1.0f, 0.0f, "Step right");	
+		configParam(WRITE_PARAM, 0.0f, 1.0f, 0.0f, "Write");
+		configParam(STEPS_PARAM, 1.0f, 32.0f, 32.0f, "Number of steps");		
+		configParam(MONITOR_PARAM, 0.0f, 1.0f, 0.0f, "Monitor");		
 		
 		onReset();
 	}

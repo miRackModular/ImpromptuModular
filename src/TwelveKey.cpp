@@ -64,22 +64,22 @@ struct TwelveKey : Module {
 	TwelveKey() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		params[KEY_PARAMS + 1].config(0.0, 1.0, 0.0, "C# key");
-		params[KEY_PARAMS + 3].config(0.0, 1.0, 0.0, "D# key");
-		params[KEY_PARAMS + 6].config(0.0, 1.0, 0.0, "F# key");
-		params[KEY_PARAMS + 8].config(0.0, 1.0, 0.0, "G# key");
-		params[KEY_PARAMS + 10].config(0.0, 1.0, 0.0, "A# key");
+		configParam(KEY_PARAMS + 1, 0.0, 1.0, 0.0, "C# key");
+		configParam(KEY_PARAMS + 3, 0.0, 1.0, 0.0, "D# key");
+		configParam(KEY_PARAMS + 6, 0.0, 1.0, 0.0, "F# key");
+		configParam(KEY_PARAMS + 8, 0.0, 1.0, 0.0, "G# key");
+		configParam(KEY_PARAMS + 10, 0.0, 1.0, 0.0, "A# key");
 
-		params[KEY_PARAMS + 0].config(0.0, 1.0, 0.0, "C key");
-		params[KEY_PARAMS + 2].config(0.0, 1.0, 0.0, "D key");
-		params[KEY_PARAMS + 4].config(0.0, 1.0, 0.0, "E key");
-		params[KEY_PARAMS + 5].config(0.0, 1.0, 0.0, "F key");
-		params[KEY_PARAMS + 7].config(0.0, 1.0, 0.0, "G key");
-		params[KEY_PARAMS + 9].config(0.0, 1.0, 0.0, "A key");
-		params[KEY_PARAMS + 11].config(0.0, 1.0, 0.0, "B key");
+		configParam(KEY_PARAMS + 0, 0.0, 1.0, 0.0, "C key");
+		configParam(KEY_PARAMS + 2, 0.0, 1.0, 0.0, "D key");
+		configParam(KEY_PARAMS + 4, 0.0, 1.0, 0.0, "E key");
+		configParam(KEY_PARAMS + 5, 0.0, 1.0, 0.0, "F key");
+		configParam(KEY_PARAMS + 7, 0.0, 1.0, 0.0, "G key");
+		configParam(KEY_PARAMS + 9, 0.0, 1.0, 0.0, "A key");
+		configParam(KEY_PARAMS + 11, 0.0, 1.0, 0.0, "B key");
 
-		params[OCTDEC_PARAM].config(0.0, 1.0, 0.0, "Oct down");
-		params[OCTINC_PARAM].config(0.0, 1.0, 0.0, "Oct up");
+		configParam(OCTDEC_PARAM, 0.0, 1.0, 0.0, "Oct down");
+		configParam(OCTINC_PARAM, 0.0, 1.0, 0.0, "Oct up");
 		
 		onReset();
 	}
