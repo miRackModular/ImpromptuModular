@@ -658,6 +658,8 @@ struct PhraseSeq32 : Module {
 		static const float holdDetectTime = 2.0f;// seconds
 		static const float editGateLengthTime = 3.5f;// seconds
 		
+		bool expanderPresent = (rightModule && rightModule->model == modelPhraseSeqExpander);
+
 		
 		//********** Buttons, knobs, switches and inputs **********
 		
@@ -713,7 +715,7 @@ struct PhraseSeq32 : Module {
 			
 			// Mode CV input
 			float modeCVin = consumerMessage[4];
-			if (!std::isnan(modeCVin)) {
+			if (expanderPresent && !std::isnan(modeCVin)) {
 				if (editingSequence)
 					sequences[seqIndexEdit].setRunMode((int) clamp( round(modeCVin * ((float)NUM_MODES - 1.0f) / 10.0f), 0.0f, (float)NUM_MODES - 1.0f ));
 			}
@@ -992,7 +994,7 @@ struct PhraseSeq32 : Module {
 					}
 					else if (displayState == DISP_MODE) {
 						if (editingSequence) {
-							if (std::isnan(consumerMessage[4])) {
+							if (!expanderPresent || std::isnan(consumerMessage[4])) {
 								sequences[seqIndexEdit].setRunMode(clamp(sequences[seqIndexEdit].getRunMode() + deltaKnob, 0, NUM_MODES - 1));
 							}
 						}
@@ -1150,7 +1152,7 @@ struct PhraseSeq32 : Module {
 			}
 
 			// Gate1, Gate1Prob, Gate2, Slide and Tied buttons
-			if (gate1Trigger.process(params[GATE1_PARAM].getValue() + consumerMessage[0])) {
+			if (gate1Trigger.process(params[GATE1_PARAM].getValue() + (expanderPresent ? consumerMessage[0] : 0.0f))) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					attributes[seqIndexEdit][stepIndexEdit].toggleGate1();
@@ -1165,13 +1167,13 @@ struct PhraseSeq32 : Module {
 						attributes[seqIndexEdit][stepIndexEdit].toggleGate1P();
 				}
 			}		
-			if (gate2Trigger.process(params[GATE2_PARAM].getValue() + consumerMessage[1])) {
+			if (gate2Trigger.process(params[GATE2_PARAM].getValue() + (expanderPresent ? consumerMessage[1] : 0.0f))) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					attributes[seqIndexEdit][stepIndexEdit].toggleGate2();
 				}
 			}		
-			if (slideTrigger.process(params[SLIDE_BTN_PARAM].getValue() + consumerMessage[3])) {
+			if (slideTrigger.process(params[SLIDE_BTN_PARAM].getValue() + (expanderPresent ? consumerMessage[3] : 0.0f))) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (attributes[seqIndexEdit][stepIndexEdit].getTied())
@@ -1180,7 +1182,7 @@ struct PhraseSeq32 : Module {
 						attributes[seqIndexEdit][stepIndexEdit].toggleSlide();
 				}
 			}		
-			if (tiedTrigger.process(params[TIE_PARAM].getValue() + consumerMessage[2])) {
+			if (tiedTrigger.process(params[TIE_PARAM].getValue() + (expanderPresent ? consumerMessage[2] : 0.0f))) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (attributes[seqIndexEdit][stepIndexEdit].getTied()) {
@@ -1269,9 +1271,9 @@ struct PhraseSeq32 : Module {
 		int seq = editingSequence ? (seqIndexEdit) : (running ? phrase[phraseIndexRun] : phrase[phraseIndexEdit]);
 		int step0 = editingSequence ? (running ? stepIndexRun[0] : stepIndexEdit) : (stepIndexRun[0]);
 		if (running) {
-			bool muteGate1A = !editingSequence && ((params[GATE1_PARAM].getValue() + consumerMessage[0]) > 0.5f);// live mute
+			bool muteGate1A = !editingSequence && ((params[GATE1_PARAM].getValue() + (expanderPresent ? consumerMessage[0] : 0.0f)) > 0.5f);// live mute
 			bool muteGate1B = muteGate1A;
-			bool muteGate2A = !editingSequence && ((params[GATE2_PARAM].getValue() + consumerMessage[1]) > 0.5f);// live mute
+			bool muteGate2A = !editingSequence && ((params[GATE2_PARAM].getValue() + (expanderPresent ? consumerMessage[1] : 0.0f)) > 0.5f);// live mute
 			bool muteGate2B = muteGate2A;
 			if (!attached && (muteGate1B || muteGate2B) && stepConfig == 1) {
 				// if not attached in 2x16, mute only the channel where phraseIndexEdit is located (hack since phraseIndexEdit's row has no relation to channels)
@@ -1856,7 +1858,8 @@ struct PhraseSeq32Widget : ModuleWidget {
 				}
 				else if (module->displayState == PhraseSeq32::DISP_MODE) {
 					if (module->isEditingSequence()) {
-						if (std::isnan(module->consumerMessage[4])) {
+						bool expanderPresent = (module->rightModule && module->rightModule->model == modelPhraseSeqExpander);
+						if (!expanderPresent || std::isnan(module->consumerMessage[4])) {
 							module->sequences[module->seqIndexEdit].setRunMode(MODE_FWD);
 						}
 					}

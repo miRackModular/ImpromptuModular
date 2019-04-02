@@ -40,16 +40,18 @@ struct ClockedExpander : Module {
 
 
 	void process(const ProcessArgs &args) override {		
-		if (leftModule && leftModule->model == modelClocked) {
+		bool motherPresent = (leftModule && leftModule->model == modelClocked);
+		if (motherPresent) {
 			// To Mother
 			float *producerMessage = reinterpret_cast<float*>(leftModule->rightProducerMessage);
 			for (int i = 0; i < 8; i++) {
 				producerMessage[i] = inputs[i].getVoltage();
 			}
-			
-			// From Mother
-			panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
+			// INFO("MOTHER PRESENT");
 		}		
+			
+		// From Mother
+		panelTheme = (motherPresent ? clamp((int)(consumerMessage[0] + 0.5f), 0, 1) : 0);
 	}// process()
 };
 

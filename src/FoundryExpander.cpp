@@ -6,7 +6,7 @@
 //See ./LICENSE.txt for all licenses
 //See ./res/fonts/ for font licenses
 //
-//Module concept and design by Marc Boulé, Nigel Sixsmith, Xavier Belmont and Steve Baker
+//Module concept and design by Marc Boulé, Nigel Sixsmith
 //
 //***********************************************************************************************
 
@@ -61,7 +61,8 @@ struct FoundryExpander : Module {
 
 
 	void process(const ProcessArgs &args) override {		
-		if (leftModule && leftModule->model == modelFoundry) {
+		bool motherPresent = leftModule && leftModule->model == modelFoundry;
+		if (motherPresent) {
 			// To Mother
 			float *producerMessage = reinterpret_cast<float*>(leftModule->rightProducerMessage);
 			int i = 0;
@@ -73,15 +74,15 @@ struct FoundryExpander : Module {
 			}
 			producerMessage[i++] = params[SYNC_SEQCV_PARAM].getValue();
 			producerMessage[i++] = params[WRITEMODE_PARAM].getValue();
-			
-			// From Mother
-			panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
-			lights[WRITE_SEL_LIGHTS + 0].value = consumerMessage[1];
-			lights[WRITE_SEL_LIGHTS + 1].value = consumerMessage[2];			
-			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-				lights[WRITECV2_LIGHTS + trkn].value = consumerMessage[trkn + 3];
-			}	
 		}		
+			
+		// From Mother
+		panelTheme = (motherPresent ? clamp((int)(consumerMessage[0] + 0.5f), 0, 1) : 0);
+		lights[WRITE_SEL_LIGHTS + 0].value = (motherPresent ? consumerMessage[1] : 0.0f);
+		lights[WRITE_SEL_LIGHTS + 1].value = (motherPresent ? consumerMessage[2] : 0.0f);			
+		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
+			lights[WRITECV2_LIGHTS + trkn].value = (motherPresent ? consumerMessage[trkn + 3] : 0.0f);
+		}	
 	}// process()
 };
 

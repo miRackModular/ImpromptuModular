@@ -677,35 +677,38 @@ struct GateSeq64 : Module {
 			}
 			
 			// Write CV inputs 
-			bool writeTrig = writeTrigger.process(consumerMessage[2]);
-			bool write0Trig = write0Trigger.process(consumerMessage[4]);
-			bool write1Trig = write1Trigger.process(consumerMessage[3]);
-			if (writeTrig || write0Trig || write1Trig) {
-				if (editingSequence) {
-					blinkNum = blinkNumInit;
-					if (writeTrig) {// higher priority than write0 and write1
-						if (!std::isnan(consumerMessage[1])) {
-							attributes[sequence][stepIndexEdit].setGatePVal(clamp( (int)round(consumerMessage[1] * 10.0f), 0, 100) );
-							attributes[sequence][stepIndexEdit].setGateP(true);
+			bool expanderPresent = (rightModule && rightModule->model == modelGateSeq64Expander);
+			if (expanderPresent) {
+				bool writeTrig = writeTrigger.process(consumerMessage[2]);
+				bool write0Trig = write0Trigger.process(consumerMessage[4]);
+				bool write1Trig = write1Trigger.process(consumerMessage[3]);
+				if (writeTrig || write0Trig || write1Trig) {
+					if (editingSequence) {
+						blinkNum = blinkNumInit;
+						if (writeTrig) {// higher priority than write0 and write1
+							if (!std::isnan(consumerMessage[1])) {
+								attributes[sequence][stepIndexEdit].setGatePVal(clamp( (int)round(consumerMessage[1] * 10.0f), 0, 100) );
+								attributes[sequence][stepIndexEdit].setGateP(true);
+							}
+							else{
+								attributes[sequence][stepIndexEdit].setGateP(false);
+							}
+							if (!std::isnan(consumerMessage[0]))
+								attributes[sequence][stepIndexEdit].setGate(consumerMessage[0] >= 1.0f);
 						}
-						else{
-							attributes[sequence][stepIndexEdit].setGateP(false);
+						else {// write1 or write0			
+							attributes[sequence][stepIndexEdit].setGate(write1Trig);
 						}
-						if (!std::isnan(consumerMessage[0]))
-							attributes[sequence][stepIndexEdit].setGate(consumerMessage[0] >= 1.0f);
+						// Autostep (after grab all active inputs)
+						stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 64);
+						if (stepIndexEdit == 0 && autoseq && !inputs[SEQCV_INPUT].isConnected())
+							sequence = moveIndex(sequence, sequence + 1, MAX_SEQS);			
 					}
-					else {// write1 or write0			
-						attributes[sequence][stepIndexEdit].setGate(write1Trig);
-					}
-					// Autostep (after grab all active inputs)
-					stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 64);
-					if (stepIndexEdit == 0 && autoseq && !inputs[SEQCV_INPUT].isConnected())
-						sequence = moveIndex(sequence, sequence + 1, MAX_SEQS);			
 				}
 			}
 
 			// Step left CV input
-			if (stepLTrigger.process(consumerMessage[5])) {
+			if (expanderPresent && stepLTrigger.process(consumerMessage[5])) {
 				if (editingSequence) {
 					blinkNum = blinkNumInit;
 					stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit - 1, 64);					

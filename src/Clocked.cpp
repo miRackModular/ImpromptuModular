@@ -311,17 +311,18 @@ struct Clocked : Module {
 	
 	void updatePulseSwingDelay() {
 		bool expanderPresent = (rightModule && rightModule->model == modelClockedExpander);
+		//if (expanderPresent) INFO("EXPANDER PRESENT");
 		for (int i = 0; i < 4; i++) {
 			// Pulse Width
 			pulseWidth[i] = params[PW_PARAMS + i].getValue();
-			if (i < 3 && (expanderPresent)) {
+			if (i < 3 && expanderPresent) {
 				pulseWidth[i] += (consumerMessage[i] / 10.0f);
 				pulseWidth[i] = clamp(pulseWidth[i], 0.0f, 1.0f);
 			}
 			
 			// Swing
 			swingAmount[i] = params[SWING_PARAMS + i].getValue();
-			if (i < 3 && (expanderPresent)) {
+			if (i < 3 && expanderPresent) {
 				swingAmount[i] += (consumerMessage[i + 4] / 5.0f);
 				swingAmount[i] = clamp(swingAmount[i], -1.0f, 1.0f);
 			}

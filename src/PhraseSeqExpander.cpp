@@ -6,7 +6,7 @@
 //See ./LICENSE.txt for all licenses
 //See ./res/fonts/ for font licenses
 //
-//Module concept and design by Marc Boulé, Nigel Sixsmith, Xavier Belmont and Steve Baker
+//Module concept and design by Marc Boulé, Nigel Sixsmith
 //
 //***********************************************************************************************
 
@@ -43,7 +43,8 @@ struct PhraseSeqExpander : Module {
 
 
 	void process(const ProcessArgs &args) override {		
-		if (leftModule && (leftModule->model == modelPhraseSeq16 || leftModule->model == modelPhraseSeq32)) {
+		bool motherPresent = leftModule && (leftModule->model == modelPhraseSeq16 || leftModule->model == modelPhraseSeq32);
+		if (motherPresent) {
 			// To Mother
 			float *producerMessage = reinterpret_cast<float*>(leftModule->rightProducerMessage);
 			int i = 0;
@@ -51,10 +52,10 @@ struct PhraseSeqExpander : Module {
 				producerMessage[i] = inputs[i].getVoltage();
 			}
 			producerMessage[i] = (inputs[i].isConnected() ? inputs[i].getVoltage() : std::numeric_limits<float>::quiet_NaN());
-			
-			// From Mother
-			panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
 		}		
+			
+		// From Mother
+		panelTheme = (motherPresent ? clamp((int)(consumerMessage[0] + 0.5f), 0, 1) : 0);
 	}// process()
 };
 
