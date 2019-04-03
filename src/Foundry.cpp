@@ -109,7 +109,7 @@ struct Foundry : Module {
 	bool running;
 	bool resetOnRun;
 	bool attached;
-	int velEditMode;// 0 is velocity, 1 is gate-prob, 2 is slide-rate
+	int velEditMode;// 0 is velocity (aka CV2), 1 is gate-prob, 2 is slide-rate
 	int writeMode;// 0 is both, 1 is CV only, 2 is CV2 only
 	Sequencer seq;
 
