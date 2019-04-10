@@ -75,6 +75,7 @@ struct BigButtonSeq2 : Module {
 	int bank[6];
 	uint64_t gates[6][2][2];// channel , bank , 64x2 page for 128
 	float cv[6][2][128];// channel , bank , indexStep
+	bool nextStepHits;
 	
 	// No need to save
 	long clockIgnoreOnReset;
@@ -106,15 +107,15 @@ struct BigButtonSeq2 : Module {
 	dsp::PulseGenerator bigLightPulse;
 
 	
-	inline bool getGate(int chan) {return !((gates[chan][bank[chan]][indexStep >> 6] & (((uint64_t)1) << (uint64_t)(indexStep & 0x3F))) == 0);}
-	inline void setGate(int chan) {gates[chan][bank[chan]][indexStep >> 6] |= (((uint64_t)1) << (uint64_t)(indexStep & 0x3F));}
-	inline void clearGate(int chan) {gates[chan][bank[chan]][indexStep >> 6] &= ~(((uint64_t)1) << (uint64_t)(indexStep & 0x3F));}
-	inline void toggleGate(int chan) {gates[chan][bank[chan]][indexStep >> 6] ^= (((uint64_t)1) << (uint64_t)(indexStep & 0x3F));}
-	inline void clearGates(int chan, int bnk) {gates[chan][bnk][0] = 0; gates[chan][bnk][1] = 0;}
-	inline void randomizeGates(int chan, int bnk) {gates[chan][bnk][0] = random::u64(); gates[chan][bnk][1] = random::u64();}
-	inline void writeCV(int chan, float cvValue) {cv[chan][bank[chan]][indexStep] = cvValue;}
-	inline void writeCV(int chan, int bnk, int step, float cvValue) {cv[chan][bnk][step] = cvValue;}
-	inline void sampleOutput(int chan) {sampleHoldBuf[chan] = cv[chan][bank[chan]][indexStep];}
+	inline bool getGate(int _chan, int _step) {return !((gates[_chan][bank[_chan]][_step >> 6] & (((uint64_t)1) << (uint64_t)(_step & 0x3F))) == 0);}
+	inline void setGate(int _chan, int _step) {gates[_chan][bank[_chan]][_step >> 6] |= (((uint64_t)1) << (uint64_t)(_step & 0x3F));}
+	inline void clearGate(int _chan, int _step) {gates[_chan][bank[_chan]][_step >> 6] &= ~(((uint64_t)1) << (uint64_t)(_step & 0x3F));}
+	inline void toggleGate(int _chan, int _step) {gates[_chan][bank[_chan]][_step >> 6] ^= (((uint64_t)1) << (uint64_t)(_step & 0x3F));}
+	inline void clearGates(int _chan, int bnk) {gates[_chan][bnk][0] = 0; gates[_chan][bnk][1] = 0;}
+	inline void randomizeGates(int _chan, int bnk) {gates[_chan][bnk][0] = random::u64(); gates[_chan][bnk][1] = random::u64();}
+	inline void writeCV(int _chan, int _step, float cvValue) {cv[_chan][bank[_chan]][_step] = cvValue;}
+	inline void writeCV(int _chan, int bnk, int _step, float cvValue) {cv[_chan][bnk][_step] = cvValue;}
+	inline void sampleOutput(int _chan) {sampleHoldBuf[_chan] = cv[_chan][bank[_chan]][indexStep];}
 	inline int calcChan() {
 		float chanInputValue = inputs[CHAN_INPUT].getVoltage() / 10.0f * (6.0f - 1.0f);
 		return (int) clamp(roundf(params[CHAN_PARAM].getValue() + chanInputValue), 0.0f, (6.0f - 1.0f));		
@@ -146,6 +147,7 @@ struct BigButtonSeq2 : Module {
 	void onReset() override {
 		writeFillsToMemory = false;
 		quantizeBig = true;
+		nextStepHits = false;
 		sampleAndHold = false;
 		indexStep = 0;
 		for (int c = 0; c < 6; c++) {
@@ -232,6 +234,9 @@ struct BigButtonSeq2 : Module {
 
 		// quantizeBig
 		json_object_set_new(rootJ, "quantizeBig", json_boolean(quantizeBig));
+
+		// nextStepHits
+		json_object_set_new(rootJ, "nextStepHits", json_boolean(nextStepHits));
 
 		// sampleAndHold
 		json_object_set_new(rootJ, "sampleAndHold", json_boolean(sampleAndHold));
@@ -328,6 +333,11 @@ struct BigButtonSeq2 : Module {
 		if (quantizeBigJ)
 			quantizeBig = json_is_true(quantizeBigJ);
 
+		// nextStepHits
+		json_t *nextStepHitsJ = json_object_get(rootJ, "nextStepHits");
+		if (nextStepHitsJ)
+			nextStepHits = json_is_true(nextStepHitsJ);
+
 		// sampleAndHold
 		json_t *sampleAndHoldJ = json_object_get(rootJ, "sampleAndHold");
 		if (sampleAndHoldJ)
@@ -342,27 +352,30 @@ struct BigButtonSeq2 : Module {
 		
 		//********** Buttons, knobs, switches and inputs **********
 		
-		// Length
+		channel = calcChan();		
 		length = (int) clamp(roundf( params[LEN_PARAM].getValue() + ( inputs[LEN_INPUT].isConnected() ? (inputs[LEN_INPUT].getVoltage() / 10.0f * (128.0f - 1.0f)) : 0.0f ) ), 0.0f, (128.0f - 1.0f)) + 1;	
 
-		// Channel
-		channel = calcChan();		
 		
 		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {		
 		
 			// Big button
 			if (bigTrigger.process(params[BIG_PARAM].getValue() + inputs[BIG_INPUT].getVoltage())) {
 				bigLight = 1.0f;
-				if (quantizeBig && (clockTime > (lastPeriod / 2.0)) && (clockTime <= (lastPeriod * 1.01))) {// allow for 1% clock jitter
+				if (nextStepHits) {
+					int nextStep = (indexStep + 1) % length;
+					setGate(channel, nextStep);// bank is global
+					writeCV(channel, nextStep, inputs[CV_INPUT].getVoltage());
+				}
+				else if (quantizeBig && (clockTime > (lastPeriod / 2.0)) && (clockTime <= (lastPeriod * 1.01))) {// allow for 1% clock jitter
 					pendingOp = 1;
 					pendingCV = inputs[CV_INPUT].getVoltage();
 				}
 				else {
-					if (!getGate(channel)) {
-						setGate(channel);// bank and indexStep are global
+					if (!getGate(channel, indexStep)) {
+						setGate(channel, indexStep);// bank is global
 						bigPulse.trigger(0.001f);
 					}
-					writeCV(channel, inputs[CV_INPUT].getVoltage());
+					writeCV(channel, indexStep, inputs[CV_INPUT].getVoltage());
 					bigLightPulse.trigger(lightTime);
 				}
 			}
@@ -392,10 +405,16 @@ struct BigButtonSeq2 : Module {
 			
 			// Del button
 			if (params[DEL_PARAM].getValue() + inputs[DEL_INPUT].getVoltage() > 0.5f) {
-				if (quantizeBig && (clockTime > (lastPeriod / 2.0)) && (clockTime <= (lastPeriod * 1.01)))// allow for 1% clock jitter
+				if (nextStepHits) {
+					int nextStep = (indexStep + 1) % length;
+					clearGate(channel, nextStep);// bank is global
+					cv[channel][bank[channel]][nextStep] = 0.0f;
+				}
+				else if (quantizeBig && (clockTime > (lastPeriod / 2.0)) && (clockTime <= (lastPeriod * 1.01))) {// allow for 1% clock jitter
 					pendingOp = -1;// overrides the pending write if it exists
+				}
 				else {
-					clearGate(channel);// bank and indexStep are global
+					clearGate(channel, indexStep);// bank is global
 					cv[channel][bank[channel]][indexStep] = 0.0f;
 				}
 			}
@@ -418,8 +437,8 @@ struct BigButtonSeq2 : Module {
 				// Fill button
 				fillPressed = (params[FILL_PARAM].getValue() + inputs[FILL_INPUT].getVoltage()) > 0.5f;// used in clock block and others
 				if (fillPressed && writeFillsToMemory) {
-					setGate(channel);// bank and indexStep are global
-					writeCV(channel, inputs[CV_INPUT].getVoltage());//sampleHoldBuf[channel]);
+					setGate(channel, indexStep);// bank is global
+					writeCV(channel, indexStep, inputs[CV_INPUT].getVoltage());//sampleHoldBuf[channel]);
 				}
 				
 				//outPulse.trigger(0.001f);
@@ -436,7 +455,7 @@ struct BigButtonSeq2 : Module {
 				float rnd01 = params[RND_PARAM].getValue() / 100.0f + inputs[RND_INPUT].getVoltage() / 10.0f;
 				if (rnd01 > 0.0f) {
 					if (random::uniform() < rnd01)// random::uniform is [0.0, 1.0), see include/util/common.hpp
-						toggleGate(channel);
+						toggleGate(channel, indexStep);
 				}
 				lastPeriod = clockTime > 2.0 ? 2.0 : clockTime;
 				clockTime = 0.0;
@@ -465,7 +484,7 @@ struct BigButtonSeq2 : Module {
 		bool outPulseState = clockTrigger.isHigh();
 		bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
 		for (int i = 0; i < 6; i++) {
-			bool gate = getGate(i);
+			bool gate = getGate(i, indexStep);
 			bool outSignal = ( ((gate || (i == channel && fillPressed)) && outPulseState) || (gate && bigPulseState && i == channel) );
 			float outGateValue = outSignal ? 10.0f : 0.0f;
 			if (internalSHTriggers[i].process(outGateValue))
@@ -486,7 +505,7 @@ struct BigButtonSeq2 : Module {
 			bool outLightPulseState = outLightPulse.process((float)sampleTime * displayRefreshStepSkips);
 			float deltaTime = APP->engine->getSampleTime() * displayRefreshStepSkips;
 			for (int i = 0; i < 6; i++) {
-				bool gate = getGate(i);
+				bool gate = getGate(i, indexStep);
 				bool outLight  = (((gate || (i == channel && fillPressed)) && outLightPulseState) || (gate && bigLightPulseState && i == channel));
 				lights[(CHAN_LIGHTS + i) * 2 + 1].setSmoothBrightness(outLight ? 1.0f : 0.0f, deltaTime);
 				lights[(CHAN_LIGHTS + i) * 2 + 0].value = (i == channel ? (1.0f - lights[(CHAN_LIGHTS + i) * 2 + 1].value) / 2.0f : 0.0f);
@@ -519,15 +538,15 @@ struct BigButtonSeq2 : Module {
 	
 	inline void performPending(int chan, float lightTime) {
 		if (pendingOp == 1) {
-			if (!getGate(chan)) {
-				setGate(chan);// bank and indexStep are global
+			if (!getGate(chan, indexStep)) {
+				setGate(chan, indexStep);// bank is global
 				bigPulse.trigger(0.001f);
 			}
-			writeCV(chan, pendingCV);
+			writeCV(chan, indexStep, pendingCV);
 			bigLightPulse.trigger(lightTime);
 		}
 		else {
-			clearGate(chan);// bank and indexStep are global
+			clearGate(chan, indexStep);// bank is global
 		}
 		pendingOp = 0;
 	}
@@ -598,6 +617,12 @@ struct BigButtonSeq2Widget : ModuleWidget {
 			rightText = (module->panelTheme == theme) ? "✔" : "";
 		}
 	};
+	struct NextStepHitsItem : MenuItem {
+		BigButtonSeq2 *module;
+		void onAction(const widget::ActionEvent &e) override {
+			module->nextStepHits = !module->nextStepHits;
+		}
+	};
 	struct MetronomeItem : MenuItem {
 		BigButtonSeq2 *module;
 		int div;
@@ -633,6 +658,15 @@ struct BigButtonSeq2Widget : ModuleWidget {
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
 
+		menu->addChild(new MenuLabel());// empty line
+		
+		MenuLabel *settingsLabel = new MenuLabel();
+		settingsLabel->text = "Settings";
+		menu->addChild(settingsLabel);
+		
+		NextStepHitsItem *nhitsItem = createMenuItem<NextStepHitsItem>("Big and Del on next step", CHECKMARK(module->nextStepHits));
+		nhitsItem->module = module;
+		menu->addChild(nhitsItem);
 		menu->addChild(new MenuLabel());// empty line
 		
 		MenuLabel *metronomeLabel = new MenuLabel();
