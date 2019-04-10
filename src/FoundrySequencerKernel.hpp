@@ -352,7 +352,6 @@ class SequencerKernel {
 	void initSequence(int seqn);
 	void initSong();
 	void randomizeSequence();
-	void randomizeSong();	
 
 	void copySequence(SeqCPbuffer* seqCPbuf, int startCP, int countCP);
 	void pasteSequence(SeqCPbuffer* seqCPbuf, int startCP);
@@ -388,13 +387,13 @@ class SequencerKernel {
 	}
 	void activateTiedStep(int seqn, int stepn);
 	void deactivateTiedStep(int seqn, int stepn);
-	void calcGateCodeEx(bool editingSequence);
+	void calcGateCode(bool editingSequence);
 	bool moveStepIndexRun(bool init, bool editingSequence);
-	void moveSongIndexBackward(bool init, bool rollover);
-	void moveSongIndexForeward(bool init, bool rollover);
+	void movePhraseIndexBackward(bool init, bool rollover);
+	void movePhraseIndexForeward(bool init, bool rollover);
 	int tempPhraseIndexes[MAX_PHRASES];// used only in next method	
-	void moveSongIndexRandom(bool init, uint32_t randomValue);	
-	void moveSongIndexBrownian(bool init, uint32_t randomValue);	
+	void movePhraseIndexRandom(bool init, uint32_t randomValue);	
+	void movePhraseIndexBrownian(bool init, uint32_t randomValue);	
 	void movePhraseIndexRun(bool init);
 };// class SequencerKernel 
 

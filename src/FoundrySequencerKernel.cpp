@@ -141,15 +141,6 @@ void SequencerKernel::randomizeSequence() {
 	}
 	dirty[seqIndexEdit] = 1;
 }
-DEPRECATED void SequencerKernel::randomizeSong() {// no longer used
-	runModeSong = random::u32() % NUM_MODES;
-	songBeginIndex = 0;
-	songEndIndex = (random::u32() % MAX_PHRASES);
-	for (int phrn = 0; phrn < MAX_PHRASES; phrn++) {
-		phrases[phrn].randomize(MAX_SEQS);
-	}
-}	
-
 
 void SequencerKernel::copySequence(SeqCPbuffer* seqCPbuf, int startCP, int countCP) {
 	countCP = std::min(countCP, MAX_STEPS - startCP);
@@ -369,7 +360,7 @@ void SequencerKernel::initRun(bool editingSequence) {
 	
 	ppqnCount = 0;
 	ppqnLeftToSkip = delay;
-	calcGateCodeEx(editingSequence);// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
+	calcGateCode(editingSequence);// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
 	slideStepsRemain = 0ul;
 }
 
@@ -412,7 +403,7 @@ bool SequencerKernel::clockStep(bool editingSequence, int delayedSeqNumberReques
 			else
 				slideStepsRemain = 0ul;
 		}
-		calcGateCodeEx(editingSequence);// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
+		calcGateCode(editingSequence);// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
 	}
 	clockPeriod = 0ul;
 	
@@ -545,7 +536,7 @@ void SequencerKernel::deactivateTiedStep(int seqn, int stepn) {// caller sets di
 }
 
 
-void SequencerKernel::calcGateCodeEx(bool editingSequence) {// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
+void SequencerKernel::calcGateCode(bool editingSequence) {// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
 	int seqn = editingSequence ? seqIndexEdit : phrases[phraseIndexRun].getSeqNum();
 	StepAttributes attribute = attributes[seqn][stepIndexRun];
 	int ppsFiltered = getPulsesPerStep();// must use method
@@ -732,7 +723,7 @@ bool SequencerKernel::moveStepIndexRun(bool init, bool editingSequence) {
 }
 
 
-void SequencerKernel::moveSongIndexBackward(bool init, bool rollover) {
+void SequencerKernel::movePhraseIndexBackward(bool init, bool rollover) {
 	int phrn = 0;
 
 	// search backward for next non 0-rep seq, ends up in same phrase if all reps in the song are 0
@@ -754,7 +745,7 @@ void SequencerKernel::moveSongIndexBackward(bool init, bool rollover) {
 }
 
 
-void SequencerKernel::moveSongIndexForeward(bool init, bool rollover) {
+void SequencerKernel::movePhraseIndexForeward(bool init, bool rollover) {
 	int phrn = 0;
 	
 	// search fowrard for next non 0-rep seq, ends up in same phrase if all reps in the song are 0
@@ -776,7 +767,7 @@ void SequencerKernel::moveSongIndexForeward(bool init, bool rollover) {
 }
 
 
-void SequencerKernel::moveSongIndexRandom(bool init, uint32_t randomValue) {
+void SequencerKernel::movePhraseIndexRandom(bool init, uint32_t randomValue) {
 	int phrn = songBeginIndex;
 	int tpi = 0;
 	
@@ -797,21 +788,21 @@ void SequencerKernel::moveSongIndexRandom(bool init, uint32_t randomValue) {
 }
 
 
-void SequencerKernel::moveSongIndexBrownian(bool init, uint32_t randomValue) {	
+void SequencerKernel::movePhraseIndexBrownian(bool init, uint32_t randomValue) {	
 	randomValue = randomValue % 3;// 0 = left, 1 = stay, 2 = right
 	
 	if (init) {
-		moveSongIndexForeward(init, true);
+		movePhraseIndexForeward(init, true);
 	}
 	else if (randomValue == 1) {// stay
 		if (phraseIndexRun > songEndIndex || phraseIndexRun < songBeginIndex)
-			moveSongIndexForeward(false, true);	
+			movePhraseIndexForeward(false, true);	
 	}
 	else if (randomValue == 0) {// left
-		moveSongIndexBackward(false, true);
+		movePhraseIndexBackward(false, true);
 	}
 	else {// right
-		moveSongIndexForeward(false, true);
+		movePhraseIndexForeward(false, true);
 	}
 }
 
@@ -826,17 +817,17 @@ void SequencerKernel::movePhraseIndexRun(bool init) {
 		
 		case MODE_REV :// reverse; history base is 0x2000
 			phraseIndexRunHistory = 0x2000;
-			moveSongIndexBackward(init, true);
+			movePhraseIndexBackward(init, true);
 		break;
 		
 		case MODE_PPG :// forward-reverse; history base is 0x3000
 			if (phraseIndexRunHistory < 0x3001 || phraseIndexRunHistory > 0x3002) // even means going forward, odd means going reverse
 				phraseIndexRunHistory = 0x3002;
 			if (phraseIndexRunHistory == 0x3002) {// even so forward phase
-				moveSongIndexForeward(init, false);
+				movePhraseIndexForeward(init, false);
 			}
 			else {// odd so reverse phase
-				moveSongIndexBackward(false, false);
+				movePhraseIndexBackward(false, false);
 			}
 		break;
 
@@ -844,25 +835,25 @@ void SequencerKernel::movePhraseIndexRun(bool init) {
 			if (phraseIndexRunHistory < 0x4001 || phraseIndexRunHistory > 0x4002) // even means going forward, odd means going reverse
 				phraseIndexRunHistory = 0x4002;
 			if (phraseIndexRunHistory == 0x4002) {// even so forward phase	
-				moveSongIndexForeward(init, false);
+				movePhraseIndexForeward(init, false);
 				if (phraseIndexRunHistory == 0x4001)
-					moveSongIndexBackward(false, false);
+					movePhraseIndexBackward(false, false);
 			}
 			else {// odd so reverse phase
-				moveSongIndexBackward(false, false);
+				movePhraseIndexBackward(false, false);
 				if (phraseIndexRunHistory == 0x4000)
-					moveSongIndexForeward(false, false);
+					movePhraseIndexForeward(false, false);
 			}			
 		break;
 		
 		case MODE_BRN :// brownian random; history base is 0x5000
 			phraseIndexRunHistory = 0x5000;
-			moveSongIndexBrownian(init, random::u32());
+			movePhraseIndexBrownian(init, random::u32());
 		break;
 		
 		case MODE_RND :// random; history base is 0x6000
 			phraseIndexRunHistory = 0x6000;
-			moveSongIndexRandom(init, random::u32());
+			movePhraseIndexRandom(init, random::u32());
 		break;
 		
 		case MODE_TKA:// use track A's phraseIndexRun; base is 0x7000
@@ -875,7 +866,7 @@ void SequencerKernel::movePhraseIndexRun(bool init) {
 			[[fallthrough]];// TKA defaults to FWD for track A
 		default :// MODE_FWD  forward; history base is 0x1000
 			phraseIndexRunHistory = 0x1000;
-			moveSongIndexForeward(init, true);
+			movePhraseIndexForeward(init, true);
 	}
 }
 

@@ -854,4 +854,7 @@ Model *modelBigButtonSeq2 = createModel<BigButtonSeq2, BigButtonSeq2Widget>("Big
 
 /*CHANGE LOG
 
+1.0.0:
+add right menu option to enter big and del on next step
+
 */

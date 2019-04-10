@@ -170,10 +170,10 @@ class Sequencer {
 
 	inline float calcCvOutputAndDecSlideStepsRemain(int trkn, bool running, bool editingSequence) {
 		float cvout = 0.0f;
-		if (running)
-			cvout = sek[trkn].getCV(editingSequence) - sek[trkn].calcSlideOffset();
+		if (editingSequence && !running)
+			cvout = (editingGate[trkn] > 0ul) ? editingGateCV[trkn] : sek[trkn].getCV(editingSequence, stepIndexEdit);
 		else
-			cvout = (editingGate[trkn] > 0ul) ? editingGateCV[trkn] : sek[trkn].getCV(true, stepIndexEdit);
+			cvout = sek[trkn].getCV(editingSequence) - (running ? sek[trkn].calcSlideOffset() : 0.0f);
 		sek[trkn].decSlideStepsRemain();
 		return cvout;
 	}
@@ -184,10 +184,10 @@ class Sequencer {
 	}
 	inline float calcVelOutput(int trkn, bool running, bool editingSequence) {
 		int vVal = 0;
-		if (running)
-			vVal = sek[trkn].getAttribute(editingSequence).getVelocityVal();
+		if (editingSequence && !running)
+			vVal = (editingGate[trkn] > 0ul) ? editingGateCV2[trkn] : sek[trkn].getAttribute(editingSequence, stepIndexEdit).getVelocityVal();
 		else 
-			vVal = (editingGate[trkn] > 0ul) ? editingGateCV2[trkn] : sek[trkn].getAttribute(true, stepIndexEdit).getVelocityVal();
+			vVal = sek[trkn].getAttribute(editingSequence).getVelocityVal();
 
 		float velRet = (float)vVal;
 		if (*velocityModePtr == 0)
