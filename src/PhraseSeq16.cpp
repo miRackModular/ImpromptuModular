@@ -113,6 +113,7 @@ struct PhraseSeq16 : Module {
 	StepAttributes attributes[16][16];// First index is patten number, 2nd index is step (see enum AttributeBitMasks for details)
 	bool resetOnRun;
 	bool attached;
+	bool stopAtEndOfSong;
 
 	// No need to save
 	int stepIndexEdit;
@@ -273,6 +274,7 @@ struct PhraseSeq16 : Module {
 		displayState = DISP_NORMAL;
 		slideStepsRemain = 0ul;
 		attached = false;
+		stopAtEndOfSong = false;
 		clockPeriod = 0ul;
 		tiedWarning = 0ul;
 		attachedWarning = 0l;
@@ -374,6 +376,9 @@ struct PhraseSeq16 : Module {
 
 		// attached
 		json_object_set_new(rootJ, "attached", json_boolean(attached));
+
+		// stopAtEndOfSong
+		json_object_set_new(rootJ, "stopAtEndOfSong", json_boolean(stopAtEndOfSong));
 
 		// resetOnRun
 		json_object_set_new(rootJ, "resetOnRun", json_boolean(resetOnRun));
@@ -637,6 +642,11 @@ struct PhraseSeq16 : Module {
 		json_t *attachedJ = json_object_get(rootJ, "attached");
 		if (attachedJ)
 			attached = json_is_true(attachedJ);
+		
+		// stopAtEndOfSong
+		json_t *stopAtEndOfSongJ = json_object_get(rootJ, "stopAtEndOfSong");
+		if (stopAtEndOfSongJ)
+			stopAtEndOfSong = json_is_true(stopAtEndOfSongJ);
 		
 		// resetOnRun
 		json_t *resetOnRunJ = json_object_get(rootJ, "resetOnRun");
@@ -1195,9 +1205,19 @@ struct PhraseSeq16 : Module {
 					}
 					else {
 						slideFromCV = cv[phrase[phraseIndexRun]][stepIndexRun];
+						int oldStepIndexRun = stepIndexRun;
 						if (moveIndexRunMode(&stepIndexRun, sequences[phrase[phraseIndexRun]].getLength(), sequences[phrase[phraseIndexRun]].getRunMode(), &stepIndexRunHistory)) {
-							moveIndexRunMode(&phraseIndexRun, phrases, runModeSong, &phraseIndexRunHistory);
-							stepIndexRun = (sequences[phrase[phraseIndexRun]].getRunMode() == MODE_REV ? sequences[phrase[phraseIndexRun]].getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
+							int oldPhraseIndexRun = phraseIndexRun;
+							bool songLoopOver = moveIndexRunMode(&phraseIndexRun, phrases, runModeSong, &phraseIndexRunHistory);
+							// check for end of song if needed
+							if (songLoopOver && stopAtEndOfSong) {
+								running = false;
+								stepIndexRun = oldStepIndexRun;
+								phraseIndexRun = oldPhraseIndexRun;
+							}
+							else {
+								stepIndexRun = (sequences[phrase[phraseIndexRun]].getRunMode() == MODE_REV ? sequences[phrase[phraseIndexRun]].getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
+							}
 						}
 						newSeq = phrase[phraseIndexRun];
 					}
@@ -1683,6 +1703,12 @@ struct PhraseSeq16Widget : ModuleWidget {
 			module->holdTiedNotes = !module->holdTiedNotes;
 		}
 	};
+	struct StopAtEndOfSongItem : MenuItem {
+		PhraseSeq16 *module;
+		void onAction(const widget::ActionEvent &e) override {
+			module->stopAtEndOfSong = !module->stopAtEndOfSong;
+		}
+	};
 	struct SeqCVmethodItem : MenuItem {
 		PhraseSeq16 *module;
 		void onAction(const widget::ActionEvent &e) override {
@@ -1743,6 +1769,10 @@ struct PhraseSeq16Widget : ModuleWidget {
 		HoldTiedItem *holdItem = createMenuItem<HoldTiedItem>("Hold tied notes", CHECKMARK(module->holdTiedNotes));
 		holdItem->module = module;
 		menu->addChild(holdItem);
+
+		StopAtEndOfSongItem *loopItem = createMenuItem<StopAtEndOfSongItem>("Stop at end of song", CHECKMARK(module->stopAtEndOfSong));
+		loopItem->module = module;
+		menu->addChild(loopItem);
 
 		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in: ", "");
 		seqcvItem->module = module;
@@ -2025,5 +2055,6 @@ Model *modelPhraseSeq16 = createModel<PhraseSeq16, PhraseSeq16Widget>("Phrase-Se
 1.0.0:
 expansion panel replaced by a separate expander module
 right-click keys to autostep replaced by double click
+add menu option to stop at end of song
 
 */
