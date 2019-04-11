@@ -113,6 +113,7 @@ struct PhraseSeq32 : Module {
 	StepAttributes attributes[32][32];// First index is patten number, 2nd index is step (see enum AttributeBitMasks for details)
 	bool resetOnRun;
 	bool attached;
+	bool stopAtEndOfSong;
 
 	// No need to save
 	int stepIndexEdit;
@@ -311,6 +312,7 @@ struct PhraseSeq32 : Module {
 		slideStepsRemain[0] = 0ul;
 		slideStepsRemain[1] = 0ul;
 		attached = false;
+		stopAtEndOfSong = false;
 		clockPeriod = 0ul;
 		tiedWarning = 0ul;
 		attachedWarning = 0l;
@@ -417,6 +419,9 @@ struct PhraseSeq32 : Module {
 
 		// attached
 		json_object_set_new(rootJ, "attached", json_boolean(attached));
+
+		// stopAtEndOfSong
+		json_object_set_new(rootJ, "stopAtEndOfSong", json_boolean(stopAtEndOfSong));
 
 		// resetOnRun
 		json_object_set_new(rootJ, "resetOnRun", json_boolean(resetOnRun));
@@ -605,6 +610,11 @@ struct PhraseSeq32 : Module {
 		json_t *attachedJ = json_object_get(rootJ, "attached");
 		if (attachedJ)
 			attached = json_is_true(attachedJ);
+		
+		// stopAtEndOfSong
+		json_t *stopAtEndOfSongJ = json_object_get(rootJ, "stopAtEndOfSong");
+		if (stopAtEndOfSongJ)
+			stopAtEndOfSong = json_is_true(stopAtEndOfSongJ);
 		
 		// resetOnRun
 		json_t *resetOnRunJ = json_object_get(rootJ, "resetOnRun");
@@ -1218,13 +1228,26 @@ struct PhraseSeq32 : Module {
 					else {
 						for (int i = 0; i < 2; i += stepConfig)
 							slideFromCV[i] = cv[phrase[phraseIndexRun]][(i * 16) + stepIndexRun[i]];
+						int oldStepIndexRun0 = stepIndexRun[0];
+						int oldStepIndexRun1 = stepIndexRun[1];
 						if (moveIndexRunMode(&stepIndexRun[0], sequences[phrase[phraseIndexRun]].getLength(), sequences[phrase[phraseIndexRun]].getRunMode(), &stepIndexRunHistory)) {
-							moveIndexRunMode(&phraseIndexRun, phrases, runModeSong, &phraseIndexRunHistory);
-							stepIndexRun[0] = (sequences[phrase[phraseIndexRun]].getRunMode() == MODE_REV ? sequences[phrase[phraseIndexRun]].getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
+							int oldPhraseIndexRun = phraseIndexRun;
+							bool songLoopOver = moveIndexRunMode(&phraseIndexRun, phrases, runModeSong, &phraseIndexRunHistory);
+							// check for end of song if needed
+							if (songLoopOver && stopAtEndOfSong) {
+								running = false;
+								stepIndexRun[0] = oldStepIndexRun0;
+								stepIndexRun[1] = oldStepIndexRun1;
+								phraseIndexRun = oldPhraseIndexRun;
+							}
+							else {
+								stepIndexRun[0] = (sequences[phrase[phraseIndexRun]].getRunMode() == MODE_REV ? sequences[phrase[phraseIndexRun]].getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
+							}
 						}
 						newSeq = phrase[phraseIndexRun];
 					}
-					fillStepIndexRunVector(sequences[newSeq].getRunMode(), sequences[newSeq].getLength());
+					if (running)// end of song may have stopped it
+						fillStepIndexRunVector(sequences[newSeq].getRunMode(), sequences[newSeq].getLength());
 
 					// Slide
 					for (int i = 0; i < 2; i += stepConfig) {
@@ -1268,8 +1291,8 @@ struct PhraseSeq32 : Module {
 		//********** Outputs and lights **********
 				
 		// CV and gates outputs
-		int seq = editingSequence ? (seqIndexEdit) : (running ? phrase[phraseIndexRun] : phrase[phraseIndexEdit]);
-		int step0 = editingSequence ? (running ? stepIndexRun[0] : stepIndexEdit) : (stepIndexRun[0]);
+		int seq = editingSequence ? (seqIndexEdit) : /*(running ?*/ phrase[phraseIndexRun] /*: phrase[phraseIndexEdit])*/;
+		int step0 = (editingSequence && !running) ? : stepIndexEdit : stepIndexRun[0];
 		if (running) {
 			bool muteGate1A = !editingSequence && ((params[GATE1_PARAM].getValue() + (expanderPresent ? consumerMessage[0] : 0.0f)) > 0.5f);// live mute
 			bool muteGate1B = muteGate1A;
@@ -1293,13 +1316,13 @@ struct PhraseSeq32 : Module {
 			bool retriggingOnReset = (clockIgnoreOnReset != 0l && retrigGatesOnReset);
 			outputs[GATE1A_OUTPUT].setVoltage((calcGate(gate1Code[0], clockTrigger, clockPeriod, sampleRate) && !muteGate1A && !retriggingOnReset) ? 10.0f : 0.0f);
 			outputs[GATE2A_OUTPUT].setVoltage((calcGate(gate2Code[0], clockTrigger, clockPeriod, sampleRate) && !muteGate2A && !retriggingOnReset) ? 10.0f : 0.0f);
-			if (stepConfig == 1) {
-				int step1 = editingSequence ? (running ? stepIndexRun[1] : stepIndexEdit) : (stepIndexRun[1]);
+			if (stepConfig == 1) {// 2x16
+				int step1 = (editingSequence && !running) ? stepIndexEdit : stepIndexRun[1];
 				outputs[CVB_OUTPUT].setVoltage(cv[seq][16 + step1] - slideOffset[1]);
 				outputs[GATE1B_OUTPUT].setVoltage((calcGate(gate1Code[1], clockTrigger, clockPeriod, sampleRate) && !muteGate1B && !retriggingOnReset) ? 10.0f : 0.0f);
 				outputs[GATE2B_OUTPUT].setVoltage((calcGate(gate2Code[1], clockTrigger, clockPeriod, sampleRate) && !muteGate2B && !retriggingOnReset) ? 10.0f : 0.0f);
 			} 
-			else {
+			else {// 1x32
 				outputs[CVB_OUTPUT].setVoltage(0.0f);
 				outputs[GATE1B_OUTPUT].setVoltage(0.0f);
 				outputs[GATE2B_OUTPUT].setVoltage(0.0f);
@@ -1316,7 +1339,7 @@ struct PhraseSeq32 : Module {
 			}
 			else {// 2x16
 				float cvA = (step0 >= 16 ? cv[seq][step0 - 16] : cv[seq][step0]);
-				float cvB = (step0 >= 16 ? cv[seq][step0] : cv[seq][step0 + 16]);
+				float cvB = (step0 >= 16 ? cv[seq][step0] : cv[seq][step0 + 16]);// TODO bug when RN2 and song turns off
 				if (editingChannel == 0) {
 					outputs[CVA_OUTPUT].setVoltage((editingGate > 0ul) ? editingGateCV : cvA);
 					outputs[GATE1A_OUTPUT].setVoltage((editingGate > 0ul) ? 10.0f : 0.0f);
@@ -1768,6 +1791,12 @@ struct PhraseSeq32Widget : ModuleWidget {
 			module->holdTiedNotes = !module->holdTiedNotes;
 		}
 	};
+	struct StopAtEndOfSongItem : MenuItem {
+		PhraseSeq32 *module;
+		void onAction(const widget::ActionEvent &e) override {
+			module->stopAtEndOfSong = !module->stopAtEndOfSong;
+		}
+	};
 	struct SeqCVmethodItem : MenuItem {
 		PhraseSeq32 *module;
 		void onAction(const widget::ActionEvent &e) override {
@@ -1828,6 +1857,10 @@ struct PhraseSeq32Widget : ModuleWidget {
 		HoldTiedItem *holdItem = createMenuItem<HoldTiedItem>("Hold tied notes", CHECKMARK(module->holdTiedNotes));
 		holdItem->module = module;
 		menu->addChild(holdItem);
+
+		StopAtEndOfSongItem *loopItem = createMenuItem<StopAtEndOfSongItem>("Stop at end of song", CHECKMARK(module->stopAtEndOfSong));
+		loopItem->module = module;
+		menu->addChild(loopItem);
 
 		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in: ", "");
 		seqcvItem->module = module;
@@ -2128,5 +2161,6 @@ Model *modelPhraseSeq32 = createModel<PhraseSeq32, PhraseSeq32Widget>("Phrase-Se
 1.0.0:
 expansion panel replaced by a separate expander module
 right-click keys to autostep replaced by double click
+add menu option to stop at end of song
 
 */

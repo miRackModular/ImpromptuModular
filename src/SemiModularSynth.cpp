@@ -196,6 +196,7 @@ struct SemiModularSynth : Module {
 	StepAttributes attributes[16][16];// First index is patten number, 2nd index is step (see enum AttributeBitMasks for details)
 	bool resetOnRun;
 	bool attached;
+	bool stopAtEndOfSong;
 
 	// No need to save
 	int stepIndexEdit;
@@ -415,6 +416,7 @@ struct SemiModularSynth : Module {
 		displayState = DISP_NORMAL;
 		slideStepsRemain = 0ul;
 		attached = false;
+		stopAtEndOfSong = false;
 		clockPeriod = 0ul;
 		tiedWarning = 0ul;
 		attachedWarning = 0l;
@@ -522,6 +524,9 @@ struct SemiModularSynth : Module {
 
 		// attached
 		json_object_set_new(rootJ, "attached", json_boolean(attached));
+
+		// stopAtEndOfSong
+		json_object_set_new(rootJ, "stopAtEndOfSong", json_boolean(stopAtEndOfSong));
 
 		// resetOnRun
 		json_object_set_new(rootJ, "resetOnRun", json_boolean(resetOnRun));
@@ -711,6 +716,11 @@ struct SemiModularSynth : Module {
 		json_t *attachedJ = json_object_get(rootJ, "attached");
 		if (attachedJ)
 			attached = json_is_true(attachedJ);
+		
+		// stopAtEndOfSong
+		json_t *stopAtEndOfSongJ = json_object_get(rootJ, "stopAtEndOfSong");
+		if (stopAtEndOfSongJ)
+			stopAtEndOfSong = json_is_true(stopAtEndOfSongJ);
 		
 		// resetOnRun
 		json_t *resetOnRunJ = json_object_get(rootJ, "resetOnRun");
@@ -1261,9 +1271,19 @@ struct SemiModularSynth : Module {
 					}
 					else {
 						slideFromCV = cv[phrase[phraseIndexRun]][stepIndexRun];
+						int oldStepIndexRun = stepIndexRun;
 						if (moveIndexRunMode(&stepIndexRun, sequences[phrase[phraseIndexRun]].getLength(), sequences[phrase[phraseIndexRun]].getRunMode(), &stepIndexRunHistory)) {
-							moveIndexRunMode(&phraseIndexRun, phrases, runModeSong, &phraseIndexRunHistory);
-							stepIndexRun = (sequences[phrase[phraseIndexRun]].getRunMode() == MODE_REV ? sequences[phrase[phraseIndexRun]].getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
+							int oldPhraseIndexRun = phraseIndexRun;
+							bool songLoopOver = moveIndexRunMode(&phraseIndexRun, phrases, runModeSong, &phraseIndexRunHistory);
+							// check for end of song if needed
+							if (songLoopOver && stopAtEndOfSong) {
+								running = false;
+								stepIndexRun = oldStepIndexRun;
+								phraseIndexRun = oldPhraseIndexRun;
+							}
+							else {
+								stepIndexRun = (sequences[phrase[phraseIndexRun]].getRunMode() == MODE_REV ? sequences[phrase[phraseIndexRun]].getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
+							}
 						}
 						newSeq = phrase[phraseIndexRun];
 					}
@@ -1304,8 +1324,8 @@ struct SemiModularSynth : Module {
 		//********** Outputs and lights **********
 				
 		// CV and gates outputs
-		int seq = editingSequence ? (seqIndexEdit) : (running ? phrase[phraseIndexRun] : phrase[phraseIndexEdit]);
-		int step = editingSequence ? (running ? stepIndexRun : stepIndexEdit) : (stepIndexRun);
+		int seq = editingSequence ? (seqIndexEdit) : /*(running ? */phrase[phraseIndexRun] /*: phrase[phraseIndexEdit])*/;
+		int step = (editingSequence && !running) ? stepIndexEdit : stepIndexRun;
 		if (running) {
 			bool muteGate1 = !editingSequence && (params[GATE1_PARAM].getValue() > 0.5f);// live mute
 			bool muteGate2 = !editingSequence && (params[GATE2_PARAM].getValue() > 0.5f);// live mute
@@ -1879,6 +1899,12 @@ struct SemiModularSynthWidget : ModuleWidget {
 			module->holdTiedNotes = !module->holdTiedNotes;
 		}
 	};
+	struct StopAtEndOfSongItem : MenuItem {
+		SemiModularSynth *module;
+		void onAction(const widget::ActionEvent &e) override {
+			module->stopAtEndOfSong = !module->stopAtEndOfSong;
+		}
+	};
 	struct SeqCVmethodItem : MenuItem {
 		SemiModularSynth *module;
 		void onAction(const widget::ActionEvent &e) override {
@@ -1938,6 +1964,10 @@ struct SemiModularSynthWidget : ModuleWidget {
 		HoldTiedItem *holdItem = createMenuItem<HoldTiedItem>("Hold tied notes", CHECKMARK(module->holdTiedNotes));
 		holdItem->module = module;
 		menu->addChild(holdItem);
+
+		StopAtEndOfSongItem *loopItem = createMenuItem<StopAtEndOfSongItem>("Stop at end of song", CHECKMARK(module->stopAtEndOfSong));
+		loopItem->module = module;
+		menu->addChild(loopItem);
 
 		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in: ", "");
 		seqcvItem->module = module;
@@ -2314,5 +2344,6 @@ Model *modelSemiModularSynth = createModel<SemiModularSynth, SemiModularSynthWid
 
 1.0.0:
 right-click keys to autostep replaced by double click
+add menu option to stop at end of song
 
 */
