@@ -512,7 +512,17 @@ Here are a few more details on some of the uses of the buttons. The sequencer us
 
 * **SNAP**: the BIG and DEL buttons are quantized to the nearest beat when the SNAP button is active. Without quantization, button presses always affect the current beat (step) of the sequencer. With quantized buttons, they affect the nearest beat. For example, without quantization, pressing the big button 1 microsecond before a beat would normally record the beat in the current step and not the next one that is about to occur (which is actually the closest). For the quantization to work properly however, the sequencer must receive a stable clock of at least 30 BPM. When this is not the case, the option is automatically disabled internally. When manually advancing the clock to program a sequence in non real-time, for example, the option has no effect and the current step is always the target of a button press.
 
-* **Big and Del on next step**: this option is available in the right-click menu of the module. When active, all hits of the big and del buttons are registered on the next beat to come. Snap has no effect when this option is activated.
+* **Big and Del on next step**: this option is available in the right-click menu of the module. When active, all hits of the big and del buttons are registered on the step that follows the current step. Snap has no effect when this option is activated.
+
+Here is a summary of how **SNAP** and the **Big and Del on next step** option work.
+* Big button hit (or del) with **snap off** and the next step **option off**:
+	* play the trigger exactly when the button is hit
+	* record the trigger in the beat that last happened (i.e. the current step)
+* Big button hit (or del) with **snap on** and the next step **option off**:
+	* if the nearest beat is the one that should come next (given current BPM), play and record the trigger in the next beat to come
+	* if the nearest beat is the last one that happened, do the same as when SNAP is off
+* Big button hit (or del) with the next step **option on** (snap has no effect): 
+	* play and record the trigger in the step that follows the current step (loops around according to selected length)
 
 ([Back to module list](#modules))
 
