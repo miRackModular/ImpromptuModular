@@ -39,7 +39,7 @@ class Sequencer {
 	
 	public: 
 	
-	void construct(bool* _holdTiedNotesPtr, int* _velocityModePtr);
+	void construct(bool* _holdTiedNotesPtr, int* _velocityModePtr, int* _stopAtEndOfSongPtr);
 
 	inline int getStepIndexEdit() {return stepIndexEdit;}
 	inline int getSeqIndexEdit() {return sek[trackIndexEdit].getSeqIndexEdit();}
@@ -48,18 +48,17 @@ class Sequencer {
 	inline int getTrackIndexEdit() {return trackIndexEdit;}
 	inline int getStepIndexRun(int trkn) {return sek[trkn].getStepIndexRun();}
 	inline int getLength() {return sek[trackIndexEdit].getLength();}
-	inline StepAttributes getAttribute(bool editingSequence) {
-		if (editingSequence)
-			return sek[trackIndexEdit].getAttribute(editingSequence, stepIndexEdit);
-		return sek[trackIndexEdit].getAttribute(editingSequence);
-	}
-	inline StepAttributes getAttribute(bool editingSequence, int stepn) {return sek[trackIndexEdit].getAttribute(editingSequence, stepn);}
 	inline float getCV(bool editingSequence) {
 		if (editingSequence)
-			return sek[trackIndexEdit].getCV(editingSequence, stepIndexEdit);
+			return sek[trackIndexEdit].getCV(stepIndexEdit);
 		return sek[trackIndexEdit].getCV(editingSequence);
 	}
-	//inline float getCV(bool editingSequence, int stepn) {return sek[trackIndexEdit].getCV(editingSequence, stepn);}
+	inline StepAttributes getAttribute(bool editingSequence) {
+		if (editingSequence)
+			return sek[trackIndexEdit].getAttribute(stepIndexEdit);
+		return sek[trackIndexEdit].getAttribute(editingSequence);
+	}
+	inline StepAttributes getAttribute(bool editingSequence, int stepn) {return sek[trackIndexEdit].getAttributei(editingSequence, stepn);}
 	inline int keyIndexToGateTypeEx(int keyn) {return sek[trackIndexEdit].keyIndexToGateTypeEx(keyn);}
 	inline int getPulsesPerStep() {return sek[trackIndexEdit].getPulsesPerStep();}
 	inline int getDelay() {return sek[trackIndexEdit].getDelay();}
@@ -78,10 +77,10 @@ class Sequencer {
 	inline void setEditingGateKeyLight(int _editingGateKeyLight) {editingGateKeyLight = _editingGateKeyLight;}
 	inline void setStepIndexEdit(int _stepIndexEdit, int sampleRate) {
 		stepIndexEdit = _stepIndexEdit;
-		StepAttributes stepAttrib = sek[trackIndexEdit].getAttribute(true, stepIndexEdit);
+		StepAttributes stepAttrib = sek[trackIndexEdit].getAttribute(stepIndexEdit);
 		if (!stepAttrib.getTied()) {// play if non-tied step
 			editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
-			editingGateCV[trackIndexEdit] = sek[trackIndexEdit].getCV(true, stepIndexEdit);
+			editingGateCV[trackIndexEdit] = sek[trackIndexEdit].getCV(stepIndexEdit);
 			editingGateCV2[trackIndexEdit] = stepAttrib.getVelocityVal();
 			editingGateKeyLight = -1;
 		}
@@ -171,7 +170,7 @@ class Sequencer {
 	inline float calcCvOutputAndDecSlideStepsRemain(int trkn, bool running, bool editingSequence) {
 		float cvout = 0.0f;
 		if (editingSequence && !running)
-			cvout = (editingGate[trkn] > 0ul) ? editingGateCV[trkn] : sek[trkn].getCV(editingSequence, stepIndexEdit);
+			cvout = (editingGate[trkn] > 0ul) ? editingGateCV[trkn] : sek[trkn].getCV(stepIndexEdit);
 		else
 			cvout = sek[trkn].getCV(editingSequence) - (running ? sek[trkn].calcSlideOffset() : 0.0f);
 		sek[trkn].decSlideStepsRemain();
@@ -185,7 +184,7 @@ class Sequencer {
 	inline float calcVelOutput(int trkn, bool running, bool editingSequence) {
 		int vVal = 0;
 		if (editingSequence && !running)
-			vVal = (editingGate[trkn] > 0ul) ? editingGateCV2[trkn] : sek[trkn].getAttribute(editingSequence, stepIndexEdit).getVelocityVal();
+			vVal = (editingGate[trkn] > 0ul) ? editingGateCV2[trkn] : sek[trkn].getAttribute(stepIndexEdit).getVelocityVal();
 		else 
 			vVal = sek[trkn].getAttribute(editingSequence).getVelocityVal();
 
@@ -246,7 +245,7 @@ class Sequencer {
 			sek[trkn].initRun(editingSequence);
 	}
 
-	void clockStep(int trkn, bool editingSequence);
+	bool clockStep(int trkn, bool editingSequence);// returns true to signal that run should be turned off
 	
 	inline void process() {
 		for (int trkn = 0; trkn < NUM_TRACKS; trkn++)

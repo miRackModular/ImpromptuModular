@@ -81,6 +81,7 @@ struct GateSeq64 : Module {
 	int phrases;// 1 to 64
 	StepAttributesGS attributes[MAX_SEQS][64];
 	bool resetOnRun;
+	bool stopAtEndOfSong;
 
 	// No need to save
 	int displayState;
@@ -239,6 +240,7 @@ struct GateSeq64 : Module {
 		infoCopyPaste = 0l;
 		revertDisplay = 0l;
 		resetOnRun = false;
+		stopAtEndOfSong = false;
 		editingPpqn = 0l;
 		blinkCount = 0l;
 		blinkNum = blinkNumInit;
@@ -319,6 +321,9 @@ struct GateSeq64 : Module {
 		// resetOnRun
 		json_object_set_new(rootJ, "resetOnRun", json_boolean(resetOnRun));
 		
+		// stopAtEndOfSong
+		json_object_set_new(rootJ, "stopAtEndOfSong", json_boolean(stopAtEndOfSong));
+
 		// stepIndexEdit
 		json_object_set_new(rootJ, "stepIndexEdit", json_integer(stepIndexEdit));
 	
@@ -503,6 +508,11 @@ struct GateSeq64 : Module {
 		if (resetOnRunJ)
 			resetOnRun = json_is_true(resetOnRunJ);
 
+		// stopAtEndOfSong
+		json_t *stopAtEndOfSongJ = json_object_get(rootJ, "stopAtEndOfSong");
+		if (stopAtEndOfSongJ)
+			stopAtEndOfSong = json_is_true(stopAtEndOfSongJ);
+		
 		// stepIndexEdit
 		json_t *stepIndexEditJ = json_object_get(rootJ, "stepIndexEdit");
 		if (stepIndexEditJ)
@@ -936,13 +946,30 @@ struct GateSeq64 : Module {
 						moveIndexRunMode(&stepIndexRun[0], sequences[sequence].getLength(), sequences[sequence].getRunMode(), &stepIndexRunHistory);
 					}
 					else {
+						int oldStepIndexRun0 = stepIndexRun[0];
+						int oldStepIndexRun1 = stepIndexRun[1];
+						int oldStepIndexRun2 = stepIndexRun[2];
+						int oldStepIndexRun3 = stepIndexRun[3];
 						if (moveIndexRunMode(&stepIndexRun[0], sequences[phrase[phraseIndexRun]].getLength(), sequences[phrase[phraseIndexRun]].getRunMode(), &stepIndexRunHistory)) {
-							moveIndexRunMode(&phraseIndexRun, phrases, runModeSong, &phraseIndexRunHistory);
-							stepIndexRun[0] = (sequences[phrase[phraseIndexRun]].getRunMode() == MODE_REV ? sequences[phrase[phraseIndexRun]].getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
+							int oldPhraseIndexRun = phraseIndexRun;
+							bool songLoopOver = moveIndexRunMode(&phraseIndexRun, phrases, runModeSong, &phraseIndexRunHistory);
+							// check for end of song if needed
+							if (songLoopOver && stopAtEndOfSong) {
+								running = false;
+								stepIndexRun[0] = oldStepIndexRun0;
+								stepIndexRun[1] = oldStepIndexRun1;
+								stepIndexRun[2] = oldStepIndexRun2;
+								stepIndexRun[3] = oldStepIndexRun3;
+								phraseIndexRun = oldPhraseIndexRun;
+							}
+							else {							
+								stepIndexRun[0] = (sequences[phrase[phraseIndexRun]].getRunMode() == MODE_REV ? sequences[phrase[phraseIndexRun]].getLength() - 1 : 0);// must always refresh after phraseIndexRun has changed
+							}
 						}
 						newSeq = phrase[phraseIndexRun];
 					}
-					fillStepIndexRunVector(sequences[newSeq].getRunMode(), sequences[newSeq].getLength());
+					if (running)// end of song may have stopped it
+						fillStepIndexRunVector(sequences[newSeq].getRunMode(), sequences[newSeq].getLength());
 				}
 				else {
 					if (!editingSequence)
@@ -1265,6 +1292,12 @@ struct GateSeq64Widget : ModuleWidget {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
+	struct StopAtEndOfSongItem : MenuItem {
+		GateSeq64 *module;
+		void onAction(const widget::ActionEvent &e) override {
+			module->stopAtEndOfSong = !module->stopAtEndOfSong;
+		}
+	};
 	struct AutoseqItem : MenuItem {
 		GateSeq64 *module;
 		void onAction(const widget::ActionEvent &e) override {
@@ -1323,6 +1356,10 @@ struct GateSeq64Widget : ModuleWidget {
 		AutoseqItem *aseqItem = createMenuItem<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
 		aseqItem->module = module;
 		menu->addChild(aseqItem);
+
+		StopAtEndOfSongItem *loopItem = createMenuItem<StopAtEndOfSongItem>("Stop at end of song", CHECKMARK(module->stopAtEndOfSong));
+		loopItem->module = module;
+		menu->addChild(loopItem);
 
 		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in: ", "");
 		seqcvItem->module = module;
@@ -1530,5 +1567,6 @@ Model *modelGateSeq64 = createModel<GateSeq64, GateSeq64Widget>("Gate-Seq-64");
 1.0.0:
 removed right-click of step buttons to clear gates
 expansion panel replaced by a separate expander module
+add menu option to stop at end of song
 
 */

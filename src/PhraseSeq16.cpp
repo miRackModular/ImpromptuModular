@@ -1260,7 +1260,7 @@ struct PhraseSeq16 : Module {
 		//********** Outputs and lights **********
 				
 		// CV and gates outputs
-		int seq = editingSequence ? (seqIndexEdit) : /*(running ?*/ phrase[phraseIndexRun]/* : phrase[phraseIndexEdit])*/;
+		int seq = editingSequence ? seqIndexEdit : phrase[phraseIndexRun];
 		int step = (editingSequence && !running) ? stepIndexEdit : stepIndexRun;
 		if (running) {
 			bool muteGate1 = !editingSequence && ((params[GATE1_PARAM].getValue() + (expanderPresent ? consumerMessage[0] : 0.0f)) > 0.5f);// live mute

@@ -197,13 +197,14 @@ class SequencerKernel {
 	float slideCVdelta;// no need to initialize, this is only used when slideStepsRemain is not 0
 	SequencerKernel *masterKernel;// nullprt for track 0, used for grouped run modes (tracks B,C,D follow A when random, for example)
 	bool* holdTiedNotesPtr;
+	int* stopAtEndOfSongPtr;
 	unsigned long clockPeriod;// counts number of step() calls upward from last clock (reset after clock processed)
 	bool moveStepIndexRunIgnore;
 	
 	
 	public: 
 	
-	void construct(int _id, SequencerKernel *_masterKernel, bool* _holdTiedNotesPtr); // don't want regaular constructor mechanism
+	void construct(int _id, SequencerKernel *_masterKernel, bool* _holdTiedNotesPtr, int* _stopAtEndOfSongPtr); // don't want regaular constructor mechanism
 	
 	inline int getSeqIndexEdit() {return seqIndexEdit;}
 	inline int getRunModeSong() {return runModeSong;}
@@ -219,14 +220,16 @@ class SequencerKernel {
 	inline int getRotateOffset() {return sequences[seqIndexEdit].getRotate();}
 	inline int getStepIndexRun() {return stepIndexRun;}
 	inline int getPhraseIndexRun() {return phraseIndexRun;}
-	inline float getCV(bool editingSequence) {return getCV(editingSequence, stepIndexRun);}
-	inline float getCV(bool editingSequence, int stepn) {
+	inline float getCV(bool editingSequence) {return getCVi(editingSequence, stepIndexRun);}
+	inline float getCV(int stepn) {return getCVi(true, stepn);}
+	inline float getCVi(bool editingSequence, int stepn) {
 		if (editingSequence)
 			return cv[seqIndexEdit][stepn];
 		return cv[phrases[phraseIndexRun].getSeqNum()][stepn];
 	}
-	inline StepAttributes getAttribute(bool editingSequence) {return getAttribute(editingSequence, stepIndexRun);}
-	inline StepAttributes getAttribute(bool editingSequence, int stepn) {
+	inline StepAttributes getAttribute(bool editingSequence) {return getAttributei(editingSequence, stepIndexRun);}
+	inline StepAttributes getAttribute(int stepn) {return getAttributei(true, stepn);}
+	inline StepAttributes getAttributei(bool editingSequence, int stepn) {
 		if (editingSequence)
 			return attributes[seqIndexEdit][stepn];
 		return attributes[phrases[phraseIndexRun].getSeqNum()][stepn];
@@ -363,7 +366,7 @@ class SequencerKernel {
 	void dataToJson(json_t *rootJ);
 	void dataFromJson(json_t *rootJ);
 	void initRun(bool editingSequence);
-	bool clockStep(bool editingSequence, int delayedSeqNumberRequest);
+	int clockStep(bool editingSequence, int delayedSeqNumberRequest);
 	inline void process() {
 		clockPeriod++;
 	}
@@ -389,12 +392,12 @@ class SequencerKernel {
 	void deactivateTiedStep(int seqn, int stepn);
 	void calcGateCode(bool editingSequence);
 	bool moveStepIndexRun(bool init, bool editingSequence);
-	void movePhraseIndexBackward(bool init, bool rollover);
-	void movePhraseIndexForeward(bool init, bool rollover);
+	bool movePhraseIndexBackward(bool init, bool rollover);
+	bool movePhraseIndexForeward(bool init, bool rollover);
 	int tempPhraseIndexes[MAX_PHRASES];// used only in next method	
 	void movePhraseIndexRandom(bool init, uint32_t randomValue);	
 	void movePhraseIndexBrownian(bool init, uint32_t randomValue);	
-	void movePhraseIndexRun(bool init);
+	bool movePhraseIndexRun(bool init);
 };// class SequencerKernel 
 
 

@@ -1291,7 +1291,7 @@ struct PhraseSeq32 : Module {
 		//********** Outputs and lights **********
 				
 		// CV and gates outputs
-		int seq = editingSequence ? (seqIndexEdit) : /*(running ?*/ phrase[phraseIndexRun] /*: phrase[phraseIndexEdit])*/;
+		int seq = editingSequence ? seqIndexEdit : phrase[phraseIndexRun];
 		int step0 = (editingSequence && !running) ? stepIndexEdit : stepIndexRun[0];
 		if (running) {
 			bool muteGate1A = !editingSequence && ((params[GATE1_PARAM].getValue() + (expanderPresent ? consumerMessage[0] : 0.0f)) > 0.5f);// live mute
@@ -1338,8 +1338,16 @@ struct PhraseSeq32 : Module {
 				outputs[GATE2B_OUTPUT].setVoltage(0.0f);
 			}
 			else {// 2x16
-				float cvA = (step0 >= 16 ? cv[seq][step0 - 16] : cv[seq][step0]);
-				float cvB = (step0 >= 16 ? cv[seq][step0] : cv[seq][step0 + 16]);// TODO bug when RN2 and song turns off
+				float cvA = 0.0f;
+				float cvB = 0.0f;
+				if (editingSequence) {
+					cvA = (step0 >= 16 ? cv[seq][step0 - 16] : cv[seq][step0]);
+					cvB = (step0 >= 16 ? cv[seq][step0] : cv[seq][step0 + 16]);
+				}
+				else {
+					cvA = cv[seq][step0];
+					cvB = cv[seq][stepIndexRun[1]];
+				}
 				if (editingChannel == 0) {
 					outputs[CVA_OUTPUT].setVoltage((editingGate > 0ul) ? editingGateCV : cvA);
 					outputs[GATE1A_OUTPUT].setVoltage((editingGate > 0ul) ? 10.0f : 0.0f);

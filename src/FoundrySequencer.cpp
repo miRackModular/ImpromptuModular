@@ -6,11 +6,11 @@
 #include "FoundrySequencer.hpp"
 
 
-void Sequencer::construct(bool* _holdTiedNotesPtr, int* _velocityModePtr) {// don't want regaular constructor mechanism
+void Sequencer::construct(bool* _holdTiedNotesPtr, int* _velocityModePtr, int* _stopAtEndOfSongPtr) {// don't want regaular constructor mechanism
 	velocityModePtr = _velocityModePtr;
-	sek[0].construct(0, nullptr, _holdTiedNotesPtr);
+	sek[0].construct(0, nullptr, _holdTiedNotesPtr, _stopAtEndOfSongPtr);
 	for (int trkn = 1; trkn < NUM_TRACKS; trkn++)
-		sek[trkn].construct(trkn, &sek[0], _holdTiedNotesPtr);
+		sek[trkn].construct(trkn, &sek[0], _holdTiedNotesPtr, _stopAtEndOfSongPtr);
 }
 
 
@@ -194,7 +194,7 @@ void Sequencer::pasteSong(bool multiTracks) {
 void Sequencer::writeCV(int trkn, float cvVal, int multiStepsCount, float sampleRate, bool multiTracks) {
 	sek[trkn].writeCV(stepIndexEdit, cvVal, multiStepsCount);
 	editingGateCV[trkn] = cvVal;
-	editingGateCV2[trkn] = sek[trkn].getAttribute(true, stepIndexEdit).getVelocityVal();
+	editingGateCV2[trkn] = sek[trkn].getAttribute(stepIndexEdit).getVelocityVal();
 	editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
@@ -217,7 +217,7 @@ void Sequencer::autostep(bool autoseq, bool autostepLen, bool multiTracks) {
 }	
 
 bool Sequencer::applyNewOctave(int octn, int multiSteps, float sampleRate, bool multiTracks) { // returns true if tied
-	StepAttributes stepAttrib = sek[trackIndexEdit].getAttribute(true, stepIndexEdit);
+	StepAttributes stepAttrib = sek[trackIndexEdit].getAttribute(stepIndexEdit);
 	if (stepAttrib.getTied())
 		return true;
 	editingGateCV[trackIndexEdit] = sek[trackIndexEdit].applyNewOctave(stepIndexEdit, octn, multiSteps);
@@ -234,7 +234,7 @@ bool Sequencer::applyNewOctave(int octn, int multiSteps, float sampleRate, bool 
 }
 bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool autostepClick, bool multiTracks) { // returns true if tied
 	bool ret = false;
-	StepAttributes stepAttrib = sek[trackIndexEdit].getAttribute(true, stepIndexEdit);
+	StepAttributes stepAttrib = sek[trackIndexEdit].getAttribute(stepIndexEdit);
 	if (stepAttrib.getTied()) {
 		if (autostepClick)
 			moveStepIndexEdit(1, false);
@@ -265,11 +265,11 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 void Sequencer::moveStepIndexEditWithEditingGate(int delta, bool writeTrig, float sampleRate) {
 	moveStepIndexEdit(delta, false);
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
-		StepAttributes stepAttrib = sek[trkn].getAttribute(true, stepIndexEdit);
+		StepAttributes stepAttrib = sek[trkn].getAttribute(stepIndexEdit);
 		if (!stepAttrib.getTied()) {// play if non-tied step
 			if (!writeTrig) {// in case autostep when simultaneous writeCV and stepCV (keep what was done in Write Input block above)
 				editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
-				editingGateCV[trkn] = sek[trkn].getCV(true, stepIndexEdit);
+				editingGateCV[trkn] = sek[trkn].getCV(stepIndexEdit);
 				editingGateCV2[trkn] = stepAttrib.getVelocityVal();
 				editingGateKeyLight = -1;
 			}
@@ -418,7 +418,7 @@ void Sequencer::toggleGate(int multiSteps, bool multiTracks) {
 	}		
 }
 bool Sequencer::toggleGateP(int multiSteps, bool multiTracks) { // returns true if tied
-	if (sek[trackIndexEdit].getAttribute(true, stepIndexEdit).getTied())
+	if (sek[trackIndexEdit].getAttribute(stepIndexEdit).getTied())
 		return true;
 	bool newGateP = sek[trackIndexEdit].toggleGateP(stepIndexEdit, multiSteps);
 	if (multiTracks) {
@@ -430,7 +430,7 @@ bool Sequencer::toggleGateP(int multiSteps, bool multiTracks) { // returns true 
 	return false;
 }
 bool Sequencer::toggleSlide(int multiSteps, bool multiTracks) { // returns true if tied
-	if (sek[trackIndexEdit].getAttribute(true, stepIndexEdit).getTied())
+	if (sek[trackIndexEdit].getAttribute(stepIndexEdit).getTied())
 		return true;
 	bool newSlide = sek[trackIndexEdit].toggleSlide(stepIndexEdit, multiSteps);
 	if (multiTracks) {
@@ -504,16 +504,19 @@ void Sequencer::reset(bool editingSequence) {
 }
 
 
-void Sequencer::clockStep(int trkn, bool editingSequence) {
-	bool phraseChange = sek[trkn].clockStep(editingSequence, delayedSeqNumberRequest[trkn]);
+bool Sequencer::clockStep(int trkn, bool editingSequence) {// returns true to signal that run should be turned off
+	int phraseChangeOrStop = sek[trkn].clockStep(editingSequence, delayedSeqNumberRequest[trkn]);
+	
+	if (phraseChangeOrStop == 2)// kernel request that run should be turned off 
+		return true;
 	
 	if (editingSequence) {
-		if (phraseChange) {
+		if (phraseChangeOrStop == 1) {
 			delayedSeqNumberRequest[trkn] = -1;// consumed
 		}
 	}
 	else {
-		if (trkn == 0 && phraseChange) {
+		if (trkn == 0 && phraseChangeOrStop == 1) {
 			for (int tkbcd = 1; tkbcd < NUM_TRACKS; tkbcd++) {// check for song run mode slaving
 				if (sek[tkbcd].getRunModeSong() == SequencerKernel::MODE_TKA) {
 					sek[tkbcd].setPhraseIndexRun(sek[0].getPhraseIndexRun());
@@ -529,6 +532,7 @@ void Sequencer::clockStep(int trkn, bool editingSequence) {
 			}
 		}
 	}
+	return false;
 }
 
 

@@ -21,11 +21,12 @@ const uint64_t SequencerKernel::advGateHitMaskHigh[NUM_GATES] =
 //  			TR1 				DUO		  			TR2 	     		D2		  			TR3  TRIG		
 
 
-void SequencerKernel::construct(int _id, SequencerKernel *_masterKernel, bool* _holdTiedNotesPtr) {// don't want regaular constructor mechanism
+void SequencerKernel::construct(int _id, SequencerKernel *_masterKernel, bool* _holdTiedNotesPtr, int* _stopAtEndOfSongPtr) {// don't want regaular constructor mechanism
 	id = _id;
 	ids = "id" + std::to_string(id) + "_";
 	masterKernel = _masterKernel;
 	holdTiedNotesPtr = _holdTiedNotesPtr;
+	stopAtEndOfSongPtr = _stopAtEndOfSongPtr;
 }
 
 
@@ -365,8 +366,8 @@ void SequencerKernel::initRun(bool editingSequence) {
 }
 
 
-bool SequencerKernel::clockStep(bool editingSequence, int delayedSeqNumberRequest) {// delayedSeqNumberRequest is only valid in seq mode (-1 means no request)
-	bool phraseChange = false;
+int SequencerKernel::clockStep(bool editingSequence, int delayedSeqNumberRequest) {// delayedSeqNumberRequest is only valid in seq mode (-1 means no request)
+	int phraseChangeOrStop = 0;//0 = nothing, 1 = phrase change, 2 = turn off run
 	
 	if (ppqnLeftToSkip > 0) {
 		ppqnLeftToSkip--;
@@ -378,16 +379,26 @@ bool SequencerKernel::clockStep(bool editingSequence, int delayedSeqNumberReques
 			ppqnCount = 0;
 		if (ppqnCount == 0) {
 			float slideFromCV = getCV(editingSequence);
+			int oldStepIndexRun = stepIndexRun;
 			if (moveStepIndexRun(false, editingSequence)) {// false means normal (not init)
-				phraseChange = true;// used by first track for random slaving, and also by all tracks for delayed Seq CV request
+				phraseChangeOrStop = 1;// used by first track for random slaving, and also by all tracks for delayed Seq CV request
 				if (editingSequence) {
 					if (delayedSeqNumberRequest >= 0) {
 						seqIndexEdit = delayedSeqNumberRequest;
 					}
 				}
 				else {
-					movePhraseIndexRun(false);// false means normal (not init)
-					moveStepIndexRun(true, editingSequence);// true means init; must always refresh after phraseIndexRun has changed
+					int oldPhraseIndexRun = phraseIndexRun;
+					bool songLoopOver = movePhraseIndexRun(false);// false means normal (not init)
+					// check for end of song if needed
+					if (songLoopOver && (id == *stopAtEndOfSongPtr)) {
+						phraseChangeOrStop = 2;
+						stepIndexRun = oldStepIndexRun;
+						phraseIndexRun = oldPhraseIndexRun;
+					}
+					else {					
+						moveStepIndexRun(true, editingSequence);// true means init; must always refresh after phraseIndexRun has changed
+					}
 				}
 			}
 
@@ -407,7 +418,7 @@ bool SequencerKernel::clockStep(bool editingSequence, int delayedSeqNumberReques
 	}
 	clockPeriod = 0ul;
 	
-	return phraseChange;
+	return phraseChangeOrStop;
 }
 
 
@@ -723,8 +734,9 @@ bool SequencerKernel::moveStepIndexRun(bool init, bool editingSequence) {
 }
 
 
-void SequencerKernel::movePhraseIndexBackward(bool init, bool rollover) {
+bool SequencerKernel::movePhraseIndexBackward(bool init, bool rollover) {
 	int phrn = 0;
+	bool crossBoundary = false;
 
 	// search backward for next non 0-rep seq, ends up in same phrase if all reps in the song are 0
 	if (init) {
@@ -735,6 +747,7 @@ void SequencerKernel::movePhraseIndexBackward(bool init, bool rollover) {
 		phrn = std::min(phraseIndexRun - 1, songEndIndex);// handle song jumped
 	for (; phrn >= songBeginIndex && phrases[phrn].getReps() == 0; phrn--);
 	if (phrn < songBeginIndex) {
+		crossBoundary = true;
 		if (rollover)
 			for (phrn = songEndIndex; phrn > phraseIndexRun && phrases[phrn].getReps() == 0; phrn--);
 		else
@@ -742,11 +755,13 @@ void SequencerKernel::movePhraseIndexBackward(bool init, bool rollover) {
 		phraseIndexRunHistory--;
 	}
 	phraseIndexRun = phrn;
+	return crossBoundary;
 }
 
 
-void SequencerKernel::movePhraseIndexForeward(bool init, bool rollover) {
+bool SequencerKernel::movePhraseIndexForeward(bool init, bool rollover) {
 	int phrn = 0;
+	bool crossBoundary = false;
 	
 	// search fowrard for next non 0-rep seq, ends up in same phrase if all reps in the song are 0
 	if (init) {
@@ -757,6 +772,7 @@ void SequencerKernel::movePhraseIndexForeward(bool init, bool rollover) {
 		phrn = std::max(phraseIndexRun + 1, songBeginIndex);// handle song jumped
 	for (; phrn <= songEndIndex && phrases[phrn].getReps() == 0; phrn++);
 	if (phrn > songEndIndex) {
+		crossBoundary = true;
 		if (rollover)
 			for (phrn = songBeginIndex; phrn < phraseIndexRun && phrases[phrn].getReps() == 0; phrn++);
 		else
@@ -764,6 +780,7 @@ void SequencerKernel::movePhraseIndexForeward(bool init, bool rollover) {
 		phraseIndexRunHistory--;
 	}
 	phraseIndexRun = phrn;
+	return crossBoundary;
 }
 
 
@@ -807,7 +824,9 @@ void SequencerKernel::movePhraseIndexBrownian(bool init, uint32_t randomValue) {
 }
 
 
-void SequencerKernel::movePhraseIndexRun(bool init) {	
+bool SequencerKernel::movePhraseIndexRun(bool init) {
+	bool crossBoundary = false;
+	
 	if (init)
 		phraseIndexRunHistory = 0;
 	
@@ -817,7 +836,7 @@ void SequencerKernel::movePhraseIndexRun(bool init) {
 		
 		case MODE_REV :// reverse; history base is 0x2000
 			phraseIndexRunHistory = 0x2000;
-			movePhraseIndexBackward(init, true);
+			crossBoundary = movePhraseIndexBackward(init, true);
 		break;
 		
 		case MODE_PPG :// forward-reverse; history base is 0x3000
@@ -827,7 +846,7 @@ void SequencerKernel::movePhraseIndexRun(bool init) {
 				movePhraseIndexForeward(init, false);
 			}
 			else {// odd so reverse phase
-				movePhraseIndexBackward(false, false);
+				crossBoundary = movePhraseIndexBackward(false, false);
 			}
 		break;
 
@@ -840,7 +859,7 @@ void SequencerKernel::movePhraseIndexRun(bool init) {
 					movePhraseIndexBackward(false, false);
 			}
 			else {// odd so reverse phase
-				movePhraseIndexBackward(false, false);
+				crossBoundary = movePhraseIndexBackward(false, false);// TODO warning: this crossBoundary happens one step too late for proper endOfSong detection.
 				if (phraseIndexRunHistory == 0x4000)
 					movePhraseIndexForeward(false, false);
 			}			
@@ -848,12 +867,12 @@ void SequencerKernel::movePhraseIndexRun(bool init) {
 		
 		case MODE_BRN :// brownian random; history base is 0x5000
 			phraseIndexRunHistory = 0x5000;
-			movePhraseIndexBrownian(init, random::u32());
+			movePhraseIndexBrownian(init, random::u32());// TODO crossBoundary
 		break;
 		
 		case MODE_RND :// random; history base is 0x6000
 			phraseIndexRunHistory = 0x6000;
-			movePhraseIndexRandom(init, random::u32());
+			movePhraseIndexRandom(init, random::u32());// TODO crossBoundary
 		break;
 		
 		case MODE_TKA:// use track A's phraseIndexRun; base is 0x7000
@@ -866,8 +885,9 @@ void SequencerKernel::movePhraseIndexRun(bool init) {
 			[[fallthrough]];// TKA defaults to FWD for track A
 		default :// MODE_FWD  forward; history base is 0x1000
 			phraseIndexRunHistory = 0x1000;
-			movePhraseIndexForeward(init, true);
+			crossBoundary = movePhraseIndexForeward(init, true);
 	}
+	return crossBoundary;
 }
 
 

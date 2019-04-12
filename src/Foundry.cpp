@@ -111,6 +111,7 @@ struct Foundry : Module {
 	bool attached;
 	int velEditMode;// 0 is velocity (aka CV2), 1 is gate-prob, 2 is slide-rate
 	int writeMode;// 0 is both, 1 is CV only, 2 is CV2 only
+	int stopAtEndOfSong;// 0 to 3 is YES stop on song end of that track, 4 is NO (off)
 	Sequencer seq;
 
 	// No need to save
@@ -234,7 +235,7 @@ struct Foundry : Module {
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 		configParam(AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f, "Autostep");		
 		
-		seq.construct(&holdTiedNotes, &velocityMode);
+		seq.construct(&holdTiedNotes, &velocityMode, &stopAtEndOfSong);
 		onReset();
 	}
 
@@ -264,6 +265,7 @@ struct Foundry : Module {
 		}
 		velEditMode = 0;
 		writeMode = 0;
+		stopAtEndOfSong = 4;// this means option is turned off (0-3 is on)
 		seq.reset(isEditingSequence());
 		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 	}
@@ -322,6 +324,9 @@ struct Foundry : Module {
 
 		// writeMode
 		json_object_set_new(rootJ, "writeMode", json_integer(writeMode));
+
+		// stopAtEndOfSong
+		json_object_set_new(rootJ, "stopAtEndOfSong", json_integer(stopAtEndOfSong));
 
 		seq.dataToJson(rootJ);
 		
@@ -407,6 +412,11 @@ struct Foundry : Module {
 		json_t *writeModeJ = json_object_get(rootJ, "writeMode");
 		if (writeModeJ)
 			writeMode = json_integer_value(writeModeJ);
+
+		// stopAtEndOfSong
+		json_t *stopAtEndOfSongJ = json_object_get(rootJ, "stopAtEndOfSong");
+		if (stopAtEndOfSongJ)
+			stopAtEndOfSong = json_integer_value(stopAtEndOfSongJ);
 
 		seq.dataFromJson(rootJ);
 		
@@ -945,7 +955,11 @@ struct Foundry : Module {
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 				clockTrigged[trkn] = clockTriggers[trkn].process(inputs[CLOCK_INPUTS + trkn].getVoltage());
 				if (clockTrigged[clkInSources[trkn]]) {
-					seq.clockStep(trkn, editingSequence);
+					bool stopRequested = seq.clockStep(trkn, editingSequence);
+					if (stopRequested) {
+						running = false;
+						break;
+					}
 				}
 			}
 			seq.process();
@@ -1574,6 +1588,46 @@ struct FoundryWidget : ModuleWidget {
 			module->holdTiedNotes = !module->holdTiedNotes;
 		}
 	};
+	
+	struct StopAtEndOfSongSubItem : MenuItem {
+		Foundry *module;
+		int setVal = 4;
+		void onAction(const widget::ActionEvent &e) override {
+			module->stopAtEndOfSong = setVal;
+		}
+	};
+	struct StopAtEndOfSongItem : MenuItem {
+		Foundry *module;
+		Menu *createChildMenu() override {
+			Menu *menu = new Menu;
+
+			StopAtEndOfSongSubItem *stopAItem = createMenuItem<StopAtEndOfSongSubItem>("Track A's song", CHECKMARK(module->stopAtEndOfSong == 0));
+			stopAItem->module = this->module;
+			stopAItem->setVal = 0;
+			menu->addChild(stopAItem);
+			
+			StopAtEndOfSongSubItem *stopBItem = createMenuItem<StopAtEndOfSongSubItem>("Track B's song", CHECKMARK(module->stopAtEndOfSong == 1));
+			stopBItem->module = this->module;
+			stopBItem->setVal = 1;
+			menu->addChild(stopBItem);
+
+			StopAtEndOfSongSubItem *stopCItem = createMenuItem<StopAtEndOfSongSubItem>("Track C's song", CHECKMARK(module->stopAtEndOfSong == 2));
+			stopCItem->module = this->module;
+			stopCItem->setVal = 2;
+			menu->addChild(stopCItem);
+
+			StopAtEndOfSongSubItem *stopDItem = createMenuItem<StopAtEndOfSongSubItem>("Track D's song", CHECKMARK(module->stopAtEndOfSong == 3));
+			stopDItem->module = this->module;
+			stopDItem->setVal = 3;
+			menu->addChild(stopDItem);
+
+			StopAtEndOfSongSubItem *stopOItem = createMenuItem<StopAtEndOfSongSubItem>("Off", CHECKMARK(module->stopAtEndOfSong == 4));
+			stopOItem->module = this->module;
+			menu->addChild(stopOItem);
+
+			return menu;
+		}
+	};
 	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
@@ -1618,6 +1672,10 @@ struct FoundryWidget : ModuleWidget {
 		HoldTiedItem *holdItem = createMenuItem<HoldTiedItem>("Hold tied notes", CHECKMARK(module->holdTiedNotes));
 		holdItem->module = module;
 		menu->addChild(holdItem);
+
+		StopAtEndOfSongItem *loopItem = createMenuItem<StopAtEndOfSongItem>("Stop at end of song", RIGHT_ARROW);
+		loopItem->module = module;
+		menu->addChild(loopItem);
 
 		VelBipolItem *bipolItem = createMenuItem<VelBipolItem>("CV2 bipolar", CHECKMARK(module->velocityBipol));
 		bipolItem->module = module;
@@ -2054,5 +2112,6 @@ Model *modelFoundry = createModel<Foundry, FoundryWidget>("Foundry");
 1.0.0:
 expansion panel replaced by a separate expander module
 right-click keys to autostep replaced by double click
+add menu option to stop at end of song
 
 */
