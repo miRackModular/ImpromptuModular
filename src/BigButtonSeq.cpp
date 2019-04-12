@@ -494,14 +494,14 @@ struct BigButtonSeqWidget : ModuleWidget {
 			module->nextStepHits = !module->nextStepHits;
 		}
 	};
-	struct MetronomeSubItem : MenuItem {
-		BigButtonSeq *module;
-		int setVal = 1000;
-		void onAction(const widget::ActionEvent &e) override {
-			module->metronomeDiv = setVal;
-		}
-	};
 	struct MetronomeItem : MenuItem {
+		struct MetronomeSubItem : MenuItem {
+			BigButtonSeq *module;
+			int setVal = 1000;
+			void onAction(const widget::ActionEvent &e) override {
+				module->metronomeDiv = setVal;
+			}
+		};
 		BigButtonSeq *module;
 		Menu *createChildMenu() override {
 			Menu *menu = new Menu;

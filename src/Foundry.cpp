@@ -1545,36 +1545,62 @@ struct FoundryWidget : ModuleWidget {
 		}
 	};
 	struct SeqCVmethodItem : MenuItem {
+		struct SeqCVmethodSubItem : MenuItem {
+			Foundry *module;
+			int setVal = 2;
+			void onAction(const widget::ActionEvent &e) override {
+				module->seqCVmethod = setVal;
+			}
+		};
 		Foundry *module;
-		void onAction(const widget::ActionEvent &e) override {
-			module->seqCVmethod++;
-			if (module->seqCVmethod > 2)
-				module->seqCVmethod = 0;
+		Menu *createChildMenu() override {
+			Menu *menu = new Menu;
+
+			SeqCVmethodSubItem *seqcv0Item = createMenuItem<SeqCVmethodSubItem>("0-10V", CHECKMARK(module->seqCVmethod == 0));
+			seqcv0Item->module = this->module;
+			seqcv0Item->setVal = 0;
+			menu->addChild(seqcv0Item);
+
+			SeqCVmethodSubItem *seqcv1Item = createMenuItem<SeqCVmethodSubItem>("C2-D7#", CHECKMARK(module->seqCVmethod == 1));
+			seqcv1Item->module = this->module;
+			seqcv1Item->setVal = 1;
+			menu->addChild(seqcv1Item);
+
+			SeqCVmethodSubItem *seqcv2Item = createMenuItem<SeqCVmethodSubItem>("Trig-Incr", CHECKMARK(module->seqCVmethod == 2));
+			seqcv2Item->module = this->module;
+			menu->addChild(seqcv2Item);
+
+			return menu;
 		}
-		void step() override {
-			if (module->seqCVmethod == 0)
-				text = "Seq CV in: <0-10V>,  C2-D7#,  Trig-Incr";
-			else if (module->seqCVmethod == 1)
-				text = "Seq CV in: 0-10V,  <C2-D7#>,  Trig-Incr";
-			else
-				text = "Seq CV in: 0-10V,  C2-D7#,  <Trig-Incr>";
-		}	
 	};
 	struct VelModeItem : MenuItem {
+		struct VelModeSubItem : MenuItem {
+			Foundry *module;
+			int setVal = 2;
+			void onAction(const widget::ActionEvent &e) override {
+				module->velocityMode = setVal;
+			}
+		};
 		Foundry *module;
-		void onAction(const widget::ActionEvent &e) override {
-			module->velocityMode++;
-			if (module->velocityMode > 2)
-				module->velocityMode = 0;
+		Menu *createChildMenu() override {
+			Menu *menu = new Menu;
+
+			VelModeSubItem *velMode0Item = createMenuItem<VelModeSubItem>("Volts", CHECKMARK(module->velocityMode == 0));
+			velMode0Item->module = this->module;
+			velMode0Item->setVal = 0;
+			menu->addChild(velMode0Item);
+
+			VelModeSubItem *velMode1Item = createMenuItem<VelModeSubItem>("0-127", CHECKMARK(module->velocityMode == 1));
+			velMode1Item->module = this->module;
+			velMode1Item->setVal = 1;
+			menu->addChild(velMode1Item);
+
+			VelModeSubItem *velMode2Item = createMenuItem<VelModeSubItem>("Notes", CHECKMARK(module->velocityMode == 2));
+			velMode2Item->module = this->module;
+			menu->addChild(velMode2Item);
+
+			return menu;
 		}
-		void step() override {
-			if (module->velocityMode == 0)
-				text = "CV2 mode: <Volts>,  0-127,  Notes";
-			else if (module->velocityMode == 1)
-				text = "CV2 mode: Volts,  <0-127>,  Notes";
-			else
-				text = "CV2 mode: Volts,  0-127,  <Notes>";
-		}	
 	};
 	struct VelBipolItem : MenuItem {
 		Foundry *module;
@@ -1589,41 +1615,41 @@ struct FoundryWidget : ModuleWidget {
 		}
 	};
 	
-	struct StopAtEndOfSongSubItem : MenuItem {
-		Foundry *module;
-		int setVal = 4;
-		void onAction(const widget::ActionEvent &e) override {
-			module->stopAtEndOfSong = setVal;
-		}
-	};
 	struct StopAtEndOfSongItem : MenuItem {
+		struct StopAtEndOfSongSubItem : MenuItem {
+			Foundry *module;
+			int setVal = 4;
+			void onAction(const widget::ActionEvent &e) override {
+				module->stopAtEndOfSong = setVal;
+			}
+		};
 		Foundry *module;
 		Menu *createChildMenu() override {
 			Menu *menu = new Menu;
 
-			StopAtEndOfSongSubItem *stopAItem = createMenuItem<StopAtEndOfSongSubItem>("Use track A's song", CHECKMARK(module->stopAtEndOfSong == 0));
+			StopAtEndOfSongSubItem *stopOItem = createMenuItem<StopAtEndOfSongSubItem>("Off", CHECKMARK(module->stopAtEndOfSong == 4));
+			stopOItem->module = this->module;
+			menu->addChild(stopOItem);
+
+			StopAtEndOfSongSubItem *stopAItem = createMenuItem<StopAtEndOfSongSubItem>("Track A", CHECKMARK(module->stopAtEndOfSong == 0));
 			stopAItem->module = this->module;
 			stopAItem->setVal = 0;
 			menu->addChild(stopAItem);
 			
-			StopAtEndOfSongSubItem *stopBItem = createMenuItem<StopAtEndOfSongSubItem>("Use track B's song", CHECKMARK(module->stopAtEndOfSong == 1));
+			StopAtEndOfSongSubItem *stopBItem = createMenuItem<StopAtEndOfSongSubItem>("Track B", CHECKMARK(module->stopAtEndOfSong == 1));
 			stopBItem->module = this->module;
 			stopBItem->setVal = 1;
 			menu->addChild(stopBItem);
 
-			StopAtEndOfSongSubItem *stopCItem = createMenuItem<StopAtEndOfSongSubItem>("Use track C's song", CHECKMARK(module->stopAtEndOfSong == 2));
+			StopAtEndOfSongSubItem *stopCItem = createMenuItem<StopAtEndOfSongSubItem>("Track C", CHECKMARK(module->stopAtEndOfSong == 2));
 			stopCItem->module = this->module;
 			stopCItem->setVal = 2;
 			menu->addChild(stopCItem);
 
-			StopAtEndOfSongSubItem *stopDItem = createMenuItem<StopAtEndOfSongSubItem>("Use track D's song", CHECKMARK(module->stopAtEndOfSong == 3));
+			StopAtEndOfSongSubItem *stopDItem = createMenuItem<StopAtEndOfSongSubItem>("Track D", CHECKMARK(module->stopAtEndOfSong == 3));
 			stopDItem->module = this->module;
 			stopDItem->setVal = 3;
 			menu->addChild(stopDItem);
-
-			StopAtEndOfSongSubItem *stopOItem = createMenuItem<StopAtEndOfSongSubItem>("Off", CHECKMARK(module->stopAtEndOfSong == 4));
-			stopOItem->module = this->module;
-			menu->addChild(stopOItem);
 
 			return menu;
 		}
@@ -1681,11 +1707,11 @@ struct FoundryWidget : ModuleWidget {
 		bipolItem->module = module;
 		menu->addChild(bipolItem);
 		
-		VelModeItem *velItem = createMenuItem<VelModeItem>("CV2 mode: ", "");
+		VelModeItem *velItem = createMenuItem<VelModeItem>("CV2 mode", RIGHT_ARROW);
 		velItem->module = module;
 		menu->addChild(velItem);
 		
-		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in: ", "");
+		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in level", RIGHT_ARROW);
 		seqcvItem->module = module;
 		menu->addChild(seqcvItem);
 	}	

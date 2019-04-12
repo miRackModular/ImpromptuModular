@@ -1806,20 +1806,33 @@ struct PhraseSeq32Widget : ModuleWidget {
 		}
 	};
 	struct SeqCVmethodItem : MenuItem {
+		struct SeqCVmethodSubItem : MenuItem {
+			PhraseSeq32 *module;
+			int setVal = 2;
+			void onAction(const widget::ActionEvent &e) override {
+				module->seqCVmethod = setVal;
+			}
+		};
 		PhraseSeq32 *module;
-		void onAction(const widget::ActionEvent &e) override {
-			module->seqCVmethod++;
-			if (module->seqCVmethod > 2)
-				module->seqCVmethod = 0;
+		Menu *createChildMenu() override {
+			Menu *menu = new Menu;
+
+			SeqCVmethodSubItem *seqcv0Item = createMenuItem<SeqCVmethodSubItem>("0-10V", CHECKMARK(module->seqCVmethod == 0));
+			seqcv0Item->module = this->module;
+			seqcv0Item->setVal = 0;
+			menu->addChild(seqcv0Item);
+
+			SeqCVmethodSubItem *seqcv1Item = createMenuItem<SeqCVmethodSubItem>("C4-G6", CHECKMARK(module->seqCVmethod == 1));
+			seqcv1Item->module = this->module;
+			seqcv1Item->setVal = 1;
+			menu->addChild(seqcv1Item);
+
+			SeqCVmethodSubItem *seqcv2Item = createMenuItem<SeqCVmethodSubItem>("Trig-Incr", CHECKMARK(module->seqCVmethod == 2));
+			seqcv2Item->module = this->module;
+			menu->addChild(seqcv2Item);
+
+			return menu;
 		}
-		void step() override {
-			if (module->seqCVmethod == 0)
-				text = "Seq CV in: <0-10V>,  C4-G6,  Trig-Incr";
-			else if (module->seqCVmethod == 1)
-				text = "Seq CV in: 0-10V,  <C4-G6>,  Trig-Incr";
-			else
-				text = "Seq CV in: 0-10V,  C4-G6,  <Trig-Incr>";
-		}	
 	};
 	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
@@ -1870,7 +1883,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 		loopItem->module = module;
 		menu->addChild(loopItem);
 
-		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in: ", "");
+		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in level", RIGHT_ARROW);
 		seqcvItem->module = module;
 		menu->addChild(seqcvItem);
 	}	

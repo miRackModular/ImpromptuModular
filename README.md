@@ -305,6 +305,8 @@ Here are some further details on the different functions of the sequencer. It is
 
 * **TRAN/ROT**: Transpose all 32 steps, or rotate steps 1 to LENGTH. These numbers are stored in the sequencer for each sequence. Resetting the values of a given sequence can be done by copy-pasting an unused sequence (sequence 64 typically, for example) over into the current sequence. If all 64 sequences were used, simply press paste after closing and restarting Rack as an uninitialized sequence is automatically held in the sequence copy-paste buffer upon power-up.
 
+By default the sequencer always restarts the song when in song mode; however, this may not always be wanted. To play the song just once, activate the option **Stop at end of song** in the right-click menu of the module. Since Foundry is a multitrack sequencer and there is only one global run state, one of the four tracks (songs) has to be used as the reference to stop the sequencer. 
+
 ([Back to module list](#modules))
 
 
