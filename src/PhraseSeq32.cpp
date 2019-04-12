@@ -1292,7 +1292,7 @@ struct PhraseSeq32 : Module {
 				
 		// CV and gates outputs
 		int seq = editingSequence ? (seqIndexEdit) : /*(running ?*/ phrase[phraseIndexRun] /*: phrase[phraseIndexEdit])*/;
-		int step0 = (editingSequence && !running) ? : stepIndexEdit : stepIndexRun[0];
+		int step0 = (editingSequence && !running) ? stepIndexEdit : stepIndexRun[0];
 		if (running) {
 			bool muteGate1A = !editingSequence && ((params[GATE1_PARAM].getValue() + (expanderPresent ? consumerMessage[0] : 0.0f)) > 0.5f);// live mute
 			bool muteGate1B = muteGate1A;
