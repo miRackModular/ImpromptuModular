@@ -1601,22 +1601,22 @@ struct FoundryWidget : ModuleWidget {
 		Menu *createChildMenu() override {
 			Menu *menu = new Menu;
 
-			StopAtEndOfSongSubItem *stopAItem = createMenuItem<StopAtEndOfSongSubItem>("Track A's song", CHECKMARK(module->stopAtEndOfSong == 0));
+			StopAtEndOfSongSubItem *stopAItem = createMenuItem<StopAtEndOfSongSubItem>("Use track A's song", CHECKMARK(module->stopAtEndOfSong == 0));
 			stopAItem->module = this->module;
 			stopAItem->setVal = 0;
 			menu->addChild(stopAItem);
 			
-			StopAtEndOfSongSubItem *stopBItem = createMenuItem<StopAtEndOfSongSubItem>("Track B's song", CHECKMARK(module->stopAtEndOfSong == 1));
+			StopAtEndOfSongSubItem *stopBItem = createMenuItem<StopAtEndOfSongSubItem>("Use track B's song", CHECKMARK(module->stopAtEndOfSong == 1));
 			stopBItem->module = this->module;
 			stopBItem->setVal = 1;
 			menu->addChild(stopBItem);
 
-			StopAtEndOfSongSubItem *stopCItem = createMenuItem<StopAtEndOfSongSubItem>("Track C's song", CHECKMARK(module->stopAtEndOfSong == 2));
+			StopAtEndOfSongSubItem *stopCItem = createMenuItem<StopAtEndOfSongSubItem>("Use track C's song", CHECKMARK(module->stopAtEndOfSong == 2));
 			stopCItem->module = this->module;
 			stopCItem->setVal = 2;
 			menu->addChild(stopCItem);
 
-			StopAtEndOfSongSubItem *stopDItem = createMenuItem<StopAtEndOfSongSubItem>("Track D's song", CHECKMARK(module->stopAtEndOfSong == 3));
+			StopAtEndOfSongSubItem *stopDItem = createMenuItem<StopAtEndOfSongSubItem>("Use track D's song", CHECKMARK(module->stopAtEndOfSong == 3));
 			stopDItem->module = this->module;
 			stopDItem->setVal = 3;
 			menu->addChild(stopDItem);

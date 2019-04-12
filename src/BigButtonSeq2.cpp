@@ -623,14 +623,43 @@ struct BigButtonSeq2Widget : ModuleWidget {
 			module->nextStepHits = !module->nextStepHits;
 		}
 	};
+	struct MetronomeSubItem : MenuItem {
+		BigButtonSeq2 *module;
+		int setVal = 1000;
+		void onAction(const widget::ActionEvent &e) override {
+			module->metronomeDiv = setVal;
+		}
+	};
 	struct MetronomeItem : MenuItem {
 		BigButtonSeq2 *module;
-		int div;
-		void onAction(const widget::ActionEvent &e) override {
-			module->metronomeDiv = div;
-		}
-		void step() override {
-			rightText = (module->metronomeDiv == div) ? "✔" : "";
+		Menu *createChildMenu() override {
+			Menu *menu = new Menu;
+
+			MetronomeSubItem *metro1Item = createMenuItem<MetronomeSubItem>("Every clock", CHECKMARK(module->metronomeDiv == 1));
+			metro1Item->module = this->module;
+			metro1Item->setVal = 1;
+			menu->addChild(metro1Item);
+
+			MetronomeSubItem *metro2Item = createMenuItem<MetronomeSubItem>("/2", CHECKMARK(module->metronomeDiv == 2));
+			metro2Item->module = this->module;
+			metro2Item->setVal = 2;
+			menu->addChild(metro2Item);
+
+			MetronomeSubItem *metro4Item = createMenuItem<MetronomeSubItem>("/4", CHECKMARK(module->metronomeDiv == 4));
+			metro4Item->module = this->module;
+			metro4Item->setVal = 4;
+			menu->addChild(metro4Item);
+
+			MetronomeSubItem *metro8Item = createMenuItem<MetronomeSubItem>("/8", CHECKMARK(module->metronomeDiv == 8));
+			metro8Item->module = this->module;
+			metro8Item->setVal = 8;
+			menu->addChild(metro8Item);
+
+			MetronomeSubItem *metroFItem = createMenuItem<MetronomeSubItem>("Full length", CHECKMARK(module->metronomeDiv == 1000));
+			metroFItem->module = this->module;
+			menu->addChild(metroFItem);
+
+			return menu;
 		}
 	};
 	void appendContextMenu(Menu *menu) override {
@@ -667,36 +696,10 @@ struct BigButtonSeq2Widget : ModuleWidget {
 		NextStepHitsItem *nhitsItem = createMenuItem<NextStepHitsItem>("Big and Del on next step", CHECKMARK(module->nextStepHits));
 		nhitsItem->module = module;
 		menu->addChild(nhitsItem);
-		menu->addChild(new MenuLabel());// empty line
 		
-		MenuLabel *metronomeLabel = new MenuLabel();
-		metronomeLabel->text = "Metronome light";
-		menu->addChild(metronomeLabel);
-
-		MetronomeItem *met1Item = createMenuItem<MetronomeItem>("Every clock", CHECKMARK(module->metronomeDiv == 1));
-		met1Item->module = module;
-		met1Item->div = 1;
-		menu->addChild(met1Item);
-
-		MetronomeItem *met2Item = createMenuItem<MetronomeItem>("/2", CHECKMARK(module->metronomeDiv == 2));
-		met2Item->module = module;
-		met2Item->div = 2;
-		menu->addChild(met2Item);
-
-		MetronomeItem *met4Item = createMenuItem<MetronomeItem>("/4", CHECKMARK(module->metronomeDiv == 4));
-		met4Item->module = module;
-		met4Item->div = 4;
-		menu->addChild(met4Item);
-
-		MetronomeItem *met8Item = createMenuItem<MetronomeItem>("/8", CHECKMARK(module->metronomeDiv == 8));
-		met8Item->module = module;
-		met8Item->div = 8;
-		menu->addChild(met8Item);
-
-		MetronomeItem *met1000Item = createMenuItem<MetronomeItem>("Full length", CHECKMARK(module->metronomeDiv == 1000));
-		met1000Item->module = module;
-		met1000Item->div = 1000;
-		menu->addChild(met1000Item);
+		MetronomeItem *metroItem = createMenuItem<MetronomeItem>("Metronome light", RIGHT_ARROW);
+		metroItem->module = module;
+		menu->addChild(metroItem);
 	}	
 	
 	

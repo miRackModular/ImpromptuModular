@@ -859,7 +859,7 @@ bool SequencerKernel::movePhraseIndexRun(bool init) {
 					movePhraseIndexBackward(false, false);
 			}
 			else {// odd so reverse phase
-				crossBoundary = movePhraseIndexBackward(false, false);// TODO warning: this crossBoundary happens one step too late for proper endOfSong detection.
+				crossBoundary = movePhraseIndexBackward(false, false);// warning: this crossBoundary happens one step too late for proper endOfSong detection.
 				if (phraseIndexRunHistory == 0x4000)
 					movePhraseIndexForeward(false, false);
 			}			
@@ -867,12 +867,12 @@ bool SequencerKernel::movePhraseIndexRun(bool init) {
 		
 		case MODE_BRN :// brownian random; history base is 0x5000
 			phraseIndexRunHistory = 0x5000;
-			movePhraseIndexBrownian(init, random::u32());// TODO crossBoundary
+			movePhraseIndexBrownian(init, random::u32());// no crossBoundary
 		break;
 		
 		case MODE_RND :// random; history base is 0x6000
 			phraseIndexRunHistory = 0x6000;
-			movePhraseIndexRandom(init, random::u32());// TODO crossBoundary
+			movePhraseIndexRandom(init, random::u32());// no crossBoundary
 		break;
 		
 		case MODE_TKA:// use track A's phraseIndexRun; base is 0x7000
