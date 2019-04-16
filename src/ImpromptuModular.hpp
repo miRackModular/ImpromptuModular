@@ -99,8 +99,8 @@ struct IMPort : DynamicSVGPort {
 		//addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/PJ301M.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/PJ301M.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/PJ301M.svg")));
-		shadow->blurRadius = 10.0;
-		shadow->opacity = 0.8;
+		// shadow->blurRadius = 10.0;
+		// shadow->opacity = 0.8;
 	}
 };
 
@@ -165,8 +165,8 @@ struct IMKnob : DynamicSVGKnob {
 	IMKnob() {
 		minAngle = -0.83*M_PI;
 		maxAngle = 0.83*M_PI;
-		shadow->blurRadius = 10.0;
-		shadow->opacity = 0.8;
+		// shadow->blurRadius = 10.0;
+		shadow->opacity = 0.1;
 	}
 };
 

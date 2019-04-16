@@ -55,6 +55,7 @@ void init(rack::Plugin *p) {
 
 
 CKSSH::CKSSH() {
+	shadow->opacity = 0.0;
 	fb->removeChild(sw);
 	
 	TransformWidget *tw = new TransformWidget();
