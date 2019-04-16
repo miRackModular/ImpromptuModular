@@ -140,6 +140,7 @@ struct IMBigPushButton : DynamicSVGSwitch {
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/CKD6b_1.svg")));
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/CKD6b_0.svg")));
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/CKD6b_1.svg")));	
+		shadow->blurRadius = 1.0f;
 	}
 };
 
