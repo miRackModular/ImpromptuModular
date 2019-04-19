@@ -109,7 +109,6 @@ struct GateSeq64 : Module {
 	int stepConfig;
 	long editingPhraseSongRunning;// downward step counter
 
-
 	int stepConfigSync = 0;// 0 means no sync requested, 1 means soft sync (no reset lengths), 2 means hard (reset lengths)
 	unsigned int lightRefreshCounter = 0;
 	float resetLight = 0.0f;
@@ -131,6 +130,8 @@ struct GateSeq64 : Module {
 	dsp::BooleanTrigger editingSequenceTrigger;
 	HoldDetect modeHoldDetect;
 	SeqAttributesGS seqAttribBuffer[MAX_SEQS];// buffer from Json for thread safety
+	int lastStep = 0;// for mouse painting
+	bool lastValue = false;// for mouse painting
 
 	
 	inline bool isEditingSequence(void) {return params[EDIT_PARAM].getValue() > 0.5f;}
@@ -741,7 +742,7 @@ struct GateSeq64 : Module {
 					}
 					else {						
 						// version 1
-						if (!attributes[sequence][stepPressed].getGate()) {// clicked inactive, so turn gate on
+						/*if (!attributes[sequence][stepPressed].getGate()) {// clicked inactive, so turn gate on
 							attributes[sequence][stepPressed].setGate(true);
 							if (attributes[sequence][stepPressed].getGateP())
 								displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
@@ -759,10 +760,10 @@ struct GateSeq64 : Module {
 								else
 									displayProbInfo = 0l;
 							}
-						}
+						}*/
 						
 						// version 2
-						/*if (!attributes[sequence][stepPressed].getGate()) {// clicked inactive, so turn gate on
+						if (!attributes[sequence][stepPressed].getGate()) {// clicked inactive, so turn gate on
 							attributes[sequence][stepPressed].setGate(true);
 							if (attributes[sequence][stepPressed].getGateP())
 								displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
@@ -772,7 +773,7 @@ struct GateSeq64 : Module {
 						else {// clicked active
 							attributes[sequence][stepPressed].setGate(false);
 							displayProbInfo = 0l;
-						}	*/					
+						}				
 						
 						stepIndexEdit = stepPressed;
 					}
@@ -816,7 +817,7 @@ struct GateSeq64 : Module {
 				blinkNum = blinkNumInit;
 				
 				// version 1
-				if (editingSequence && attributes[sequence][stepIndexEdit].getGate()) {
+				/*if (editingSequence && attributes[sequence][stepIndexEdit].getGate()) {
 					if (attributes[sequence][stepIndexEdit].getGateP()) {
 						displayProbInfo = 0l;
 						attributes[sequence][stepIndexEdit].setGateP(false);
@@ -825,10 +826,10 @@ struct GateSeq64 : Module {
 						displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
 						attributes[sequence][stepIndexEdit].setGateP(true);
 					}
-				}
+				}*/
 				
 				// version 2
-				/*if (editingSequence) {
+				if (editingSequence) {
 					if (attributes[sequence][stepIndexEdit].getGate()) {// gate is on and pressed gatep
 						if (attributes[sequence][stepIndexEdit].getGateP()) {
 							displayProbInfo = 0l;
@@ -844,7 +845,7 @@ struct GateSeq64 : Module {
 						displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
 						attributes[sequence][stepIndexEdit].setGateP(true);
 					}
-				}*/
+				}
 				
 			}
 			
@@ -1440,7 +1441,36 @@ struct GateSeq64Widget : ModuleWidget {
 			}
 			ParamWidget::onDoubleClick(e);
 		}
-	};			
+	};		
+
+	struct LEDButtonGS : LEDButton {
+		LEDButtonGS() {};
+		void onDragStart(const DragStartEvent &e) override {
+			if (paramQuantity) {
+				GateSeq64 *module = dynamic_cast<GateSeq64*>(paramQuantity->module);
+				if (module->isEditingSequence() && module->displayState != GateSeq64::DISP_LENGTH && module->displayState != GateSeq64::DISP_MODES) {
+					int step = paramQuantity->paramId - GateSeq64::STEP_PARAMS;
+					if ( (step >= 0) && (step < 64) ) {
+						module->lastStep = step;
+						module->lastValue = !module->attributes[module->sequence][step].getGate();// negate since event to toggle has yet to occur
+					}
+				}
+			}
+			LEDButton::onDragStart(e);
+		}
+		void onDragEnter(const DragEnterEvent &e) override {
+			if (paramQuantity) {
+				GateSeq64 *module = dynamic_cast<GateSeq64*>(paramQuantity->module);
+				if (module->isEditingSequence() && module->displayState != GateSeq64::DISP_LENGTH && module->displayState != GateSeq64::DISP_MODES) {
+					int step = paramQuantity->paramId - GateSeq64::STEP_PARAMS;
+					if ( (step != module->lastStep) && (step >= 0) && (step < 64)) {
+						module->attributes[module->sequence][step].setGate(module->lastValue);
+					}
+				}
+			}
+			LEDButton::onDragEnter(e);
+		};
+	};
 
 	GateSeq64Widget(GateSeq64 *module) {
 		setModule(module);		
@@ -1475,7 +1505,7 @@ struct GateSeq64Widget : ModuleWidget {
 		for (int y = 0; y < 4; y++) {
 			int posX = colRulerSteps;
 			for (int x = 0; x < 16; x++) {
-				addParam(createParam<LEDButton>(Vec(posX, rowRuler0 + 8 + y * spacingRows - 4.4f), module, GateSeq64::STEP_PARAMS + y * 16 + x));
+				addParam(createParam<LEDButtonGS>(Vec(posX, rowRuler0 + 8 + y * spacingRows - 4.4f), module, GateSeq64::STEP_PARAMS + y * 16 + x));
 				addChild(createLight<MediumLight<GreenRedWhiteLight>>(Vec(posX + 4.4f, rowRuler0 + 8 + y * spacingRows), module, GateSeq64::STEP_LIGHTS + (y * 16 + x) * 3));
 				posX += spacingSteps;
 				if ((x + 1) % 4 == 0)
@@ -1581,5 +1611,6 @@ Model *modelGateSeq64 = createModel<GateSeq64, GateSeq64Widget>("Gate-Seq-64");
 removed right-click of step buttons to clear gates
 expansion panel replaced by a separate expander module
 add menu option to stop at end of song
+implement mouse painting and change click strategy in the steps 
 
 */
