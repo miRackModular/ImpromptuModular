@@ -1519,7 +1519,7 @@ struct FoundryWidget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		Foundry *module;
 		int theme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -1528,19 +1528,19 @@ struct FoundryWidget : ModuleWidget {
 	};
 	struct ResetOnRunItem : MenuItem {
 		Foundry *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
 	struct AutoStepLenItem : MenuItem {
 		Foundry *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->autostepLen = !module->autostepLen;
 		}
 	};
 	struct AutoseqItem : MenuItem {
 		Foundry *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->autoseq = !module->autoseq;
 		}
 	};
@@ -1548,7 +1548,7 @@ struct FoundryWidget : ModuleWidget {
 		struct SeqCVmethodSubItem : MenuItem {
 			Foundry *module;
 			int setVal = 2;
-			void onAction(const widget::ActionEvent &e) override {
+			void onAction(const event::Action &e) override {
 				module->seqCVmethod = setVal;
 			}
 		};
@@ -1577,7 +1577,7 @@ struct FoundryWidget : ModuleWidget {
 		struct VelModeSubItem : MenuItem {
 			Foundry *module;
 			int setVal = 2;
-			void onAction(const widget::ActionEvent &e) override {
+			void onAction(const event::Action &e) override {
 				module->velocityMode = setVal;
 			}
 		};
@@ -1604,13 +1604,13 @@ struct FoundryWidget : ModuleWidget {
 	};
 	struct VelBipolItem : MenuItem {
 		Foundry *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->velocityBipol = !module->velocityBipol;
 		}
 	};
 	struct HoldTiedItem : MenuItem {
 		Foundry *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->holdTiedNotes = !module->holdTiedNotes;
 		}
 	};
@@ -1619,7 +1619,7 @@ struct FoundryWidget : ModuleWidget {
 		struct StopAtEndOfSongSubItem : MenuItem {
 			Foundry *module;
 			int setVal = 4;
-			void onAction(const widget::ActionEvent &e) override {
+			void onAction(const event::Action &e) override {
 				module->stopAtEndOfSong = setVal;
 			}
 		};
@@ -1719,7 +1719,7 @@ struct FoundryWidget : ModuleWidget {
 	struct CKSSNotify : CKSS {// Not randomizable
 		CKSSNotify() {}
 		void randomize() override {}
-		void onChange(const widget::ChangeEvent &e) override {
+		void onChange(const event::Change &e) override {
 			if (paramQuantity) {
 				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);
 				module->displayState = Foundry::DISP_NORMAL;
@@ -1733,7 +1733,7 @@ struct FoundryWidget : ModuleWidget {
 	};
 	struct CPModeSwitch : CKSSThreeInvNoRandom {// Not randomizable
 		CPModeSwitch() {};
-		void onChange(const widget::ChangeEvent &e) override {
+		void onChange(const event::Change &e) override {
 			SVGSwitch::onChange(e);	
 			if (paramQuantity) {
 				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);			
@@ -1746,7 +1746,7 @@ struct FoundryWidget : ModuleWidget {
 	// Velocity edit knob
 	struct VelocityKnob : IMMediumKnobInf {
 		VelocityKnob() {};		
-		void onDoubleClick(const widget::DoubleClickEvent &e) override {
+		void onDoubleClick(const event::DoubleClick &e) override {
 			if (paramQuantity) {
 				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);
 				// same code structure below as in velocity knob in main step()
@@ -1770,7 +1770,7 @@ struct FoundryWidget : ModuleWidget {
 	// Sequence edit knob
 	struct SequenceKnob : IMMediumKnobInf {
 		SequenceKnob() {};		
-		void onDoubleClick(const widget::DoubleClickEvent &e) override {
+		void onDoubleClick(const event::DoubleClick &e) override {
 			if (paramQuantity) {
 				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);
 				// same code structure below as in sequence knob in main step()
@@ -1811,7 +1811,7 @@ struct FoundryWidget : ModuleWidget {
 	// Phrase edit knob
 	struct PhraseKnob : IMMediumKnobInf {
 		PhraseKnob() {};		
-		void onDoubleClick(const widget::DoubleClickEvent &e) override {
+		void onDoubleClick(const event::DoubleClick &e) override {
 			if (paramQuantity) {
 				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);
 				// same code structure below as in phrase knob in main step()

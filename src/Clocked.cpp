@@ -819,7 +819,7 @@ struct ClockedWidget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		Clocked *module;
 		int theme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -828,19 +828,19 @@ struct ClockedWidget : ModuleWidget {
 	};
 	struct DelayDisplayNoteItem : MenuItem {
 		Clocked *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->displayDelayNoteMode = !module->displayDelayNoteMode;
 		}
 	};
 	struct EmitResetItem : MenuItem {
 		Clocked *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->emitResetOnStopRun = !module->emitResetOnStopRun;
 		}
 	};	
 	struct ResetHighItem : MenuItem {
 		Clocked *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->resetClockOutputsHigh = !module->resetClockOutputsHigh;
 			module->resetClocked(true);
 		}
@@ -889,7 +889,7 @@ struct ClockedWidget : ModuleWidget {
 	
 	struct IMSmallKnobNotify : IMSmallKnob {
 		IMSmallKnobNotify() {};
-		void onDragMove(const widget::DragMoveEvent &e) override {
+		void onDragMove(const event::DragMove &e) override {
 			if (paramQuantity) {
 				Clocked *module = dynamic_cast<Clocked*>(paramQuantity->module);
 				int dispIndex = 0;
@@ -914,7 +914,7 @@ struct ClockedWidget : ModuleWidget {
 	struct IMBigSnapKnobNotify : IMBigSnapKnob {
 		IMBigSnapKnobNotify() {}
 		void randomize() override {ParamWidget::randomize();}
-		void onChange(const widget::ChangeEvent &e) override {
+		void onChange(const event::Change &e) override {
 			if (paramQuantity) {
 				Clocked *module = dynamic_cast<Clocked*>(paramQuantity->module);
 				int dispIndex = 0;

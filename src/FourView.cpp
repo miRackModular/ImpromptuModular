@@ -133,7 +133,7 @@ struct FourViewWidget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		FourView *module;
 		int theme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -142,7 +142,7 @@ struct FourViewWidget : ModuleWidget {
 	};
 	struct SharpItem : MenuItem {
 		FourView *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->showSharp = !module->showSharp;
 		}
 	};

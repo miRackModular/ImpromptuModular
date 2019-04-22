@@ -298,8 +298,8 @@ struct InvisibleKeySmall : Switch {
 		momentary = true;
 		box.size = Vec(23, 38);
 	}
-	void onButton(const ButtonEvent &e) override;
-	void onDoubleClick(const DoubleClickEvent &e) override;
+	void onButton(const event::Button &e) override;
+	void onDoubleClick(const event::DoubleClick &e) override;
 };
 
 struct IMTactile : ParamWidget {
@@ -310,9 +310,9 @@ struct IMTactile : ParamWidget {
 	static const int padHeight = 200;
 	
 	IMTactile();
-	void onDragStart(const DragStartEvent &e) override;
-	void onDragMove(const DragMoveEvent &e) override;
-	void onButton(const ButtonEvent &e) override;
+	void onDragStart(const event::DragStart &e) override;
+	void onDragMove(const event::DragMove &e) override;
+	void onButton(const event::Button &e) override;
 	void reset() override;
 	void randomize() override;
 };

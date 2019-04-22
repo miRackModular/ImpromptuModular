@@ -331,7 +331,7 @@ struct TactWidget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		Tact *module;
 		int theme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -340,7 +340,7 @@ struct TactWidget : ModuleWidget {
 	};
 	struct ExtendRateItem : MenuItem {
 		Tact *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			if (module->rateMultiplier < 2.0f)
 				module->rateMultiplier = 3.0f;
 			else
@@ -349,7 +349,7 @@ struct TactWidget : ModuleWidget {
 	};
 	struct LevelSensitiveItem : MenuItem {
 		Tact *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->levelSensitiveTopBot = !module->levelSensitiveTopBot;
 		}
 	};
@@ -691,7 +691,7 @@ struct Tact1Widget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		Tact1 *module;
 		int theme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -700,7 +700,7 @@ struct Tact1Widget : ModuleWidget {
 	};
 	struct ExtendRateItem : MenuItem {
 		Tact1 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			if (module->rateMultiplier < 2.0f)
 				module->rateMultiplier = 3.0f;
 			else

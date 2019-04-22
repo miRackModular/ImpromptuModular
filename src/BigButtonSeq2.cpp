@@ -610,7 +610,7 @@ struct BigButtonSeq2Widget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		BigButtonSeq2 *module;
 		int theme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -619,7 +619,7 @@ struct BigButtonSeq2Widget : ModuleWidget {
 	};
 	struct NextStepHitsItem : MenuItem {
 		BigButtonSeq2 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->nextStepHits = !module->nextStepHits;
 		}
 	};
@@ -627,7 +627,7 @@ struct BigButtonSeq2Widget : ModuleWidget {
 		struct MetronomeSubItem : MenuItem {
 			BigButtonSeq2 *module;
 			int setVal = 1000;
-			void onAction(const widget::ActionEvent &e) override {
+			void onAction(const event::Action &e) override {
 				module->metronomeDiv = setVal;
 			}
 		};

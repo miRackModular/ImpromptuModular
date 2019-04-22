@@ -585,7 +585,7 @@ struct WriteSeq32Widget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		WriteSeq32 *module;
 		int theme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -594,7 +594,7 @@ struct WriteSeq32Widget : ModuleWidget {
 	};
 	struct ResetOnRunItem : MenuItem {
 		WriteSeq32 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};

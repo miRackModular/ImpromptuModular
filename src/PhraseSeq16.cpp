@@ -1672,7 +1672,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		PhraseSeq16 *module;
 		int theme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -1681,31 +1681,31 @@ struct PhraseSeq16Widget : ModuleWidget {
 	};
 	struct ResetOnRunItem : MenuItem {
 		PhraseSeq16 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
 	struct AutoStepLenItem : MenuItem {
 		PhraseSeq16 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->autostepLen = !module->autostepLen;
 		}
 	};
 	struct AutoseqItem : MenuItem {
 		PhraseSeq16 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->autoseq = !module->autoseq;
 		}
 	};
 	struct HoldTiedItem : MenuItem {
 		PhraseSeq16 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->holdTiedNotes = !module->holdTiedNotes;
 		}
 	};
 	struct StopAtEndOfSongItem : MenuItem {
 		PhraseSeq16 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->stopAtEndOfSong = !module->stopAtEndOfSong;
 		}
 	};
@@ -1713,7 +1713,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 		struct SeqCVmethodSubItem : MenuItem {
 			PhraseSeq16 *module;
 			int setVal = 2;
-			void onAction(const widget::ActionEvent &e) override {
+			void onAction(const event::Action &e) override {
 				module->seqCVmethod = setVal;
 			}
 		};
@@ -1794,7 +1794,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 	
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
-		void onDoubleClick(const widget::DoubleClickEvent &e) override {
+		void onDoubleClick(const event::DoubleClick &e) override {
 			if (paramQuantity) {
 				PhraseSeq16* module = dynamic_cast<PhraseSeq16*>(paramQuantity->module);
 				// same code structure below as in sequence knob in main step()

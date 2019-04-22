@@ -1768,7 +1768,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		PhraseSeq32 *module;
 		int theme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -1777,31 +1777,31 @@ struct PhraseSeq32Widget : ModuleWidget {
 	};
 	struct ResetOnRunItem : MenuItem {
 		PhraseSeq32 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
 	struct AutoStepLenItem : MenuItem {
 		PhraseSeq32 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->autostepLen = !module->autostepLen;
 		}
 	};
 	struct AutoseqItem : MenuItem {
 		PhraseSeq32 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->autoseq = !module->autoseq;
 		}
 	};
 	struct HoldTiedItem : MenuItem {
 		PhraseSeq32 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->holdTiedNotes = !module->holdTiedNotes;
 		}
 	};
 	struct StopAtEndOfSongItem : MenuItem {
 		PhraseSeq32 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->stopAtEndOfSong = !module->stopAtEndOfSong;
 		}
 	};
@@ -1809,7 +1809,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 		struct SeqCVmethodSubItem : MenuItem {
 			PhraseSeq32 *module;
 			int setVal = 2;
-			void onAction(const widget::ActionEvent &e) override {
+			void onAction(const event::Action &e) override {
 				module->seqCVmethod = setVal;
 			}
 		};
@@ -1891,7 +1891,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 	struct CKSSNotify : CKSS {// Not randomizable
 		CKSSNotify() {}
 		void randomize() override {}
-		void onDragStart(const widget::DragStartEvent &e) override {
+		void onDragStart(const event::DragStart &e) override {
 			Switch::onDragStart(e);
 			if (paramQuantity) {
 				PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(paramQuantity->module);
@@ -1902,7 +1902,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 	
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
-		void onDoubleClick(const widget::DoubleClickEvent &e) override {
+		void onDoubleClick(const event::DoubleClick &e) override {
 			if (paramQuantity) {
 				PhraseSeq32* module = dynamic_cast<PhraseSeq32*>(paramQuantity->module);
 				// same code structure below as in sequence knob in main step()

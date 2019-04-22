@@ -1280,7 +1280,7 @@ struct GateSeq64Widget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		GateSeq64 *module;
 		int theme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {
@@ -1289,19 +1289,19 @@ struct GateSeq64Widget : ModuleWidget {
 	};
 	struct ResetOnRunItem : MenuItem {
 		GateSeq64 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
 	struct StopAtEndOfSongItem : MenuItem {
 		GateSeq64 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->stopAtEndOfSong = !module->stopAtEndOfSong;
 		}
 	};
 	struct AutoseqItem : MenuItem {
 		GateSeq64 *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->autoseq = !module->autoseq;
 		}
 	};
@@ -1309,7 +1309,7 @@ struct GateSeq64Widget : ModuleWidget {
 		struct SeqCVmethodSubItem : MenuItem {
 			GateSeq64 *module;
 			int setVal = 2;
-			void onAction(const widget::ActionEvent &e) override {
+			void onAction(const event::Action &e) override {
 				module->seqCVmethod = setVal;
 			}
 		};
@@ -1382,7 +1382,7 @@ struct GateSeq64Widget : ModuleWidget {
 	
 	struct CKSSThreeInvNotify : CKSSThreeInvNoRandom {// Not randomizable
 		CKSSThreeInvNotify() {}
-		void onDragStart(const widget::DragStartEvent &e) override {
+		void onDragStart(const event::DragStart &e) override {
 			Switch::onDragStart(e);
 			if (paramQuantity) {
 				GateSeq64* module = dynamic_cast<GateSeq64*>(paramQuantity->module);
@@ -1393,7 +1393,7 @@ struct GateSeq64Widget : ModuleWidget {
 	
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
-		void onDoubleClick(const widget::DoubleClickEvent &e) override {
+		void onDoubleClick(const event::DoubleClick &e) override {
 			if (paramQuantity) {
 				GateSeq64* module = dynamic_cast<GateSeq64*>(paramQuantity->module);
 				// same code structure below as in sequence knob in main step()
@@ -1445,7 +1445,7 @@ struct GateSeq64Widget : ModuleWidget {
 
 	struct LEDButtonGS : LEDButton {
 		LEDButtonGS() {};
-		void onDragStart(const DragStartEvent &e) override {
+		void onDragStart(const event::DragStart &e) override {
 			if (paramQuantity) {
 				GateSeq64 *module = dynamic_cast<GateSeq64*>(paramQuantity->module);
 				if (module->isEditingSequence() && module->displayState != GateSeq64::DISP_LENGTH && module->displayState != GateSeq64::DISP_MODES) {
@@ -1458,7 +1458,7 @@ struct GateSeq64Widget : ModuleWidget {
 			}
 			LEDButton::onDragStart(e);
 		}
-		void onDragEnter(const DragEnterEvent &e) override {
+		void onDragEnter(const event::DragEnter &e) override {
 			if (paramQuantity) {
 				GateSeq64 *module = dynamic_cast<GateSeq64*>(paramQuantity->module);
 				if (module->isEditingSequence() && module->displayState != GateSeq64::DISP_LENGTH && module->displayState != GateSeq64::DISP_MODES) {

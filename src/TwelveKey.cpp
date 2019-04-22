@@ -246,7 +246,7 @@ struct TwelveKeyWidget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		TwelveKey *module;
 		int theme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = theme;
 		}
 		void step() override {

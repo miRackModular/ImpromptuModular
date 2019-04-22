@@ -1868,7 +1868,7 @@ struct SemiModularSynthWidget : ModuleWidget {
 	struct PanelThemeItem : MenuItem {
 		SemiModularSynth *module;
 		int panelTheme;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->panelTheme = panelTheme;
 		}
 		void step() override {
@@ -1877,31 +1877,31 @@ struct SemiModularSynthWidget : ModuleWidget {
 	};
 	struct ResetOnRunItem : MenuItem {
 		SemiModularSynth *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->resetOnRun = !module->resetOnRun;
 		}
 	};
 	struct AutoStepLenItem : MenuItem {
 		SemiModularSynth *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->autostepLen = !module->autostepLen;
 		}
 	};
 	struct AutoseqItem : MenuItem {
 		SemiModularSynth *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->autoseq = !module->autoseq;
 		}
 	};
 	struct HoldTiedItem : MenuItem {
 		SemiModularSynth *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->holdTiedNotes = !module->holdTiedNotes;
 		}
 	};
 	struct StopAtEndOfSongItem : MenuItem {
 		SemiModularSynth *module;
-		void onAction(const widget::ActionEvent &e) override {
+		void onAction(const event::Action &e) override {
 			module->stopAtEndOfSong = !module->stopAtEndOfSong;
 		}
 	};
@@ -1909,7 +1909,7 @@ struct SemiModularSynthWidget : ModuleWidget {
 		struct SeqCVmethodSubItem : MenuItem {
 			SemiModularSynth *module;
 			int setVal = 2;
-			void onAction(const widget::ActionEvent &e) override {
+			void onAction(const event::Action &e) override {
 				module->seqCVmethod = setVal;
 			}
 		};
@@ -1990,7 +1990,7 @@ struct SemiModularSynthWidget : ModuleWidget {
 	
 	struct SequenceKnob : IMBigKnobInf {
 		SequenceKnob() {};		
-		void onDoubleClick(const widget::DoubleClickEvent &e) override {
+		void onDoubleClick(const event::DoubleClick &e) override {
 			if (paramQuantity) {
 				SemiModularSynth* module = dynamic_cast<SemiModularSynth*>(paramQuantity->module);
 				// same code structure below as in sequence knob in main step()

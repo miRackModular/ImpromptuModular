@@ -104,13 +104,13 @@ LEDBezelBig::LEDBezelBig() {
 
 // Invisible key
 
-void InvisibleKeySmall::onButton(const ButtonEvent &e) {
+void InvisibleKeySmall::onButton(const event::Button &e) {
 	if (e.action == GLFW_PRESS && paramQuantity) {
 		paramQuantity->maxValue = 1.0f;
 	}
 	Switch::onButton(e);
 }
-void InvisibleKeySmall::onDoubleClick(const DoubleClickEvent &e) {
+void InvisibleKeySmall::onDoubleClick(const event::DoubleClick &e) {
 	if (paramQuantity) {
 		paramQuantity->maxValue = 2.0f;
 	}
@@ -124,7 +124,7 @@ IMTactile::IMTactile() {
 	box.size = Vec(padWidth, padHeight);
 }
 
-void IMTactile::onDragStart(const DragStartEvent &e) {
+void IMTactile::onDragStart(const event::DragStart &e) {
 	if (paramQuantity) {
 		dragValue = paramQuantity->getValue();
 		dragY = APP->scene->rack->mousePos.y;
@@ -132,7 +132,7 @@ void IMTactile::onDragStart(const DragStartEvent &e) {
 	e.consume(this);// Must consume to set the widget as dragged
 }
 
-void IMTactile::onDragMove(const DragMoveEvent &e) {
+void IMTactile::onDragMove(const event::DragMove &e) {
 	if (paramQuantity) {
 		float rangeValue = paramQuantity->getMaxValue() - paramQuantity->getMinValue();// infinite not supported (not relevant)
 		float newDragY = APP->scene->rack->mousePos.y;
@@ -145,7 +145,7 @@ void IMTactile::onDragMove(const DragMoveEvent &e) {
 	e.consume(this);
 }
 
-void IMTactile::onButton(const ButtonEvent &e) {
+void IMTactile::onButton(const event::Button &e) {
 	if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT && paramQuantity) {
 		float val = rescale(e.pos.y, box.size.y, 0.0f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
 		paramQuantity->setValue(val);
