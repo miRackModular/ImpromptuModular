@@ -220,7 +220,7 @@ For a tutorial on Clocked regarding chaining, clock multiplications and division
 
 * **PW**: Pulse width is dependent on the swing knob, but can be used to control the general duration of the clock pulse. In the worst-case knob settings, the pulse width is guaranteed to be a minimum of 1ms, with a minimum 1ms pause between pulses. 
 
-* **DELAY**: Clock delay can be used to offset a sub-clock relative to the master clock, and is expressed in fractions of the clock period of the given sub-clock. Using the right click menu, the delay value can also be displayed in notes where one quarter note corresponds to a clock period. 
+* **DELAY**: Clock delay can be used to offset a sub-clock relative to the master clock, and is expressed in fractions of the clock period of the given sub-clock. Using the right click menu, the delay value can also be displayed in notes, where one quarter note corresponds to a clock period. It is important to keep in mind, however, that the ratio knobs in Clocked are not PPQN settings as such, they are general clock frequency selectors. For example, setting a ratio to x24 with a master tempo at 120 BPM, the clock delay will be applied on a very fast clock, which is practically imperceptible: in this example, a clock delay of 1/16 note is actually equal to a quarter of a clock interval at 2880 BPM! (2880 = 120 x 24) 
 
 In place of a detailed explanation of these three main controls, it is recommended to connect the outputs to a scope or a logic analyzer, such as the Fundamental Scope (pictured above) or the SubmarineFree LA-108, to observe the effects of the different controls.
 
