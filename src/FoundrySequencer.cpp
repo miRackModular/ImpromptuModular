@@ -65,7 +65,7 @@ bool Sequencer::setGateType(int keyn, int multiSteps, float sampleRate, bool aut
 		moveStepIndexEdit(1, false);
 		editingGateKeyLight = keyn;
 		editingType = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
-		if ( ((APP->window->getMods() & WINDOW_MOD_MASK) == WINDOW_MOD_CTRL) && multiSteps < 2 )
+		if ( ((APP->window->getMods() & RACK_MOD_MASK) == RACK_MOD_CTRL) && multiSteps < 2 )
 			setGateType(keyn, 1, sampleRate, false, multiTracks);
 	}
 	return true;
@@ -254,7 +254,7 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 		}
 		if (autostepClick) {// if right-click then move to next step
 			moveStepIndexEdit(1, false);
-			if ( ((APP->window->getMods() & WINDOW_MOD_MASK) == WINDOW_MOD_CTRL) && multiSteps < 2 ) // if ctrl-right-click and SEL is off
+			if ( ((APP->window->getMods() & RACK_MOD_MASK) == RACK_MOD_CTRL) && multiSteps < 2 ) // if ctrl-right-click and SEL is off
 				writeCV(trackIndexEdit, editingGateCV[trackIndexEdit], 1, sampleRate, multiTracks);// copy CV only to next step
 			editingGateKeyLight = keyn;
 		}

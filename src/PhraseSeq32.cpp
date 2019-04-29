@@ -1115,7 +1115,7 @@ struct PhraseSeq32 : Module {
 									stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
 									editingType = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
 									editingGateKeyLight = i;
-									if ((APP->window->getMods() & WINDOW_MOD_MASK) == WINDOW_MOD_CTRL)
+									if ((APP->window->getMods() & RACK_MOD_MASK) == RACK_MOD_CTRL)
 										attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
 								}
 							}
@@ -1139,7 +1139,7 @@ struct PhraseSeq32 : Module {
 							if (paramQuantities[KEY_PARAMS + i]->getMaxValue() > 1.5f) {// if double-click
 								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
 								editingGateKeyLight = i;
-								if ((APP->window->getMods() & WINDOW_MOD_MASK) == WINDOW_MOD_CTRL)
+								if ((APP->window->getMods() & RACK_MOD_MASK) == RACK_MOD_CTRL)
 									cv[seqIndexEdit][stepIndexEdit] = newCV;
 							}
 						}						
