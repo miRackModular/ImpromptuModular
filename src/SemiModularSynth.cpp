@@ -1573,7 +1573,7 @@ struct SemiModularSynth : Module {
 		// VCO
 		oscillatorVco.analog = params[VCO_MODE_PARAM].getValue() > 0.0f;
 		float pitchFine = 3.0f * dsp::quadraticBipolar(params[VCO_FINE_PARAM].getValue());
-		float pitchCv = 12.0f * (inputs[VCO_PITCH_INPUT].isConnected() ? inputs[VCO_PITCH_INPUT].getVoltage() : outputs[CV_OUTPUT].value);// Pre-patching
+		float pitchCv = 12.0f * (inputs[VCO_PITCH_INPUT].isConnected() ? inputs[VCO_PITCH_INPUT].getVoltage() : outputs[CV_OUTPUT].getVoltage());// Pre-patching
 		float pitchOctOffset = 12.0f * params[VCO_OCT_PARAM].getValue();
 		if (inputs[VCO_FM_INPUT].isConnected()) {
 			pitchCv += dsp::quadraticBipolar(params[VCO_FM_PARAM].getValue()) * 12.0f * inputs[VCO_FM_INPUT].getVoltage();
@@ -1604,8 +1604,8 @@ struct SemiModularSynth : Module {
 		
 		
 		// VCA
-		float vcaIn = inputs[VCA_IN1_INPUT].isConnected() ? inputs[VCA_IN1_INPUT].getVoltage() : outputs[VCO_SQR_OUTPUT].value;// Pre-patching
-		float vcaLin = inputs[VCA_LIN1_INPUT].isConnected() ? inputs[VCA_LIN1_INPUT].getVoltage() : outputs[ADSR_ENVELOPE_OUTPUT].value;// Pre-patching
+		float vcaIn = inputs[VCA_IN1_INPUT].isConnected() ? inputs[VCA_IN1_INPUT].getVoltage() : outputs[VCO_SQR_OUTPUT].getVoltage();// Pre-patching
+		float vcaLin = inputs[VCA_LIN1_INPUT].isConnected() ? inputs[VCA_LIN1_INPUT].getVoltage() : outputs[ADSR_ENVELOPE_OUTPUT].getVoltage();// Pre-patching
 		float v = vcaIn * params[VCA_LEVEL1_PARAM].getValue();
 		v *= clamp(vcaLin / 10.0f, 0.0f, 1.0f);
 		outputs[VCA_OUT1_OUTPUT].setVoltage(v);
@@ -1617,7 +1617,7 @@ struct SemiModularSynth : Module {
 		float sustain = clamp(params[ADSR_SUSTAIN_PARAM].getValue(), 0.0f, 1.0f);
 		float release = clamp(params[ADSR_RELEASE_PARAM].getValue(), 0.0f, 1.0f);
 		// Gate
-		float adsrIn = inputs[ADSR_GATE_INPUT].isConnected() ? inputs[ADSR_GATE_INPUT].getVoltage() : outputs[GATE1_OUTPUT].value;// Pre-patching
+		float adsrIn = inputs[ADSR_GATE_INPUT].isConnected() ? inputs[ADSR_GATE_INPUT].getVoltage() : outputs[GATE1_OUTPUT].getVoltage();// Pre-patching
 		bool gated = adsrIn >= 1.0f;
 		const float base = 20000.0f;
 		const float maxTime = 10.0f;
@@ -1662,7 +1662,7 @@ struct SemiModularSynth : Module {
 		// VCF
 		if (outputs[VCF_LPF_OUTPUT].isConnected() || outputs[VCF_HPF_OUTPUT].isConnected()) {
 		
-			float input = (inputs[VCF_IN_INPUT].isConnected() ? inputs[VCF_IN_INPUT].getVoltage() : outputs[VCA_OUT1_OUTPUT].value) / 5.0f;// Pre-patching
+			float input = (inputs[VCF_IN_INPUT].isConnected() ? inputs[VCF_IN_INPUT].getVoltage() : outputs[VCA_OUT1_OUTPUT].getVoltage()) / 5.0f;// Pre-patching
 			float drive = clamp(params[VCF_DRIVE_PARAM].getValue() + inputs[VCF_DRIVE_INPUT].getVoltage() / 10.0f, 0.f, 1.f);
 			float gain = powf(1.f + drive, 5);
 			input *= gain;
