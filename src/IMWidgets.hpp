@@ -1,7 +1,6 @@
 //***********************************************************************************************
 //Impromptu Modular: Modules for VCV Rack by Marc Boulé
 //
-//Based on code from Valley Rack Free by Dale Johnson
 //See ./LICENSE.txt for all licenses
 //***********************************************************************************************
 
