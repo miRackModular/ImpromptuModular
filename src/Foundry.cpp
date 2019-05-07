@@ -1065,14 +1065,14 @@ struct Foundry : Module {
 						gate = seq.getAttribute(true, stepn).getGate();
 					else if (!editingSequence && (attached && running))
 						gate = seq.getAttribute(false, stepn).getGate();
-					white = ((green == 0.0f && red == 0.0f && gate && displayState != DISP_MODE_SEQ && displayState != DISP_PPQN && displayState != DISP_DELAY) ? 0.04f : 0.0f);
+					white = ((green == 0.0f && red == 0.0f && gate && displayState != DISP_MODE_SEQ && displayState != DISP_PPQN && displayState != DISP_DELAY) ? 0.2f : 0.0f);
 					if (editingSequence && white != 0.0f) {
 						green = 0.02f; white = 0.0f;
 					}
 				}
 
-				setGreenRed(STEP_PHRASE_LIGHTS + stepn * 3, green, red);
-				lights[STEP_PHRASE_LIGHTS + stepn * 3 + 2].value = white;
+				setGreenRed(STEP_PHRASE_LIGHTS + stepn * 3, green, red);// TODO
+				lights[STEP_PHRASE_LIGHTS + stepn * 3 + 2].setBrightness(white);
 			}
 			
 			
@@ -1088,7 +1088,7 @@ struct Foundry : Module {
 					else				
 						red = (i == (6 - octLightIndex) ? 1.0f : 0.0f);// no lights when outside of range
 				}
-				lights[OCTAVE_LIGHTS + i].value = red;
+				lights[OCTAVE_LIGHTS + i].setBrightness(red);
 			}
 			
 			// Keyboard lights
@@ -1107,7 +1107,7 @@ struct Foundry : Module {
 					if (editingGates) {
 						green = 1.0f;
 						red = 0.2f;
-						unsigned long editingType = seq.getEditingType();
+						unsigned long editingType = seq.getEditingType();// TODO
 						if (editingType > 0ul) {
 							if (i == seq.getEditingGateKeyLight()) {
 								float dimMult = ((float) editingType / (float)(Sequencer::gateTime * sampleRate / displayRefreshStepSkips));
@@ -1133,18 +1133,18 @@ struct Foundry : Module {
 							red = (warningFlashState && i == keyLightIndex) ? 1.0f : 0.0f;
 						}
 						else {
-							red = seq.calcKeyLightWithEditing(i, keyLightIndex, sampleRate);
+							red = seq.calcKeyLightWithEditing(i, keyLightIndex, sampleRate);// TODO
 						}
 					}
 				}
-				setGreenRed(KEY_LIGHTS + i * 2, green, red);
+				setGreenRed(KEY_LIGHTS + i * 2, green, red);// TODO
 			}
 
 			// Gate, Tied, GateProb, and Slide lights 
 			if (!attributesVisual.getGate())
 				setGreenRed(GATE_LIGHT, 0.0f, 0.0f);
 			else 
-				setGreenRed(GATE_LIGHT, editingGates ? 1.0f : 0.0f, editingGates ? 0.2f : 1.0f);
+				setGreenRed(GATE_LIGHT, editingGates ? 1.0f : 0.0f, editingGates ? 0.45f : 1.0f);
 			if (tiedWarning > 0l) {
 				bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
 				lights[TIE_LIGHT].setBrightness(warningFlashState ? 1.0f : 0.0f);
@@ -1219,8 +1219,8 @@ struct Foundry : Module {
 	
 
 	inline void setGreenRed(int id, float green, float red) {
-		lights[id + 0].value = green;
-		lights[id + 1].value = red;
+		lights[id + 0].setBrightness(green);
+		lights[id + 1].setBrightness(red);
 	}
 	
 	inline void calcClkInSources() {

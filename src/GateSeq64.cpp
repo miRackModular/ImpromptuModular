@@ -1016,7 +1016,7 @@ struct GateSeq64 : Module {
 			if (infoCopyPaste != 0l) {
 				for (int i = 0; i < 64; i++) {
 					if (i >= startCP && i < (startCP + countCP))
-						setGreenRed3(STEP_LIGHTS + i * 3, 0.5f, 0.0f);
+						setGreenRed3(STEP_LIGHTS + i * 3, 0.71f, 0.0f);
 					else
 						setGreenRed3(STEP_LIGHTS + i * 3, 0.0f, 0.0f);
 				}
@@ -1032,14 +1032,14 @@ struct GateSeq64 : Module {
 					if (editingSequence) {
 						if (displayState == DISP_LENGTH) {
 							if (col < (sequences[sequence].getLength() - 1))
-								setGreenRed3(STEP_LIGHTS + i * 3, 0.1f, 0.0f);
+								setGreenRed3(STEP_LIGHTS + i * 3, 0.32f, 0.0f);
 							else if (col == (sequences[sequence].getLength() - 1))
 								setGreenRed3(STEP_LIGHTS + i * 3, 1.0f, 0.0f);
 							else 
 								setGreenRed3(STEP_LIGHTS + i * 3, 0.0f, 0.0f);
 						}
 						else {
-							float stepHereOffset = ((stepIndexRun[row] == col) && running) ? 0.5f : 1.0f;
+							float stepHereOffset = ((stepIndexRun[row] == col) && running) ? 0.71f : 1.0f;
 							long blinkCountMarker = (long) (0.67f * sampleRate / displayRefreshStepSkips);							
 							if (attributes[sequence][i].getGate()) {
 								bool blinkEnableOn = (displayState != DISP_MODES) && (blinkCount < blinkCountMarker);
@@ -1058,9 +1058,9 @@ struct GateSeq64 : Module {
 							}
 							else {
 								if (i == stepIndexEdit && blinkCount > blinkCountMarker && displayState != DISP_MODES)
-									setGreenRed3(STEP_LIGHTS + i * 3, 0.05f, 0.0f);
+									setGreenRed3(STEP_LIGHTS + i * 3, 0.22f, 0.0f);
 								else
-									setGreenRed3(STEP_LIGHTS + i * 3, ((stepIndexRun[row] == col) && running) ? 0.1f : 0.0f, 0.0f);
+									setGreenRed3(STEP_LIGHTS + i * 3, ((stepIndexRun[row] == col) && running) ? 0.32f : 0.0f, 0.0f);
 							}
 						}
 					}
@@ -1068,7 +1068,7 @@ struct GateSeq64 : Module {
 						if (displayState == DISP_LENGTH) {
 							col = i & 0xF;//i % 16;// optimized
 							if (i < (phrases - 1))
-								setGreenRed3(STEP_LIGHTS + i * 3, 0.1f, 0.0f);
+								setGreenRed3(STEP_LIGHTS + i * 3, 0.32f, 0.0f);
 							else if (i == (phrases - 1))
 								setGreenRed3(STEP_LIGHTS + i * 3, 1.0f, 0.0f);
 							else 
@@ -1076,13 +1076,16 @@ struct GateSeq64 : Module {
 						}
 						else {
 							float green = (i == (phraseIndexRun) && running) ? 1.0f : 0.0f;
+							green += ((running && (col == stepIndexRun[row]) && i != (phraseIndexEdit)) ? 0.32f : 0.0f);
 							float red = (i == (phraseIndexEdit) && ((editingPhraseSongRunning > 0l) || !running)) ? 1.0f : 0.0f;
-							green += ((running && (col == stepIndexRun[row]) && i != (phraseIndexEdit)) ? 0.1f : 0.0f);
-							setGreenRed3(STEP_LIGHTS + i * 3, clamp(green, 0.0f, 1.0f), red);
+							float white = 0.0f;
 							if (green == 0.0f && red == 0.0f && displayState != DISP_MODES){
-								lights[STEP_LIGHTS + i * 3 + 2].value = (attributes[phrase[phraseIndexRun]][i].getGate() ? 0.2f : 0.0f);
-								lights[STEP_LIGHTS + i * 3 + 2].value -= (attributes[phrase[phraseIndexRun]][i].getGateP() ? 0.18f : 0.0f);
+								white = (attributes[phrase[phraseIndexRun]][i].getGate() ? 0.45f : 0.0f);
+								if (attributes[phrase[phraseIndexRun]][i].getGateP())
+									white = 0.14f;
 							}
+							setGreenRed(STEP_LIGHTS + i * 3, std::min(green, 1.0f), red);
+							lights[STEP_LIGHTS + i * 3 + 2].setBrightness(white);
 						}				
 					}
 				}
@@ -1166,12 +1169,12 @@ struct GateSeq64 : Module {
 	}// process()
 	
 	inline void setGreenRed(int id, float green, float red) {
-		lights[id + 0].value = green;
-		lights[id + 1].value = red;
+		lights[id + 0].setBrightness(green);
+		lights[id + 1].setBrightness(red);
 	}
 	inline void setGreenRed3(int id, float green, float red) {
 		setGreenRed(id, green, red);
-		lights[id + 2].value = 0.0f;
+		lights[id + 2].setBrightness(0.0f);
 	}
 
 };// GateSeq64 : module

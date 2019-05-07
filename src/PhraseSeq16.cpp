@@ -1562,16 +1562,16 @@ struct PhraseSeq16 : Module {
 	
 	inline void setGateLight(bool gateOn, int lightIndex) {
 		if (!gateOn) {
-			lights[lightIndex + 0].value = 0.0f;
-			lights[lightIndex + 1].value = 0.0f;
+			lights[lightIndex + 0].setBrightness(0.0f);
+			lights[lightIndex + 1].setBrightness(0.0f);
 		}
 		else if (editingGateLength == 0l) {
-			lights[lightIndex + 0].value = 0.0f;
-			lights[lightIndex + 1].value = 1.0f;
+			lights[lightIndex + 0].setBrightness(0.0f);
+			lights[lightIndex + 1].setBrightness(1.0f);
 		}
 		else {
-			lights[lightIndex + 0].value = lightIndex == GATE1_LIGHT ? 1.0f : 0.2f;
-			lights[lightIndex + 1].value = lightIndex == GATE1_LIGHT ? 0.2f : 1.0f;
+			lights[lightIndex + 0].setBrightness(lightIndex == GATE1_LIGHT ? 1.0f : 0.45f);
+			lights[lightIndex + 1].setBrightness(lightIndex == GATE1_LIGHT ? 0.45f : 1.0f);
 		}
 	}
 	
