@@ -78,10 +78,10 @@ struct FoundryExpander : Module {
 			
 		// From Mother
 		panelTheme = (motherPresent ? clamp((int)(consumerMessage[0] + 0.5f), 0, 1) : 0);
-		lights[WRITE_SEL_LIGHTS + 0].value = (motherPresent ? consumerMessage[1] : 0.0f);
-		lights[WRITE_SEL_LIGHTS + 1].value = (motherPresent ? consumerMessage[2] : 0.0f);			
+		lights[WRITE_SEL_LIGHTS + 0].setBrightness(motherPresent ? consumerMessage[1] : 0.0f);
+		lights[WRITE_SEL_LIGHTS + 1].setBrightness(motherPresent ? consumerMessage[2] : 0.0f);			
 		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-			lights[WRITECV2_LIGHTS + trkn].value = (motherPresent ? consumerMessage[trkn + 3] : 0.0f);
+			lights[WRITECV2_LIGHTS + trkn].setBrightness(motherPresent ? consumerMessage[trkn + 3] : 0.0f);
 		}	
 	}// process()
 };

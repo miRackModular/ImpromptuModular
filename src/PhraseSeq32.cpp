@@ -1566,8 +1566,8 @@ struct PhraseSeq32 : Module {
 				lights[ATTACH_LIGHT].value = (attached ? 1.0f : 0.0f);
 			
 			// Reset light
-			lights[RESET_LIGHT].value =	resetLight;
-			resetLight -= (resetLight / lightLambda) * args.sampleTime * displayRefreshStepSkips;
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * displayRefreshStepSkips);
+			resetLight = 0.0f;
 			
 			// Run light
 			lights[RUN_LIGHT].value = running ? 1.0f : 0.0f;

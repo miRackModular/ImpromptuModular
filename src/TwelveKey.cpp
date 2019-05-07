@@ -205,7 +205,7 @@ struct TwelveKey : Module {
 
 			// Key lights
 			for (int i = 0; i < 12; i++)
-				lights[KEY_LIGHTS + i].value = (( i == lastKeyPressed && (noteLightCounter > 0ul || params[KEY_PARAMS + i].getValue() > 0.5f)) ? 1.0f : 0.0f);
+				lights[KEY_LIGHTS + i].setBrightness(( i == lastKeyPressed && (noteLightCounter > 0ul || params[KEY_PARAMS + i].getValue() > 0.5f)) ? 1.0f : 0.0f);
 			
 			if (noteLightCounter > 0ul)
 				noteLightCounter--;

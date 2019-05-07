@@ -441,11 +441,11 @@ struct WriteSeq32 : Module {
 			int index = (indexChannel == 3 ? indexStepStage : indexStep);
 			// Window lights
 			for (int i = 0; i < 4; i++) {
-				lights[WINDOW_LIGHTS + i].value = ((i == (index >> 3))?1.0f:0.0f);
+				lights[WINDOW_LIGHTS + i].setBrightness((i == (index >> 3)) ? 1.0f : 0.0f);
 			}
 			// Step and gate lights
 			for (int index8 = 0, iGate = 0; index8 < 8; index8++) {
-				lights[STEP_LIGHTS + index8].value = (index8 == (index&0x7)) ? 1.0f : 0.0f;
+				lights[STEP_LIGHTS + index8].setBrightness((index8 == (index&0x7)) ? 1.0f : 0.0f);
 				iGate = (index&0x18) | index8;
 				float green = 0.0f;
 				float red = 0.0f;
@@ -457,20 +457,20 @@ struct WriteSeq32 : Module {
 			}
 				
 			// Channel lights		
-			lights[CHANNEL_LIGHTS + 0].value = (indexChannel == 0) ? 1.0f : 0.0f;// green
-			lights[CHANNEL_LIGHTS + 1].value = (indexChannel == 1) ? 1.0f : 0.0f;// yellow
-			lights[CHANNEL_LIGHTS + 2].value = (indexChannel == 2) ? 1.0f : 0.0f;// orange
-			lights[CHANNEL_LIGHTS + 3].value = (indexChannel == 3) ? 1.0f : 0.0f;// blue
+			lights[CHANNEL_LIGHTS + 0].setBrightness((indexChannel == 0) ? 1.0f : 0.0f);// green
+			lights[CHANNEL_LIGHTS + 1].setBrightness((indexChannel == 1) ? 1.0f : 0.0f);// yellow
+			lights[CHANNEL_LIGHTS + 2].setBrightness((indexChannel == 2) ? 1.0f : 0.0f);// orange
+			lights[CHANNEL_LIGHTS + 3].setBrightness((indexChannel == 3) ? 1.0f : 0.0f);// blue
 			
 			// Run light
-			lights[RUN_LIGHT].value = running ? 1.0f : 0.0f;
+			lights[RUN_LIGHT].setBrightness(running ? 1.0f : 0.0f);
 			
 			// Write allowed light
-			lights[WRITE_LIGHT + 0].value = (canEdit)?1.0f:0.0f;
-			lights[WRITE_LIGHT + 1].value = (canEdit)?0.0f:1.0f;
+			lights[WRITE_LIGHT + 0].setBrightness(canEdit ? 1.0f : 0.0f);
+			lights[WRITE_LIGHT + 1].setBrightness(canEdit ? 0.0f : 1.0f);
 			
 			// Pending paste light
-			lights[PENDING_LIGHT].value = (pendingPaste == 0 ? 0.0f : 1.0f);
+			lights[PENDING_LIGHT].setBrightness((pendingPaste == 0 ? 0.0f : 1.0f));
 			
 			if (infoCopyPaste != 0l) {
 				if (infoCopyPaste > 0l)

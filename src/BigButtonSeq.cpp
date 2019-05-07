@@ -374,33 +374,33 @@ struct BigButtonSeq : Module {
 		lightRefreshCounter++;
 		if (lightRefreshCounter >= displayRefreshStepSkips) {
 			lightRefreshCounter = 0;
+			float deltaTime = (float)sampleTime * displayRefreshStepSkips;
 
 			// Gate light outputs
 			bool bigLightPulseState = bigLightPulse.process((float)sampleTime * displayRefreshStepSkips);
 			bool outLightPulseState = outLightPulse.process((float)sampleTime * displayRefreshStepSkips);
-			float deltaTime = APP->engine->getSampleTime() * displayRefreshStepSkips;
 			for (int i = 0; i < 6; i++) {
 				bool gate = getGate(i, indexStep);
 				bool outLight  = (((gate || (i == channel && fillPressed)) && outLightPulseState) || (gate && bigLightPulseState && i == channel));
 				lights[(CHAN_LIGHTS + i) * 2 + 1].setSmoothBrightness(outLight ? 1.0f : 0.0f, deltaTime);
-				lights[(CHAN_LIGHTS + i) * 2 + 0].value = (i == channel ? (1.0f - lights[(CHAN_LIGHTS + i) * 2 + 1].value) / 2.0f : 0.0f);
+				lights[(CHAN_LIGHTS + i) * 2 + 0].setBrightness(i == channel ? (1.0f - lights[(CHAN_LIGHTS + i) * 2 + 1].getBrightness()) : 0.0f);
 			}
 
 			// Big button lights
-			lights[BIG_LIGHT].value = bank[channel] == 1 ? 1.0f : 0.0f;
-			lights[BIGC_LIGHT].value = bigLight;
+			lights[BIG_LIGHT].setBrightness(bank[channel] == 1 ? 1.0f : 0.0f);
+			lights[BIGC_LIGHT].setSmoothBrightness(bigLight, deltaTime);
+			bigLight = 0.0f;	
 			
 			// Metronome light
-			lights[METRONOME_LIGHT + 1].value = metronomeLightStart;
-			lights[METRONOME_LIGHT + 0].value = metronomeLightDiv;
+			lights[METRONOME_LIGHT + 1].setSmoothBrightness(metronomeLightStart, deltaTime);
+			lights[METRONOME_LIGHT + 0].setSmoothBrightness(metronomeLightDiv, deltaTime);
+			metronomeLightStart = 0.0f;
+			metronomeLightDiv =0.0f;
 		
 			// Other push button lights
-			lights[WRITEFILL_LIGHT].value = writeFillsToMemory ? 1.0f : 0.0f;
-			lights[QUANTIZEBIG_LIGHT].value = quantizeBig ? 1.0f : 0.0f;
+			lights[WRITEFILL_LIGHT].setBrightness(writeFillsToMemory ? 1.0f : 0.0f);
+			lights[QUANTIZEBIG_LIGHT].setBrightness(quantizeBig ? 1.0f : 0.0f);
 		
-			bigLight -= (bigLight / lightLambda) * (float)sampleTime * displayRefreshStepSkips;	
-			metronomeLightStart -= (metronomeLightStart / lightLambda) * (float)sampleTime * displayRefreshStepSkips;	
-			metronomeLightDiv -= (metronomeLightDiv / lightLambda) * (float)sampleTime * displayRefreshStepSkips;
 		}
 		
 		clockTime += sampleTime;

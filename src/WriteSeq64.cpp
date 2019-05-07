@@ -474,18 +474,18 @@ struct WriteSeq64 : Module {
 			lights[GATE_LIGHT + 1].value = red;
 			
 			// Reset light
-			lights[RESET_LIGHT].value =	resetLight;	
-			resetLight -= (resetLight / lightLambda) * args.sampleTime * displayRefreshStepSkips;
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * displayRefreshStepSkips);	
+			resetLight = 0.0f;
 
 			// Run light
-			lights[RUN_LIGHT].value = running ? 1.0f : 0.0f;
+			lights[RUN_LIGHT].setBrightness(running ? 1.0f : 0.0f);
 			
 			// Write allowed light
-			lights[WRITE_LIGHT + 0].value = (canEdit)?1.0f:0.0f;
-			lights[WRITE_LIGHT + 1].value = (canEdit)?0.0f:1.0f;
+			lights[WRITE_LIGHT + 0].setBrightness(canEdit ? 1.0f : 0.0f);
+			lights[WRITE_LIGHT + 1].setBrightness(canEdit ? 0.0f : 1.0f);
 			
 			// Pending paste light
-			lights[PENDING_LIGHT].value = (pendingPaste == 0 ? 0.0f : 1.0f);
+			lights[PENDING_LIGHT].setBrightness(pendingPaste == 0 ? 0.0f : 1.0f);
 			
 			if (infoCopyPaste != 0l) {
 				if (infoCopyPaste > 0l)

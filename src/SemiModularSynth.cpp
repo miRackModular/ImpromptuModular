@@ -425,6 +425,7 @@ struct SemiModularSynth : Module {
 		editingGateLength = 0l;
 		lastGateEdit = 1l;
 		editingPpqn = 0l;
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 		
 		// VCO
 		// none
@@ -463,7 +464,6 @@ struct SemiModularSynth : Module {
 		gate1Code = calcGate1Code(attributes[seq][stepIndexRun], 0, pulsesPerStep, params[GATE1_KNOB_PARAM].getValue());
 		gate2Code = calcGate2Code(attributes[seq][stepIndexRun], 0, pulsesPerStep);
 		slideStepsRemain = 0ul;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 	}
 	
 	
@@ -1533,8 +1533,8 @@ struct SemiModularSynth : Module {
 				lights[ATTACH_LIGHT].value = (attached ? 1.0f : 0.0f);
 			
 			// Reset light
-			lights[RESET_LIGHT].value =	resetLight;	
-			resetLight -= (resetLight / lightLambda) * args.sampleTime * displayRefreshStepSkips;
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * displayRefreshStepSkips);	
+			resetLight = 0.0f;
 			
 			// Run light
 			lights[RUN_LIGHT].value = running ? 1.0f : 0.0f;

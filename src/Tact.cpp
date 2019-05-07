@@ -288,10 +288,10 @@ struct Tact : Module {
 			}
 			// CV input lights
 			for (int i = 0; i < 2; i++)
-				lights[CVIN_LIGHTS + i * 2].value = infoCVinLight[i];
+				lights[CVIN_LIGHTS + i * 2].setSmoothBrightness(infoCVinLight[i], sampleTime * displayRefreshStepSkips);
 			
 			for (int i = 0; i < 2; i++) {
-				infoCVinLight[i] -= (infoCVinLight[i] / lightLambda) * sampleTime * displayRefreshStepSkips;
+				infoCVinLight[i] = 0.0f;
 			}
 		}
 		
@@ -308,7 +308,7 @@ struct Tact : Module {
 			// Green diode
 			lights[TACT_LIGHTS + (chan * numLights * 2) + (numLights - 1 - i) * 2 + 0].setBrightness(level);
 			// Red diode
-			lights[TACT_LIGHTS + (chan * numLights * 2) + (numLights - 1 - i) * 2 + 1].value = 0.0f;
+			lights[TACT_LIGHTS + (chan * numLights * 2) + (numLights - 1 - i) * 2 + 1].setBrightness(0.0f);
 		}
 	}
 	
@@ -318,7 +318,7 @@ struct Tact : Module {
 			// Green diode
 			lights[TACT_LIGHTS + (chan * numLights * 2) + (numLights - 1 - i) * 2 + 0].setBrightness(level);
 			// Red diode
-			lights[TACT_LIGHTS + (chan * numLights * 2) + (numLights - 1 - i) * 2 + 1].value = 0.0f;
+			lights[TACT_LIGHTS + (chan * numLights * 2) + (numLights - 1 - i) * 2 + 1].setBrightness(0.0f);
 		}	
 	}
 };
@@ -679,7 +679,7 @@ struct Tact1 : Module {
 			// Green diode
 			lights[TACT_LIGHTS + (numLights - 1 - i) * 2 + 0].setBrightness(level);
 			// Red diode
-			lights[TACT_LIGHTS + (numLights - 1 - i) * 2 + 1].value = 0.0f;
+			lights[TACT_LIGHTS + (numLights - 1 - i) * 2 + 1].setBrightness(0.0f);
 		}
 	}
 };

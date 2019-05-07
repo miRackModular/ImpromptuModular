@@ -688,22 +688,22 @@ struct Clocked : Module {
 			lightRefreshCounter = 0;
 
 			// Reset light
-			lights[RESET_LIGHT].value =	resetLight;	
-			resetLight -= (resetLight / lightLambda) * (float)sampleTime * displayRefreshStepSkips;
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, (float)sampleTime * displayRefreshStepSkips);	
+			resetLight = 0.0f;
 			
 			// Run light
-			lights[RUN_LIGHT].value = running ? 1.0f : 0.0f;
+			lights[RUN_LIGHT].setBrightness(running ? 1.0f : 0.0f);
 			
 			// BPM light
 			bool warningFlashState = true;
 			if (cantRunWarning > 0l) 
 				warningFlashState = calcWarningFlash(cantRunWarning, (long) (0.7 * sampleRate / displayRefreshStepSkips));
-			lights[BPMSYNC_LIGHT + 0].value = (bpmDetectionMode && warningFlashState) ? 1.0f : 0.0f;
-			lights[BPMSYNC_LIGHT + 1].value = (bpmDetectionMode && warningFlashState) ? (float)((ppqn - 2)*(ppqn - 2))/440.0f : 0.0f;			
+			lights[BPMSYNC_LIGHT + 0].setBrightness((bpmDetectionMode && warningFlashState) ? 1.0f : 0.0f);
+			lights[BPMSYNC_LIGHT + 1].setBrightness((bpmDetectionMode && warningFlashState) ? (float)((ppqn - 2)*(ppqn - 2))/440.0f : 0.0f);			
 			
 			// ratios synched lights
 			for (int i = 1; i < 4; i++)
-				lights[CLK_LIGHTS + i].value = (syncRatios[i] && running) ? 1.0f: 0.0f;
+				lights[CLK_LIGHTS + i].setBrightness((syncRatios[i] && running) ? 1.0f: 0.0f);
 
 			// info notification counters
 			for (int i = 0; i < 4; i++) {

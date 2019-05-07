@@ -1158,8 +1158,8 @@ struct Foundry : Module {
 			lights[SLIDE_LIGHT].value = attributesVisual.getSlide() ? 1.0f : 0.0f;
 			
 			// Reset light
-			lights[RESET_LIGHT].value =	resetLight;
-			resetLight -= (resetLight / lightLambda) * args.sampleTime * displayRefreshStepSkips;
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * displayRefreshStepSkips);
+			resetLight = 0.0f;
 			
 			// Run light
 			lights[RUN_LIGHT].value = (running ? 1.0f : 0.0f);
@@ -1204,8 +1204,8 @@ struct Foundry : Module {
 			if (rightModule && rightModule->model == modelFoundryExpander) {
 				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
 				producerMessage[0] = (float)panelTheme;
-				producerMessage[1] = (((writeMode & 0x2) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 0].value
-				producerMessage[2] = (((writeMode & 0x1) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 1].value
+				producerMessage[1] = (((writeMode & 0x2) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 0].setBrightness()
+				producerMessage[2] = (((writeMode & 0x1) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 1].setBrightness()
 				for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 					producerMessage[3 + trkn] = (editingSequence && ((writeMode & 0x1) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
 				}	
