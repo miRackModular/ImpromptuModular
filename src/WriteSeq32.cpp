@@ -451,9 +451,10 @@ struct WriteSeq32 : Module {
 				float red = 0.0f;
 				if ( (iGate < numSteps) && (gates[indexChannel][iGate] != 0) ) {
 					if (gates[indexChannel][iGate] == 1) 	green = 1.0f;
-					else {									green = 0.2f; red = 1.0f;}
+					else {									green = 0.45f; red = 1.0f;}
 				}	
-				setGreenRed(GATE_LIGHTS + index8 * 2, green, red);
+				lights[GATE_LIGHTS + index8 * 2 + 0].setBrightness(green);
+				lights[GATE_LIGHTS + index8 * 2 + 1].setBrightness(red);
 			}
 				
 			// Channel lights		
@@ -482,11 +483,6 @@ struct WriteSeq32 : Module {
 		
 		if (clockIgnoreOnReset > 0l)
 			clockIgnoreOnReset--;
-	}
-	
-	inline void setGreenRed(int id, float green, float red) {
-		lights[id + 0].value = green;
-		lights[id + 1].value = red;
 	}
 
 };

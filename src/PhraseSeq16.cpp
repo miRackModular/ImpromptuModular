@@ -1351,14 +1351,14 @@ struct PhraseSeq16 : Module {
 				if (!editingSequence && (!attached || !running))// no oct lights when song mode and either (detached [1] or stopped [2])
 												// [1] makes no sense, can't mod steps and stepping though seq that may not be playing
 												// [2] CV is set to 0V when not running and in song mode, so cv[][] makes no sense to display
-					lights[OCTAVE_LIGHTS + i].value = 0.0f;
+					lights[OCTAVE_LIGHTS + i].setBrightness(0.0f);
 				else {
 					if (tiedWarning > 0l) {
 						bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
-						lights[OCTAVE_LIGHTS + i].value = (warningFlashState && (i == (6 - octLightIndex))) ? 1.0f : 0.0f;
+						lights[OCTAVE_LIGHTS + i].setBrightness((warningFlashState && (i == (6 - octLightIndex))) ? 1.0f : 0.0f);
 					}
 					else				
-						lights[OCTAVE_LIGHTS + i].value = (i == (6 - octLightIndex) ? 1.0f : 0.0f);
+						lights[OCTAVE_LIGHTS + i].setBrightness(i == (6 - octLightIndex) ? 1.0f : 0.0f);
 				}
 			}
 			
@@ -1404,28 +1404,28 @@ struct PhraseSeq16 : Module {
 			}
 			else {
 				for (int i = 0; i < 12; i++) {
-					lights[KEY_LIGHTS + i * 2 + 0].value = 0.0f;
+					lights[KEY_LIGHTS + i * 2 + 0].setBrightness(0.0f);
 					if (!editingSequence && (!attached || !running))// no keyboard lights when song mode and either (detached [1] or stopped [2])
 													// [1] makes no sense, can't mod steps and stepping though seq that may not be playing
 													// [2] CV is set to 0V when not running and in song mode, so cv[][] makes no sense to display
-						lights[KEY_LIGHTS + i * 2 + 1].value = 0.0f;
+						lights[KEY_LIGHTS + i * 2 + 1].setBrightness(0.0f);
 					else {
 						if (tiedWarning > 0l) {
 							bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
-							lights[KEY_LIGHTS + i * 2 + 1].value = (warningFlashState && i == keyLightIndex) ? 1.0f : 0.0f;
+							lights[KEY_LIGHTS + i * 2 + 1].setBrightness((warningFlashState && i == keyLightIndex) ? 1.0f : 0.0f);
 						}
 						else {
 							if (editingGate > 0ul && editingGateKeyLight != -1)
 								lights[KEY_LIGHTS + i * 2 + 1].value = (i == editingGateKeyLight ? ((float) editingGate / (float)(gateTime * sampleRate / displayRefreshStepSkips)) : 0.0f);
 							else
-								lights[KEY_LIGHTS + i * 2 + 1].value = (i == keyLightIndex ? 1.0f : 0.0f);
+								lights[KEY_LIGHTS + i * 2 + 1].setBrightness(i == keyLightIndex ? 1.0f : 0.0f);
 						}
 					}
 				}	
 			}			
 			
 			// Key mode light (note or gate type)
-			lights[KEYNOTE_LIGHT].value = editingGateLength == 0l ? 10.0f : 0.0f;
+			lights[KEYNOTE_LIGHT].setBrightness(editingGateLength == 0l ? 1.0f : 0.0f);
 			if (editingGateLength == 0l)
 				setGreenRed(KEYGATE_LIGHT, 0.0f, 0.0f);
 			else if (editingGateLength > 0l)
@@ -1440,8 +1440,8 @@ struct PhraseSeq16 : Module {
 				setGateLight(false, GATE1_LIGHT);
 				setGateLight(false, GATE2_LIGHT);
 				setGreenRed(GATE1_PROB_LIGHT, 0.0f, 0.0f);
-				lights[SLIDE_LIGHT].value = 0.0f;
-				lights[TIE_LIGHT].value = 0.0f;
+				lights[SLIDE_LIGHT].setBrightness(0.0f);
+				lights[TIE_LIGHT].setBrightness(0.0f);
 			}
 			else {
 				StepAttributes attributesVal = attributes[seqIndexEdit][stepIndexEdit];
@@ -1451,29 +1451,29 @@ struct PhraseSeq16 : Module {
 				setGateLight(attributesVal.getGate1(), GATE1_LIGHT);
 				setGateLight(attributesVal.getGate2(), GATE2_LIGHT);
 				setGreenRed(GATE1_PROB_LIGHT, attributesVal.getGate1P() ? 1.0f : 0.0f, attributesVal.getGate1P() ? 1.0f : 0.0f);
-				lights[SLIDE_LIGHT].value = attributesVal.getSlide() ? 1.0f : 0.0f;
+				lights[SLIDE_LIGHT].setBrightness(attributesVal.getSlide() ? 1.0f : 0.0f);
 				if (tiedWarning > 0l) {
 					bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
-					lights[TIE_LIGHT].value = (warningFlashState) ? 1.0f : 0.0f;
+					lights[TIE_LIGHT].setBrightness(warningFlashState ? 1.0f : 0.0f);
 				}
 				else
-					lights[TIE_LIGHT].value = attributesVal.getTied() ? 1.0f : 0.0f;
+					lights[TIE_LIGHT].setBrightness(attributesVal.getTied() ? 1.0f : 0.0f);
 			}
 			
 			// Attach light
 			if (attachedWarning > 0l) {
 				bool warningFlashState = calcWarningFlash(attachedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
-				lights[ATTACH_LIGHT].value = (warningFlashState) ? 1.0f : 0.0f;
+				lights[ATTACH_LIGHT].setBrightness(warningFlashState ? 1.0f : 0.0f);
 			}
 			else
-				lights[ATTACH_LIGHT].value = (attached ? 1.0f : 0.0f);
+				lights[ATTACH_LIGHT].setBrightness(attached ? 1.0f : 0.0f);
 			
 			// Reset light
 			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * displayRefreshStepSkips);	
 			resetLight = 0.0f;
 			
 			// Run light
-			lights[RUN_LIGHT].value = running ? 1.0f : 0.0f;
+			lights[RUN_LIGHT].setBrightness(running ? 1.0f : 0.0f);
 			
 			if (editingGate > 0ul)
 				editingGate--;

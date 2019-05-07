@@ -1147,44 +1147,44 @@ struct Foundry : Module {
 				setGreenRed(GATE_LIGHT, editingGates ? 1.0f : 0.0f, editingGates ? 0.2f : 1.0f);
 			if (tiedWarning > 0l) {
 				bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
-				lights[TIE_LIGHT].value = (warningFlashState) ? 1.0f : 0.0f;
+				lights[TIE_LIGHT].setBrightness(warningFlashState ? 1.0f : 0.0f);
 			}
 			else
-				lights[TIE_LIGHT].value = attributesVisual.getTied() ? 1.0f : 0.0f;			
+				lights[TIE_LIGHT].setBrightness(attributesVisual.getTied() ? 1.0f : 0.0f);			
 			if (attributesVisual.getGateP())
 				setGreenRed(GATE_PROB_LIGHT, 1.0f, 1.0f);
 			else 
 				setGreenRed(GATE_PROB_LIGHT, 0.0f, 0.0f);
-			lights[SLIDE_LIGHT].value = attributesVisual.getSlide() ? 1.0f : 0.0f;
+			lights[SLIDE_LIGHT].setBrightness(attributesVisual.getSlide() ? 1.0f : 0.0f);
 			
 			// Reset light
 			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * displayRefreshStepSkips);
 			resetLight = 0.0f;
 			
 			// Run light
-			lights[RUN_LIGHT].value = (running ? 1.0f : 0.0f);
+			lights[RUN_LIGHT].setBrightness(running ? 1.0f : 0.0f);
 
 			// Attach light
 			if (attachedWarning > 0l) {
 				bool warningFlashState = calcWarningFlash(attachedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
-				lights[ATTACH_LIGHT].value = (warningFlashState) ? 1.0f : 0.0f;
+				lights[ATTACH_LIGHT].setBrightness(warningFlashState ? 1.0f : 0.0f);
 			}
 			else
-				lights[ATTACH_LIGHT].value = (attached ? 1.0f : 0.0f);
+				lights[ATTACH_LIGHT].setBrightness(attached ? 1.0f : 0.0f);
 				
 			// Velocity edit mode lights
 			if (editingSequence || (attached && running)) {
 				setGreenRed(VEL_PROB_LIGHT, velEditMode == 1 ? 1.0f : 0.0f, velEditMode == 1 ? 1.0f : 0.0f);
-				lights[VEL_SLIDE_LIGHT].value = (velEditMode == 2 ? 1.0f : 0.0f);
+				lights[VEL_SLIDE_LIGHT].setBrightness(velEditMode == 2 ? 1.0f : 0.0f);
 			}
 			else {
 				setGreenRed(VEL_PROB_LIGHT, 0.0f, 0.0f);
-				lights[VEL_SLIDE_LIGHT].value = 0.0f;
+				lights[VEL_SLIDE_LIGHT].setBrightness(0.0f);
 			}
 			
 			// CV writing lights (CV only, CV2 done below for exp panel)
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-				lights[WRITECV_LIGHTS + trkn].value = (editingSequence && ((writeMode & 0x2) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
+				lights[WRITECV_LIGHTS + trkn].setBrightness((editingSequence && ((writeMode & 0x2) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f);
 			}	
 			
 			

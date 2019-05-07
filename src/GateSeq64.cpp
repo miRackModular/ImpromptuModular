@@ -1122,7 +1122,7 @@ struct GateSeq64 : Module {
 			resetLight = 0.0f;
 
 			// Run lights
-			lights[RUN_LIGHT].value = running ? 1.0f : 0.0f;
+			lights[RUN_LIGHT].setBrightness(running ? 1.0f : 0.0f);
 		
 			if (infoCopyPaste != 0l) {
 				if (infoCopyPaste > 0l)

@@ -468,10 +468,10 @@ struct WriteSeq64 : Module {
 			float red = 0.0f;
 			if (gates[indexChannel][indexStep[indexChannel]] != 0) {
 				if (gates[indexChannel][indexStep[indexChannel]] == 1) 	green = 1.0f;
-				else {													green = 0.2f; red = 1.0f;}
+				else {													green = 0.45f; red = 1.0f;}
 			}	
-			lights[GATE_LIGHT + 0].value = green;			
-			lights[GATE_LIGHT + 1].value = red;
+			lights[GATE_LIGHT + 0].setBrightness(green);
+			lights[GATE_LIGHT + 1].setBrightness(red);
 			
 			// Reset light
 			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * displayRefreshStepSkips);	
