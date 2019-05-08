@@ -1015,18 +1015,18 @@ struct Foundry : Module {
 				if ((displayState == DISP_COPY_SEQ) || (displayState == DISP_PASTE_SEQ)) {
 					int startCP = seq.getStepIndexEdit();
 					if (stepn >= startCP && stepn < (startCP + seq.getLengthSeqCPbuf()))
-						green = 0.5f;
+						green = 0.71f;
 				}
 				else if (displayState == DISP_TRANSPOSE) {
-					red = 0.5f;
+					red = 0.71f;
 				}
 				else if (displayState == DISP_ROTATE) {
-					red = (stepn == seq.getStepIndexEdit() ? 1.0f : (stepn < seq.getLength() ? 0.2f : 0.0f));
+					red = (stepn == seq.getStepIndexEdit() ? 1.0f : (stepn < seq.getLength() ? 0.45f : 0.0f));
 				}
 				else if (displayState == DISP_LEN) {
 					int seqEnd = seq.getLength() - 1;
 					if (stepn < seqEnd)
-						green = 0.1f;
+						green = 0.32f;
 					else if (stepn == seqEnd)
 						green =  1.0f;
 				}				
@@ -1037,7 +1037,7 @@ struct Foundry : Module {
 					int stepIndexEdit = seq.getStepIndexEdit();
 					if (multiSteps) {
 						if (stepn >= stepIndexEdit && stepn < (stepIndexEdit + cpSeqLength))
-							red = 0.2f;
+							red = 0.45f;
 					}
 
 					// Run cursor (green)
@@ -1045,10 +1045,10 @@ struct Foundry : Module {
 						for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 							bool trknIsUsed = outputs[CV_OUTPUTS + trkn].isConnected() || outputs[GATE_OUTPUTS + trkn].isConnected() || outputs[VEL_OUTPUTS + trkn].isConnected();
 							if (stepn == seq.getStepIndexRun(trkn) && trknIsUsed) 
-								green = 0.1f;	
+								green = 0.32f;	
 						}
-						if (green > 0.2f) 
-							green = 0.2f;
+						if (green > 0.45f) 
+							green = 0.45f;
 						if (stepn == stepIndexRun) {
 							green = 1.0f;
 						}
@@ -1067,11 +1067,11 @@ struct Foundry : Module {
 						gate = seq.getAttribute(false, stepn).getGate();
 					white = ((green == 0.0f && red == 0.0f && gate && displayState != DISP_MODE_SEQ && displayState != DISP_PPQN && displayState != DISP_DELAY) ? 0.2f : 0.0f);
 					if (editingSequence && white != 0.0f) {
-						green = 0.02f; white = 0.0f;
+						green = 0.14f; white = 0.0f;
 					}
 				}
 
-				setGreenRed(STEP_PHRASE_LIGHTS + stepn * 3, green, red);// TODO
+				setGreenRed(STEP_PHRASE_LIGHTS + stepn * 3, green, red);
 				lights[STEP_PHRASE_LIGHTS + stepn * 3 + 2].setBrightness(white);
 			}
 			
@@ -1106,8 +1106,8 @@ struct Foundry : Module {
 				else if (editingSequence || (attached && running)) {			
 					if (editingGates) {
 						green = 1.0f;
-						red = 0.2f;
-						unsigned long editingType = seq.getEditingType();// TODO
+						red = 0.45f;
+						unsigned long editingType = seq.getEditingType();
 						if (editingType > 0ul) {
 							if (i == seq.getEditingGateKeyLight()) {
 								float dimMult = ((float) editingType / (float)(Sequencer::gateTime * sampleRate / displayRefreshStepSkips));
@@ -1123,7 +1123,7 @@ struct Foundry : Module {
 							int modeLightIndex = attributesVisual.getGateType();
 							if (i != modeLightIndex) {// show dim note if gatetype is different than note
 								green = 0.0f;
-								red = (i == keyLightIndex ? 0.1f : 0.0f);
+								red = (i == keyLightIndex ? 0.32f : 0.0f);
 							}
 						}
 					}
@@ -1133,11 +1133,11 @@ struct Foundry : Module {
 							red = (warningFlashState && i == keyLightIndex) ? 1.0f : 0.0f;
 						}
 						else {
-							red = seq.calcKeyLightWithEditing(i, keyLightIndex, sampleRate);// TODO
+							red = seq.calcKeyLightWithEditing(i, keyLightIndex, sampleRate);
 						}
 					}
 				}
-				setGreenRed(KEY_LIGHTS + i * 2, green, red);// TODO
+				setGreenRed(KEY_LIGHTS + i * 2, green, red);
 			}
 
 			// Gate, Tied, GateProb, and Slide lights 

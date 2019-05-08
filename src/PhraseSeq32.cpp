@@ -1383,27 +1383,27 @@ struct PhraseSeq32 : Module {
 				float white = 0.0f;
 				if (infoCopyPaste != 0l) {
 					if (i >= startCP && i < (startCP + countCP))
-						green = 0.5f;
+						green = 0.71f;
 				}
 				else if (displayState == DISP_LENGTH) {
 					if (editingSequence) {
 						if (col < (sequences[seqIndexEdit].getLength() - 1))
-							green = 0.1f;
+							green = 0.32f;
 						else if (col == (sequences[seqIndexEdit].getLength() - 1))
 							green = 1.0f;
 					}
 					else {
 						if (i < phrases - 1)
-							green = 0.1f;
+							green = 0.32f;
 						else
 							green = (i == phrases - 1) ? 1.0f : 0.0f;
 					}
 				}
 				else if (displayState == DISP_TRANSPOSE) {
-					red = 0.5f;
+					red = 0.71f;
 				}
 				else if (displayState == DISP_ROTATE) {
-					red = (i == stepIndexEdit ? 1.0f : (col < sequences[seqIndexEdit].getLength() ? 0.2f : 0.0f));
+					red = (i == stepIndexEdit ? 1.0f : (col < sequences[seqIndexEdit].getLength() ? 0.45f : 0.0f));
 				}
 				else {// normal led display (i.e. not length)
 					int row = i >> (3 + stepConfig);//i / (16 * stepConfig);// optimized (not equivalent code, but in this case has same effect)
@@ -1412,8 +1412,8 @@ struct PhraseSeq32 : Module {
 						green = ((running && (col == stepIndexRun[row])) ? 1.0f : 0.0f);
 					else {
 						green = ((running && (i == phraseIndexRun)) ? 1.0f : 0.0f);
-						green += ((running && (col == stepIndexRun[row]) && i != phraseIndexEdit) ? 0.1f : 0.0f);
-						green = clamp(green, 0.0f, 1.0f);
+						green += ((running && (col == stepIndexRun[row]) && i != phraseIndexEdit) ? 0.32f : 0.0f);
+						green = std::min(green, 1.0f);
 					}
 					// Edit cursor (red)
 					if (editingSequence)
@@ -1425,13 +1425,13 @@ struct PhraseSeq32 : Module {
 						gate = attributes[seqIndexEdit][i].getGate1();
 					else if (!editingSequence && (attached && running))
 						gate = attributes[phrase[phraseIndexRun]][i].getGate1();
-					white = ((green == 0.0f && red == 0.0f && gate && displayState != DISP_MODE) ? 0.04f : 0.0f);
+					white = ((green == 0.0f && red == 0.0f && gate && displayState != DISP_MODE) ? 0.2f : 0.0f);
 					if (editingSequence && white != 0.0f) {
-						green = 0.02f; white = 0.0f;
+						green = 0.14f; white = 0.0f;
 					}
 				}
 				setGreenRed(STEP_PHRASE_LIGHTS + i * 3, green, red);
-				lights[STEP_PHRASE_LIGHTS + i * 3 + 2].value = white;
+				lights[STEP_PHRASE_LIGHTS + i * 3 + 2].setBrightness(white);
 			}
 		
 			// Octave lights
@@ -1477,8 +1477,8 @@ struct PhraseSeq32 : Module {
 			else if (editingGateLength != 0l && editingSequence) {
 				int modeLightIndex = gateModeToKeyLightIndex(attributes[seqIndexEdit][stepIndexEdit], editingGateLength > 0l);
 				for (int i = 0; i < 12; i++) {
-					float green = editingGateLength > 0l ? 1.0f : 0.2f;
-					float red = editingGateLength > 0l ? 0.2f : 1.0f;
+					float green = editingGateLength > 0l ? 1.0f : 0.45f;
+					float red = editingGateLength > 0l ? 0.45f : 1.0f;
 					if (editingType > 0ul) {
 						if (i == editingGateKeyLight) {
 							float dimMult = ((float) editingType / (float)(gateTime * sampleRate / displayRefreshStepSkips));
@@ -1492,7 +1492,7 @@ struct PhraseSeq32 : Module {
 							setGreenRed(KEY_LIGHTS + i * 2, green, red);
 						}
 						else { // show dim note if gatetype is different than note
-							setGreenRed(KEY_LIGHTS + i * 2, 0.0f, (i == keyLightIndex ? 0.1f : 0.0f));
+							setGreenRed(KEY_LIGHTS + i * 2, 0.0f, (i == keyLightIndex ? 0.32f : 0.0f));
 						}
 					}
 				}
@@ -1512,7 +1512,7 @@ struct PhraseSeq32 : Module {
 						}
 						else {
 							if (editingGate > 0ul && editingGateKeyLight != -1)
-								lights[KEY_LIGHTS + i * 2 + 1].value = (i == editingGateKeyLight ? ((float) editingGate / (float)(gateTime * sampleRate / displayRefreshStepSkips)) : 0.0f);
+								lights[KEY_LIGHTS + i * 2 + 1].setBrightness(i == editingGateKeyLight ? ((float) editingGate / (float)(gateTime * sampleRate / displayRefreshStepSkips)) : 0.0f);
 							else
 								lights[KEY_LIGHTS + i * 2 + 1].setBrightness(i == keyLightIndex ? 1.0f : 0.0f);
 						}
@@ -1525,9 +1525,9 @@ struct PhraseSeq32 : Module {
 			if (editingGateLength == 0l)
 				setGreenRed(KEYGATE_LIGHT, 0.0f, 0.0f);
 			else if (editingGateLength > 0l)
-				setGreenRed(KEYGATE_LIGHT, 1.0f, 0.2f);
+				setGreenRed(KEYGATE_LIGHT, 1.0f, 0.45f);
 			else
-				setGreenRed(KEYGATE_LIGHT, 0.2f, 1.0f);
+				setGreenRed(KEYGATE_LIGHT, 0.45f, 1.0f);
 			
 			// Gate1, Gate1Prob, Gate2, Slide and Tied lights (can only show channel A when running attached in 1x32 mode, does not pose problem for all other situations)
 			if (!editingSequence && (!attached || !running || (stepConfig == 1))) {// no oct lights when song mode and either (detached [1] or stopped [2] or 2x16config [3])
@@ -1611,8 +1611,8 @@ struct PhraseSeq32 : Module {
 	
 
 	inline void setGreenRed(int id, float green, float red) {
-		lights[id + 0].value = green;
-		lights[id + 1].value = red;
+		lights[id + 0].setBrightness(green);
+		lights[id + 1].setBrightness(red);
 	}
 
 	inline void propagateCVtoTied(int seqn, int stepn) {
