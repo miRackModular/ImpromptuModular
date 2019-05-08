@@ -5,7 +5,7 @@
 	"license": "BSD-3-Clause",
 	"authorEmail": "marc.boule@etsmtl.ca",
 	"authorUrl": "https://github.com/MarcBoule/ImpromptuModular",
-	"manualUrl": "https://github.com/MarcBoule/ImpromptuModular",
+	"manualUrl": "https://github.com/MarcBoule/ImpromptuModular/tree/v1#modules-",
 	"version": "1.0.0",
 	"modules": [
 		{
