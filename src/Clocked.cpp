@@ -95,7 +95,7 @@ class Clock {
 			float period = (float)length / 2.0f;
 			float swing = (period - 2.0f * onems) * swParam;
 			float p2min = onems;
-			float p2max = period - onems - fabsf(swing);
+			float p2max = period - onems - std::fabs(swing);
 			if (p2max < p2min) {
 				p2max = p2min;
 			}
@@ -282,20 +282,13 @@ struct Clocked : Module {
 	dsp::PulseGenerator runPulse;
 
 	
-	inline float getBpmKnob() {
-		float knobBPM = params[RATIO_PARAMS + 0].getValue();// already integer BPM since using snap knob
-		if (knobBPM < (float)bpmMin)// safety in case module step() starts before widget defaults take effect.
-			return (float)bpmMin;	
-		return knobBPM;
-	}
-	
 	int getRatioDoubled(int ratioKnobIndex) {
 		// ratioKnobIndex is 0 for master BPM's ratio (1 is implicitly returned), and 1 to 3 for other ratio knobs
 		// returns a positive ratio for mult, negative ratio for div (0 never returned)
 		if (ratioKnobIndex < 1) 
 			return 1;
 		bool isDivision = false;
-		int i = (int) round( params[RATIO_PARAMS + ratioKnobIndex].getValue() );// [ -(numRatios-1) ; (numRatios-1) ]
+		int i = (int) std::round( params[RATIO_PARAMS + ratioKnobIndex].getValue() );// [ -(numRatios-1) ; (numRatios-1) ]
 		if (i < 0) {
 			i *= -1;
 			isDivision = true;
@@ -417,10 +410,10 @@ struct Clocked : Module {
 					newMasterLength = 1.0f;// 120 BPM
 			}
 			else
-				newMasterLength = 1.0f / powf(2.0f, inputs[BPM_INPUT].getVoltage());// bpm = 120*2^V, 2T = 120/bpm = 120/(120*2^V) = 1/2^V
+				newMasterLength = 1.0f / std::pow(2.0f, inputs[BPM_INPUT].getVoltage());// bpm = 120*2^V, 2T = 120/bpm = 120/(120*2^V) = 1/2^V
 		}
 		else
-			newMasterLength = 120.0f / getBpmKnob();
+			newMasterLength = 120.0f / params[RATIO_PARAMS + 0].getValue();
 		newMasterLength = clamp(newMasterLength, masterLengthMin, masterLengthMax);
 		masterLength = newMasterLength;
 	}	
@@ -613,12 +606,12 @@ struct Clocked : Module {
 			}
 			// BPM CV method
 			else {// bpmDetectionMode not active
-				newMasterLength = clamp(1.0f / powf(2.0f, inputs[BPM_INPUT].getVoltage()), masterLengthMin, masterLengthMax);// bpm = 120*2^V, 2T = 120/bpm = 120/(120*2^V) = 1/2^V
+				newMasterLength = clamp(1.0f / std::pow(2.0f, inputs[BPM_INPUT].getVoltage()), masterLengthMin, masterLengthMax);// bpm = 120*2^V, 2T = 120/bpm = 120/(120*2^V) = 1/2^V
 				// no need to round since this clocked's master's BPM knob is a snap knob thus already rounded, and with passthru approach, no cumul error
 			}
 		}
 		else {// BPM_INPUT not active
-			newMasterLength = clamp(120.0f / getBpmKnob(), masterLengthMin, masterLengthMax);
+			newMasterLength = clamp(120.0f / params[RATIO_PARAMS + 0].getValue(), masterLengthMin, masterLengthMax);
 		}
 		if (newMasterLength != masterLength) {
 			double lengthStretchFactor = ((double)newMasterLength) / ((double)masterLength);
@@ -764,7 +757,7 @@ struct ClockedWidget : ModuleWidget {
 				int srcParam = module->notifyingSource[knobIndex];
 				if ( (srcParam >= Clocked::SWING_PARAMS + 0) && (srcParam <= Clocked::SWING_PARAMS + 3) ) {
 					float swValue = module->swingAmount[knobIndex];//module->params[Clocked::SWING_PARAMS + knobIndex].getValue();
-					int swInt = (int)round(swValue * 99.0f);
+					int swInt = (int)std::round(swValue * 99.0f);
 					snprintf(displayStr, 4, " %2u", (unsigned) abs(swInt));
 					if (swInt < 0)
 						displayStr[0] = '-';
@@ -780,7 +773,7 @@ struct ClockedWidget : ModuleWidget {
 				}					
 				else if ( (srcParam >= Clocked::PW_PARAMS + 0) && (srcParam <= Clocked::PW_PARAMS + 3) ) {				
 					float pwValue = module->pulseWidth[knobIndex];//module->params[Clocked::PW_PARAMS + knobIndex].getValue();
-					int pwInt = ((int)round(pwValue * 98.0f)) + 1;
+					int pwInt = ((int)std::round(pwValue * 98.0f)) + 1;
 					snprintf(displayStr, 4, "_%2u", (unsigned) abs(pwInt));
 				}					
 			}

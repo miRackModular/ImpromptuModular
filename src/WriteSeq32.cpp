@@ -91,7 +91,7 @@ struct WriteSeq32 : Module {
 
 	
 	inline float quantize(float cv, bool enable) {
-		return enable ? (roundf(cv * 12.0f) / 12.0f) : cv;
+		return enable ? (std::round(cv * 12.0f) / 12.0f) : cv;
 	}
 	
 	
@@ -256,7 +256,7 @@ struct WriteSeq32 : Module {
 		
 		//********** Buttons, knobs, switches and inputs **********
 		
-		int numSteps = (int) clamp(roundf(params[STEPS_PARAM].getValue()), 1.0f, 32.0f);	
+		int numSteps = (int) clamp(std::round(params[STEPS_PARAM].getValue()), 1.0f, 32.0f);	
 		bool canEdit = !running || (indexChannel == 3);
 		
 		// Run state button
@@ -526,7 +526,7 @@ struct WriteSeq32Widget : ModuleWidget {
 			}
 			else {
 				int index = (module->indexChannel == 3 ? module->indexStepStage : module->indexStep);
-				if ( ( (index&0x18) |index8) >= (int) clamp(roundf(module->params[WriteSeq32::STEPS_PARAM].getValue()), 1.0f, 32.0f) ) {
+				if ( ( (index&0x18) |index8) >= (int) clamp(std::round(module->params[WriteSeq32::STEPS_PARAM].getValue()), 1.0f, 32.0f) ) {
 					text[0] = 0;
 				}
 				else {
@@ -572,7 +572,7 @@ struct WriteSeq32Widget : ModuleWidget {
 			nvgFillColor(args.vg, textColor);
 			char displayStr[3];
 			float valueKnob = (module ? module->params[WriteSeq32::STEPS_PARAM].getValue() : 32.0f);
-			snprintf(displayStr, 3, "%2u", (unsigned) clamp(roundf(valueKnob), 1.0f, 32.0f) );
+			snprintf(displayStr, 3, "%2u", (unsigned) clamp(std::round(valueKnob), 1.0f, 32.0f) );
 			nvgText(args.vg, textPos.x, textPos.y, displayStr, NULL);
 		}
 	};

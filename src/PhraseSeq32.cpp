@@ -727,7 +727,7 @@ struct PhraseSeq32 : Module {
 			float modeCVin = consumerMessage[4];
 			if (expanderPresent && !std::isnan(modeCVin)) {
 				if (editingSequence)
-					sequences[seqIndexEdit].setRunMode((int) clamp( round(modeCVin * ((float)NUM_MODES - 1.0f) / 10.0f), 0.0f, (float)NUM_MODES - 1.0f ));
+					sequences[seqIndexEdit].setRunMode((int) clamp( std::round(modeCVin * ((float)NUM_MODES - 1.0f) / 10.0f), 0.0f, (float)NUM_MODES - 1.0f ));
 			}
 			
 			// Attach button
@@ -991,7 +991,7 @@ struct PhraseSeq32 : Module {
 			
 			// Sequence knob 
 			float seqParamValue = params[SEQUENCE_PARAM].getValue();
-			int newSequenceKnob = (int)roundf(seqParamValue * 7.0f);
+			int newSequenceKnob = (int)std::round(seqParamValue * 7.0f);
 			if (seqParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				sequenceKnob = newSequenceKnob;
 			int deltaKnob = newSequenceKnob - sequenceKnob;
@@ -1129,7 +1129,7 @@ struct PhraseSeq32 : Module {
 								tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 						}
 						else {			
-							float newCV = floor(cv[seqIndexEdit][stepIndexEdit]) + ((float) i) / 12.0f;
+							float newCV = std::floor(cv[seqIndexEdit][stepIndexEdit]) + ((float) i) / 12.0f;
 							cv[seqIndexEdit][stepIndexEdit] = newCV;
 							propagateCVtoTied(seqIndexEdit, stepIndexEdit);
 							editingGate = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
@@ -1440,7 +1440,7 @@ struct PhraseSeq32 : Module {
 				octCV = cv[seqIndexEdit][stepIndexEdit];
 			else
 				octCV = cv[phrase[phraseIndexEdit]][stepIndexRun[0]];
-			int octLightIndex = (int) floor(octCV + 3.0f);
+			int octLightIndex = (int) std::floor(octCV + 3.0f);
 			for (int i = 0; i < 7; i++) {
 				if (!editingSequence && (!attached || !running || (stepConfig == 1)))// no oct lights when song mode and either (detached [1] or stopped [2] or 2x16config [3])
 												// [1] makes no sense, can't mod steps and stepping though seq that may not be playing
@@ -1463,7 +1463,7 @@ struct PhraseSeq32 : Module {
 				cvValOffset = cv[seqIndexEdit][stepIndexEdit] + 10.0f;//to properly handle negative note voltages
 			else	
 				cvValOffset = cv[phrase[phraseIndexEdit]][stepIndexRun[0]] + 10.0f;//to properly handle negative note voltages
-			int keyLightIndex = clamp( (int)((cvValOffset-floor(cvValOffset)) * 12.0f + 0.5f),  0,  11);
+			int keyLightIndex = clamp( (int)((cvValOffset - std::floor(cvValOffset)) * 12.0f + 0.5f),  0,  11);
 			if (editingPpqn != 0) {
 				for (int i = 0; i < 12; i++) {
 					if (keyIndexToGateMode(i, pulsesPerStep) != -1) {

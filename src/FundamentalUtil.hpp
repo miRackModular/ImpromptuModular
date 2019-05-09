@@ -93,7 +93,7 @@ struct VoltageControlledOscillator {
 		return sqrDecimator.process(sqrBuffer);
 	}
 	float light() {
-		return sinf(2*M_PI * phase);
+		return std::sin(2*M_PI * phase);
 	}
 };
 
@@ -110,8 +110,8 @@ struct LowFrequencyOscillator {
 
 	LowFrequencyOscillator() {}
 	void setPitch(float pitch) {
-		pitch = fminf(pitch, 8.0f);
-		freq = powf(2.0f, pitch);
+		pitch = std::fmin(pitch, 8.0f);
+		freq = std::pow(2.0f, pitch);
 	}
 	void setPulseWidth(float pw_) {
 		const float pwMin = 0.01f;
@@ -123,19 +123,19 @@ struct LowFrequencyOscillator {
 		}
 	}
 	void step(float dt) {
-		float deltaPhase = fminf(freq * dt, 0.5f);
+		float deltaPhase = std::fmin(freq * dt, 0.5f);
 		phase += deltaPhase;
 		if (phase >= 1.0f)
 			phase -= 1.0f;
 	}
 	float sin() {
 		if (offset)
-			return 1.0f - cosf(2*M_PI * phase) * (invert ? -1.0f : 1.0f);
+			return 1.0f - std::cos(2*M_PI * phase) * (invert ? -1.0f : 1.0f);
 		else
-			return sinf(2*M_PI * phase) * (invert ? -1.0f : 1.0f);
+			return std::sin(2*M_PI * phase) * (invert ? -1.0f : 1.0f);
 	}
 	float tri(float x) {
-		return 4.0f * fabsf(x - roundf(x));
+		return 4.0f * std::fabs(x - std::round(x));
 	}
 	float tri() {
 		if (offset)
@@ -144,7 +144,7 @@ struct LowFrequencyOscillator {
 			return -1.0f + tri(invert ? phase - 0.25f : phase - 0.75f);
 	}
 	float saw(float x) {
-		return 2.0f * (x - roundf(x));
+		return 2.0f * (x - std::round(x));
 	}
 	float saw() {
 		if (offset)
@@ -157,7 +157,7 @@ struct LowFrequencyOscillator {
 		return offset ? sqr + 1.0f : sqr;
 	}
 	float light() {
-		return sinf(2*M_PI * phase);
+		return std::sin(2*M_PI * phase);
 	}
 };
 

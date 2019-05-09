@@ -48,11 +48,11 @@ void VoltageControlledOscillator::setPitch(float pitchKnob, float pitchCv) {
 	}
 	else {
 		// Quantize coarse knob if digital mode
-		pitch = roundf(pitch);
+		pitch = std::round(pitch);
 	}
 	pitch += pitchCv;
 	// Note C4
-	freq = 261.626f * powf(2.0f, pitch / 12.0f);
+	freq = 261.626f * std::pow(2.0f, pitch / 12.0f);
 };
 
 void VoltageControlledOscillator::setPulseWidth(float pulseWidth) {
@@ -108,13 +108,13 @@ void VoltageControlledOscillator::process(float deltaTime, float syncValue) {
 		if (analog) {
 			// Quadratic approximation of sine, slightly richer harmonics
 			if (phase < 0.5f)
-				sinBuffer[i] = 1.f - 16.f * powf(phase - 0.25f, 2);
+				sinBuffer[i] = 1.f - 16.f * std::pow(phase - 0.25f, 2);
 			else
-				sinBuffer[i] = -1.f + 16.f * powf(phase - 0.75f, 2);
+				sinBuffer[i] = -1.f + 16.f * std::pow(phase - 0.75f, 2);
 			sinBuffer[i] *= 1.08f;
 		}
 		else {
-			sinBuffer[i] = sinf(2.f*M_PI * phase);
+			sinBuffer[i] = std::sin(2.f*M_PI * phase);
 		}
 		if (analog) {
 			triBuffer[i] = 1.25f * interpolateLinear(triTable, phase * 2047.f);

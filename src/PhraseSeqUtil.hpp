@@ -139,7 +139,7 @@ inline int indexToPps(int index) {// inverse map of ppsToIndex()
 
 inline float applyNewOct(float cvVal, int newOct) {
 	float newCV = cvVal + 10.0f;//to properly handle negative note voltages
-	return newCV - floor(newCV) + (float) (newOct - 3);
+	return newCV - std::floor(newCV) + (float) (newOct - 3);
 }
 
 inline bool calcGate(int gateCode, Trigger clockTrigger, unsigned long clockStep, float sampleRate) {

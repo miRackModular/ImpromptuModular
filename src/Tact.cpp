@@ -314,7 +314,7 @@ struct Tact : Module {
 	
 	void setTLightsStore(int chan, long infoCount, long initInfoStore) {
 		for (int i = 0; i < numLights; i++) {
-			float level = (i == (int) round((float(infoCount)) / ((float)initInfoStore) * (float)(numLights - 1)) ? 1.0f : 0.0f);
+			float level = (i == (int) std::round((float(infoCount)) / ((float)initInfoStore) * (float)(numLights - 1)) ? 1.0f : 0.0f);
 			// Green diode
 			lights[TACT_LIGHTS + (chan * numLights * 2) + (numLights - 1 - i) * 2 + 0].setBrightness(level);
 			// Red diode

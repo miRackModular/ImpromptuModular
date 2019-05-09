@@ -763,7 +763,7 @@ struct Foundry : Module {
 		
 			// Velocity edit knob 
 			float velParamValue = params[VEL_KNOB_PARAM].getValue();
-			int newVelocityKnob = (int)roundf(velParamValue * 30.0f);
+			int newVelocityKnob = (int)std::round(velParamValue * 30.0f);
 			if (velParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				velocityKnob = newVelocityKnob;
 			int deltaVelKnob = newVelocityKnob - velocityKnob;
@@ -790,7 +790,7 @@ struct Foundry : Module {
 						
 			// Sequence edit knob 
 			float seqParamValue = params[SEQUENCE_PARAM].getValue();
-			int newSequenceKnob = (int)roundf(seqParamValue * 7.0f);
+			int newSequenceKnob = (int)std::round(seqParamValue * 7.0f);
 			if (seqParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				sequenceKnob = newSequenceKnob;
 			int deltaSeqKnob = newSequenceKnob - sequenceKnob;
@@ -841,7 +841,7 @@ struct Foundry : Module {
 
 			// Phrase edit knob 
 			float phraseParamValue = params[PHRASE_PARAM].getValue();
-			int newPhraseKnob = (int)roundf(phraseParamValue * 7.0f);
+			int newPhraseKnob = (int)std::round(phraseParamValue * 7.0f);
 			if (phraseParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				phraseKnob = newPhraseKnob;
 			int deltaPhrKnob = newPhraseKnob - phraseKnob;
@@ -1077,7 +1077,7 @@ struct Foundry : Module {
 			
 			
 			// Octave lights
-			int octLightIndex = (int) floor(cvVisual + 3.0f);
+			int octLightIndex = (int) std::floor(cvVisual + 3.0f);
 			for (int i = 0; i < 7; i++) {
 				float red = 0.0f;
 				if (editingSequence || (attached && running)) {
@@ -1093,7 +1093,7 @@ struct Foundry : Module {
 			
 			// Keyboard lights
 			float keyCV = cvVisual + 10.0f;// to properly handle negative note voltages
-			int keyLightIndex = clamp( (int)((keyCV - floor(keyCV)) * 12.0f + 0.5f),  0,  11);
+			int keyLightIndex = clamp( (int)((keyCV - std::floor(keyCV)) * 12.0f + 0.5f),  0,  11);
 			for (int i = 0; i < 12; i++) {
 				float green = 0.0f;
 				float red = 0.0f;
@@ -1357,7 +1357,7 @@ struct FoundryWidget : ModuleWidget {
 							if (module->velocityBipol) {						
 								if (cvValPrint < 5.0f)
 									ret = 1;
-								cvValPrint = fabsf(cvValPrint - 5.0f);
+								cvValPrint = std::fabs(cvValPrint - 5.0f);
 							}
 							if (cvValPrint > 9.975f)
 								snprintf(displayStr, 5, "  10");

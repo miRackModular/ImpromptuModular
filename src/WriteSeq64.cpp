@@ -94,7 +94,7 @@ struct WriteSeq64 : Module {
 
 	
 	inline float quantize(float cv, bool enable) {
-		return enable ? (roundf(cv * 12.0f) / 12.0f) : cv;
+		return enable ? (std::round(cv * 12.0f) / 12.0f) : cv;
 	}
 	inline int calcChan() {
 		return clamp((int)(params[CHANNEL_PARAM].getValue() + 0.5f), 0, 4);
@@ -333,7 +333,7 @@ struct WriteSeq64 : Module {
 			
 			// Steps knob
 			float stepsParamValue = params[STEPS_PARAM].getValue();
-			int newStepsKnob = (int)roundf(stepsParamValue * 10.0f);
+			int newStepsKnob = (int)std::round(stepsParamValue * 10.0f);
 			if (stepsParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				stepsKnob = newStepsKnob;
 			if (newStepsKnob != stepsKnob) {
@@ -343,7 +343,7 @@ struct WriteSeq64 : Module {
 			}	
 			// Step knob
 			float stepParamValue = params[STEP_PARAM].getValue();
-			int newStepKnob = (int)roundf(stepParamValue * 10.0f);
+			int newStepKnob = (int)std::round(stepParamValue * 10.0f);
 			if (stepParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				stepKnob = newStepKnob;
 			if (newStepKnob != stepKnob) {
@@ -535,7 +535,7 @@ struct WriteSeq64Widget : ModuleWidget {
 						printNote(cvVal, &text[1], module->params[WriteSeq64::SHARP_PARAM].getValue() < 1.5f);
 					}
 					else  {// show volts
-						float cvValPrint = fabsf(cvVal);
+						float cvValPrint = std::fabs(cvVal);
 						cvValPrint = (cvValPrint > 9.999f) ? 9.999f : cvValPrint;
 						snprintf(text, 7, " %4.3f", cvValPrint);// Four-wide, three positions after the decimal, left-justified
 						text[0] = (cvVal<0.0f) ? '-' : ' ';

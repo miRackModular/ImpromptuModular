@@ -698,7 +698,7 @@ struct GateSeq64 : Module {
 						blinkNum = blinkNumInit;
 						if (writeTrig) {// higher priority than write0 and write1
 							if (!std::isnan(consumerMessage[1])) {
-								attributes[sequence][stepIndexEdit].setGatePVal(clamp( (int)round(consumerMessage[1] * 10.0f), 0, 100) );
+								attributes[sequence][stepIndexEdit].setGatePVal(clamp( (int)std::round(consumerMessage[1] * 10.0f), 0, 100) );
 								attributes[sequence][stepIndexEdit].setGateP(true);
 							}
 							else{
@@ -868,7 +868,7 @@ struct GateSeq64 : Module {
 			
 			// Sequence knob (Main knob)
 			float seqParamValue = params[SEQUENCE_PARAM].getValue();
-			int newSequenceKnob = (int)roundf(seqParamValue * 7.0f);
+			int newSequenceKnob = (int)std::round(seqParamValue * 7.0f);
 			if (seqParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				sequenceKnob = newSequenceKnob;
 			int deltaKnob = newSequenceKnob - sequenceKnob;

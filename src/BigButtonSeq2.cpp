@@ -118,7 +118,7 @@ struct BigButtonSeq2 : Module {
 	inline void sampleOutput(int _chan) {sampleHoldBuf[_chan] = cv[_chan][bank[_chan]][indexStep];}
 	inline int calcChan() {
 		float chanInputValue = inputs[CHAN_INPUT].getVoltage() / 10.0f * (6.0f - 1.0f);
-		return (int) clamp(roundf(params[CHAN_PARAM].getValue() + chanInputValue), 0.0f, (6.0f - 1.0f));		
+		return (int) clamp(std::round(params[CHAN_PARAM].getValue() + chanInputValue), 0.0f, (6.0f - 1.0f));		
 	}
 
 	
@@ -353,7 +353,7 @@ struct BigButtonSeq2 : Module {
 		//********** Buttons, knobs, switches and inputs **********
 		
 		channel = calcChan();		
-		length = (int) clamp(roundf( params[LEN_PARAM].getValue() + ( inputs[LEN_INPUT].isConnected() ? (inputs[LEN_INPUT].getVoltage() / 10.0f * (128.0f - 1.0f)) : 0.0f ) ), 0.0f, (128.0f - 1.0f)) + 1;	
+		length = (int) clamp(std::round( params[LEN_PARAM].getValue() + ( inputs[LEN_INPUT].isConnected() ? (inputs[LEN_INPUT].getVoltage() / 10.0f * (128.0f - 1.0f)) : 0.0f ) ), 0.0f, (128.0f - 1.0f)) + 1;	
 
 		
 		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {		

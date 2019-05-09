@@ -90,13 +90,13 @@ void SequencerKernel::setGateType(int stepn, int gateType, int count) {
 
 float SequencerKernel::applyNewOctave(int stepn, int newOct, int count) {// does not overwrite tied steps
 	float newCV = cv[seqIndexEdit][stepn] + 10.0f;//to properly handle negative note voltages
-	newCV = newCV - floor(newCV) + (float) (newOct - 3);
+	newCV = newCV - std::floor(newCV) + (float) (newOct - 3);
 	
 	writeCV(stepn, newCV, count);// also sets dirty[] to 1
 	return newCV;
 }
 float SequencerKernel::applyNewKey(int stepn, int newKeyIndex, int count) {// does not overwrite tied steps
-	float newCV = floor(cv[seqIndexEdit][stepn]) + ((float) newKeyIndex) / 12.0f;
+	float newCV = std::floor(cv[seqIndexEdit][stepn]) + ((float) newKeyIndex) / 12.0f;
 	
 	writeCV(stepn, newCV, count);// also sets dirty[] to 1
 	return newCV;

@@ -1055,7 +1055,7 @@ struct SemiModularSynth : Module {
 			
 			// Sequence knob  
 			float seqParamValue = params[SEQUENCE_PARAM].getValue();
-			int newSequenceKnob = (int)roundf(seqParamValue * 7.0f);
+			int newSequenceKnob = (int)std::round(seqParamValue * 7.0f);
 			if (seqParamValue == 0.0f)// true when constructor or dataFromJson() occured
 				sequenceKnob = newSequenceKnob;
 			int deltaKnob = newSequenceKnob - sequenceKnob;
@@ -1174,7 +1174,7 @@ struct SemiModularSynth : Module {
 								tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
 						}
 						else {			
-							float newCV = floor(cv[seqIndexEdit][stepIndexEdit]) + ((float) i) / 12.0f;
+							float newCV = std::floor(cv[seqIndexEdit][stepIndexEdit]) + ((float) i) / 12.0f;
 							cv[seqIndexEdit][stepIndexEdit] = newCV;
 							propagateCVtoTied(seqIndexEdit, stepIndexEdit);
 							editingGate = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
@@ -1410,7 +1410,7 @@ struct SemiModularSynth : Module {
 				octCV = cv[seqIndexEdit][stepIndexEdit];
 			else
 				octCV = cv[phrase[phraseIndexEdit]][stepIndexRun];
-			int octLightIndex = (int) floor(octCV + 3.0f);
+			int octLightIndex = (int) std::floor(octCV + 3.0f);
 			for (int i = 0; i < 7; i++) {
 				if (!editingSequence && (!attached || !running))// no oct lights when song mode and either (detached [1] or stopped [2])
 												// [1] makes no sense, can't mod steps and stepping though seq that may not be playing
@@ -1432,7 +1432,7 @@ struct SemiModularSynth : Module {
 				cvValOffset = cv[seqIndexEdit][stepIndexEdit] + 10.0f;//to properly handle negative note voltages
 			else	
 				cvValOffset = cv[phrase[phraseIndexEdit]][stepIndexRun] + 10.0f;//to properly handle negative note voltages
-			int keyLightIndex = clamp( (int)((cvValOffset-floor(cvValOffset)) * 12.0f + 0.5f),  0,  11);
+			int keyLightIndex = clamp( (int)((cvValOffset - std::floor(cvValOffset)) * 12.0f + 0.5f),  0,  11);
 			if (editingPpqn != 0) {
 				for (int i = 0; i < 12; i++) {
 					if (keyIndexToGateMode(i, pulsesPerStep) != -1) {
@@ -1628,7 +1628,7 @@ struct SemiModularSynth : Module {
 					env = sustain;
 				}
 				else {
-					env += powf(base, 1 - decay) / maxTime * (sustain - env) * args.sampleTime;
+					env += std::pow(base, 1 - decay) / maxTime * (sustain - env) * args.sampleTime;
 				}
 			}
 			else {
@@ -1638,7 +1638,7 @@ struct SemiModularSynth : Module {
 					env = 1.0f;
 				}
 				else {
-					env += powf(base, 1 - attack) / maxTime * (1.01f - env) * args.sampleTime;
+					env += std::pow(base, 1 - attack) / maxTime * (1.01f - env) * args.sampleTime;
 				}
 				if (env >= 1.0f) {
 					env = 1.0f;
@@ -1652,7 +1652,7 @@ struct SemiModularSynth : Module {
 				env = 0.0f;
 			}
 			else {
-				env += powf(base, 1 - release) / maxTime * (0.0f - env) * args.sampleTime;
+				env += std::pow(base, 1 - release) / maxTime * (0.0f - env) * args.sampleTime;
 			}
 			decaying = false;
 		}
@@ -1664,20 +1664,20 @@ struct SemiModularSynth : Module {
 		
 			float input = (inputs[VCF_IN_INPUT].isConnected() ? inputs[VCF_IN_INPUT].getVoltage() : outputs[VCA_OUT1_OUTPUT].getVoltage()) / 5.0f;// Pre-patching
 			float drive = clamp(params[VCF_DRIVE_PARAM].getValue() + inputs[VCF_DRIVE_INPUT].getVoltage() / 10.0f, 0.f, 1.f);
-			float gain = powf(1.f + drive, 5);
+			float gain = std::pow(1.f + drive, 5);
 			input *= gain;
 			// Add -60dB noise to bootstrap self-oscillation
 			input += 1e-6f * (2.f * random::uniform() - 1.f);
 			// Set resonance
 			float res = clamp(params[VCF_RES_PARAM].getValue() + inputs[VCF_RES_INPUT].getVoltage() / 10.f, 0.f, 1.f);
-			filter.resonance = powf(res, 2) * 10.f;
+			filter.resonance = std::pow(res, 2) * 10.f;
 			// Set cutoff frequency
 			float pitch = 0.f;
 			if (inputs[VCF_FREQ_INPUT].isConnected())
 				pitch += inputs[VCF_FREQ_INPUT].getVoltage() * dsp::quadraticBipolar(params[VCF_FREQ_CV_PARAM].getValue());
 			pitch += params[VCF_FREQ_PARAM].getValue() * 10.f - 5.f;
 			//pitch += dsp::quadraticBipolar(params[FINE_PARAM].getValue() * 2.f - 1.f) * 7.f / 12.f;
-			float cutoff = 261.626f * powf(2.f, pitch);
+			float cutoff = 261.626f * std::pow(2.f, pitch);
 			cutoff = clamp(cutoff, 1.f, 8000.f);
 			filter.setCutoff(cutoff);
 			filter.process(input, args.sampleTime);

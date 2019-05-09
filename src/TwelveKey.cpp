@@ -169,7 +169,7 @@ struct TwelveKey : Module {
 		
 		
 		if (inputs[OCT_INPUT].isConnected())
-			octaveNum = ((int) floor(inputs[OCT_INPUT].getVoltage()));
+			octaveNum = ((int) std::floor(inputs[OCT_INPUT].getVoltage()));
 		else if (upOctTrig)
 			octaveNum++;
 		else if (downOctTrig)
@@ -197,7 +197,7 @@ struct TwelveKey : Module {
 		}
 		
 		// Octave output
-		outputs[OCT_OUTPUT].setVoltage(round( (float)(octaveNum + 1) ));
+		outputs[OCT_OUTPUT].setVoltage(std::round( (float)(octaveNum + 1) ));
 		
 		lightRefreshCounter++;
 		if (lightRefreshCounter >= displayRefreshStepSkips) {

@@ -36,7 +36,7 @@ struct FourView : Module {
 
 	
 	inline float quantize(float cv, bool enable) {
-		return enable ? (roundf(cv * 12.0f) / 12.0f) : cv;
+		return enable ? (std::round(cv * 12.0f) / 12.0f) : cv;
 	}
 	
 	
