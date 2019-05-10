@@ -62,8 +62,10 @@ struct DynamicSVGPort : SvgPort {
     int* mode = NULL;
     int oldMode = -1;
     std::vector<std::shared_ptr<Svg>> frames;
+	std::string frameAltName;
 
     void addFrame(std::shared_ptr<Svg> svg);
+    void addFrameAlt(std::string filename) {frameAltName = filename;}
     void step() override;
 };
 
@@ -88,8 +90,12 @@ struct DynamicSVGSwitch : SvgSwitch {
     int* mode = NULL;
     int oldMode = -1;
 	std::vector<std::shared_ptr<Svg>> framesAll;
+	std::string frameAltName0;
+	std::string frameAltName1;
 	
 	void addFrameAll(std::shared_ptr<Svg> svg);
+    void addFrameAlt0(std::string filename) {frameAltName0 = filename;}
+    void addFrameAlt1(std::string filename) {frameAltName1 = filename;}
     void step() override;
 };
 

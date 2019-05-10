@@ -99,7 +99,7 @@ struct IMPort : DynamicSVGPort {
 	IMPort() {
 		//addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/PJ301M.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/PJ301M.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/PJ301M.svg")));
+		addFrameAlt(asset::plugin(pluginInstance, "res/dark/comp/PJ301M.svg"));
 		shadow->blurRadius = 1.0f;
 		// shadow->opacity = 0.8;
 	}
@@ -137,8 +137,8 @@ struct IMBigPushButton : DynamicSVGSwitch {
 		momentary = true;
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/CKD6b_0.svg")));
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/CKD6b_1.svg")));
-		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/CKD6b_0.svg")));
-		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/CKD6b_1.svg")));	
+		addFrameAlt0(asset::plugin(pluginInstance, "res/dark/comp/CKD6b_0.svg"));
+		addFrameAlt1(asset::plugin(pluginInstance, "res/dark/comp/CKD6b_1.svg"));	
 		shadow->blurRadius = 1.0f;
 	}
 };
@@ -148,8 +148,8 @@ struct IMPushButton : DynamicSVGSwitch {
 		momentary = true;
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/TL1105_0.svg")));
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/TL1105_1.svg")));
-		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/TL1105_0.svg")));
-		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/TL1105_1.svg")));	
+		addFrameAlt0(asset::plugin(pluginInstance, "res/dark/comp/TL1105_0.svg"));
+		addFrameAlt1(asset::plugin(pluginInstance, "res/dark/comp/TL1105_1.svg"));	
 	}
 };
 
