@@ -100,7 +100,7 @@ struct IMPort : DynamicSVGPort {
 		//addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/PJ301M.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/PJ301M.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/PJ301M.svg")));
-		 shadow->blurRadius = 1.0f;
+		shadow->blurRadius = 1.0f;
 		// shadow->opacity = 0.8;
 	}
 };

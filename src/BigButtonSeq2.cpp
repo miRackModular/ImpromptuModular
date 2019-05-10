@@ -711,11 +711,13 @@ struct BigButtonSeq2Widget : ModuleWidget {
         lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/BigButtonSeq2.svg")));
         box.size = lightPanel->box.size;
         addChild(lightPanel);
-        darkPanel = new SvgPanel();
-		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BigButtonSeq2_dark.svg")));
-		darkPanel->visible = false;
-		addChild(darkPanel);
-
+        if (module) {
+			darkPanel = new SvgPanel();
+			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BigButtonSeq2_dark.svg")));
+			darkPanel->visible = false;
+			addChild(darkPanel);
+		}
+		
 		// Screws
 		addChild(createDynamicWidget<IMScrew>(Vec(15, 0), module ? &module->panelTheme : NULL));
 		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 0), module ? &module->panelTheme : NULL));
