@@ -1770,14 +1770,6 @@ struct PhraseSeq16Widget : ModuleWidget {
 		ResetOnRunItem *rorItem = createMenuItem<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
-		
-		AutoStepLenItem *astlItem = createMenuItem<AutoStepLenItem>("AutoStep write bounded by seq length", CHECKMARK(module->autostepLen));
-		astlItem->module = module;
-		menu->addChild(astlItem);
-
-		AutoseqItem *aseqItem = createMenuItem<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
-		aseqItem->module = module;
-		menu->addChild(aseqItem);
 
 		HoldTiedItem *holdItem = createMenuItem<HoldTiedItem>("Hold tied notes", CHECKMARK(module->holdTiedNotes));
 		holdItem->module = module;
@@ -1790,6 +1782,14 @@ struct PhraseSeq16Widget : ModuleWidget {
 		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in level", RIGHT_ARROW);
 		seqcvItem->module = module;
 		menu->addChild(seqcvItem);
+		
+		AutoStepLenItem *astlItem = createMenuItem<AutoStepLenItem>("AutoStep write bounded by seq length", CHECKMARK(module->autostepLen));
+		astlItem->module = module;
+		menu->addChild(astlItem);
+
+		AutoseqItem *aseqItem = createMenuItem<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
+		aseqItem->module = module;
+		menu->addChild(aseqItem);
 	}	
 	
 	struct SequenceKnob : IMBigKnobInf {

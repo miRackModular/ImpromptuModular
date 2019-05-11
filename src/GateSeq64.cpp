@@ -1369,10 +1369,6 @@ struct GateSeq64Widget : ModuleWidget {
 		ResetOnRunItem *rorItem = createMenuItem<ResetOnRunItem>("Reset on run", CHECKMARK(module->resetOnRun));
 		rorItem->module = module;
 		menu->addChild(rorItem);
-		
-		AutoseqItem *aseqItem = createMenuItem<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
-		aseqItem->module = module;
-		menu->addChild(aseqItem);
 
 		StopAtEndOfSongItem *loopItem = createMenuItem<StopAtEndOfSongItem>("Stop at end of song", CHECKMARK(module->stopAtEndOfSong));
 		loopItem->module = module;
@@ -1381,6 +1377,10 @@ struct GateSeq64Widget : ModuleWidget {
 		SeqCVmethodItem *seqcvItem = createMenuItem<SeqCVmethodItem>("Seq CV in level", RIGHT_ARROW);
 		seqcvItem->module = module;
 		menu->addChild(seqcvItem);
+		
+		AutoseqItem *aseqItem = createMenuItem<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
+		aseqItem->module = module;
+		menu->addChild(aseqItem);
 	}	
 	
 	struct CKSSThreeInvNotify : CKSSThreeInvNoRandom {// Not randomizable
