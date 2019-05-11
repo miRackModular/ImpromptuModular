@@ -143,18 +143,21 @@ void DynamicSVGKnob::addFrameAll(std::shared_ptr<Svg> svg) {
 	}
 }
 
-void DynamicSVGKnob::addEffect(std::shared_ptr<Svg> svg) {
-    effect = new SvgWidget();
-	effect->setSvg(svg);
-	effect->visible = false;
-	addChild(effect);
-}
-
 void DynamicSVGKnob::step() {
     if(mode != NULL && *mode != oldMode) {
+        if (*mode > 0 && !frameAltName.empty() && !frameEffectName.empty()) {// JIT loading of alternate skin
+			framesAll.push_back(APP->window->loadSvg(frameAltName));
+			effect = new SvgWidget();
+			effect->setSvg(APP->window->loadSvg(frameEffectName));
+			effect->visible = false;
+			addChild(effect);
+			frameAltName.clear();// don't reload!
+			frameEffectName.clear();// don't reload!
+		}
         if ((*mode) == 0) {
 			setSvg(framesAll[0]);
-			effect->visible = false;
+			if (effect != NULL)
+				effect->visible = false;
 		}
 		else {
 			setSvg(framesAll[1]);

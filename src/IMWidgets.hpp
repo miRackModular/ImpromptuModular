@@ -103,10 +103,13 @@ struct DynamicSVGKnob : SvgKnob {
     int* mode = NULL;
     int oldMode = -1;
 	std::vector<std::shared_ptr<Svg>> framesAll;
-	SvgWidget* effect;
-	
+	SvgWidget* effect = NULL;
+	std::string frameAltName;
+	std::string frameEffectName;
+
 	void addFrameAll(std::shared_ptr<Svg> svg);
-	void addEffect(std::shared_ptr<Svg> svg);// do this last
+    void addFrameAlt(std::string filename) {frameAltName = filename;}	
+	void addFrameEffect(std::string filename) {frameEffectName = filename;}	
     void step() override;
 };
 

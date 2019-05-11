@@ -173,8 +173,8 @@ struct IMKnob : DynamicSVGKnob {
 struct IMBigKnob : IMKnob {
 	IMBigKnob() {
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/BlackKnobLargeWithMark.svg")));
-		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLargeWithMark.svg")));
-		addEffect(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLargeWithMarkEffects.svg")));
+		addFrameAlt(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLargeWithMark.svg"));
+		addFrameEffect(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLargeWithMarkEffects.svg"));
 		shadow->blurRadius = box.size.y * blurRadiusRatio;
 		// shadow->opacity = 0.1;
 	}
@@ -189,8 +189,8 @@ struct IMBigSnapKnob : IMBigKnob {
 struct IMBigKnobInf : IMKnob {
 	IMBigKnobInf() {
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/BlackKnobLarge.svg")));
-		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLarge.svg")));
-		addEffect(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLargeEffects.svg")));
+		addFrameAlt(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLarge.svg"));
+		addFrameEffect(asset::plugin(pluginInstance, "res/dark/comp/BlackKnobLargeEffects.svg"));
 		shadow->blurRadius = box.size.y * blurRadiusRatio;
 		// shadow->opacity = 0.1;
 		speed = 0.9f;				
@@ -200,8 +200,8 @@ struct IMBigKnobInf : IMKnob {
 struct IMSmallKnob : IMKnob {
 	IMSmallKnob() {
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/RoundSmallBlackKnob.svg")));
-		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/RoundSmallBlackKnob.svg")));
-		addEffect(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/RoundSmallBlackKnobEffects.svg")));		
+		addFrameAlt(asset::plugin(pluginInstance, "res/dark/comp/RoundSmallBlackKnob.svg"));
+		addFrameEffect(asset::plugin(pluginInstance, "res/dark/comp/RoundSmallBlackKnobEffects.svg"));		
 		shadow->blurRadius = box.size.y * blurRadiusRatio;
 		// shadow->opacity = 0.1;
 		// shadow->box.pos = Vec(0.0, box.size.y * 0.15);
@@ -217,8 +217,8 @@ struct IMSmallSnapKnob : IMSmallKnob {
 struct IMMediumKnobInf : IMKnob {
 	IMMediumKnobInf() {
 		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/RoundMediumBlackKnobNoMark.svg")));
-		addFrameAll(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/RoundMediumBlackKnobNoMark.svg")));
-		addEffect(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/RoundMediumBlackKnobNoMarkEffects.svg")));
+		addFrameAlt(asset::plugin(pluginInstance, "res/dark/comp/RoundMediumBlackKnobNoMark.svg"));
+		addFrameEffect(asset::plugin(pluginInstance, "res/dark/comp/RoundMediumBlackKnobNoMarkEffects.svg"));
 		shadow->blurRadius = box.size.y * blurRadiusRatio;
 		// shadow->opacity = 0.1;
 		// shadow->box.pos = Vec(0.0, box.size.y * 0.15);
