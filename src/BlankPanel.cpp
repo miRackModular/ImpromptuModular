@@ -20,10 +20,7 @@ struct BlankPanelWidget : ModuleWidget {
 		setModule(module);
 		
 		// Main panel from Inkscape
-        SvgPanel *panel = new SvgPanel();
-        panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BlankPanel_dark.svg")));
-        box.size = panel->box.size;
-        addChild(panel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BlankPanel_dark.svg")));
 
 		// Screws
 		addChild(createDynamicWidget<IMScrew>(Vec(15, 0), &screwType));

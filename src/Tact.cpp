@@ -325,7 +325,6 @@ struct Tact : Module {
 
 
 struct TactWidget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 
 	struct PanelThemeItem : MenuItem {
@@ -413,10 +412,7 @@ struct TactWidget : ModuleWidget {
 		setModule(module);
 
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Tact.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Tact.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Tact_dark.svg")));
@@ -529,7 +525,7 @@ struct TactWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((Tact*)module)->panelTheme) == 0);
+			panel->visible = ((((Tact*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((Tact*)module)->panelTheme) == 1);
 		}
 		Widget::step();
@@ -687,7 +683,6 @@ struct Tact1 : Module {
 };
 
 struct Tact1Widget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 
 	struct PanelThemeItem : MenuItem {
@@ -747,10 +742,7 @@ struct Tact1Widget : ModuleWidget {
 		setModule(module);
 
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Tact1.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Tact1.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Tact1_dark.svg")));
@@ -796,7 +788,7 @@ struct Tact1Widget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((Tact1*)module)->panelTheme) == 0);
+			panel->visible = ((((Tact1*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((Tact1*)module)->panelTheme) == 1);
 		}
 		Widget::step();

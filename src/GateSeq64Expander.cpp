@@ -60,17 +60,13 @@ struct GateSeq64Expander : Module {
 
 
 struct GateSeq64ExpanderWidget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 	
 	GateSeq64ExpanderWidget(GateSeq64Expander *module) {
 		setModule(module);
 	
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/GateSeq64Expander.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/GateSeq64Expander.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/GateSeq64Expander_dark.svg")));
@@ -96,7 +92,7 @@ struct GateSeq64ExpanderWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((GateSeq64Expander*)module)->panelTheme) == 0);
+			panel->visible = ((((GateSeq64Expander*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((GateSeq64Expander*)module)->panelTheme) == 1);
 		}
 		Widget::step();

@@ -215,7 +215,6 @@ struct TwelveKey : Module {
 
 
 struct TwelveKeyWidget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 
 	struct OctaveNumDisplayWidget : TransparentWidget {
@@ -282,10 +281,7 @@ struct TwelveKeyWidget : ModuleWidget {
 		setModule(module);
 		
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/TwelveKey.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/TwelveKey.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/TwelveKey_dark.svg")));
@@ -377,7 +373,7 @@ struct TwelveKeyWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((TwelveKey*)module)->panelTheme) == 0);
+			panel->visible = ((((TwelveKey*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((TwelveKey*)module)->panelTheme) == 1);
 		}
 		Widget::step();

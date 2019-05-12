@@ -88,7 +88,6 @@ struct FoundryExpander : Module {
 
 
 struct FoundryExpanderWidget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 	
 	struct CKSSNoRandom : CKSS {// Not randomizable
@@ -100,10 +99,7 @@ struct FoundryExpanderWidget : ModuleWidget {
 		setModule(module);
 	
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/FoundryExpander.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/FoundryExpander.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/FoundryExpander_dark.svg")));
@@ -178,7 +174,7 @@ struct FoundryExpanderWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((FoundryExpander*)module)->panelTheme) == 0);
+			panel->visible = ((((FoundryExpander*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((FoundryExpander*)module)->panelTheme) == 1);
 		}
 		Widget::step();

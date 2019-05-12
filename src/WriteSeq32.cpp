@@ -489,7 +489,6 @@ struct WriteSeq32 : Module {
 
 
 struct WriteSeq32Widget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 	int notesPos[8]; // used for rendering notes in LCD_24, 8 gate and 8 step LEDs 
 
@@ -633,10 +632,7 @@ struct WriteSeq32Widget : ModuleWidget {
 		setModule(module);
 		
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/WriteSeq32.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/WriteSeq32.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/WriteSeq32_dark.svg")));
@@ -797,7 +793,7 @@ struct WriteSeq32Widget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((WriteSeq32*)module)->panelTheme) == 0);
+			panel->visible = ((((WriteSeq32*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((WriteSeq32*)module)->panelTheme) == 1);
 		}
 		Widget::step();

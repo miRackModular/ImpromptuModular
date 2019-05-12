@@ -427,7 +427,6 @@ struct BigButtonSeq : Module {
 
 
 struct BigButtonSeqWidget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 
 	struct ChanDisplayWidget : TransparentWidget {
@@ -578,10 +577,7 @@ struct BigButtonSeqWidget : ModuleWidget {
 		setModule(module);
 
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/BigButtonSeq.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/BigButtonSeq.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/BigButtonSeq_dark.svg")));
@@ -707,7 +703,7 @@ struct BigButtonSeqWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((BigButtonSeq*)module)->panelTheme) == 0);
+			panel->visible = ((((BigButtonSeq*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((BigButtonSeq*)module)->panelTheme) == 1);
 		}
 		Widget::step();

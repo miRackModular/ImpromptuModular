@@ -721,7 +721,6 @@ struct Clocked : Module {
 
 
 struct ClockedWidget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 
 	struct RatioDisplayWidget : TransparentWidget {
@@ -927,10 +926,7 @@ struct ClockedWidget : ModuleWidget {
 		setModule(module);
 		
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Clocked.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Clocked.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Clocked_dark.svg")));
@@ -1043,7 +1039,7 @@ struct ClockedWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((Clocked*)module)->panelTheme) == 0);
+			panel->visible = ((((Clocked*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((Clocked*)module)->panelTheme) == 1);
 		}
 		Widget::step();

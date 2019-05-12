@@ -1239,7 +1239,6 @@ struct Foundry : Module {
 
 
 struct FoundryWidget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 	
 	template <int NUMCHAR>
@@ -1849,10 +1848,7 @@ struct FoundryWidget : ModuleWidget {
 		setModule(module);
 		
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Foundry.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/Foundry.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/Foundry_dark.svg")));
@@ -2126,7 +2122,7 @@ struct FoundryWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((Foundry*)module)->panelTheme) == 0);
+			panel->visible = ((((Foundry*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((Foundry*)module)->panelTheme) == 1);
 		}
 		Widget::step();

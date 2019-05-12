@@ -87,7 +87,6 @@ struct FourView : Module {
 
 
 struct FourViewWidget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 
 	struct NotesDisplayWidget : TransparentWidget {
@@ -185,10 +184,7 @@ struct FourViewWidget : ModuleWidget {
 		setModule(module);
 		
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/FourView.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/FourView.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/FourView_dark.svg")));
@@ -222,7 +218,7 @@ struct FourViewWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((FourView*)module)->panelTheme) == 0);
+			panel->visible = ((((FourView*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((FourView*)module)->panelTheme) == 1);
 		}
 		Widget::step();

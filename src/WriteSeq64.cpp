@@ -502,7 +502,6 @@ struct WriteSeq64 : Module {
 
 
 struct WriteSeq64Widget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 
 	struct NoteDisplayWidget : TransparentWidget {
@@ -691,10 +690,7 @@ struct WriteSeq64Widget : ModuleWidget {
 		setModule(module);
 
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/WriteSeq64.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/WriteSeq64.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/WriteSeq64_dark.svg")));
@@ -849,7 +845,7 @@ struct WriteSeq64Widget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((WriteSeq64*)module)->panelTheme) == 0);
+			panel->visible = ((((WriteSeq64*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((WriteSeq64*)module)->panelTheme) == 1);
 		}
 		Widget::step();

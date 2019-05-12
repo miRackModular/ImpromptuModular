@@ -1775,7 +1775,6 @@ struct SemiModularSynth : Module {
 
 
 struct SemiModularSynthWidget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 
 	struct SequenceDisplayWidget : TransparentWidget {
@@ -2040,10 +2039,7 @@ struct SemiModularSynthWidget : ModuleWidget {
 		setModule(module);
 		
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/SemiModular.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/SemiModular.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/SemiModular_dark.svg")));
@@ -2347,7 +2343,7 @@ struct SemiModularSynthWidget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((SemiModularSynth*)module)->panelTheme) == 0);
+			panel->visible = ((((SemiModularSynth*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((SemiModularSynth*)module)->panelTheme) == 1);
 		}
 		Widget::step();

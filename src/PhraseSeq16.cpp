@@ -1580,7 +1580,6 @@ struct PhraseSeq16 : Module {
 
 
 struct PhraseSeq16Widget : ModuleWidget {
-	SvgPanel* lightPanel;
 	SvgPanel* darkPanel;
 
 	struct SequenceDisplayWidget : TransparentWidget {
@@ -1847,10 +1846,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 		setModule(module);
 
 		// Main panels from Inkscape
-        lightPanel = new SvgPanel();
-        lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/PhraseSeq16.svg")));
-        box.size = lightPanel->box.size;
-        addChild(lightPanel);
+        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/PhraseSeq16.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
 			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/PhraseSeq16_dark.svg")));
@@ -2056,7 +2052,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 	
 	void step() override {
 		if (module) {
-			lightPanel->visible = ((((PhraseSeq16*)module)->panelTheme) == 0);
+			panel->visible = ((((PhraseSeq16*)module)->panelTheme) == 0);
 			darkPanel->visible  = ((((PhraseSeq16*)module)->panelTheme) == 1);
 		}
 		Widget::step();
