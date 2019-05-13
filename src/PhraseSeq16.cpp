@@ -1190,8 +1190,8 @@ struct PhraseSeq16 : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		if (running && clockIgnoreOnReset == 0l) {
-			if (clockTrigger.process(inputs[CLOCK_INPUT].getVoltage())) {
+		if (running) {
+			if (clockTrigger.process(inputs[CLOCK_INPUT].getVoltage())  && clockIgnoreOnReset == 0l) {
 				ppqnCount++;
 				if (ppqnCount >= pulsesPerStep)
 					ppqnCount = 0;
