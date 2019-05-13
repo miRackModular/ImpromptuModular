@@ -111,7 +111,7 @@ A few of the modules feature **Expander modules** to provide additional CV input
 
 ![IM](res/img/Expanders.jpg)
 
-Pictured above are the expanders for the following modules, from left to right: Clocked, GateSeq64, PhraseSeq16/32, Foundry.
+Pictured above are the expanders for the following modules, from left to right: Clocked, PhraseSeq16/32, GateSeq64, Foundry.
 
 
 ### On resets, clocks and run states... <a id="clk_rst_run"></a>
