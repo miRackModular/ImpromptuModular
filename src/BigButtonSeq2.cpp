@@ -430,9 +430,8 @@ struct BigButtonSeq2 : Module {
 		//********** Clock and reset **********
 		
 		// Clock
-		//if (clockIgnoreOnReset == 0l) 
-		{			
-			if (clockTrigger.process(inputs[CLK_INPUT].getVoltage() + params[CLOCK_PARAM].getValue()) && (clockIgnoreOnReset == 0l)) {
+		if (clockIgnoreOnReset == 0l) {			
+			if (clockTrigger.process(inputs[CLK_INPUT].getVoltage() + params[CLOCK_PARAM].getValue())) {
 				if ((++indexStep) >= length) indexStep = 0;
 				
 				// Fill button
