@@ -52,6 +52,7 @@ static const std::string darkPanelID = "Dark-valor";
 static const unsigned int displayRefreshStepSkips = 256;
 static const unsigned int userInputsStepSkipMask = 0xF;// sub interval of displayRefreshStepSkips, since inputs should be more responsive than lights
 // above value should make it such that inputs are sampled > 1kHz so as to not miss 1ms triggers
+static const unsigned int expanderRefreshStepSkips = 64;
 
 
 // Component offset constants
@@ -178,12 +179,12 @@ struct IMBigKnob : IMKnob {
 		shadow->blurRadius = box.size.y * blurRadiusRatio;
 		// shadow->opacity = 0.1;
 	}
+	void randomize() override {}
 };
 struct IMBigSnapKnob : IMBigKnob {
 	IMBigSnapKnob() {
 		snap = true;
 	}
-	void randomize() override {}
 };
 
 struct IMBigKnobInf : IMKnob {
@@ -207,7 +208,9 @@ struct IMSmallKnob : IMKnob {
 		// shadow->box.pos = Vec(0.0, box.size.y * 0.15);
 	}
 };
-
+struct IMSmallKnobNoRandom : IMSmallKnob {
+	void randomize() override {}
+};
 struct IMSmallSnapKnob : IMSmallKnob {
 	IMSmallSnapKnob() {
 		snap = true;
@@ -232,6 +235,7 @@ struct IMFivePosSmallKnob : IMSmallSnapKnob {
 		minAngle = -0.5*M_PI;
 		maxAngle = 0.5*M_PI;
 	}
+	void randomize() override {}
 };
 
 struct IMSixPosBigKnob : IMBigSnapKnob {

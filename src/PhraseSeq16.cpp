@@ -1505,6 +1505,7 @@ struct PhraseSeq16 : Module {
 			if (rightModule && rightModule->model == modelPhraseSeqExpander) {
 				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
 				producerMessage[0] = (float)panelTheme;
+				// no flip request needed here since expander will regularly call flips
 			}
 		}// lightRefreshCounter
 		

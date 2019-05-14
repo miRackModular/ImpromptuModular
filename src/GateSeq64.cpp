@@ -1160,6 +1160,7 @@ struct GateSeq64 : Module {
 			if (rightModule && rightModule->model == modelGateSeq64Expander) {
 				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
 				producerMessage[0] = (float)panelTheme;
+				// no flip request needed here since expander will regularly call flips
 			}
 		}// lightRefreshCounter
 
@@ -1382,7 +1383,7 @@ struct GateSeq64Widget : ModuleWidget {
 		menu->addChild(aseqItem);
 	}	
 	
-	struct CKSSThreeInvNotify : CKSSThreeInvNoRandom {// Not randomizable
+	struct CKSSThreeInvNotify : CKSSThreeInvNoRandom {
 		CKSSThreeInvNotify() {}
 		void onDragStart(const event::DragStart &e) override {
 			Switch::onDragStart(e);

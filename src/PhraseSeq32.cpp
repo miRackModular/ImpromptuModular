@@ -1602,6 +1602,7 @@ struct PhraseSeq32 : Module {
 			if (rightModule && rightModule->model == modelPhraseSeqExpander) {
 				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
 				producerMessage[0] = (float)panelTheme;
+				// no flip request needed here since expander will regularly call flips
 			}
 		}// lightRefreshCounter
 				
@@ -1887,9 +1888,8 @@ struct PhraseSeq32Widget : ModuleWidget {
 		menu->addChild(aseqItem);
 	}	
 	
-	struct CKSSNotify : CKSS {// Not randomizable
+	struct CKSSNotify : CKSSNoRandom {
 		CKSSNotify() {}
-		void randomize() override {}
 		void onDragStart(const event::DragStart &e) override {
 			Switch::onDragStart(e);
 			if (paramQuantity) {

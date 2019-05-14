@@ -304,7 +304,6 @@ struct Clocked : Module {
 	
 	void updatePulseSwingDelay() {
 		bool expanderPresent = (rightModule && rightModule->model == modelClockedExpander);
-		//if (expanderPresent) INFO("EXPANDER PRESENT");
 		for (int i = 0; i < 4; i++) {
 			// Pulse Width
 			pulseWidth[i] = params[PW_PARAMS + i].getValue();
@@ -714,6 +713,7 @@ struct Clocked : Module {
 			if (rightModule && rightModule->model == modelClockedExpander) {
 				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
 				producerMessage[0] = (float)panelTheme;
+				// no flip request needed here since expander will regularly call flips
 			}
 		}// lightRefreshCounter
 	}// process()

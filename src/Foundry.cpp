@@ -125,7 +125,6 @@ struct Foundry : Module {
 	int cpSeqLength;
 	int cpSongStart;// no need to initialize
 	
-	
 
 	unsigned int lightRefreshCounter = 0;
 	float resetLight = 0.0f;
@@ -1209,6 +1208,7 @@ struct Foundry : Module {
 				for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 					producerMessage[3 + trkn] = (editingSequence && ((writeMode & 0x1) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
 				}	
+				// no flip request needed here since expander will regularly call flips
 			}
 		}// lightRefreshCounter
 				
@@ -1715,9 +1715,8 @@ struct FoundryWidget : ModuleWidget {
 		menu->addChild(aseqItem);
 	}	
 		
-	struct CKSSNotify : CKSS {// Not randomizable
+	struct CKSSNotify : CKSSNoRandom {
 		CKSSNotify() {}
-		void randomize() override {}
 		void onChange(const event::Change &e) override {
 			if (paramQuantity) {
 				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);
@@ -1730,7 +1729,7 @@ struct FoundryWidget : ModuleWidget {
 			SVGSwitch::onChange(e);		
 		}
 	};
-	struct CPModeSwitch : CKSSThreeInvNoRandom {// Not randomizable
+	struct CPModeSwitch : CKSSThreeInvNoRandom {
 		CPModeSwitch() {};
 		void onChange(const event::Change &e) override {
 			SVGSwitch::onChange(e);	

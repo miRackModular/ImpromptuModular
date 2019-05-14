@@ -31,6 +31,7 @@ struct GateSeq64Expander : Module {
 
 	// No need to save
 	int panelTheme = 0;
+	unsigned int expanderRefreshCounter = 0;	
 
 
 	GateSeq64Expander() {
@@ -42,19 +43,25 @@ struct GateSeq64Expander : Module {
 
 
 	void process(const ProcessArgs &args) override {		
-		bool motherPresent = (leftModule && leftModule->model == modelGateSeq64);
-		if (motherPresent) {
-			// To Mother
-			float *producerMessage = reinterpret_cast<float*>(leftModule->rightProducerMessage);
-			producerMessage[0] = (inputs[0].isConnected() ? inputs[0].getVoltage() : std::numeric_limits<float>::quiet_NaN());
-			producerMessage[1] = (inputs[1].isConnected() ? inputs[1].getVoltage() : std::numeric_limits<float>::quiet_NaN());
-			for (int i = 2; i < NUM_INPUTS; i++) {
-				producerMessage[i] = inputs[i].getVoltage();
-			}
-		}		
+		expanderRefreshCounter++;
+		if (expanderRefreshCounter >= expanderRefreshStepSkips) {
+			expanderRefreshCounter = 0;
 			
-		// From Mother
-		panelTheme = (motherPresent ? clamp((int)(consumerMessage[0] + 0.5f), 0, 1) : 0);
+			bool motherPresent = (leftModule && leftModule->model == modelGateSeq64);
+			if (motherPresent) {
+				// To Mother
+				float *producerMessage = reinterpret_cast<float*>(leftModule->rightProducerMessage);
+				producerMessage[0] = (inputs[0].isConnected() ? inputs[0].getVoltage() : std::numeric_limits<float>::quiet_NaN());
+				producerMessage[1] = (inputs[1].isConnected() ? inputs[1].getVoltage() : std::numeric_limits<float>::quiet_NaN());
+				for (int i = 2; i < NUM_INPUTS; i++) {
+					producerMessage[i] = inputs[i].getVoltage();
+				}
+				leftMessageFlipRequested = true;
+			}		
+				
+			// From Mother
+			panelTheme = (motherPresent ? clamp((int)(consumerMessage[0] + 0.5f), 0, 1) : 0);
+		}// expanderRefreshCounter
 	}// process()
 };
 
