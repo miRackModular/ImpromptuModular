@@ -96,7 +96,7 @@ struct PhraseSeq32 : Module {
 
 
 	// Need to save
-	int panelTheme = 0;
+	int panelTheme;
 	int expansion = 0;
 	bool autoseq;
 	bool autostepLen;
@@ -271,6 +271,8 @@ struct PhraseSeq32 : Module {
 		for (int i = 0; i < 32; i++)
 			seqAttribBuffer[i].init(16, MODE_FWD);
 		onReset();
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 	
@@ -1856,6 +1858,8 @@ struct PhraseSeq32Widget : ModuleWidget {
 		darkItem->module = module;
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
+
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
 
 		menu->addChild(new MenuLabel());// empty line
 		

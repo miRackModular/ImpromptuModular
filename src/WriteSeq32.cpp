@@ -59,7 +59,7 @@ struct WriteSeq32 : Module {
 	};
 
 	// Need to save
-	int panelTheme = 0;
+	int panelTheme;
 	bool running;
 	int indexStep;
 	int indexStepStage;
@@ -123,6 +123,8 @@ struct WriteSeq32 : Module {
 		configParam(MONITOR_PARAM, 0.0f, 1.0f, 0.0f, "Monitor");		
 		
 		onReset();
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 	
 
@@ -615,6 +617,8 @@ struct WriteSeq32Widget : ModuleWidget {
 		darkItem->module = module;
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
+		
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
 
 		menu->addChild(new MenuLabel());// empty line
 		

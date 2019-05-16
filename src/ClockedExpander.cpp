@@ -28,7 +28,7 @@ struct ClockedExpander : Module {
 
 
 	// No need to save
-	int panelTheme = 0;
+	int panelTheme;
 	unsigned int expanderRefreshCounter = 0;
 
 
@@ -37,6 +37,8 @@ struct ClockedExpander : Module {
 		
 		leftProducerMessage = producerMessage;
 		leftConsumerMessage = consumerMessage;
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 
@@ -53,10 +55,10 @@ struct ClockedExpander : Module {
 					producerMessage[i] = inputs[i].getVoltage();
 				}
 				leftMessageFlipRequested = true;
-			}		
 				
-			// From Mother
-			panelTheme = (motherPresent ? clamp((int)(consumerMessage[0] + 0.5f), 0, 1) : 0);
+				// From Mother
+				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);			
+			}		
 		}// expanderRefreshCounter
 	}// process()
 };

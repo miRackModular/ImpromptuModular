@@ -96,7 +96,7 @@ struct PhraseSeq16 : Module {
 
 
 	// Need to save
-	int panelTheme = 0;
+	int panelTheme;
 	int expansion = 0;
 	bool autoseq;
 	bool autostepLen;
@@ -237,6 +237,8 @@ struct PhraseSeq16 : Module {
 		configParam(AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f, "Autostep");						
 		
 		onReset();
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 	
 
@@ -1760,6 +1762,8 @@ struct PhraseSeq16Widget : ModuleWidget {
 		darkItem->module = module;
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
+		
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
 
 		menu->addChild(new MenuLabel());// empty line
 		

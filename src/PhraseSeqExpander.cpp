@@ -31,7 +31,7 @@ struct PhraseSeqExpander : Module {
 
 
 	// No need to save
-	int panelTheme = 0;
+	int panelTheme;
 	unsigned int expanderRefreshCounter = 0;	
 
 
@@ -40,6 +40,8 @@ struct PhraseSeqExpander : Module {
 		
 		leftProducerMessage = producerMessage;
 		leftConsumerMessage = consumerMessage;
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 
@@ -58,10 +60,10 @@ struct PhraseSeqExpander : Module {
 				}
 				producerMessage[i] = (inputs[i].isConnected() ? inputs[i].getVoltage() : std::numeric_limits<float>::quiet_NaN());
 				leftMessageFlipRequested = true;
+					
+				// From Mother
+				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
 			}		
-				
-			// From Mother
-			panelTheme = (motherPresent ? clamp((int)(consumerMessage[0] + 0.5f), 0, 1) : 0);
 		}// expanderRefreshCounter			
 	}// process()
 };

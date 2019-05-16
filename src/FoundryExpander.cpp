@@ -46,7 +46,7 @@ struct FoundryExpander : Module {
 
 
 	// No need to save
-	int panelTheme = 0;
+	int panelTheme;
 	unsigned int expanderRefreshCounter = 0;	
 
 
@@ -58,6 +58,8 @@ struct FoundryExpander : Module {
 	
 		leftProducerMessage = producerMessage;
 		leftConsumerMessage = consumerMessage;
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 
@@ -80,10 +82,12 @@ struct FoundryExpander : Module {
 				producerMessage[i++] = params[SYNC_SEQCV_PARAM].getValue();
 				producerMessage[i++] = params[WRITEMODE_PARAM].getValue();
 				leftMessageFlipRequested = true;
+
+				// From Mother
+				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
 			}		
-				
+
 			// From Mother
-			panelTheme = (motherPresent ? clamp((int)(consumerMessage[0] + 0.5f), 0, 1) : 0);
 			lights[WRITE_SEL_LIGHTS + 0].setBrightness(motherPresent ? consumerMessage[1] : 0.0f);
 			lights[WRITE_SEL_LIGHTS + 1].setBrightness(motherPresent ? consumerMessage[2] : 0.0f);			
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {

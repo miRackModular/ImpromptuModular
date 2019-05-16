@@ -107,7 +107,7 @@ This feature can be used to play difference sequences consecutively under extern
 
 ### Expanders <a id="expanders"></a>
 
-A few of the modules feature **Expander modules** to provide additional CV inputs. An expander modules must be added to the _right_ side of the mother module with no space between the two modules. Only compatible expanders will work with a given module. For example, the PS-X expander will only work with the PhraseSeq16 and PhraseSeq32 modules, while the GS-X expander will only work with the GateSeq64 module.
+A few of the modules feature **Expander modules** to provide additional CV inputs. An expander modules must be added to the _right_ side of the mother module with no space between the two modules. Expanders automatically match their mother module's panel theme, thus they do not have a panel theme option in their right-click menu. Only compatible expanders will work with a given module. For example, the PS-X expander will only work with the PhraseSeq16 and PhraseSeq32 modules, while the GS-X expander will only work with the GateSeq64 module.
 
 ![IM](res/img/Expanders.jpg)
 

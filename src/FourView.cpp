@@ -28,7 +28,7 @@ struct FourView : Module {
 	};
 
 	// Need to save
-	int panelTheme = 0;
+	int panelTheme;
 	bool showSharp = true;
 
 	// No need to save
@@ -43,6 +43,8 @@ struct FourView : Module {
 	FourView() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		onReset();
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 	
 
@@ -167,6 +169,8 @@ struct FourViewWidget : ModuleWidget {
 		darkItem->module = module;
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
+		
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
 
 		menu->addChild(new MenuLabel());// empty line
 		

@@ -96,7 +96,7 @@ struct Foundry : Module {
 	static constexpr float warningTime = 0.7f;// seconds
 
 	// Need to save
-	int panelTheme = 0;// 0 = classic, 1 = dark
+	int panelTheme;
 	int expansion = 0;
 	int velocityMode;
 	bool velocityBipol;
@@ -236,6 +236,8 @@ struct Foundry : Module {
 		
 		seq.construct(&holdTiedNotes, &velocityMode, &stopAtEndOfSong);
 		onReset();
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 	
@@ -1675,6 +1677,8 @@ struct FoundryWidget : ModuleWidget {
 		darkItem->module = module;
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
+		
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
 
 		menu->addChild(new MenuLabel());// empty line
 		

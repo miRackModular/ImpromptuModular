@@ -180,7 +180,7 @@ struct SemiModularSynth : Module {
 	enum DisplayStateIds {DISP_NORMAL, DISP_MODE, DISP_LENGTH, DISP_TRANSPOSE, DISP_ROTATE};
 
 	// Need to save
-	int panelTheme = 1;
+	int panelTheme;
 	bool autoseq;
 	bool autostepLen;
 	bool holdTiedNotes;
@@ -337,7 +337,7 @@ struct SemiModularSynth : Module {
 		configParam(SLIDE_KNOB_PARAM, 0.0f, 2.0f, 0.2f, "Slide rate");
 		configParam(AUTOSTEP_PARAM, 0.0f, 1.0f, 1.0f, "Autostep");		
 		
-		configParam(VCO_FREQ_PARAM, -54.0f, 54.0f, 0.0f, "VCO freq", " Hz", std::pow(2, 1/12.f), dsp::FREQ_C4);// https://community.vcvrack.com/t/rack-v1-development-blog/1149/230
+		configParam(VCO_FREQ_PARAM, -54.0f, 54.0f, 0.0f, "VCO freq", " Hz", std::pow(2.0f, 1.0f/12.f), dsp::FREQ_C4);// https://community.vcvrack.com/t/rack-v1-development-blog/1149/230 or src/engine/ParamQuantity.cpp ParamQuantity::getDisplayValue()
 		configParam(VCO_FINE_PARAM, -1.0f, 1.0f, 0.0f, "VCO freq fine");
 		configParam(VCO_PW_PARAM, 0.0f, 1.0f, 0.5f, "VCO pulse width", "%", 0.f, 100.f);
 		configParam(VCO_FM_PARAM, 0.0f, 1.0f, 0.0f, "VCO FM");
@@ -360,7 +360,7 @@ struct SemiModularSynth : Module {
 		configParam(VCF_FREQ_CV_PARAM, -1.0f, 1.0f, 0.0f, "VCF freq cv");
 		configParam(VCF_DRIVE_PARAM, 0.0f, 1.0f, 0.0f, "VCF drive");
 		
-		configParam(LFO_FREQ_PARAM, -8.0f, 6.0f, -1.0f, "LFO freq");
+		configParam(LFO_FREQ_PARAM, -8.0f, 6.0f, -1.0f, "LFO freq", " BPM", 2.0f, 60.0f);// 30 BMP when default value  (30 = 60*2^-1) diplay params are: base, mult, offset);
 		configParam(LFO_GAIN_PARAM, 0.0f, 1.0f, 0.5f, "LFO gain");
 		configParam(LFO_OFFSET_PARAM, -1.0f, 1.0f, 0.0f, "LFO offset");
 
@@ -378,6 +378,8 @@ struct SemiModularSynth : Module {
 		oscillatorLfo.setPulseWidth(0.5f);
 		oscillatorLfo.offset = false;
 		oscillatorLfo.invert = false;
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 	
 
@@ -1866,12 +1868,12 @@ struct SemiModularSynthWidget : ModuleWidget {
 	
 	struct PanelThemeItem : MenuItem {
 		SemiModularSynth *module;
-		int panelTheme;
+		int theme;
 		void onAction(const event::Action &e) override {
-			module->panelTheme = panelTheme;
+			module->panelTheme = theme;
 		}
 		void step() override {
-			rightText = (module->panelTheme == panelTheme) ? "✔" : "";
+			rightText = (module->panelTheme == theme) ? "✔" : "";
 		}
 	};
 	struct ResetOnRunItem : MenuItem {
@@ -1947,14 +1949,16 @@ struct SemiModularSynthWidget : ModuleWidget {
 		PanelThemeItem *lightItem = new PanelThemeItem();
 		lightItem->text = lightPanelID;// ImpromptuModular.hpp
 		lightItem->module = module;
-		lightItem->panelTheme = 0;
+		lightItem->theme = 0;
 		menu->addChild(lightItem);
 
 		PanelThemeItem *darkItem = new PanelThemeItem();
 		darkItem->text = darkPanelID;// ImpromptuModular.hpp
 		darkItem->module = module;
-		darkItem->panelTheme = 1;
+		darkItem->theme = 1;
 		menu->addChild(darkItem);
+		
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
 
 		menu->addChild(new MenuLabel());// empty line
 		

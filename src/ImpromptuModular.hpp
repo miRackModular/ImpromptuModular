@@ -360,4 +360,13 @@ void printNote(float cvVal, char* text, bool sharp);
 int moveIndex(int index, int indexNext, int numSteps);
 
 
+void saveDarkAsDefault(bool darkAsDefault);
+bool loadDarkAsDefault();
+
+struct DarkDefaultItem : MenuItem {
+	void onAction(const event::Action &e) override {
+		saveDarkAsDefault(rightText.empty());// implicitly toggled
+	}
+};	
+
 #endif

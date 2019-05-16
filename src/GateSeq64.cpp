@@ -68,7 +68,7 @@ struct GateSeq64 : Module {
 	static constexpr float CONFIG_PARAM_INIT_VALUE = 0.0f;// so that module constructor is coherent with widget initialization, since module created before widget
 
 	// Need to save
-	int panelTheme = 0;
+	int panelTheme;
 	int expansion = 0;
 	bool autoseq;
 	int seqCVmethod;// 0 is 0-10V, 1 is C4-D5#, 2 is TrigIncr
@@ -206,6 +206,8 @@ struct GateSeq64 : Module {
 		for (int i = 0; i < MAX_SEQS; i++)
 			seqAttribBuffer[i].init(16, MODE_FWD);
 		onReset();
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 	
@@ -1359,6 +1361,8 @@ struct GateSeq64Widget : ModuleWidget {
 		darkItem->module = module;
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
+		
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
 
 		menu->addChild(new MenuLabel());// empty line
 		

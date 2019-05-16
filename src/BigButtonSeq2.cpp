@@ -66,7 +66,7 @@ struct BigButtonSeq2 : Module {
 	};
 	
 	// Need to save
-	int panelTheme = 0;
+	int panelTheme;
 	int metronomeDiv = 4;
 	bool writeFillsToMemory;
 	bool quantizeBig;
@@ -141,6 +141,8 @@ struct BigButtonSeq2 : Module {
 		configParam(SAMPLEHOLD_PARAM, 0.0f, 1.0f, 0.0f, "Sample & hold");
 		
 		onReset();
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 	
@@ -685,6 +687,8 @@ struct BigButtonSeq2Widget : ModuleWidget {
 		darkItem->module = module;
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
+		
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
 
 		menu->addChild(new MenuLabel());// empty line
 		

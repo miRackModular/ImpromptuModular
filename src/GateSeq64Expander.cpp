@@ -30,7 +30,7 @@ struct GateSeq64Expander : Module {
 
 
 	// No need to save
-	int panelTheme = 0;
+	int panelTheme;
 	unsigned int expanderRefreshCounter = 0;	
 
 
@@ -39,6 +39,8 @@ struct GateSeq64Expander : Module {
 		
 		leftProducerMessage = producerMessage;
 		leftConsumerMessage = consumerMessage;
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 
@@ -57,10 +59,10 @@ struct GateSeq64Expander : Module {
 					producerMessage[i] = inputs[i].getVoltage();
 				}
 				leftMessageFlipRequested = true;
+
+				// From Mother
+				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
 			}		
-				
-			// From Mother
-			panelTheme = (motherPresent ? clamp((int)(consumerMessage[0] + 0.5f), 0, 1) : 0);
 		}// expanderRefreshCounter
 	}// process()
 };

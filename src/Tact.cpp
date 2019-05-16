@@ -43,7 +43,7 @@ struct Tact : Module {
 	};
 		
 	// Need to save
-	int panelTheme = 0;
+	int panelTheme;
 	double cv[2];// actual Tact CV since Tactknob can be different than these when transitioning
 	float storeCV[2];
 	float rateMultiplier;
@@ -85,6 +85,8 @@ struct Tact : Module {
 		configParam(LINK_PARAM, 0.0f, 1.0f, 0.0f, "Link");		
 		
 		onReset();
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 	
@@ -375,6 +377,8 @@ struct TactWidget : ModuleWidget {
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
 
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
+
 		menu->addChild(new MenuLabel());// empty line
 		
 		MenuLabel *settingsLabel = new MenuLabel();
@@ -558,7 +562,7 @@ struct Tact1 : Module {
 	};
 		
 	// Need to save
-	int panelTheme = 0;
+	int panelTheme;
 	double cv;// actual Tact CV since Tactknob can be different than these when transitioning
 	float rateMultiplier;
 
@@ -577,6 +581,8 @@ struct Tact1 : Module {
 		configParam(EXP_PARAM, 0.0f, 1.0f, 0.0f, "Exponential");			
 		
 		onReset();
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 	
@@ -726,6 +732,8 @@ struct Tact1Widget : ModuleWidget {
 		darkItem->module = module;
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
+		
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
 
 		menu->addChild(new MenuLabel());// empty line
 		

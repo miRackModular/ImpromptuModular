@@ -241,7 +241,7 @@ struct Clocked : Module {
 	
 	
 	// Need to save
-	int panelTheme = 0;
+	int panelTheme;
 	bool displayDelayNoteMode;
 	bool bpmDetectionMode;
 	bool emitResetOnStopRun;
@@ -367,6 +367,8 @@ struct Clocked : Module {
 			clk[i].setup(&clk[0], &resetClockOutputsHigh);		
 		}
 		onReset();
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 	
 
@@ -859,6 +861,8 @@ struct ClockedWidget : ModuleWidget {
 		darkItem->module = module;
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
+		
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
 
 		menu->addChild(new MenuLabel());// empty line
 		

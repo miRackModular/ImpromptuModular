@@ -43,7 +43,7 @@ struct TwelveKey : Module {
 	};
 	
 	// Need to save
-	int panelTheme = 0;
+	int panelTheme;
 	int octaveNum;// 0 to 9
 	float cv;
 	bool stateInternal;// false when pass through CV and Gate, true when CV and gate from this module
@@ -82,6 +82,8 @@ struct TwelveKey : Module {
 		configParam(OCTINC_PARAM, 0.0, 1.0, 0.0, "Oct up");
 		
 		onReset();
+		
+		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 	void onReset() override {
@@ -274,6 +276,8 @@ struct TwelveKeyWidget : ModuleWidget {
 		darkItem->module = module;
 		darkItem->theme = 1;
 		menu->addChild(darkItem);
+		
+		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
 	}	
 	
 	
