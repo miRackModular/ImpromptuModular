@@ -175,8 +175,8 @@ struct Foundry : Module {
 	Foundry() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		rightProducerMessage = producerMessage;
-		rightConsumerMessage = consumerMessage;
+		rightExpander.producerMessage = producerMessage;
+		rightExpander.consumerMessage = consumerMessage;
 
 		char strBuf[32];
 		const int numX = SequencerKernel::MAX_STEPS / 2;
@@ -431,7 +431,7 @@ struct Foundry : Module {
 		const float sampleRate = args.sampleRate;
 		static const float revertDisplayTime = 0.7f;// seconds
 		
-		bool expanderPresent = (rightModule && rightModule->model == modelFoundryExpander);
+		bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelFoundryExpander);
 		
 		
 		//********** Buttons, knobs, switches and inputs **********
@@ -1202,8 +1202,8 @@ struct Foundry : Module {
 			}
 			
 			// To Expander
-			if (rightModule && rightModule->model == modelFoundryExpander) {
-				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
+			if (rightExpander.module && rightExpander.module->model == modelFoundryExpander) {
+				float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
 				producerMessage[0] = (float)panelTheme;
 				producerMessage[1] = (((writeMode & 0x2) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 0].setBrightness()
 				producerMessage[2] = (((writeMode & 0x1) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 1].setBrightness()
@@ -1793,7 +1793,7 @@ struct FoundryWidget : ModuleWidget {
 				else {// DISP_NORMAL
 					if (module->isEditingSequence()) {
 						for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-							bool expanderPresent = (module->rightModule && module->rightModule->model == modelFoundryExpander);
+							bool expanderPresent = (module->rightExpander.module && module->rightExpander.module->model == modelFoundryExpander);
 							if (!expanderPresent || std::isnan(module->consumerMessage[Sequencer::NUM_TRACKS + trkn])) {
 								if (module->multiTracks || (trkn == module->seq.getTrackIndexEdit())) {
 									module->seq.setSeqIndexEdit(0, trkn);

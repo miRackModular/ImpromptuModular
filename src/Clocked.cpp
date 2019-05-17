@@ -303,7 +303,7 @@ struct Clocked : Module {
 	}
 	
 	void updatePulseSwingDelay() {
-		bool expanderPresent = (rightModule && rightModule->model == modelClockedExpander);
+		bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelClockedExpander);
 		for (int i = 0; i < 4; i++) {
 			// Pulse Width
 			pulseWidth[i] = params[PW_PARAMS + i].getValue();
@@ -337,8 +337,8 @@ struct Clocked : Module {
 	Clocked() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		rightProducerMessage = producerMessage;
-		rightConsumerMessage = consumerMessage;
+		rightExpander.producerMessage = producerMessage;
+		rightExpander.consumerMessage = consumerMessage;
 
 		configParam(RATIO_PARAMS + 0, (float)(bpmMin), (float)(bpmMax), 120.0f, "Master clock", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
@@ -712,8 +712,8 @@ struct Clocked : Module {
 				editingBpmMode = 0l;
 			
 			// To Expander
-			if (rightModule && rightModule->model == modelClockedExpander) {
-				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
+			if (rightExpander.module && rightExpander.module->model == modelClockedExpander) {
+				float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
 				producerMessage[0] = (float)panelTheme;
 				// no flip request needed here since expander will regularly call flips
 			}

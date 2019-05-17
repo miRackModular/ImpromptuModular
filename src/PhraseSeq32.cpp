@@ -215,8 +215,8 @@ struct PhraseSeq32 : Module {
 	PhraseSeq32() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		rightProducerMessage = producerMessage;
-		rightConsumerMessage = consumerMessage;
+		rightExpander.producerMessage = producerMessage;
+		rightExpander.consumerMessage = consumerMessage;
 
 		configParam(CONFIG_PARAM, 0.0f, 1.0f, PhraseSeq32::CONFIG_PARAM_INIT_VALUE, "Configuration (1, 2 chan)");
 		char strBuf[32];
@@ -670,7 +670,7 @@ struct PhraseSeq32 : Module {
 		static const float holdDetectTime = 2.0f;// seconds
 		static const float editGateLengthTime = 3.5f;// seconds
 		
-		bool expanderPresent = (rightModule && rightModule->model == modelPhraseSeqExpander);
+		bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelPhraseSeqExpander);
 
 		
 		//********** Buttons, knobs, switches and inputs **********
@@ -1601,8 +1601,8 @@ struct PhraseSeq32 : Module {
 			}
 			
 			// To Expander
-			if (rightModule && rightModule->model == modelPhraseSeqExpander) {
-				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
+			if (rightExpander.module && rightExpander.module->model == modelPhraseSeqExpander) {
+				float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
 				producerMessage[0] = (float)panelTheme;
 				// no flip request needed here since expander will regularly call flips
 			}
@@ -1915,7 +1915,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 				}
 				else if (module->displayState == PhraseSeq32::DISP_MODE) {
 					if (module->isEditingSequence()) {
-						bool expanderPresent = (module->rightModule && module->rightModule->model == modelPhraseSeqExpander);
+						bool expanderPresent = (module->rightExpander.module && module->rightExpander.module->model == modelPhraseSeqExpander);
 						if (!expanderPresent || std::isnan(module->consumerMessage[4])) {
 							module->sequences[module->seqIndexEdit].setRunMode(MODE_FWD);
 						}

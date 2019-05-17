@@ -174,8 +174,8 @@ struct GateSeq64 : Module {
 	GateSeq64() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		rightProducerMessage = producerMessage;
-		rightConsumerMessage = consumerMessage;
+		rightExpander.producerMessage = producerMessage;
+		rightExpander.consumerMessage = consumerMessage;
 
 		char strBuf[32];
 		// Step LED buttons and GateMode lights
@@ -690,7 +690,7 @@ struct GateSeq64 : Module {
 			}
 			
 			// Write CV inputs 
-			bool expanderPresent = (rightModule && rightModule->model == modelGateSeq64Expander);
+			bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelGateSeq64Expander);
 			if (expanderPresent) {
 				bool writeTrig = writeTrigger.process(consumerMessage[2]);
 				bool write0Trig = write0Trigger.process(consumerMessage[4]);
@@ -1159,8 +1159,8 @@ struct GateSeq64 : Module {
 			}
 			
 			// To Expander
-			if (rightModule && rightModule->model == modelGateSeq64Expander) {
-				float *producerMessage = reinterpret_cast<float*>(rightModule->leftProducerMessage);
+			if (rightExpander.module && rightExpander.module->model == modelGateSeq64Expander) {
+				float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
 				producerMessage[0] = (float)panelTheme;
 				// no flip request needed here since expander will regularly call flips
 			}

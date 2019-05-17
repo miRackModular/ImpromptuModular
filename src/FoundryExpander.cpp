@@ -56,8 +56,8 @@ struct FoundryExpander : Module {
 		configParam(SYNC_SEQCV_PARAM, 0.0f, 1.0f, 0.0f, "Sync Seq#");// 1.0f is top position
 		configParam(WRITEMODE_PARAM, 0.0f, 1.0f, 0.0f, "Write mode");
 	
-		leftProducerMessage = producerMessage;
-		leftConsumerMessage = consumerMessage;
+		leftExpander.producerMessage = producerMessage;
+		leftExpander.consumerMessage = consumerMessage;
 		
 		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
@@ -68,10 +68,10 @@ struct FoundryExpander : Module {
 		if (expanderRefreshCounter >= expanderRefreshStepSkips) {
 			expanderRefreshCounter = 0;
 			
-			bool motherPresent = leftModule && leftModule->model == modelFoundry;
+			bool motherPresent = leftExpander.module && leftExpander.module->model == modelFoundry;
 			if (motherPresent) {
 				// To Mother
-				float *producerMessage = reinterpret_cast<float*>(leftModule->rightProducerMessage);
+				float *producerMessage = reinterpret_cast<float*>(leftExpander.module->rightExpander.producerMessage);
 				int i = 0;
 				for (; i < GATECV_INPUT; i++) {
 					producerMessage[i] = (inputs[i].isConnected() ? inputs[i].getVoltage() : std::numeric_limits<float>::quiet_NaN());
@@ -81,7 +81,7 @@ struct FoundryExpander : Module {
 				}
 				producerMessage[i++] = params[SYNC_SEQCV_PARAM].getValue();
 				producerMessage[i++] = params[WRITEMODE_PARAM].getValue();
-				leftMessageFlipRequested = true;
+				leftExpander.messageFlipRequested = true;
 
 				// From Mother
 				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);

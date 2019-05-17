@@ -35,8 +35,8 @@ struct ClockedExpander : Module {
 	ClockedExpander() {
 		config(0, NUM_INPUTS, 0, 0);
 		
-		leftProducerMessage = producerMessage;
-		leftConsumerMessage = consumerMessage;
+		leftExpander.producerMessage = producerMessage;
+		leftExpander.consumerMessage = consumerMessage;
 		
 		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
@@ -47,14 +47,14 @@ struct ClockedExpander : Module {
 		if (expanderRefreshCounter >= expanderRefreshStepSkips) {
 			expanderRefreshCounter = 0;
 			
-			bool motherPresent = (leftModule && leftModule->model == modelClocked);
+			bool motherPresent = (leftExpander.module && leftExpander.module->model == modelClocked);
 			if (motherPresent) {
 				// To Mother
-				float *producerMessage = reinterpret_cast<float*>(leftModule->rightProducerMessage);
+				float *producerMessage = reinterpret_cast<float*>(leftExpander.module->rightExpander.producerMessage);
 				for (int i = 0; i < 8; i++) {
 					producerMessage[i] = inputs[i].getVoltage();
 				}
-				leftMessageFlipRequested = true;
+				leftExpander.messageFlipRequested = true;
 				
 				// From Mother
 				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);			

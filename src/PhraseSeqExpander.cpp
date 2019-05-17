@@ -38,8 +38,8 @@ struct PhraseSeqExpander : Module {
 	PhraseSeqExpander() {
 		config(0, NUM_INPUTS, 0, 0);
 		
-		leftProducerMessage = producerMessage;
-		leftConsumerMessage = consumerMessage;
+		leftExpander.producerMessage = producerMessage;
+		leftExpander.consumerMessage = consumerMessage;
 		
 		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
@@ -50,16 +50,16 @@ struct PhraseSeqExpander : Module {
 		if (expanderRefreshCounter >= expanderRefreshStepSkips) {
 			expanderRefreshCounter = 0;
 			
-			bool motherPresent = leftModule && (leftModule->model == modelPhraseSeq16 || leftModule->model == modelPhraseSeq32);
+			bool motherPresent = leftExpander.module && (leftExpander.module->model == modelPhraseSeq16 || leftExpander.module->model == modelPhraseSeq32);
 			if (motherPresent) {
 				// To Mother
-				float *producerMessage = reinterpret_cast<float*>(leftModule->rightProducerMessage);
+				float *producerMessage = reinterpret_cast<float*>(leftExpander.module->rightExpander.producerMessage);
 				int i = 0;
 				for (; i < NUM_INPUTS - 1; i++) {
 					producerMessage[i] = inputs[i].getVoltage();
 				}
 				producerMessage[i] = (inputs[i].isConnected() ? inputs[i].getVoltage() : std::numeric_limits<float>::quiet_NaN());
-				leftMessageFlipRequested = true;
+				leftExpander.messageFlipRequested = true;
 					
 				// From Mother
 				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
