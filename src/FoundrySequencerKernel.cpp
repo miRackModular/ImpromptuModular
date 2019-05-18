@@ -32,25 +32,25 @@ void SequencerKernel::construct(int _id, SequencerKernel *_masterKernel, bool* _
 
 
 void SequencerKernel::setGate(int stepn, bool newGate, int count) {
-	int endi = std::min(MAX_STEPS, stepn + count);
+	int endi = std::min<int>(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqIndexEdit][i].setGate(newGate);
 	dirty[seqIndexEdit] = 1;
 }
 void SequencerKernel::setGateP(int stepn, bool newGateP, int count) {
-	int endi = std::min(MAX_STEPS, stepn + count);
+	int endi = std::min<int>(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqIndexEdit][i].setGateP(newGateP);
 	dirty[seqIndexEdit] = 1;
 }
 void SequencerKernel::setSlide(int stepn, bool newSlide, int count) {
-	int endi = std::min(MAX_STEPS, stepn + count);
+	int endi = std::min<int>(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqIndexEdit][i].setSlide(newSlide);
 	dirty[seqIndexEdit] = 1;
 }
 void SequencerKernel::setTied(int stepn, bool newTied, int count) {
-	int endi = std::min(MAX_STEPS, stepn + count);
+	int endi = std::min<int>(MAX_STEPS, stepn + count);
 	if (!newTied) {
 		for (int i = stepn; i < endi; i++)
 			deactivateTiedStep(seqIndexEdit, i);
@@ -63,25 +63,25 @@ void SequencerKernel::setTied(int stepn, bool newTied, int count) {
 }
 
 void SequencerKernel::setGatePVal(int stepn, int gatePval, int count) {
-	int endi = std::min(MAX_STEPS, stepn + count);
+	int endi = std::min<int>(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqIndexEdit][i].setGatePVal(gatePval);
 	dirty[seqIndexEdit] = 1;
 }
 void SequencerKernel::setSlideVal(int stepn, int slideVal, int count) {
-	int endi = std::min(MAX_STEPS, stepn + count);
+	int endi = std::min<int>(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqIndexEdit][i].setSlideVal(slideVal);
 	dirty[seqIndexEdit] = 1;
 }
 void SequencerKernel::setVelocityVal(int stepn, int velocity, int count) {
-	int endi = std::min(MAX_STEPS, stepn + count);
+	int endi = std::min<int>(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqIndexEdit][i].setVelocityVal(velocity);
 	dirty[seqIndexEdit] = 1;
 }
 void SequencerKernel::setGateType(int stepn, int gateType, int count) {
-	int endi = std::min(MAX_STEPS, stepn + count);
+	int endi = std::min<int>(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++)
 		attributes[seqIndexEdit][i].setGateType(gateType);
 	dirty[seqIndexEdit] = 1;
@@ -102,7 +102,7 @@ float SequencerKernel::applyNewKey(int stepn, int newKeyIndex, int count) {// do
 	return newCV;
 }
 void SequencerKernel::writeCV(int stepn, float newCV, int count) {// does not overwrite tied steps
-	int endi = std::min(MAX_STEPS, stepn + count);
+	int endi = std::min<int>(MAX_STEPS, stepn + count);
 	for (int i = stepn; i < endi; i++) {
 		if (!attributes[seqIndexEdit][i].getTied()) {
 			cv[seqIndexEdit][i] = newCV;
@@ -144,7 +144,7 @@ void SequencerKernel::randomizeSequence() {
 }
 
 void SequencerKernel::copySequence(SeqCPbuffer* seqCPbuf, int startCP, int countCP) {
-	countCP = std::min(countCP, MAX_STEPS - startCP);
+	countCP = std::min<int>(countCP, MAX_STEPS - startCP);
 	for (int i = 0, stepn = startCP; i < countCP; i++, stepn++) {
 		seqCPbuf->cvCPbuffer[i] = cv[seqIndexEdit][stepn];
 		seqCPbuf->attribCPbuffer[i] = attributes[seqIndexEdit][stepn];
@@ -153,7 +153,7 @@ void SequencerKernel::copySequence(SeqCPbuffer* seqCPbuf, int startCP, int count
 	seqCPbuf->storedLength = countCP;
 }
 void SequencerKernel::pasteSequence(SeqCPbuffer* seqCPbuf, int startCP) {
-	int countCP = std::min(seqCPbuf->storedLength, MAX_STEPS - startCP);
+	int countCP = std::min<int>(seqCPbuf->storedLength, MAX_STEPS - startCP);
 	for (int i = 0, stepn = startCP; i < countCP; i++, stepn++) {
 		cv[seqIndexEdit][stepn] = seqCPbuf->cvCPbuffer[i];
 		attributes[seqIndexEdit][stepn] = seqCPbuf->attribCPbuffer[i];
@@ -163,7 +163,7 @@ void SequencerKernel::pasteSequence(SeqCPbuffer* seqCPbuf, int startCP) {
 	dirty[seqIndexEdit] = 1;
 }
 void SequencerKernel::copySong(SongCPbuffer* songCPbuf, int startCP, int countCP) {	
-	countCP = std::min(countCP, MAX_PHRASES - startCP);
+	countCP = std::min<int>(countCP, MAX_PHRASES - startCP);
 	for (int i = 0, phrn = startCP; i < countCP; i++, phrn++) {
 		songCPbuf->phraseCPbuffer[i] = phrases[phrn];
 	}
@@ -173,7 +173,7 @@ void SequencerKernel::copySong(SongCPbuffer* songCPbuf, int startCP, int countCP
 	songCPbuf->storedLength = countCP;
 }
 void SequencerKernel::pasteSong(SongCPbuffer* songCPbuf, int startCP) {	
-	int countCP = std::min(songCPbuf->storedLength, MAX_PHRASES - startCP);
+	int countCP = std::min<int>(songCPbuf->storedLength, MAX_PHRASES - startCP);
 	for (int i = 0, phrn = startCP; i < countCP; i++, phrn++) {
 		phrases[phrn] = songCPbuf->phraseCPbuffer[i];
 	}
