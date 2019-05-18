@@ -488,8 +488,8 @@ struct Clocked : Module {
 	}
 
 	
-	void onSampleRateChange(const ProcessArgs &args) {
-		sampleRate = (double)args.sampleRate;
+	void onSampleRateChange() override {
+		sampleRate = (double)(APP->engine->getSampleRate());
 		sampleTime = 1.0 / sampleRate;
 		resetClocked(false);
 	}		
@@ -921,7 +921,7 @@ struct ClockedWidget : ModuleWidget {
 				}
 				module->notifyInfo[dispIndex] = 0l;
 			}
-			SVGKnob::onChange(e);		
+			SvgKnob::onChange(e);		
 		}
 	};
 

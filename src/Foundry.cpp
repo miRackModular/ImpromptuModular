@@ -1730,13 +1730,13 @@ struct FoundryWidget : ModuleWidget {
 					module->multiSteps = false;
 				}
 			}
-			SVGSwitch::onChange(e);		
+			SvgSwitch::onChange(e);		
 		}
 	};
 	struct CPModeSwitch : CKSSThreeInvNoRandom {
 		CPModeSwitch() {};
 		void onChange(const event::Change &e) override {
-			SVGSwitch::onChange(e);	
+			SvgSwitch::onChange(e);	
 			if (paramQuantity) {
 				Foundry* module = dynamic_cast<Foundry*>(paramQuantity->module);			
 				module->cpSeqLength = module->getCPMode();
