@@ -76,7 +76,7 @@ struct WriteSeq32 : Module {
 	long clockIgnoreOnReset;
 
 
-	unsigned int lightRefreshCounter = 0;	
+	RefreshCounter refresh;	
 	Trigger clockTrigger;
 	Trigger resetTrigger;
 	Trigger runningTrigger;
@@ -275,11 +275,10 @@ struct WriteSeq32 : Module {
 			}
 		}
 		
-		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
-		
+		if (refresh.processInputs()) {
 			// Copy button
 			if (copyTrigger.process(params[COPY_PARAM].getValue())) {
-				infoCopyPaste = (long) (copyPasteInfoTime * args.sampleRate / displayRefreshStepSkips);
+				infoCopyPaste = (long) (copyPasteInfoTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
 				for (int s = 0; s < 32; s++) {
 					cvCPbuffer[s] = cv[indexChannel][s];
 					gateCPbuffer[s] = gates[indexChannel][s];
@@ -290,7 +289,7 @@ struct WriteSeq32 : Module {
 			if (pasteTrigger.process(params[PASTE_PARAM].getValue())) {
 				if (params[PASTESYNC_PARAM].getValue() < 0.5f || indexChannel == 3) {
 					// Paste realtime, no pending to schedule
-					infoCopyPaste = (long) (-1 * copyPasteInfoTime * args.sampleRate / displayRefreshStepSkips);
+					infoCopyPaste = (long) (-1 * copyPasteInfoTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
 					for (int s = 0; s < 32; s++) {
 						cv[indexChannel][s] = cvCPbuffer[s];
 						gates[indexChannel][s] = gateCPbuffer[s];
@@ -377,7 +376,6 @@ struct WriteSeq32 : Module {
 					}
 				}
 			}
-
 		}// userInputs refresh
 		
 		
@@ -392,7 +390,7 @@ struct WriteSeq32 : Module {
 				// Pending paste on clock or end of seq
 				if ( ((pendingPaste&0x3) == 1) || ((pendingPaste&0x3) == 2 && indexStep == 0) ) {
 					int pasteChannel = pendingPaste>>2;
-					infoCopyPaste = (long) (-1 * copyPasteInfoTime * args.sampleRate / displayRefreshStepSkips);
+					infoCopyPaste = (long) (-1 * copyPasteInfoTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
 					for (int s = 0; s < 32; s++) {
 						cv[pasteChannel][s] = cvCPbuffer[s];
 						gates[pasteChannel][s] = gateCPbuffer[s];
@@ -436,10 +434,8 @@ struct WriteSeq32 : Module {
 			}
 		}
 
-		lightRefreshCounter++;
-		if (lightRefreshCounter >= displayRefreshStepSkips) {
-			lightRefreshCounter = 0;
-
+		// lights
+		if (refresh.processLights()) {
 			int index = (indexChannel == 3 ? indexStepStage : indexStep);
 			// Window lights
 			for (int i = 0; i < 4; i++) {

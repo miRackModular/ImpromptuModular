@@ -150,7 +150,7 @@ struct PhraseSeq16 : Module {
 	int ppqnCount;
 
 	
-	unsigned int lightRefreshCounter = 0;
+	RefreshCounter refresh;
 	float resetLight = 0.0f;
 	int sequenceKnob = 0;
 	Trigger resetTrigger;
@@ -722,8 +722,7 @@ struct PhraseSeq16 : Module {
 			displayState = DISP_NORMAL;
 		}
 
-		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
-
+		if (refresh.processInputs()) {
 			// Seq CV input
 			if (inputs[SEQCV_INPUT].isConnected()) {
 				if (seqCVmethod == 0) {// 0-10 V
@@ -783,16 +782,16 @@ struct PhraseSeq16 : Module {
 							phraseCPbuffer[i] = phrase[p];
 						seqCopied = false;// so that a cross paste can be detected
 					}
-					infoCopyPaste = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
+					infoCopyPaste = (long) (revertDisplayTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					displayState = DISP_NORMAL;
 				}
 				else
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}
 			// Paste button
 			if (pasteTrigger.process(params[PASTE_PARAM].getValue())) {
 				if (!attached) {
-					infoCopyPaste = (long) (-1 * revertDisplayTime * sampleRate / displayRefreshStepSkips);
+					infoCopyPaste = (long) (-1 * revertDisplayTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					startCP = 0;
 					if (countCP <= 8) {
 						startCP = editingSequence ? stepIndexEdit : phraseIndexEdit;
@@ -862,7 +861,7 @@ struct PhraseSeq16 : Module {
 					displayState = DISP_NORMAL;
 				}
 				else
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}
 
 			// Write input (must be before Left and Right in case route gate simultaneously to Right and Write for example)
@@ -874,7 +873,7 @@ struct PhraseSeq16 : Module {
 						cv[seqIndexEdit][stepIndexEdit] = inputs[CV_INPUT].getVoltage();
 						propagateCVtoTied(seqIndexEdit, stepIndexEdit);
 					}
-					editingGate = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+					editingGate = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					editingGateCV = inputs[CV_INPUT].getVoltage();// cv[seqIndexEdit][stepIndexEdit];
 					editingGateKeyLight = -1;
 					// Autostep (after grab all active inputs)
@@ -904,7 +903,7 @@ struct PhraseSeq16 : Module {
 						stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + delta, 16);
 						if (!attributes[seqIndexEdit][stepIndexEdit].getTied()) {// play if non-tied step
 							if (!writeTrig) {// in case autostep when simultaneous writeCV and stepCV (keep what was done in Write Input block above)
-								editingGate = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+								editingGate = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 								editingGateCV = cv[seqIndexEdit][stepIndexEdit];
 								editingGateKeyLight = -1;
 							}
@@ -930,14 +929,14 @@ struct PhraseSeq16 : Module {
 						sequences[seqIndexEdit].setLength(stepPressed + 1);
 					else
 						phrases = stepPressed + 1;
-					revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
+					revertDisplay = (long) (revertDisplayTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				}
 				else {
 					if (!running || !attached) {// not running or detached
 						if (editingSequence) {
 							stepIndexEdit = stepPressed;
 							if (!attributes[seqIndexEdit][stepIndexEdit].getTied()) {// play if non-tied step
-								editingGate = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+								editingGate = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 								editingGateCV = cv[seqIndexEdit][stepIndexEdit];
 								editingGateKeyLight = -1;
 							}
@@ -949,7 +948,7 @@ struct PhraseSeq16 : Module {
 						}
 					}
 					else if (attached)
-						attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+						attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					displayState = DISP_NORMAL;
 				}
 			} 
@@ -965,10 +964,10 @@ struct PhraseSeq16 : Module {
 						displayState = DISP_MODE;
 					else
 						displayState = DISP_NORMAL;
-					modeHoldDetect.start((long) (holdDetectTime * sampleRate / displayRefreshStepSkips));
+					modeHoldDetect.start((long) (holdDetectTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 				}
 				else
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}
 			
 			// Transpose/Rotate button
@@ -984,7 +983,7 @@ struct PhraseSeq16 : Module {
 						displayState = DISP_NORMAL;
 				}
 				else if (attached)
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}			
 			
 			// Sequence knob  
@@ -998,7 +997,7 @@ struct PhraseSeq16 : Module {
 					// any changes in here should may also require right click behavior to be updated in the knob's onMouseDown()
 					if (editingPpqn != 0) {
 						pulsesPerStep = indexToPps(ppsToIndex(pulsesPerStep) + deltaKnob);// indexToPps() does clamping
-						editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
+						editingPpqn = (long) (editGateLengthTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					}
 					else if (displayState == DISP_MODE) {
 						if (editingSequence) {
@@ -1057,7 +1056,7 @@ struct PhraseSeq16 : Module {
 							if (!attached || (attached && !running))
 								phrase[phraseIndexEdit] = clamp(phrase[phraseIndexEdit] + deltaKnob, 0, 16 - 1);
 							else
-								attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+								attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 							
 						}
 					}
@@ -1071,11 +1070,11 @@ struct PhraseSeq16 : Module {
 					if (editingSequence) {
 						displayState = DISP_NORMAL;
 						if (attributes[seqIndexEdit][stepIndexEdit].getTied())
-							tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+							tiedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 						else {			
 							cv[seqIndexEdit][stepIndexEdit] = applyNewOct(cv[seqIndexEdit][stepIndexEdit], 6 - i);
 							propagateCVtoTied(seqIndexEdit, stepIndexEdit);
-							editingGate = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+							editingGate = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 							editingGateCV = cv[seqIndexEdit][stepIndexEdit];
 							editingGateKeyLight = -1;
 						}
@@ -1095,26 +1094,26 @@ struct PhraseSeq16 : Module {
 								attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
 								if (paramQuantities[KEY_PARAMS + i]->getMaxValue() > 1.5f) {// if double-click
 									stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
-									editingType = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+									editingType = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 									editingGateKeyLight = i;
 									if ((APP->window->getMods() & RACK_MOD_MASK) == RACK_MOD_CTRL)
 										attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
 								}
 							}
 							else
-								editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
+								editingPpqn = (long) (editGateLengthTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 						}
 						else if (attributes[seqIndexEdit][stepIndexEdit].getTied()) {
 							if (paramQuantities[KEY_PARAMS + i]->getMaxValue() > 1.5f)// if double-click
 								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 16);
 							else
-								tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+								tiedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 						}
 						else {	
 							float newCV = std::floor(cv[seqIndexEdit][stepIndexEdit]) + ((float) i) / 12.0f;
 							cv[seqIndexEdit][stepIndexEdit] = newCV;
 							propagateCVtoTied(seqIndexEdit, stepIndexEdit);
-							editingGate = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+							editingGate = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 							editingGateCV = cv[seqIndexEdit][stepIndexEdit];
 							editingGateKeyLight = -1;
 							if (paramQuantities[KEY_PARAMS + i]->getMaxValue() > 1.5f) {// if double-click
@@ -1153,7 +1152,7 @@ struct PhraseSeq16 : Module {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (attributes[seqIndexEdit][stepIndexEdit].getTied())
-						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+						tiedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					else
 						attributes[seqIndexEdit][stepIndexEdit].toggleGate1P();
 				}
@@ -1168,7 +1167,7 @@ struct PhraseSeq16 : Module {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (attributes[seqIndexEdit][stepIndexEdit].getTied())
-						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+						tiedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					else
 						attributes[seqIndexEdit][stepIndexEdit].toggleSlide();
 				}
@@ -1184,7 +1183,6 @@ struct PhraseSeq16 : Module {
 					}
 				}
 			}
-		
 		}// userInputs refresh
 		
 		
@@ -1281,10 +1279,8 @@ struct PhraseSeq16 : Module {
 		if (slideStepsRemain > 0ul)
 			slideStepsRemain--;
 		
-		lightRefreshCounter++;
-		if (lightRefreshCounter >= displayRefreshStepSkips) {
-			lightRefreshCounter = 0;
-
+		// lights
+		if (refresh.processLights()) {
 			// Step/phrase lights
 			for (int i = 0; i < 16; i++) {
 				float red = 0.0f;
@@ -1356,7 +1352,7 @@ struct PhraseSeq16 : Module {
 					lights[OCTAVE_LIGHTS + i].setBrightness(0.0f);
 				else {
 					if (tiedWarning > 0l) {
-						bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
+						bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 						lights[OCTAVE_LIGHTS + i].setBrightness((warningFlashState && (i == (6 - octLightIndex))) ? 1.0f : 0.0f);
 					}
 					else				
@@ -1388,7 +1384,7 @@ struct PhraseSeq16 : Module {
 					float red = editingGateLength > 0l ? 0.45f : 1.0f;
 					if (editingType > 0ul) {
 						if (i == editingGateKeyLight) {
-							float dimMult = ((float) editingType / (float)(gateTime * sampleRate / displayRefreshStepSkips));
+							float dimMult = ((float) editingType / (float)(gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 							setGreenRed(KEY_LIGHTS + i * 2, green * dimMult, red * dimMult);
 						}
 						else
@@ -1413,12 +1409,12 @@ struct PhraseSeq16 : Module {
 						lights[KEY_LIGHTS + i * 2 + 1].setBrightness(0.0f);
 					else {
 						if (tiedWarning > 0l) {
-							bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
+							bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 							lights[KEY_LIGHTS + i * 2 + 1].setBrightness((warningFlashState && i == keyLightIndex) ? 1.0f : 0.0f);
 						}
 						else {
 							if (editingGate > 0ul && editingGateKeyLight != -1)
-								lights[KEY_LIGHTS + i * 2 + 1].setBrightness(i == editingGateKeyLight ? ((float) editingGate / (float)(gateTime * sampleRate / displayRefreshStepSkips)) : 0.0f);
+								lights[KEY_LIGHTS + i * 2 + 1].setBrightness(i == editingGateKeyLight ? ((float) editingGate / (float)(gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips)) : 0.0f);
 							else
 								lights[KEY_LIGHTS + i * 2 + 1].setBrightness(i == keyLightIndex ? 1.0f : 0.0f);
 						}
@@ -1455,7 +1451,7 @@ struct PhraseSeq16 : Module {
 				setGreenRed(GATE1_PROB_LIGHT, attributesVal.getGate1P() ? 1.0f : 0.0f, attributesVal.getGate1P() ? 1.0f : 0.0f);
 				lights[SLIDE_LIGHT].setBrightness(attributesVal.getSlide() ? 1.0f : 0.0f);
 				if (tiedWarning > 0l) {
-					bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
+					bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 					lights[TIE_LIGHT].setBrightness(warningFlashState ? 1.0f : 0.0f);
 				}
 				else
@@ -1464,14 +1460,14 @@ struct PhraseSeq16 : Module {
 			
 			// Attach light
 			if (attachedWarning > 0l) {
-				bool warningFlashState = calcWarningFlash(attachedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
+				bool warningFlashState = calcWarningFlash(attachedWarning, (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 				lights[ATTACH_LIGHT].setBrightness(warningFlashState ? 1.0f : 0.0f);
 			}
 			else
 				lights[ATTACH_LIGHT].setBrightness(attached ? 1.0f : 0.0f);
 			
 			// Reset light
-			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * displayRefreshStepSkips);	
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * RefreshCounter::displayRefreshStepSkips);	
 			resetLight = 0.0f;
 			
 			// Run light
@@ -1495,7 +1491,7 @@ struct PhraseSeq16 : Module {
 				attachedWarning--;
 			if (modeHoldDetect.process(params[RUNMODE_PARAM].getValue())) {
 				displayState = DISP_NORMAL;
-				editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
+				editingPpqn = (long) (editGateLengthTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}
 			if (revertDisplay > 0l) {
 				if (revertDisplay == 1)
@@ -1804,7 +1800,7 @@ struct PhraseSeq16Widget : ModuleWidget {
 				// same code structure below as in sequence knob in main step()
 				if (module->editingPpqn != 0) {
 					module->pulsesPerStep = 1;
-					//editingPpqn = (long) (editGateLengthTime * sampleRate / displayRefreshStepSkips);
+					//editingPpqn = (long) (editGateLengthTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				}
 				else if (module->displayState == PhraseSeq16::DISP_MODE) {
 					if (module->isEditingSequence()) {

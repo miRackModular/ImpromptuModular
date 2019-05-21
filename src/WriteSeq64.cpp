@@ -77,7 +77,7 @@ struct WriteSeq64 : Module {
 	long clockIgnoreOnReset;
 
 
-	unsigned int lightRefreshCounter = 0;	
+	RefreshCounter refresh;	
 	int stepKnob = 0;
 	int stepsKnob = 0;
 	float resetLight = 0.0f;
@@ -294,11 +294,10 @@ struct WriteSeq64 : Module {
 			}
 		}
 	
-		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
-		
+		if (refresh.processInputs()) {
 			// Copy button
 			if (copyTrigger.process(params[COPY_PARAM].getValue())) {
-				infoCopyPaste = (long) (copyPasteInfoTime * args.sampleRate / displayRefreshStepSkips);
+				infoCopyPaste = (long) (copyPasteInfoTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
 				for (int s = 0; s < 64; s++) {
 					cvCPbuffer[s] = cv[indexChannel][s];
 					gateCPbuffer[s] = gates[indexChannel][s];
@@ -310,7 +309,7 @@ struct WriteSeq64 : Module {
 			if (pasteTrigger.process(params[PASTE_PARAM].getValue())) {
 				if (params[PASTESYNC_PARAM].getValue() < 0.5f || indexChannel == 4) {
 					// Paste realtime, no pending to schedule
-					infoCopyPaste = (long) (-1 * copyPasteInfoTime * args.sampleRate / displayRefreshStepSkips);
+					infoCopyPaste = (long) (-1 * copyPasteInfoTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
 					for (int s = 0; s < 64; s++) {
 						cv[indexChannel][s] = cvCPbuffer[s];
 						gates[indexChannel][s] = gateCPbuffer[s];
@@ -384,7 +383,6 @@ struct WriteSeq64 : Module {
 					indexStep[indexChannel] = moveIndex(indexStep[indexChannel], indexStep[indexChannel] + 1, indexSteps[indexChannel]); 
 				}
 			}
-		
 		}// userInputs refresh
 		
 		
@@ -409,7 +407,7 @@ struct WriteSeq64 : Module {
 			if ( ((pendingPaste&0x3) == 1) || ((pendingPaste&0x3) == 2 && indexStep[indexChannel] == 0) ) {
 				if ( (clk12step && (indexChannel == 0 || indexChannel == 1)) ||
 					 (clk34step && (indexChannel == 2 || indexChannel == 3)) ) {
-					infoCopyPaste = (long) (-1 * copyPasteInfoTime * args.sampleRate / displayRefreshStepSkips);
+					infoCopyPaste = (long) (-1 * copyPasteInfoTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
 					int pasteChannel = pendingPaste>>2;
 					for (int s = 0; s < 64; s++) {
 						cv[pasteChannel][s] = cvCPbuffer[s];
@@ -461,10 +459,8 @@ struct WriteSeq64 : Module {
 			}
 		}
 		
-		lightRefreshCounter++;
-		if (lightRefreshCounter >= displayRefreshStepSkips) {
-			lightRefreshCounter = 0;
-
+		// lights
+		if (refresh.processLights()) {
 			// Gate light
 			float green = 0.0f;
 			float red = 0.0f;
@@ -476,7 +472,7 @@ struct WriteSeq64 : Module {
 			lights[GATE_LIGHT + 1].setBrightness(red);
 			
 			// Reset light
-			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * displayRefreshStepSkips);	
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * RefreshCounter::displayRefreshStepSkips);	
 			resetLight = 0.0f;
 
 			// Run light

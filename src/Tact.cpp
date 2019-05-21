@@ -54,7 +54,7 @@ struct Tact : Module {
 	
 	
 	float infoCVinLight[2] = {0.0f, 0.0f};
-	unsigned int lightRefreshCounter = 0;
+	RefreshCounter refresh;
 	Trigger topTriggers[2];
 	Trigger botTriggers[2];
 	Trigger topInvTriggers[2];
@@ -168,18 +168,15 @@ struct Tact : Module {
 
 	
 	void process(const ProcessArgs &args) override {		
-		float sampleRate = args.sampleRate;
-		float sampleTime = args.sampleTime;
 		static const float storeInfoTime = 0.5f;// seconds	
 	
-		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
-		
+		if (refresh.processInputs()) {
 			// store buttons
 			for (int i = 0; i < 2; i++) {
 				if (storeTriggers[i].process(params[STORE_PARAMS + i].getValue())) {
 					if ( !(i == 1 && isLinked()) ) {// ignore right channel store-button press when linked
 						storeCV[i] = cv[i];
-						infoStore = (long) (storeInfoTime * sampleRate / displayRefreshStepSkips) * (i == 0 ? 1l : -1l);
+						infoStore = (long) (storeInfoTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips) * (i == 0 ? 1l : -1l);
 					}
 				}
 			}
@@ -219,7 +216,6 @@ struct Tact : Module {
 					}				
 				}
 			}
-			
 		}// userInputs refresh
 		
 		
@@ -229,7 +225,7 @@ struct Tact : Module {
 			float newParamValue = clamp(params[TACT_PARAMS + i].getValue(), 0.0f, 10.0f);
 			if (newParamValue != cv[i]) {
 				double transitionRate = params[RATE_PARAMS + i].getValue() * rateMultiplier; // s/V
-				double dt = sampleTime;
+				double dt = args.sampleTime;
 				if ((newParamValue - cv[i]) > 0.001f && transitionRate > 0.001) {
 					double dV = expSliding ? (cv[i] + 1.0) * (pow(11.0, dt / (10.0 * transitionRate)) - 1.0) : dt/transitionRate;
 					double newCV = cv[i] + dV;
@@ -261,7 +257,7 @@ struct Tact : Module {
 		
 	
 		// CV and EOC Outputs
-		bool eocValues[2] = {eocPulses[0].process((float)sampleTime), eocPulses[1].process((float)sampleTime)};
+		bool eocValues[2] = {eocPulses[0].process(args.sampleTime), eocPulses[1].process(args.sampleTime)};
 		for (int i = 0; i < 2; i++) {
 			int readChan = isLinked() ? 0 : i;
 			outputs[CV_OUTPUTS + i].setVoltage((float)cv[readChan] * params[ATTV_PARAMS + readChan].getValue());
@@ -269,17 +265,15 @@ struct Tact : Module {
 		}
 		
 		
-		lightRefreshCounter++;
-		if (lightRefreshCounter >= displayRefreshStepSkips) {
-			lightRefreshCounter = 0;
-
+		// lights
+		if (refresh.processLights()) {
 			// Tactile lights
 			if (infoStore > 0l)
-				setTLightsStore(0, infoStore, (long) (storeInfoTime * sampleRate / displayRefreshStepSkips) );
+				setTLightsStore(0, infoStore, (long) (storeInfoTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips) );
 			else
 				setTLights(0);
 			if (infoStore < 0l)
-				setTLightsStore(1, infoStore * -1l, (long) (storeInfoTime * sampleRate / displayRefreshStepSkips) );
+				setTLightsStore(1, infoStore * -1l, (long) (storeInfoTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips) );
 			else
 				setTLights(1);
 			if (infoStore != 0l) {
@@ -290,7 +284,7 @@ struct Tact : Module {
 			}
 			// CV input lights
 			for (int i = 0; i < 2; i++)
-				lights[CVIN_LIGHTS + i * 2].setSmoothBrightness(infoCVinLight[i], sampleTime * displayRefreshStepSkips);
+				lights[CVIN_LIGHTS + i * 2].setSmoothBrightness(infoCVinLight[i], args.sampleTime * RefreshCounter::displayRefreshStepSkips);
 			
 			for (int i = 0; i < 2; i++) {
 				infoCVinLight[i] = 0.0f;
@@ -567,7 +561,7 @@ struct Tact1 : Module {
 	float rateMultiplier;
 
 	// No need to save
-	unsigned int lightRefreshCounter = 0;	
+	RefreshCounter refresh;	
 	
 	inline bool isExpSliding(void) {return params[EXP_PARAM].getValue() > 0.5f;}
 
@@ -633,14 +627,12 @@ struct Tact1 : Module {
 
 	
 	void process(const ProcessArgs &args) override {		
-		float sampleTime = args.sampleTime;
-		
 		// cv
 		bool expSliding = isExpSliding();
 		float newParamValue = clamp(params[TACT_PARAM].getValue(), 0.0f, 10.0f);
 		if (newParamValue != cv) {
 			double transitionRate = params[RATE_PARAM].getValue() * rateMultiplier; // s/V
-			double dt = sampleTime;
+			double dt = args.sampleTime;
 			if ((newParamValue - cv) > 0.001f && transitionRate > 0.001) {
 				double dV = expSliding ? (cv + 1.0) * (pow(11.0, dt / (10.0 * transitionRate)) - 1.0) : dt/transitionRate;
 				double newCV = cv + dV;
@@ -668,10 +660,8 @@ struct Tact1 : Module {
 		outputs[CV_OUTPUT].setVoltage((float)cv * params[ATTV_PARAM].getValue());
 		
 		
-		lightRefreshCounter++;
-		if (lightRefreshCounter >= displayRefreshStepSkips) {
-			lightRefreshCounter = 0;
-
+		// lights
+		if (refresh.processLights()) {
 			setTLights();
 		}
 	}

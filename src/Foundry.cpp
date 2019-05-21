@@ -126,7 +126,7 @@ struct Foundry : Module {
 	int cpSongStart;// no need to initialize
 	
 
-	unsigned int lightRefreshCounter = 0;
+	RefreshCounter refresh;
 	float resetLight = 0.0f;
 	int sequenceKnob = 0;
 	int velocityKnob = 0;
@@ -452,8 +452,7 @@ struct Foundry : Module {
 			displayState = DISP_NORMAL;
 		}
 
-		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
-			
+		if (refresh.processInputs()) {
 			// Track CV input
 			float trkCVin = consumerMessage[Sequencer::NUM_TRACKS * 2 + 0];
 			if (expanderPresent && !std::isnan(trkCVin)) {
@@ -525,10 +524,10 @@ struct Foundry : Module {
 						}
 					}
 					if (displayState != DISP_COPY_SONG_CUST)
-						revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
+						revertDisplay = (long) (revertDisplayTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				}
 				else
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}
 			// Paste 
 			if (pasteTrigger.process(params[PASTE_PARAM].getValue())) {
@@ -544,10 +543,10 @@ struct Foundry : Module {
 						}
 					}
 					if (displayState != DISP_COPY_SONG_CUST)
-						revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
+						revertDisplay = (long) (revertDisplayTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				}
 				else
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}			
 			
 
@@ -612,7 +611,7 @@ struct Foundry : Module {
 					if (editingSequence) {
 						seq.setLength(stepPressed + 1, multiTracks);
 					}
-					revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
+					revertDisplay = (long) (revertDisplayTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				}
 				else {
 					if (!running || !attached) {// not running or detached
@@ -631,7 +630,7 @@ struct Foundry : Module {
 						}
 					}
 					else if (attached)
-						attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+						attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				}
 			}
 			
@@ -644,7 +643,7 @@ struct Foundry : Module {
 						displayState = DISP_NORMAL;
 				}
 				else
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}
 			
 			// Clk res/delay button
@@ -658,7 +657,7 @@ struct Foundry : Module {
 						displayState = DISP_NORMAL;
 				}
 				else
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}
 			
 			// Transpose/Rotate button
@@ -674,7 +673,7 @@ struct Foundry : Module {
 						displayState = DISP_NORMAL;
 				}
 				else if (attached)
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}			
 
 			// Begin/End buttons
@@ -684,7 +683,7 @@ struct Foundry : Module {
 					displayState = DISP_NORMAL;
 				}
 				else if (attached)
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}	
 			if (endTrigger.process(params[END_PARAM].getValue())) {
 				if (!editingSequence && !attached) {
@@ -692,7 +691,7 @@ struct Foundry : Module {
 					displayState = DISP_NORMAL;
 				}
 				else if (attached)
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}	
 
 			// Rep/Len button
@@ -704,7 +703,7 @@ struct Foundry : Module {
 						displayState = DISP_NORMAL;
 				}
 				else
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}	
 
 			// Track Inc/Dec buttons
@@ -726,7 +725,7 @@ struct Foundry : Module {
 					}
 					else {
 						multiTracks = false;
-						attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+						attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					}
 				}
 			}	
@@ -737,7 +736,7 @@ struct Foundry : Module {
 					multiSteps = !multiSteps;
 				else if (attached) {
 					multiSteps = false;
-					attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+					attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				}
 			}	
 			
@@ -832,7 +831,7 @@ struct Foundry : Module {
 							if (!attached || (attached && !running))
 								seq.modPhraseSeqNum(deltaSeqKnob, multiTracks);
 							else
-								attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+								attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 						}
 					}	
 				}
@@ -874,7 +873,7 @@ struct Foundry : Module {
 							}
 						}
 						else if (attached)
-							attachedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+							attachedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					}
 				}
 				phraseKnob = newPhraseKnob;
@@ -887,7 +886,7 @@ struct Foundry : Module {
 					if (editingSequence) {
 						displayState = DISP_NORMAL;
 						if (seq.applyNewOctave(6 - octn, multiSteps ? cpSeqLength : 1, sampleRate, multiTracks))
-							tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+							tiedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					}
 				}
 			}
@@ -904,7 +903,7 @@ struct Foundry : Module {
 						}
 						else {
 							if (seq.applyNewKey(keyn, multiSteps ? cpSeqLength : 1, sampleRate, autostepClick, multiTracks))
-								tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+								tiedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 						}							
 					}
 				}
@@ -921,7 +920,7 @@ struct Foundry : Module {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (seq.toggleGateP(multiSteps ? cpSeqLength : 1, multiTracks)) 
-						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+						tiedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					else if (seq.getAttribute(true).getGateP())
 						velEditMode = 1;
 				}
@@ -930,7 +929,7 @@ struct Foundry : Module {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (seq.toggleSlide(multiSteps ? cpSeqLength : 1, multiTracks))
-						tiedWarning = (long) (warningTime * sampleRate / displayRefreshStepSkips);
+						tiedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					else if (seq.getAttribute(true).getSlide())
 						velEditMode = 2;
 				}
@@ -943,7 +942,6 @@ struct Foundry : Module {
 			}		
 			
 			calcClkInSources();
-			
 		}// userInputs refresh
 		
 		
@@ -994,10 +992,7 @@ struct Foundry : Module {
 		}
 
 		// lights
-		lightRefreshCounter++;
-		if (lightRefreshCounter >= displayRefreshStepSkips) {
-			lightRefreshCounter = 0;
-		
+		if (refresh.processLights()) {
 			// Prepare values to visualize
 			StepAttributes attributesVisual;
 			attributesVisual.clear();
@@ -1083,7 +1078,7 @@ struct Foundry : Module {
 				float red = 0.0f;
 				if (editingSequence || (attached && running)) {
 					if (tiedWarning > 0l) {
-						bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
+						bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 						red = (warningFlashState && (i == (6 - octLightIndex))) ? 1.0f : 0.0f;
 					}
 					else				
@@ -1111,7 +1106,7 @@ struct Foundry : Module {
 						unsigned long editingType = seq.getEditingType();
 						if (editingType > 0ul) {
 							if (i == seq.getEditingGateKeyLight()) {
-								float dimMult = ((float) editingType / (float)(Sequencer::gateTime * sampleRate / displayRefreshStepSkips));
+								float dimMult = ((float) editingType / (float)(Sequencer::gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 								green *= dimMult;
 								red *= dimMult;
 							}
@@ -1130,7 +1125,7 @@ struct Foundry : Module {
 					}
 					else {
 						if (tiedWarning > 0l) {
-							bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
+							bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 							red = (warningFlashState && i == keyLightIndex) ? 1.0f : 0.0f;
 						}
 						else {
@@ -1147,7 +1142,7 @@ struct Foundry : Module {
 			else 
 				setGreenRed(GATE_LIGHT, editingGates ? 1.0f : 0.0f, editingGates ? 0.45f : 1.0f);
 			if (tiedWarning > 0l) {
-				bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
+				bool warningFlashState = calcWarningFlash(tiedWarning, (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 				lights[TIE_LIGHT].setBrightness(warningFlashState ? 1.0f : 0.0f);
 			}
 			else
@@ -1159,7 +1154,7 @@ struct Foundry : Module {
 			lights[SLIDE_LIGHT].setBrightness(attributesVisual.getSlide() ? 1.0f : 0.0f);
 			
 			// Reset light
-			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * displayRefreshStepSkips);
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * RefreshCounter::displayRefreshStepSkips);
 			resetLight = 0.0f;
 			
 			// Run light
@@ -1167,7 +1162,7 @@ struct Foundry : Module {
 
 			// Attach light
 			if (attachedWarning > 0l) {
-				bool warningFlashState = calcWarningFlash(attachedWarning, (long) (warningTime * sampleRate / displayRefreshStepSkips));
+				bool warningFlashState = calcWarningFlash(attachedWarning, (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 				lights[ATTACH_LIGHT].setBrightness(warningFlashState ? 1.0f : 0.0f);
 			}
 			else

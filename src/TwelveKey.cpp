@@ -53,7 +53,7 @@ struct TwelveKey : Module {
 	int lastKeyPressed;// 0 to 11
 
 	
-	unsigned int lightRefreshCounter = 0;
+	RefreshCounter refresh;
 	//float gateLight = 0.0f;
 	Trigger keyTriggers[12];
 	Trigger gateInputTrigger;
@@ -151,8 +151,7 @@ struct TwelveKey : Module {
 		bool upOctTrig = false;
 		bool downOctTrig = false;
 		
-		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
-		
+		if (refresh.processInputs()) {
 			// Octave buttons and input
 			upOctTrig = octIncTrigger.process(params[OCTINC_PARAM].getValue());
 			downOctTrig = octDecTrigger.process(params[OCTDEC_PARAM].getValue());
@@ -162,11 +161,10 @@ struct TwelveKey : Module {
 				if (keyTriggers[i].process(params[KEY_PARAMS + i].getValue())) {
 					cv = ((float)(octaveNum - 4)) + ((float) i) / 12.0f;
 					stateInternal = true;
-					noteLightCounter = (unsigned long) (noteLightTime * args.sampleRate / displayRefreshStepSkips);
+					noteLightCounter = (unsigned long) (noteLightTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
 					lastKeyPressed = i;
 				}
 			}
-		
 		}// userInputs refresh
 		
 		
@@ -201,10 +199,8 @@ struct TwelveKey : Module {
 		// Octave output
 		outputs[OCT_OUTPUT].setVoltage(std::round( (float)(octaveNum + 1) ));
 		
-		lightRefreshCounter++;
-		if (lightRefreshCounter >= displayRefreshStepSkips) {
-			lightRefreshCounter = 0;
-
+		// lights
+		if (refresh.processLights()) {
 			// Key lights
 			for (int i = 0; i < 12; i++)
 				lights[KEY_LIGHTS + i].setBrightness(( i == lastKeyPressed && (noteLightCounter > 0ul || params[KEY_PARAMS + i].getValue() > 0.5f)) ? 1.0f : 0.0f);

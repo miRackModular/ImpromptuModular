@@ -110,7 +110,7 @@ struct GateSeq64 : Module {
 	long editingPhraseSongRunning;// downward step counter
 
 	int stepConfigSync = 0;// 0 means no sync requested, 1 means soft sync (no reset lengths), 2 means hard (reset lengths)
-	unsigned int lightRefreshCounter = 0;
+	RefreshCounter refresh;
 	float resetLight = 0.0f;
 	int sequenceKnob = 0;
 	Trigger modesTrigger;
@@ -559,8 +559,7 @@ struct GateSeq64 : Module {
 			displayState = DISP_GATE;
 		}
 		
-		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
-			
+		if (refresh.processInputs()) {
 			// Edit mode blink when change
 			if (editingSequenceTrigger.process(editingSequence))
 				blinkNum = blinkNumInit;
@@ -617,13 +616,13 @@ struct GateSeq64 : Module {
 						phraseCPbuffer[i] = phrase[p];
 					seqCopied = false;// so that a cross paste can be detected
 				}
-				infoCopyPaste = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
+				infoCopyPaste = (long) (revertDisplayTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				displayState = DISP_GATE;
 				blinkNum = blinkNumInit;
 			}
 			// Paste button
 			if (pasteTrigger.process(params[PASTE_PARAM].getValue())) {
-				infoCopyPaste = (long) (-1 * revertDisplayTime * sampleRate / displayRefreshStepSkips);
+				infoCopyPaste = (long) (-1 * revertDisplayTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				startCP = 0;
 				if (countCP <= 8) {
 					startCP = editingSequence ? stepIndexEdit : phraseIndexEdit;
@@ -738,7 +737,7 @@ struct GateSeq64 : Module {
 				if (editingSequence) {
 					if (displayState == DISP_LENGTH) {
 						sequences[sequence].setLength(stepPressed % (16 * stepConfig) + 1);
-						revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
+						revertDisplay = (long) (revertDisplayTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					}
 					else if (displayState == DISP_MODES) {
 					}
@@ -747,7 +746,7 @@ struct GateSeq64 : Module {
 						/*if (!attributes[sequence][stepPressed].getGate()) {// clicked inactive, so turn gate on
 							attributes[sequence][stepPressed].setGate(true);
 							if (attributes[sequence][stepPressed].getGateP())
-								displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+								displayProbInfo = (long) (displayProbInfoTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 							else
 								displayProbInfo = 0l;
 						}
@@ -758,7 +757,7 @@ struct GateSeq64 : Module {
 							}
 							else {
 								if (attributes[sequence][stepPressed].getGateP())
-									displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+									displayProbInfo = (long) (displayProbInfoTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 								else
 									displayProbInfo = 0l;
 							}
@@ -768,7 +767,7 @@ struct GateSeq64 : Module {
 						if (!attributes[sequence][stepPressed].getGate()) {// clicked inactive, so turn gate on
 							attributes[sequence][stepPressed].setGate(true);
 							if (attributes[sequence][stepPressed].getGateP())
-								displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+								displayProbInfo = (long) (displayProbInfoTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 							else
 								displayProbInfo = 0l;
 						}
@@ -786,14 +785,14 @@ struct GateSeq64 : Module {
 						phrases = stepPressed + 1;
 						if (phrases > 64) phrases = 64;
 						if (phrases < 1 ) phrases = 1;
-						revertDisplay = (long) (revertDisplayTime * sampleRate / displayRefreshStepSkips);
+						revertDisplay = (long) (revertDisplayTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					}
 					else if (displayState == DISP_MODES) {
 					}
 					else {
 						phraseIndexEdit = stepPressed;
 						if (running)
-							editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / displayRefreshStepSkips);
+							editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 						else
 							phraseIndexRun = stepPressed;
 					}
@@ -811,7 +810,7 @@ struct GateSeq64 : Module {
 					displayState = DISP_MODES;
 				else
 					displayState = DISP_GATE;
-				modeHoldDetect.start((long) (holdDetectTime * sampleRate / displayRefreshStepSkips));
+				modeHoldDetect.start((long) (holdDetectTime * sampleRate / RefreshCounter::displayRefreshStepSkips));
 			}
 
 			// Prob button
@@ -825,7 +824,7 @@ struct GateSeq64 : Module {
 						attributes[sequence][stepIndexEdit].setGateP(false);
 					}
 					else {
-						displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+						displayProbInfo = (long) (displayProbInfoTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 						attributes[sequence][stepIndexEdit].setGateP(true);
 					}
 				}*/
@@ -838,13 +837,13 @@ struct GateSeq64 : Module {
 							attributes[sequence][stepIndexEdit].setGateP(false);
 						}
 						else {
-							displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+							displayProbInfo = (long) (displayProbInfoTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 							attributes[sequence][stepIndexEdit].setGateP(true);							
 						}
 					}
 					else {// gate is off and pressed gatep button
 						attributes[sequence][stepIndexEdit].setGate(true);
-						displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+						displayProbInfo = (long) (displayProbInfoTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 						attributes[sequence][stepIndexEdit].setGateP(true);
 					}
 				}
@@ -861,7 +860,7 @@ struct GateSeq64 : Module {
 							attributes[sequence][stepIndexEdit].setGateMode(i);
 						}
 						else {
-							editingPpqn = (long) (editingPpqnTime * sampleRate / displayRefreshStepSkips);
+							editingPpqn = (long) (editingPpqnTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 						}
 					}
 				}
@@ -885,11 +884,11 @@ struct GateSeq64 : Module {
 						if (pval < 0)
 							pval = 0;
 						attributes[sequence][stepIndexEdit].setGatePVal(pval);
-						displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+						displayProbInfo = (long) (displayProbInfoTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					}
 					else if (editingPpqn != 0) {
 						pulsesPerStep = indexToPpsGS(ppsToIndexGS(pulsesPerStep) + deltaKnob);// indexToPps() does clamping
-						editingPpqn = (long) (editingPpqnTime * sampleRate / displayRefreshStepSkips);
+						editingPpqn = (long) (editingPpqnTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					}
 					else if (displayState == DISP_MODES) {
 						if (editingSequence) {
@@ -922,14 +921,13 @@ struct GateSeq64 : Module {
 								newPhrase = newPhrase % MAX_SEQS;
 								phrase[phraseIndexEdit] = newPhrase;
 								if (running)
-									editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / displayRefreshStepSkips);
+									editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 							}
 						}	
 					}					
 				}
 				sequenceKnob = newSequenceKnob;
 			}		
-		
 		}// userInputs refresh
 		
 		
@@ -1010,10 +1008,8 @@ struct GateSeq64 : Module {
 				outputs[GATE_OUTPUTS + i].setVoltage(0.0f);	
 		}
 
-		lightRefreshCounter++;
-		if (lightRefreshCounter >= displayRefreshStepSkips) {
-			lightRefreshCounter = 0;
-
+		// lights
+		if (refresh.processLights()) {
 			// Step LED button lights
 			if (infoCopyPaste != 0l) {
 				for (int i = 0; i < 64; i++) {
@@ -1042,7 +1038,7 @@ struct GateSeq64 : Module {
 						}
 						else {
 							float stepHereOffset = ((stepIndexRun[row] == col) && running) ? 0.71f : 1.0f;
-							long blinkCountMarker = (long) (0.67f * sampleRate / displayRefreshStepSkips);							
+							long blinkCountMarker = (long) (0.67f * sampleRate / RefreshCounter::displayRefreshStepSkips);							
 							if (attributes[sequence][i].getGate()) {
 								bool blinkEnableOn = (displayState != DISP_MODES) && (blinkCount < blinkCountMarker);
 								if (attributes[sequence][i].getGateP()) {
@@ -1123,7 +1119,7 @@ struct GateSeq64 : Module {
 			}
 		
 			// Reset light
-			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * displayRefreshStepSkips);	
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * RefreshCounter::displayRefreshStepSkips);	
 			resetLight = 0.0f;
 
 			// Run lights
@@ -1139,7 +1135,7 @@ struct GateSeq64 : Module {
 				displayProbInfo--;
 			if (modeHoldDetect.process(params[MODES_PARAM].getValue())) {
 				displayState = DISP_GATE;
-				editingPpqn = (long) (editingPpqnTime * sampleRate / displayRefreshStepSkips);
+				editingPpqn = (long) (editingPpqnTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}
 			if (editingPpqn > 0l)
 				editingPpqn--;
@@ -1152,7 +1148,7 @@ struct GateSeq64 : Module {
 			}
 			if (blinkNum > 0) {
 				blinkCount++;
-				if (blinkCount >= (long) (1.0f * sampleRate / displayRefreshStepSkips)) {
+				if (blinkCount >= (long) (1.0f * sampleRate / RefreshCounter::displayRefreshStepSkips)) {
 					blinkCount = 0l;
 					blinkNum--;
 				}
@@ -1408,11 +1404,11 @@ struct GateSeq64Widget : ModuleWidget {
 				if (module->displayProbInfo != 0l && editingSequence) {
 					//blinkNum = blinkNumInit;
 					module->attributes[module->sequence][module->stepIndexEdit].setGatePVal(50);
-					//displayProbInfo = (long) (displayProbInfoTime * sampleRate / displayRefreshStepSkips);
+					//displayProbInfo = (long) (displayProbInfoTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				}
 				else if (module->editingPpqn != 0) {
 					module->pulsesPerStep = 1;
-					//editingPpqn = (long) (editingPpqnTime * sampleRate / displayRefreshStepSkips);
+					//editingPpqn = (long) (editingPpqnTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				}
 				else if (module->displayState == GateSeq64::DISP_MODES) {
 					if (editingSequence) {
@@ -1441,7 +1437,7 @@ struct GateSeq64Widget : ModuleWidget {
 						if (module->editingPhraseSongRunning > 0l || !module->running) {
 							module->phrase[module->phraseIndexEdit] = 0;
 							// if (running)
-								// editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / displayRefreshStepSkips);
+								// editingPhraseSongRunning = (long) (editingPhraseSongRunningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 						}
 					}	
 				}			

@@ -79,7 +79,7 @@ class Sequencer {
 		stepIndexEdit = _stepIndexEdit;
 		StepAttributes stepAttrib = sek[trackIndexEdit].getAttribute(stepIndexEdit);
 		if (!stepAttrib.getTied()) {// play if non-tied step
-			editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+			editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			editingGateCV[trackIndexEdit] = sek[trackIndexEdit].getCV(stepIndexEdit);
 			editingGateCV2[trackIndexEdit] = stepAttrib.getVelocityVal();
 			editingGateKeyLight = -1;
@@ -199,7 +199,7 @@ class Sequencer {
 	}
 	inline float calcKeyLightWithEditing(int keyScanIndex, int keyLightIndex, float sampleRate) {
 		if (editingGate[trackIndexEdit] > 0ul && editingGateKeyLight != -1)
-			return (keyScanIndex == editingGateKeyLight ? ((float) editingGate[trackIndexEdit] / (float)(gateTime * sampleRate / displayRefreshStepSkips)) : 0.0f);
+			return (keyScanIndex == editingGateKeyLight ? ((float) editingGate[trackIndexEdit] / (float)(gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips)) : 0.0f);
 		return (keyScanIndex == keyLightIndex ? 1.0f : 0.0f);
 	}
 	

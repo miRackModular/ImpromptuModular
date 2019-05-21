@@ -271,7 +271,7 @@ struct Clocked : Module {
 	int notifyingSource[4] = {-1, -1, -1, -1};
 	long notifyInfo[4] = {0l, 0l, 0l, 0l};// downward step counter when swing to be displayed, 0 when normal display
 	long cantRunWarning = 0l;// 0 when no warning, positive downward step counter timer when warning
-	unsigned int lightRefreshCounter = 0;
+	RefreshCounter refresh;
 	float resetLight = 0.0f;
 	Trigger resetTrigger;
 	Trigger runTrigger;
@@ -514,7 +514,7 @@ struct Clocked : Module {
 				}
 			}
 			else
-				cantRunWarning = (long) (0.7 * sampleRate / displayRefreshStepSkips);
+				cantRunWarning = (long) (0.7 * sampleRate / RefreshCounter::displayRefreshStepSkips);
 		}
 
 		// Reset (has to be near top because it sets steps to 0, and 0 not a real step (clock section will move to 1 before reaching outputs)
@@ -524,8 +524,7 @@ struct Clocked : Module {
 			resetClocked(false);	
 		}	
 
-		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {
-
+		if (refresh.processInputs()) {
 			updatePulseSwingDelay();
 		
 			// BPM mode
@@ -556,9 +555,8 @@ struct Clocked : Module {
 						}
 					}
 				}
-				editingBpmMode = (long) (3.0 * sampleRate / displayRefreshStepSkips);
+				editingBpmMode = (long) (3.0 * sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}
-			
 		}// userInputs refresh
 	
 		// BPM input and knob
@@ -677,12 +675,10 @@ struct Clocked : Module {
 		outputs[BPM_OUTPUT].setVoltage( inputs[BPM_INPUT].isConnected() ? inputs[BPM_INPUT].getVoltage() : log2f(1.0f / masterLength));
 			
 		
-		lightRefreshCounter++;
-		if (lightRefreshCounter >= displayRefreshStepSkips) {
-			lightRefreshCounter = 0;
-
+		// lights
+		if (refresh.processLights()) {
 			// Reset light
-			lights[RESET_LIGHT].setSmoothBrightness(resetLight, (float)sampleTime * displayRefreshStepSkips);	
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, (float)sampleTime * RefreshCounter::displayRefreshStepSkips);	
 			resetLight = 0.0f;
 			
 			// Run light
@@ -691,7 +687,7 @@ struct Clocked : Module {
 			// BPM light
 			bool warningFlashState = true;
 			if (cantRunWarning > 0l) 
-				warningFlashState = calcWarningFlash(cantRunWarning, (long) (0.7 * sampleRate / displayRefreshStepSkips));
+				warningFlashState = calcWarningFlash(cantRunWarning, (long) (0.7 * sampleRate / RefreshCounter::displayRefreshStepSkips));
 			lights[BPMSYNC_LIGHT + 0].setBrightness((bpmDetectionMode && warningFlashState) ? 1.0f : 0.0f);
 			lights[BPMSYNC_LIGHT + 1].setBrightness((bpmDetectionMode && warningFlashState) ? (float)((ppqn - 2)*(ppqn - 2))/440.0f : 0.0f);			
 			
@@ -897,7 +893,7 @@ struct ClockedWidget : ModuleWidget {
 				else if ( (paramId >= Clocked::PW_PARAMS + 0) && (paramId <= Clocked::PW_PARAMS + 3) )
 					dispIndex = paramId - Clocked::PW_PARAMS;
 				module->notifyingSource[dispIndex] = paramId;
-				module->notifyInfo[dispIndex] = (long) (Clocked::delayInfoTime * module->sampleRate / displayRefreshStepSkips);
+				module->notifyInfo[dispIndex] = (long) (Clocked::delayInfoTime * module->sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}
 			Knob::onDragMove(e);
 		}

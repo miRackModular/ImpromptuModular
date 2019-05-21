@@ -64,7 +64,7 @@ bool Sequencer::setGateType(int keyn, int multiSteps, float sampleRate, bool aut
 	if (autostepClick){ // if right-click then move to next step
 		moveStepIndexEdit(1, false);
 		editingGateKeyLight = keyn;
-		editingType = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+		editingType = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 		if ( ((APP->window->getMods() & RACK_MOD_MASK) == RACK_MOD_CTRL) && multiSteps < 2 )
 			setGateType(keyn, 1, sampleRate, false, multiTracks);
 	}
@@ -195,7 +195,7 @@ void Sequencer::writeCV(int trkn, float cvVal, int multiStepsCount, float sample
 	sek[trkn].writeCV(stepIndexEdit, cvVal, multiStepsCount);
 	editingGateCV[trkn] = cvVal;
 	editingGateCV2[trkn] = sek[trkn].getAttribute(stepIndexEdit).getVelocityVal();
-	editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+	editingGate[trkn] = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			if (i == trkn) continue;
@@ -222,7 +222,7 @@ bool Sequencer::applyNewOctave(int octn, int multiSteps, float sampleRate, bool 
 		return true;
 	editingGateCV[trackIndexEdit] = sek[trackIndexEdit].applyNewOctave(stepIndexEdit, octn, multiSteps);
 	editingGateCV2[trackIndexEdit] = stepAttrib.getVelocityVal();
-	editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+	editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 	editingGateKeyLight = -1;
 	if (multiTracks) {
 		for (int i = 0; i < NUM_TRACKS; i++) {
@@ -244,7 +244,7 @@ bool Sequencer::applyNewKey(int keyn, int multiSteps, float sampleRate, bool aut
 	else {
 		editingGateCV[trackIndexEdit] = sek[trackIndexEdit].applyNewKey(stepIndexEdit, keyn, multiSteps);
 		editingGateCV2[trackIndexEdit] = stepAttrib.getVelocityVal();
-		editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+		editingGate[trackIndexEdit] = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 		editingGateKeyLight = -1;
 		if (multiTracks) {
 			for (int i = 0; i < NUM_TRACKS; i++) {
@@ -268,7 +268,7 @@ void Sequencer::moveStepIndexEditWithEditingGate(int delta, bool writeTrig, floa
 		StepAttributes stepAttrib = sek[trkn].getAttribute(stepIndexEdit);
 		if (!stepAttrib.getTied()) {// play if non-tied step
 			if (!writeTrig) {// in case autostep when simultaneous writeCV and stepCV (keep what was done in Write Input block above)
-				editingGate[trkn] = (unsigned long) (gateTime * sampleRate / displayRefreshStepSkips);
+				editingGate[trkn] = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 				editingGateCV[trkn] = sek[trkn].getCV(stepIndexEdit);
 				editingGateCV2[trkn] = stepAttrib.getVelocityVal();
 				editingGateKeyLight = -1;

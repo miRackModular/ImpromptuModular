@@ -170,30 +170,8 @@ void IMTactile::randomize() {
 
 // Other objects
 
+
 bool Trigger::process(float in) {
-/*	switch (state) {
-		case LOW:
-			if (in >= 1.0f) {
-				state = HIGH;
-				return true;
-			}
-			break;
-		case HIGH:
-			if (in <= 0.1f) {
-				state = LOW;
-			}
-			break;
-		default:
-			if (in >= 1.0f) {
-				state = HIGH;
-			}
-			else if (in <= 0.1f) {
-				state = LOW;
-			}
-			break;
-	}
-	return false;
-	*/
 	if (state) {
 		// HIGH to LOW
 		if (in <= 0.1f) {
@@ -226,8 +204,8 @@ bool HoldDetect::process(float paramValue) {
 }
 
 
-
 // Other functions
+
 
 NVGcolor prepareDisplay(NVGcontext *vg, Rect *box, int fontSize) {
 	NVGcolor backgroundColor = nvgRGB(0x38, 0x38, 0x38); 

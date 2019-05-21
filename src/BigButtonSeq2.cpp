@@ -85,7 +85,7 @@ struct BigButtonSeq2 : Module {
 	float pendingCV;// 
 	bool fillPressed;
 
-	unsigned int lightRefreshCounter = 0;	
+	RefreshCounter refresh;	
 	float bigLight = 0.0f;
 	float metronomeLightStart = 0.0f;
 	float metronomeLightDiv = 0.0f;
@@ -358,8 +358,7 @@ struct BigButtonSeq2 : Module {
 		length = (int) clamp(std::round( params[LEN_PARAM].getValue() + ( inputs[LEN_INPUT].isConnected() ? (inputs[LEN_INPUT].getVoltage() / 10.0f * (128.0f - 1.0f)) : 0.0f ) ), 0.0f, (128.0f - 1.0f)) + 1;	
 
 		
-		if ((lightRefreshCounter & userInputsStepSkipMask) == 0) {		
-		
+		if (refresh.processInputs()) {
 			// Big button
 			if (bigTrigger.process(params[BIG_PARAM].getValue() + inputs[BIG_INPUT].getVoltage())) {
 				bigLight = 1.0f;
@@ -424,7 +423,6 @@ struct BigButtonSeq2 : Module {
 			// Pending timeout (write/del current step)
 			if (pendingOp != 0 && clockTime > (lastPeriod * 1.01) ) 
 				performPending(channel, lightTime);
-			
 		}// userInputs refresh
 		
 		
@@ -498,14 +496,13 @@ struct BigButtonSeq2 : Module {
 		}
 
 		
-		lightRefreshCounter++;
-		if (lightRefreshCounter >= displayRefreshStepSkips) {
-			lightRefreshCounter = 0;
-			float deltaTime = (float)sampleTime * displayRefreshStepSkips;
+		// lights
+		if (refresh.processLights()) {
+			float deltaTime = (float)sampleTime * RefreshCounter::displayRefreshStepSkips;
 
 			// Gate light outputs
-			bool bigLightPulseState = bigLightPulse.process((float)sampleTime * displayRefreshStepSkips);
-			bool outLightPulseState = outLightPulse.process((float)sampleTime * displayRefreshStepSkips);
+			bool bigLightPulseState = bigLightPulse.process(deltaTime);
+			bool outLightPulseState = outLightPulse.process(deltaTime);
 			for (int i = 0; i < 6; i++) {
 				bool gate = getGate(i, indexStep);
 				bool outLight  = (((gate || (i == channel && fillPressed)) && outLightPulseState) || (gate && bigLightPulseState && i == channel));
@@ -528,7 +525,6 @@ struct BigButtonSeq2 : Module {
 			lights[WRITEFILL_LIGHT].setBrightness(writeFillsToMemory ? 1.0f : 0.0f);
 			lights[QUANTIZEBIG_LIGHT].setBrightness(quantizeBig ? 1.0f : 0.0f);
 			lights[SAMPLEHOLD_LIGHT].setBrightness(sampleAndHold ? 1.0f : 0.0f);
-		
 		}
 		
 		clockTime += sampleTime;
