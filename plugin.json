@@ -29,7 +29,7 @@
 		{
 			"slug": "Clocked",
 			"name": "Clocked",
-			"description": "Chainable one octave keyboard controller",
+			"description": "Chainable clock generator",
 			"tags": ["Clock"]
 		},
 		{
@@ -41,7 +41,7 @@
 		{
 			"slug": "Foundry",
 			"name": "Foundry",
-			"description": "3-channel 32-step sequencer",
+			"description": "4-track, 32-step / 64-pattern sequencer",
 			"tags": ["Sequencer"]
 		},
 		{
@@ -53,7 +53,7 @@
 		{
 			"slug": "Gate-Seq-64",
 			"name": "GateSeq64",
-			"description": "64 step / 32 pattern gate sequencer",
+			"description": "64-step / 32-pattern gate sequencer",
 			"tags": ["Sequencer"]
 		},
 		{
@@ -65,13 +65,13 @@
 		{
 			"slug": "Phrase-Seq-16",
 			"name": "PhraseSeq16",
-			"description": "16 step / 16 phrase sequencer",
+			"description": "16-step / 16-pattern sequencer",
 			"tags": ["Sequencer"]
 		},
 		{
 			"slug": "Phrase-Seq-32",
 			"name": "PhraseSeq32",
-			"description": "32 step / 32 phrase sequencer",
+			"description": "32-step / 32-pattern sequencer",
 			"tags": ["Sequencer"]
 		},
 		{
@@ -101,7 +101,7 @@
 		{
 			"slug": "Big-Button-Seq2",
 			"name": "BigButtonSeq2",
-			"description": "6-channel 128-step cv and gate sequencer",
+			"description": "6-channel 128-step sequencer",
 			"tags": ["Sequencer"]
 		},
 		{
