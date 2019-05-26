@@ -283,10 +283,8 @@ struct Tact : Module {
 					infoStore ++;
 			}
 			// CV input lights
-			for (int i = 0; i < 2; i++)
-				lights[CVIN_LIGHTS + i * 2].setSmoothBrightness(infoCVinLight[i], args.sampleTime * RefreshCounter::displayRefreshStepSkips);
-			
 			for (int i = 0; i < 2; i++) {
+				lights[CVIN_LIGHTS + i * 2].setSmoothBrightness(infoCVinLight[i], args.sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));
 				infoCVinLight[i] = 0.0f;
 			}
 		}

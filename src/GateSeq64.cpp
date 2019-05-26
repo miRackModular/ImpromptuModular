@@ -1119,7 +1119,7 @@ struct GateSeq64 : Module {
 			}
 		
 			// Reset light
-			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * RefreshCounter::displayRefreshStepSkips);	
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
 			resetLight = 0.0f;
 
 			// Run lights

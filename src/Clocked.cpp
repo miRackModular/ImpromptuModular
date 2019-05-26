@@ -678,7 +678,7 @@ struct Clocked : Module {
 		// lights
 		if (refresh.processLights()) {
 			// Reset light
-			lights[RESET_LIGHT].setSmoothBrightness(resetLight, (float)sampleTime * RefreshCounter::displayRefreshStepSkips);	
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));	
 			resetLight = 0.0f;
 			
 			// Run light

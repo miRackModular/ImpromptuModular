@@ -1154,7 +1154,7 @@ struct Foundry : Module {
 			lights[SLIDE_LIGHT].setBrightness(attributesVisual.getSlide() ? 1.0f : 0.0f);
 			
 			// Reset light
-			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * RefreshCounter::displayRefreshStepSkips);
+			lights[RESET_LIGHT].setSmoothBrightness(resetLight, args.sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));
 			resetLight = 0.0f;
 			
 			// Run light

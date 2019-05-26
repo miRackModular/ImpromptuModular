@@ -373,7 +373,7 @@ struct BigButtonSeq : Module {
 		
 		// lights
 		if (refresh.processLights()) {
-			float deltaTime = (float)sampleTime * RefreshCounter::displayRefreshStepSkips;
+			float deltaTime = (float)sampleTime * (RefreshCounter::displayRefreshStepSkips);
 
 			// Gate light outputs
 			bool bigLightPulseState = bigLightPulse.process(deltaTime);
@@ -385,6 +385,8 @@ struct BigButtonSeq : Module {
 				lights[(CHAN_LIGHTS + i) * 2 + 0].setBrightness(i == channel ? (1.0f - lights[(CHAN_LIGHTS + i) * 2 + 1].getBrightness()) : 0.0f);
 			}
 
+			deltaTime = (float)sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2);
+			
 			// Big button lights
 			lights[BIG_LIGHT].setBrightness(bank[channel] == 1 ? 1.0f : 0.0f);
 			lights[BIGC_LIGHT].setSmoothBrightness(bigLight, deltaTime);
