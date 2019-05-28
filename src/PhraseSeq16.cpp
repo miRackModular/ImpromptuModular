@@ -97,7 +97,6 @@ struct PhraseSeq16 : Module {
 
 	// Need to save
 	int panelTheme;
-	int expansion = 0;
 	bool autoseq;
 	bool autostepLen;
 	bool holdTiedNotes;
@@ -324,9 +323,6 @@ struct PhraseSeq16 : Module {
 		// panelTheme
 		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
 
-		// expansion
-		json_object_set_new(rootJ, "expansion", json_integer(expansion));
-
 		// autostepLen
 		json_object_set_new(rootJ, "autostepLen", json_boolean(autostepLen));
 		
@@ -405,11 +401,6 @@ struct PhraseSeq16 : Module {
 		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
 		if (panelThemeJ)
 			panelTheme = json_integer_value(panelThemeJ);
-
-		// expansion
-		json_t *expansionJ = json_object_get(rootJ, "expansion");
-		if (expansionJ)
-			expansion = json_integer_value(expansionJ);
 
 		// autostepLen
 		json_t *autostepLenJ = json_object_get(rootJ, "autostepLen");

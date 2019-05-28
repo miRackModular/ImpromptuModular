@@ -28,9 +28,11 @@ void Sequencer::resetNonJson(bool editingSequence) {
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
 		editingGate[trkn] = 0ul;
 	}
-	initDelayedSeqNumberRequest();
 	seqCPbuf.reset();
 	songCPbuf.reset();
+	initRun(editingSequence);// seks' initRun() will be called twice when coming from this.onReset() (since the seks' initRun() is also called in the seks' onReset()),
+								// but ok since small code. Same effect when this.dataFromJson() occurs, since the seks' initRun() is also called in the seks' dataFromJson().
+								// This exception occurs since sek is a Need-to-save with both a reset and no-reset component.
 }
 
 void Sequencer::initRun(bool editingSequence) {

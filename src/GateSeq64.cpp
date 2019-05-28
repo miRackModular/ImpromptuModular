@@ -65,29 +65,29 @@ struct GateSeq64 : Module {
 	//										1/4		DUO			D2			TR1		TR2		TR3 		TR23	   TRI
 	const uint32_t advGateHitMaskGS[8] = {0x00003F, 0x03F03F, 0x03F000, 0x00000F, 0x000F00, 0x0F0000, 0x0F0F00, 0x0F0F0F};
 	static const int blinkNumInit = 15;// init number of blink cycles for cursor
-	static constexpr float CONFIG_PARAM_INIT_VALUE = 0.0f;// so that module constructor is coherent with widget initialization, since module created before widget
 
-	// Need to save
+	// Need to save, no reset
 	int panelTheme;
-	int expansion = 0;
+	
+	// Need to save, with reset
 	bool autoseq;
 	int seqCVmethod;// 0 is 0-10V, 1 is C4-D5#, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
-	SeqAttributesGS sequences[MAX_SEQS];
 	int runModeSong;
+	int stepIndexEdit;
+	int phraseIndexEdit;	
 	int sequence;
-	int phrase[64];// This is the song (series of phases; a phrase is a patten number)
 	int phrases;// 1 to 64
 	StepAttributesGS attributes[MAX_SEQS][64];
+	SeqAttributesGS sequences[MAX_SEQS];
+	int phrase[64];// This is the song (series of phases; a phrase is a patten number)
 	bool resetOnRun;
 	bool stopAtEndOfSong;
 
-	// No need to save
+	// No need to save, with reset
 	int displayState;
-	int stepIndexEdit;
 	int stepIndexRun[4];
-	int phraseIndexEdit;	
 	int phraseIndexRun;
 	unsigned long stepIndexRunHistory;
 	unsigned long phraseIndexRunHistory;
@@ -109,6 +109,7 @@ struct GateSeq64 : Module {
 	int stepConfig;
 	long editingPhraseSongRunning;// downward step counter
 
+	// No need to save, no reset
 	int stepConfigSync = 0;// 0 means no sync requested, 1 means soft sync (no reset lengths), 2 means hard (reset lengths)
 	RefreshCounter refresh;
 	float resetLight = 0.0f;
@@ -135,7 +136,8 @@ struct GateSeq64 : Module {
 
 	
 	inline bool isEditingSequence(void) {return params[EDIT_PARAM].getValue() > 0.5f;}
-	inline int getStepConfig(float paramValue) {// 1 = 4x16 = 0.0f,  2 = 2x32 = 1.0f,  4 = 1x64 = 2.0f
+	inline int getStepConfig() {// 1 = 4x16 = 0.0f,  2 = 2x32 = 1.0f,  4 = 1x64 = 2.0f
+		float paramValue = params[CONFIG_PARAM].getValue();
 		if (paramValue < 0.5f) return 1;
 		else if (paramValue < 1.5f) return 2;
 		return 4;
@@ -200,7 +202,7 @@ struct GateSeq64 : Module {
 		configParam(COPY_PARAM, 0.0f, 1.0f, 0.0f, "Copy");
 		configParam(PASTE_PARAM, 0.0f, 1.0f, 0.0f, "Paste");
 		configParam(EDIT_PARAM, 0.0f, 1.0f, 1.0f, "Seq/song mode");
-		configParam(CONFIG_PARAM, 0.0f, 2.0f, CONFIG_PARAM_INIT_VALUE, "Configuration (1, 2, 4 chan)");// 0.0f is top position
+		configParam(CONFIG_PARAM, 0.0f, 2.0f, 0.0f, "Configuration (1, 2, 4 chan)");// 0.0f is top position
 		configParam(CPMODE_PARAM, 0.0f, 2.0f, 2.0f, "Copy-paste mode");		
 		
 		for (int i = 0; i < MAX_SEQS; i++)
@@ -212,7 +214,7 @@ struct GateSeq64 : Module {
 
 	
 	void onReset() override {
-		stepConfig = getStepConfig(CONFIG_PARAM_INIT_VALUE);
+		stepConfig = getStepConfig();
 		autoseq = false;
 		seqCVmethod = 0;
 		pulsesPerStep = 1;
@@ -233,22 +235,25 @@ struct GateSeq64 : Module {
 			attribCPbuffer[i].init();
 			phraseCPbuffer[i] = 0;
 		}
-		initRun();
+		resetOnRun = false;
+		stopAtEndOfSong = false;
+		
+		// this next code should go in new method resetNonJson(), however, can't call resetNonJson() at end of this.dataFromJson() since the initRun()
+		//   uses sequences[].getLength() and setting length() is deffered to process() via stepConfigSync so invalid value will be used
+		displayState = DISP_GATE;
 		seqAttribCPbuffer.init(16, MODE_FWD);
 		seqCopied = true;
 		countCP = 64;
 		startCP = 0;
-		displayState = DISP_GATE;
 		displayProbInfo = 0l;
 		infoCopyPaste = 0l;
 		revertDisplay = 0l;
-		resetOnRun = false;
-		stopAtEndOfSong = false;
 		editingPpqn = 0l;
 		blinkCount = 0l;
 		blinkNum = blinkNumInit;
 		editingPhraseSongRunning = 0l;
 		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
+		initRun();
 	}
 
 	
@@ -283,9 +288,6 @@ struct GateSeq64 : Module {
 		// panelTheme
 		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
 
-		// expansion
-		json_object_set_new(rootJ, "expansion", json_integer(expansion));
-
 		// autoseq
 		json_object_set_new(rootJ, "autoseq", json_boolean(autoseq));
 		
@@ -301,14 +303,14 @@ struct GateSeq64 : Module {
 		// runModeSong
 		json_object_set_new(rootJ, "runModeSong3", json_integer(runModeSong));
 
+		// stepIndexEdit
+		json_object_set_new(rootJ, "stepIndexEdit", json_integer(stepIndexEdit));
+	
+		// phraseIndexEdit
+		json_object_set_new(rootJ, "phraseIndexEdit", json_integer(phraseIndexEdit));
+		
 		// sequence
 		json_object_set_new(rootJ, "sequence", json_integer(sequence));
-
-		// phrase 
-		json_t *phraseJ = json_array();
-		for (int i = 0; i < 64; i++)
-			json_array_insert_new(phraseJ, i, json_integer(phrase[i]));
-		json_object_set_new(rootJ, "phrase2", phraseJ);// "2" appended so no break patches
 
 		// phrases
 		json_object_set_new(rootJ, "phrases", json_integer(phrases));
@@ -321,23 +323,23 @@ struct GateSeq64 : Module {
 			}
 		json_object_set_new(rootJ, "attributes2", attributesJ);// "2" appended so no break patches
 		
-		// resetOnRun
-		json_object_set_new(rootJ, "resetOnRun", json_boolean(resetOnRun));
-		
-		// stopAtEndOfSong
-		json_object_set_new(rootJ, "stopAtEndOfSong", json_boolean(stopAtEndOfSong));
-
-		// stepIndexEdit
-		json_object_set_new(rootJ, "stepIndexEdit", json_integer(stepIndexEdit));
-	
-		// phraseIndexEdit
-		json_object_set_new(rootJ, "phraseIndexEdit", json_integer(phraseIndexEdit));
-		
 		// sequences
 		json_t *sequencesJ = json_array();
 		for (int i = 0; i < MAX_SEQS; i++)
 			json_array_insert_new(sequencesJ, i, json_integer(sequences[i].getSeqAttrib()));
 		json_object_set_new(rootJ, "sequences", sequencesJ);
+
+		// phrase 
+		json_t *phraseJ = json_array();
+		for (int i = 0; i < 64; i++)
+			json_array_insert_new(phraseJ, i, json_integer(phrase[i]));
+		json_object_set_new(rootJ, "phrase2", phraseJ);// "2" appended so no break patches
+
+		// resetOnRun
+		json_object_set_new(rootJ, "resetOnRun", json_boolean(resetOnRun));
+		
+		// stopAtEndOfSong
+		json_object_set_new(rootJ, "stopAtEndOfSong", json_boolean(stopAtEndOfSong));
 
 		return rootJ;
 	}
@@ -349,11 +351,6 @@ struct GateSeq64 : Module {
 		if (panelThemeJ)
 			panelTheme = json_integer_value(panelThemeJ);
 		
-		// expansion
-		json_t *expansionJ = json_object_get(rootJ, "expansion");
-		if (expansionJ)
-			expansion = json_integer_value(expansionJ);
-
 		// autoseq
 		json_t *autoseqJ = json_object_get(rootJ, "autoseq");
 		if (autoseqJ)
@@ -374,6 +371,65 @@ struct GateSeq64 : Module {
 		if (runningJ)
 			running = json_is_true(runningJ);
 		
+		// runModeSong
+		json_t *runModeSongJ = json_object_get(rootJ, "runModeSong3");
+		if (runModeSongJ)
+			runModeSong = json_integer_value(runModeSongJ);
+		else {// legacy
+			runModeSongJ = json_object_get(rootJ, "runModeSong");
+			if (runModeSongJ) {
+				runModeSong = json_integer_value(runModeSongJ);
+				if (runModeSong >= MODE_PEN)// this mode was not present in original version
+					runModeSong++;
+			}
+		}
+		
+		// stepIndexEdit
+		json_t *stepIndexEditJ = json_object_get(rootJ, "stepIndexEdit");
+		if (stepIndexEditJ)
+			stepIndexEdit = json_integer_value(stepIndexEditJ);
+		
+		// phraseIndexEdit
+		json_t *phraseIndexEditJ = json_object_get(rootJ, "phraseIndexEdit");
+		if (phraseIndexEditJ)
+			phraseIndexEdit = json_integer_value(phraseIndexEditJ);
+		
+		// sequence
+		json_t *sequenceJ = json_object_get(rootJ, "sequence");
+		if (sequenceJ)
+			sequence = json_integer_value(sequenceJ);
+		
+		// phrases
+		json_t *phrasesJ = json_object_get(rootJ, "phrases");
+		if (phrasesJ)
+			phrases = json_integer_value(phrasesJ);
+	
+		// attributes
+		json_t *attributesJ = json_object_get(rootJ, "attributes2");
+		if (attributesJ) {
+			for (int i = 0; i < MAX_SEQS; i++)
+				for (int s = 0; s < 64; s++) {
+					json_t *attributesArrayJ = json_array_get(attributesJ, s + (i * 64));
+					if (attributesArrayJ)
+						attributes[i][s].setAttribute((unsigned short)json_integer_value(attributesArrayJ));
+				}
+		}
+		else {
+			attributesJ = json_object_get(rootJ, "attributes");
+			if (attributesJ) {
+				for (int i = 0; i < 16; i++) {
+					for (int s = 0; s < 64; s++) {
+						json_t *attributesArrayJ = json_array_get(attributesJ, s + (i * 64));
+						if (attributesArrayJ)
+							attributes[i][s].setAttribute((unsigned short)json_integer_value(attributesArrayJ));
+					}
+				}
+				for (int i = 16; i < MAX_SEQS; i++) {
+					for (int s = 0; s < 64; s++)
+						attributes[i][s].init();
+				}
+			}
+		}
 		
 		// sequences
 		json_t *sequencesJ = json_object_get(rootJ, "sequences");
@@ -432,24 +488,6 @@ struct GateSeq64 : Module {
 		}
 		
 		
-		// runModeSong
-		json_t *runModeSongJ = json_object_get(rootJ, "runModeSong3");
-		if (runModeSongJ)
-			runModeSong = json_integer_value(runModeSongJ);
-		else {// legacy
-			runModeSongJ = json_object_get(rootJ, "runModeSong");
-			if (runModeSongJ) {
-				runModeSong = json_integer_value(runModeSongJ);
-				if (runModeSong >= MODE_PEN)// this mode was not present in original version
-					runModeSong++;
-			}
-		}
-		
-		// sequence
-		json_t *sequenceJ = json_object_get(rootJ, "sequence");
-		if (sequenceJ)
-			sequence = json_integer_value(sequenceJ);
-		
 		// phrase
 		json_t *phraseJ = json_object_get(rootJ, "phrase2");// "2" appended so no break patches
 		if (phraseJ) {
@@ -474,38 +512,6 @@ struct GateSeq64 : Module {
 			}
 		}
 		
-		// phrases
-		json_t *phrasesJ = json_object_get(rootJ, "phrases");
-		if (phrasesJ)
-			phrases = json_integer_value(phrasesJ);
-	
-		// attributes
-		json_t *attributesJ = json_object_get(rootJ, "attributes2");
-		if (attributesJ) {
-			for (int i = 0; i < MAX_SEQS; i++)
-				for (int s = 0; s < 64; s++) {
-					json_t *attributesArrayJ = json_array_get(attributesJ, s + (i * 64));
-					if (attributesArrayJ)
-						attributes[i][s].setAttribute((unsigned short)json_integer_value(attributesArrayJ));
-				}
-		}
-		else {
-			attributesJ = json_object_get(rootJ, "attributes");
-			if (attributesJ) {
-				for (int i = 0; i < 16; i++) {
-					for (int s = 0; s < 64; s++) {
-						json_t *attributesArrayJ = json_array_get(attributesJ, s + (i * 64));
-						if (attributesArrayJ)
-							attributes[i][s].setAttribute((unsigned short)json_integer_value(attributesArrayJ));
-					}
-				}
-				for (int i = 16; i < MAX_SEQS; i++) {
-					for (int s = 0; s < 64; s++)
-						attributes[i][s].init();
-				}
-			}
-		}
-		
 		// resetOnRun
 		json_t *resetOnRunJ = json_object_get(rootJ, "resetOnRun");
 		if (resetOnRunJ)
@@ -515,16 +521,6 @@ struct GateSeq64 : Module {
 		json_t *stopAtEndOfSongJ = json_object_get(rootJ, "stopAtEndOfSong");
 		if (stopAtEndOfSongJ)
 			stopAtEndOfSong = json_is_true(stopAtEndOfSongJ);
-		
-		// stepIndexEdit
-		json_t *stepIndexEditJ = json_object_get(rootJ, "stepIndexEdit");
-		if (stepIndexEditJ)
-			stepIndexEdit = json_integer_value(stepIndexEditJ);
-		
-		// phraseIndexEdit
-		json_t *phraseIndexEditJ = json_object_get(rootJ, "phraseIndexEdit");
-		if (phraseIndexEditJ)
-			phraseIndexEdit = json_integer_value(phraseIndexEditJ);
 		
 		stepConfigSync = 1;// signal a sync from dataFromJson so that step will get lengths from seqAttribBuffer
 	}
@@ -566,7 +562,7 @@ struct GateSeq64 : Module {
 
 			// Config switch
 			if (stepConfigSync != 0) {
-				stepConfig = getStepConfig(params[CONFIG_PARAM].getValue());
+				stepConfig = getStepConfig();
 				if (stepConfigSync == 1) {// sync from dataFromJson, so read lengths from seqAttribBuffer
 					for (int i = 0; i < MAX_SEQS; i++)
 						sequences[i].setSeqAttrib(seqAttribBuffer[i].getSeqAttrib());

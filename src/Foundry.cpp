@@ -99,7 +99,6 @@ struct Foundry : Module {
 	int panelTheme;
 	
 	// Need to save, with reset
-	int expansion;
 	int velocityMode;
 	bool velocityBipol;
 	bool autostepLen;
@@ -246,7 +245,6 @@ struct Foundry : Module {
 	// widgets are not yet created when module is created (and when onReset() is called by constructor)
 	// onReset() is also called when right-click initialization of module
 	void onReset() override {
-		expansion = 0;
 		velocityMode = 0;
 		velocityBipol = false;
 		autostepLen = false;
@@ -289,9 +287,6 @@ struct Foundry : Module {
 
 		// panelTheme
 		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
-
-		// expansion
-		json_object_set_new(rootJ, "expansion", json_integer(expansion));
 
 		// velocityMode
 		json_object_set_new(rootJ, "velocityMode", json_integer(velocityMode));
@@ -350,11 +345,6 @@ struct Foundry : Module {
 			if (panelTheme == 2)// metal was deprecated 
 				panelTheme = 1;
 		}
-
-		// expansion
-		json_t *expansionJ = json_object_get(rootJ, "expansion");
-		if (expansionJ)
-			expansion = json_integer_value(expansionJ);
 
 		// velocityMode
 		json_t *velocityModeJ = json_object_get(rootJ, "velocityMode");
@@ -430,7 +420,6 @@ struct Foundry : Module {
 		seq.dataFromJson(rootJ, isEditingSequence());
 		
 		resetNonJson();
-		seq.initRun(isEditingSequence());// TODO why is this needed? follow this
 	}
 
 
