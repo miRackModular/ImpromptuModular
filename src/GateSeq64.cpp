@@ -240,6 +240,7 @@ struct GateSeq64 : Module {
 		
 		// this next code should go in new method resetNonJson(), however, can't call resetNonJson() at end of this.dataFromJson() since the initRun()
 		//   uses sequences[].getLength() and setting length() is deffered to process() via stepConfigSync so invalid value will be used
+		// but initRun() is called in process when stepConfigSync!
 		displayState = DISP_GATE;
 		seqAttribCPbuffer.init(16, MODE_FWD);
 		seqCopied = true;
