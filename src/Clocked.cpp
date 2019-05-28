@@ -240,17 +240,21 @@ struct Clocked : Module {
 	static constexpr float swingInfoTime = 2.0f;// seconds
 	
 	
-	// Need to save
+	// Need to save, no reset
 	int panelTheme;
+	
+	// Need to save, with reset
+	bool running;
 	bool displayDelayNoteMode;
 	bool bpmDetectionMode;
 	bool emitResetOnStopRun;
 	int ppqn;
-	bool running;
 	bool resetClockOutputsHigh;
 
-	
-	// No need to save
+	// No need to save, with reset
+	long editingBpmMode;// 0 when no edit bpmMode, downward step counter timer when edit, negative upward when show can't edit ("--") 
+	double sampleRate;
+	double sampleTime;
 	Clock clk[4];
 	ClockDelay delay[3];// only channels 1 to 3 have delay
 	bool syncRatios[4];// 0 index unused
@@ -258,15 +262,13 @@ struct Clocked : Module {
 	int extPulseNumber;// 0 to ppqn - 1
 	double extIntervalTime;
 	double timeoutTime;
-	float newMasterLength;
-	float masterLength;
-	long editingBpmMode;// 0 when no edit bpmMode, downward step counter timer when edit, negative upward when show can't edit ("--") 
 	float pulseWidth[4];
 	float swingAmount[4];
 	long delaySamples[4];
-	double sampleRate;
-	double sampleTime;
+	float newMasterLength;
+	float masterLength;
 	
+	// No need to save, no reset
 	bool scheduledReset = false;
 	int notifyingSource[4] = {-1, -1, -1, -1};
 	long notifyInfo[4] = {0l, 0l, 0l, 0l};// downward step counter when swing to be displayed, 0 when normal display
@@ -373,18 +375,23 @@ struct Clocked : Module {
 	
 
 	void onReset() override {
-		sampleRate = (double)(APP->engine->getSampleRate());
-		sampleTime = 1.0 / sampleRate;
+		running = true;
 		displayDelayNoteMode = true;
 		bpmDetectionMode = false;
 		emitResetOnStopRun = false;
 		ppqn = 4;
-		running = true;
 		resetClockOutputsHigh = true;
-		editingBpmMode = 0l;
-		resetClocked(true);		
+		resetNonJson(false);
 	}
-	
+	void resetNonJson(bool delayed) {
+		editingBpmMode = 0l;
+		if (delayed) {
+			scheduledReset = true;// will be a soft reset
+		}
+		else {
+			resetClocked(true);// hard reset
+		}			
+	}
 	
 	void onRandomize() override {
 		resetClocked(false);
@@ -392,15 +399,17 @@ struct Clocked : Module {
 
 	
 	void resetClocked(bool hardReset) {// set hardReset to true to revert learned BPM to 120 in sync mode, or else when false, learned bmp will stay persistent
+		sampleRate = (double)(APP->engine->getSampleRate());
+		sampleTime = 1.0 / sampleRate;
 		for (int i = 0; i < 4; i++) {
 			clk[i].reset();
 			if (i < 3) 
 				delay[i].reset(resetClockOutputsHigh);
 			syncRatios[i] = false;
 			ratiosDoubled[i] = getRatioDoubled(i);
-			updatePulseSwingDelay();
 			outputs[CLK_OUTPUTS + i].setVoltage((resetClockOutputsHigh ? 10.0f : 0.0f));
 		}
+		updatePulseSwingDelay();
 		extPulseNumber = -1;
 		extIntervalTime = 0.0;
 		timeoutTime = 2.0 / ppqn + 0.1;// worst case. This is a double period at 30 BPM (4s), divided by the expected number of edges in the double period 
@@ -423,12 +432,12 @@ struct Clocked : Module {
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		
-		// running
-		json_object_set_new(rootJ, "running", json_boolean(running));
-		
 		// panelTheme
 		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
 
+		// running
+		json_object_set_new(rootJ, "running", json_boolean(running));
+		
 		// displayDelayNoteMode
 		json_object_set_new(rootJ, "displayDelayNoteMode", json_boolean(displayDelayNoteMode));
 		
@@ -449,15 +458,15 @@ struct Clocked : Module {
 
 
 	void dataFromJson(json_t *rootJ) override {
-		// running
-		json_t *runningJ = json_object_get(rootJ, "running");
-		if (runningJ)
-			running = json_is_true(runningJ);
-
 		// panelTheme
 		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
 		if (panelThemeJ)
 			panelTheme = json_integer_value(panelThemeJ);
+
+		// running
+		json_t *runningJ = json_object_get(rootJ, "running");
+		if (runningJ)
+			running = json_is_true(runningJ);
 
 		// displayDelayNoteMode
 		json_t *displayDelayNoteModeJ = json_object_get(rootJ, "displayDelayNoteMode");
@@ -484,13 +493,11 @@ struct Clocked : Module {
 		if (resetClockOutputsHighJ)
 			resetClockOutputsHigh = json_is_true(resetClockOutputsHighJ);
 
-		scheduledReset = true;
+		resetNonJson(true);// need this for load preset, which won't have onReset() called
 	}
 
 	
 	void onSampleRateChange() override {
-		sampleRate = (double)(APP->engine->getSampleRate());
-		sampleTime = 1.0 / sampleRate;
 		resetClocked(false);
 	}		
 	

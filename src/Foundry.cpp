@@ -95,16 +95,18 @@ struct Foundry : Module {
 	enum EditPSDisplayStateIds {DISP_NORMAL, DISP_MODE_SEQ, DISP_MODE_SONG, DISP_LEN, DISP_REPS, DISP_TRANSPOSE, DISP_ROTATE, DISP_PPQN, DISP_DELAY, DISP_COPY_SEQ, DISP_PASTE_SEQ, DISP_COPY_SONG, DISP_PASTE_SONG, DISP_COPY_SONG_CUST};
 	static constexpr float warningTime = 0.7f;// seconds
 
-	// Need to save
+	// Need to save, no reset
 	int panelTheme;
-	int expansion = 0;
+	
+	// Need to save, with reset
+	int expansion;
 	int velocityMode;
 	bool velocityBipol;
-	bool holdTiedNotes;
-	bool autoseq;
 	bool autostepLen;
-	bool showSharp;
 	bool multiTracks;
+	bool autoseq;
+	bool holdTiedNotes;
+	bool showSharp;
 	int seqCVmethod;// 0 is 0-10V, 1 is C2-D7#, 2 is TrigIncr
 	bool running;
 	bool resetOnRun;
@@ -114,7 +116,7 @@ struct Foundry : Module {
 	int stopAtEndOfSong;// 0 to 3 is YES stop on song end of that track, 4 is NO (off)
 	Sequencer seq;
 
-	// No need to save
+	// No need to save, with reset
 	int displayState;
 	long clockIgnoreOnReset;
 	long tiedWarning;// 0 when no warning, positive downward step counter timer when warning
@@ -123,9 +125,9 @@ struct Foundry : Module {
 	bool multiSteps;
 	int clkInSources[Sequencer::NUM_TRACKS];// first index is always 0 and will never change
 	int cpSeqLength;
-	int cpSongStart;// no need to initialize
 	
-
+	// No need to save, no reset
+	int cpSongStart;// no need to initialize
 	RefreshCounter refresh;
 	float resetLight = 0.0f;
 	int sequenceKnob = 0;
@@ -244,37 +246,41 @@ struct Foundry : Module {
 	// widgets are not yet created when module is created (and when onReset() is called by constructor)
 	// onReset() is also called when right-click initialization of module
 	void onReset() override {
-		autoseq = false;
-		autostepLen = false;
-		showSharp = true;
-		running = true;
+		expansion = 0;
 		velocityMode = 0;
 		velocityBipol = false;
+		autostepLen = false;
+		multiTracks = false;
+		autoseq = false;
 		holdTiedNotes = true;
-		displayState = DISP_NORMAL;
-		tiedWarning = 0l;
-		attachedWarning = 0l;
-		revertDisplay = 0l;
+		showSharp = true;
+		seqCVmethod = 0;
+		running = true;
 		resetOnRun = false;
 		attached = false;
-		multiSteps = false;
-		multiTracks = false;
-		seqCVmethod = 0;
-		cpSeqLength = getCPMode();
-		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-			clkInSources[trkn] = 0;
-		}
 		velEditMode = 0;
 		writeMode = 0;
 		stopAtEndOfSong = 4;// this means option is turned off (0-3 is on)
-		seq.reset(isEditingSequence());
+		seq.onReset(isEditingSequence());
+		resetNonJson();
+	}
+	void resetNonJson() {
+		displayState = DISP_NORMAL;
 		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
+		tiedWarning = 0l;
+		attachedWarning = 0l;
+		revertDisplay = 0l;
+		multiSteps = false;
+		for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
+			clkInSources[trkn] = 0;
+		}
+		cpSeqLength = getCPMode();
 	}
 	
 	
 	void onRandomize() override {
 		if (isEditingSequence())
-			seq.randomize(isEditingSequence());
+			seq.onRandomize(isEditingSequence());
 	}
 	
 	
@@ -329,6 +335,7 @@ struct Foundry : Module {
 		// stopAtEndOfSong
 		json_object_set_new(rootJ, "stopAtEndOfSong", json_integer(stopAtEndOfSong));
 
+		// seq
 		seq.dataToJson(rootJ);
 		
 		return rootJ;
@@ -419,11 +426,11 @@ struct Foundry : Module {
 		if (stopAtEndOfSongJ)
 			stopAtEndOfSong = json_integer_value(stopAtEndOfSongJ);
 
-		seq.dataFromJson(rootJ);
+		// seq
+		seq.dataFromJson(rootJ, isEditingSequence());
 		
-		// Initialize dependants after everything loaded
-		cpSeqLength = getCPMode();
-		seq.initRun(isEditingSequence());
+		resetNonJson();
+		seq.initRun(isEditingSequence());// TODO why is this needed? follow this
 	}
 
 

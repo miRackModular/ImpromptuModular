@@ -14,6 +14,75 @@ void Sequencer::construct(bool* _holdTiedNotesPtr, int* _velocityModePtr, int* _
 }
 
 
+void Sequencer::onReset(bool editingSequence) {
+	stepIndexEdit = 0;
+	phraseIndexEdit = 0;
+	trackIndexEdit = 0;
+	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
+		sek[trkn].onReset(editingSequence);
+	}
+	resetNonJson(editingSequence);
+}
+void Sequencer::resetNonJson(bool editingSequence) {
+	editingType = 0ul;
+	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
+		editingGate[trkn] = 0ul;
+	}
+	initDelayedSeqNumberRequest();
+	seqCPbuf.reset();
+	songCPbuf.reset();
+}
+
+void Sequencer::initRun(bool editingSequence) {
+	initDelayedSeqNumberRequest();
+	for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
+		sek[trkn].initRun(editingSequence);
+}
+void Sequencer::initDelayedSeqNumberRequest() {
+	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
+		delayedSeqNumberRequest[trkn] = -1;
+	}
+}
+
+
+void Sequencer::dataToJson(json_t *rootJ) {
+	// stepIndexEdit
+	json_object_set_new(rootJ, "stepIndexEdit", json_integer(stepIndexEdit));
+
+	// phraseIndexEdit
+	json_object_set_new(rootJ, "phraseIndexEdit", json_integer(phraseIndexEdit));
+
+	// trackIndexEdit
+	json_object_set_new(rootJ, "trackIndexEdit", json_integer(trackIndexEdit));
+
+	for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
+		sek[trkn].dataToJson(rootJ);
+}
+
+
+void Sequencer::dataFromJson(json_t *rootJ, bool editingSequence) {
+	// stepIndexEdit
+	json_t *stepIndexEditJ = json_object_get(rootJ, "stepIndexEdit");
+	if (stepIndexEditJ)
+		stepIndexEdit = json_integer_value(stepIndexEditJ);
+	
+	// phraseIndexEdit
+	json_t *phraseIndexEditJ = json_object_get(rootJ, "phraseIndexEdit");
+	if (phraseIndexEditJ)
+		phraseIndexEdit = json_integer_value(phraseIndexEditJ);
+	
+	// trackIndexEdit
+	json_t *trackIndexEditJ = json_object_get(rootJ, "trackIndexEdit");
+	if (trackIndexEditJ)
+		trackIndexEdit = json_integer_value(trackIndexEditJ);
+	
+	for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
+		sek[trkn].dataFromJson(rootJ, editingSequence);
+	
+	resetNonJson(editingSequence);
+}
+
+
 void Sequencer::setVelocityVal(int trkn, int intVel, int multiStepsCount, bool multiTracks) {
 	sek[trkn].setVelocityVal(stepIndexEdit, intVel, multiStepsCount);
 	if (multiTracks) {
@@ -449,58 +518,6 @@ void Sequencer::toggleTied(int multiSteps, bool multiTracks) {
 			sek[i].setTied(stepIndexEdit, newTied, multiSteps);
 		}
 	}						
-}
-
-
-void Sequencer::dataToJson(json_t *rootJ) {
-	// stepIndexEdit
-	json_object_set_new(rootJ, "stepIndexEdit", json_integer(stepIndexEdit));
-
-	// phraseIndexEdit
-	json_object_set_new(rootJ, "phraseIndexEdit", json_integer(phraseIndexEdit));
-
-	// trackIndexEdit
-	json_object_set_new(rootJ, "trackIndexEdit", json_integer(trackIndexEdit));
-
-	for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
-		sek[trkn].dataToJson(rootJ);
-}
-
-
-void Sequencer::dataFromJson(json_t *rootJ) {
-	// stepIndexEdit
-	json_t *stepIndexEditJ = json_object_get(rootJ, "stepIndexEdit");
-	if (stepIndexEditJ)
-		stepIndexEdit = json_integer_value(stepIndexEditJ);
-	
-	// phraseIndexEdit
-	json_t *phraseIndexEditJ = json_object_get(rootJ, "phraseIndexEdit");
-	if (phraseIndexEditJ)
-		phraseIndexEdit = json_integer_value(phraseIndexEditJ);
-	
-	// trackIndexEdit
-	json_t *trackIndexEditJ = json_object_get(rootJ, "trackIndexEdit");
-	if (trackIndexEditJ)
-		trackIndexEdit = json_integer_value(trackIndexEditJ);
-	
-	for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
-		sek[trkn].dataFromJson(rootJ);
-}
-
-
-void Sequencer::reset(bool editingSequence) {
-	stepIndexEdit = 0;
-	phraseIndexEdit = 0;
-	trackIndexEdit = 0;
-	initDelayedSeqNumberRequest();
-	seqCPbuf.reset();
-	songCPbuf.reset();
-
-	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
-		editingGate[trkn] = 0ul;
-		sek[trkn].reset(editingSequence);
-	}
-	editingType = 0ul;
 }
 
 

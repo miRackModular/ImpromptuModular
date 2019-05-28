@@ -30,6 +30,207 @@ void SequencerKernel::construct(int _id, SequencerKernel *_masterKernel, bool* _
 }
 
 
+void SequencerKernel::onReset(bool editingSequence) {
+	initPulsesPerStep();
+	initDelay();
+	// reset song content
+	runModeSong = MODE_FWD;
+	songBeginIndex = 0;
+	songEndIndex = 0;
+	for (int phrn = 0; phrn < MAX_PHRASES; phrn++) {
+		phrases[phrn].init();
+	}
+	// reset sequence content
+	for (int seqn = 0; seqn < MAX_SEQS; seqn++) {
+		sequences[seqn].init(MAX_STEPS, MODE_FWD);
+		for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
+			cv[seqn][stepn] = INIT_CV;
+			attributes[seqn][stepn].init();
+		}
+		dirty[seqn] = 0;
+	}
+	seqIndexEdit = 0;
+	resetNonJson(editingSequence);
+}
+void SequencerKernel::resetNonJson(bool editingSequence) {
+	clockPeriod = 0ul;
+	initRun(editingSequence);
+}
+
+
+void SequencerKernel::onRandomize(bool editingSequence) {
+	// randomize sequence only
+	sequences[seqIndexEdit].randomize(MAX_STEPS, NUM_MODES);// code below uses lengths so this must be randomized first
+	for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
+		cv[seqIndexEdit][stepn] = ((float)(random::u32() % 7)) + ((float)(random::u32() % 12)) / 12.0f - 3.0f;
+		attributes[seqIndexEdit][stepn].randomize();
+	}
+	dirty[seqIndexEdit] = 1;
+	initRun(editingSequence);
+}
+	
+void SequencerKernel::initRun(bool editingSequence) {
+	movePhraseIndexRun(true);// true means init 
+	moveStepIndexRunIgnore = false;
+	moveStepIndexRun(true, editingSequence);// true means init 
+	ppqnCount = 0;
+	ppqnLeftToSkip = delay;
+	calcGateCode(editingSequence);// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
+	slideStepsRemain = 0ul;
+}
+
+
+void SequencerKernel::dataToJson(json_t *rootJ) {
+	// pulsesPerStep
+	json_object_set_new(rootJ, (ids + "pulsesPerStep").c_str(), json_integer(pulsesPerStep));
+
+	// delay
+	json_object_set_new(rootJ, (ids + "delay").c_str(), json_integer(delay));
+
+	// runModeSong
+	json_object_set_new(rootJ, (ids + "runModeSong").c_str(), json_integer(runModeSong));
+
+	// songBeginIndex
+	json_object_set_new(rootJ, (ids + "songBeginIndex").c_str(), json_integer(songBeginIndex));
+
+	// songEndIndex
+	json_object_set_new(rootJ, (ids + "songEndIndex").c_str(), json_integer(songEndIndex));
+
+	// phrases 
+	json_t *phrasesJ = json_array();
+	for (int i = 0; i < MAX_PHRASES; i++)
+		json_array_insert_new(phrasesJ, i, json_integer(phrases[i].getPhraseJson()));
+	json_object_set_new(rootJ, (ids + "phrases").c_str(), phrasesJ);
+
+	// sequences (attributes of a seqs)
+	json_t *sequencesJ = json_array();
+	for (int i = 0; i < MAX_SEQS; i++)
+		json_array_insert_new(sequencesJ, i, json_integer(sequences[i].getSeqAttrib()));
+	json_object_set_new(rootJ, (ids + "sequences").c_str(), sequencesJ);
+
+	// CV and attributes (and dirty)
+	json_t *seqSavedJ = json_array();		
+	json_t *cvJ = json_array();
+	json_t *attributesJ = json_array();
+	for (int seqnRead = 0, seqnWrite = 0; seqnRead < MAX_SEQS; seqnRead++) {
+		if (dirty[seqnRead] == 0) {
+			json_array_insert_new(seqSavedJ, seqnRead, json_integer(0));
+		}
+		else {
+			json_array_insert_new(seqSavedJ, seqnRead, json_integer(1));
+			for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
+				json_array_insert_new(cvJ, stepn + (seqnWrite * MAX_STEPS), json_real(cv[seqnRead][stepn]));
+				json_array_insert_new(attributesJ, stepn + (seqnWrite * MAX_STEPS), json_integer(attributes[seqnRead][stepn].getAttribute()));
+			}
+			seqnWrite++;
+		}
+	}
+	json_object_set_new(rootJ, (ids + "seqSaved").c_str(), seqSavedJ);
+	json_object_set_new(rootJ, (ids + "cv").c_str(), cvJ);
+	json_object_set_new(rootJ, (ids + "attributes").c_str(), attributesJ);
+
+	// seqIndexEdit
+	json_object_set_new(rootJ, (ids + "seqIndexEdit").c_str(), json_integer(seqIndexEdit));
+}
+
+
+void SequencerKernel::dataFromJson(json_t *rootJ, bool editingSequence) {
+	// pulsesPerStep
+	json_t *pulsesPerStepJ = json_object_get(rootJ, (ids + "pulsesPerStep").c_str());
+	if (pulsesPerStepJ)
+		pulsesPerStep = json_integer_value(pulsesPerStepJ);
+
+	// delay
+	json_t *delayJ = json_object_get(rootJ, (ids + "delay").c_str());
+	if (delayJ)
+		delay = json_integer_value(delayJ);
+
+	// runModeSong
+	json_t *runModeSongJ = json_object_get(rootJ, (ids + "runModeSong").c_str());
+	if (runModeSongJ)
+		runModeSong = json_integer_value(runModeSongJ);
+			
+	// songBeginIndex
+	json_t *songBeginIndexJ = json_object_get(rootJ, (ids + "songBeginIndex").c_str());
+	if (songBeginIndexJ)
+		songBeginIndex = json_integer_value(songBeginIndexJ);
+			
+	// songEndIndex
+	json_t *songEndIndexJ = json_object_get(rootJ, (ids + "songEndIndex").c_str());
+	if (songEndIndexJ)
+		songEndIndex = json_integer_value(songEndIndexJ);
+
+	// phrases
+	json_t *phrasesJ = json_object_get(rootJ, (ids + "phrases").c_str());
+	if (phrasesJ)
+		for (int i = 0; i < MAX_PHRASES; i++)
+		{
+			json_t *phrasesArrayJ = json_array_get(phrasesJ, i);
+			if (phrasesArrayJ)
+				phrases[i].setPhraseJson(json_integer_value(phrasesArrayJ));
+		}
+	
+	// sequences (attributes of a seqs)
+	json_t *sequencesJ = json_object_get(rootJ, (ids + "sequences").c_str());
+	if (sequencesJ) {
+		for (int i = 0; i < MAX_SEQS; i++)
+		{
+			json_t *sequencesArrayJ = json_array_get(sequencesJ, i);
+			if (sequencesArrayJ)
+				sequences[i].setSeqAttrib(json_integer_value(sequencesArrayJ));
+		}			
+	}		
+	
+	// CV and attributes (and dirty)
+	json_t *seqSavedJ = json_object_get(rootJ, (ids + "seqSaved").c_str());
+	int seqSaved[MAX_SEQS];
+	if (seqSavedJ) {
+		int i;
+		for (i = 0; i < MAX_SEQS; i++)
+		{
+			json_t *seqSavedArrayJ = json_array_get(seqSavedJ, i);
+			if (seqSavedArrayJ)
+				seqSaved[i] = json_integer_value(seqSavedArrayJ);
+			else 
+				break;
+		}	
+		if (i == MAX_SEQS) {			
+			json_t *cvJ = json_object_get(rootJ, (ids + "cv").c_str());
+			json_t *attributesJ = json_object_get(rootJ, (ids + "attributes").c_str());
+			if (cvJ && attributesJ) {
+				for (int seqnFull = 0, seqnComp = 0; seqnFull < MAX_SEQS; seqnFull++) {
+					if (seqSaved[seqnFull]) {
+						for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
+							json_t *cvArrayJ = json_array_get(cvJ, stepn + (seqnComp * MAX_STEPS));
+							if (cvArrayJ)
+								cv[seqnFull][stepn] = json_number_value(cvArrayJ);
+							json_t *attributesArrayJ = json_array_get(attributesJ, stepn + (seqnComp * MAX_STEPS));
+							if (attributesArrayJ)
+								attributes[seqnFull][stepn].setAttribute(json_integer_value(attributesArrayJ));
+						}
+						dirty[seqnFull] = 1;
+						seqnComp++;
+					}
+					else {
+						for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
+							cv[seqnFull][stepn] = INIT_CV;
+							attributes[seqnFull][stepn].init();
+						}
+						dirty[seqnFull] = 0;
+					}	
+				}
+			}
+		}
+	}		
+	
+	// seqIndexEdit
+	json_t *seqIndexEditJ = json_object_get(rootJ, (ids + "seqIndexEdit").c_str());
+	if (seqIndexEditJ)
+		seqIndexEdit = json_integer_value(seqIndexEditJ);
+	
+	resetNonJson(editingSequence);
+}
+
 
 void SequencerKernel::setGate(int stepn, bool newGate, int count) {
 	int endi = std::min((int)MAX_STEPS, stepn + count);
@@ -113,36 +314,6 @@ void SequencerKernel::writeCV(int stepn, float newCV, int count) {// does not ov
 }
 
 
-void SequencerKernel::initSequence(int seqn) {
-	sequences[seqn].init(MAX_STEPS, MODE_FWD);
-	for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
-		cv[seqn][stepn] = INIT_CV;
-		attributes[seqn][stepn].init();
-	}
-	dirty[seqn] = 0;
-}
-void SequencerKernel::initSong() {
-	runModeSong = MODE_FWD;
-	songBeginIndex = 0;
-	songEndIndex = 0;
-	for (int phrn = 0; phrn < MAX_PHRASES; phrn++) {
-		phrases[phrn].init();
-	}
-}
-
-
-void SequencerKernel::randomizeSequence() {
-	sequences[seqIndexEdit].randomize(MAX_STEPS, NUM_MODES);// code below uses lengths so this must be randomized first
-	for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
-		cv[seqIndexEdit][stepn] = ((float)(random::u32() % 7)) + ((float)(random::u32() % 12)) / 12.0f - 3.0f;
-		attributes[seqIndexEdit][stepn].randomize();
-		// if (attributes[seqIndexEdit][stepn].getTied()) {
-			// activateTiedStep(seqIndexEdit, stepn);
-		// }	
-	}
-	dirty[seqIndexEdit] = 1;
-}
-
 void SequencerKernel::copySequence(SeqCPbuffer* seqCPbuf, int startCP, int countCP) {
 	countCP = std::min(countCP, (int)MAX_STEPS - startCP);
 	for (int i = 0, stepn = startCP; i < countCP; i++, stepn++) {
@@ -182,187 +353,6 @@ void SequencerKernel::pasteSong(SongCPbuffer* songCPbuf, int startCP) {
 		songEndIndex = songCPbuf->endIndex;
 		runModeSong = songCPbuf->runModeSong;
 	}
-}
-
-
-void SequencerKernel::reset(bool editingSequence) {
-	seqIndexEdit = 0;
-	initPulsesPerStep();
-	initDelay();
-	initSong();
-	for (int seqn = 0; seqn < MAX_SEQS; seqn++) {
-		initSequence(seqn);		
-	}
-	clockPeriod = 0ul;
-	initRun(editingSequence);
-}
-
-
-void SequencerKernel::randomize(bool editingSequence) {
-	randomizeSequence();
-	initRun(editingSequence);
-}
-	
-
-void SequencerKernel::dataToJson(json_t *rootJ) {
-	// pulsesPerStep
-	json_object_set_new(rootJ, (ids + "pulsesPerStep").c_str(), json_integer(pulsesPerStep));
-
-	// delay
-	json_object_set_new(rootJ, (ids + "delay").c_str(), json_integer(delay));
-
-	// runModeSong
-	json_object_set_new(rootJ, (ids + "runModeSong").c_str(), json_integer(runModeSong));
-
-	// sequences (attributes of a seqs)
-	json_t *sequencesJ = json_array();
-	for (int i = 0; i < MAX_SEQS; i++)
-		json_array_insert_new(sequencesJ, i, json_integer(sequences[i].getSeqAttrib()));
-	json_object_set_new(rootJ, (ids + "sequences").c_str(), sequencesJ);
-
-	// phrases 
-	json_t *phrasesJ = json_array();
-	for (int i = 0; i < MAX_PHRASES; i++)
-		json_array_insert_new(phrasesJ, i, json_integer(phrases[i].getPhraseJson()));
-	json_object_set_new(rootJ, (ids + "phrases").c_str(), phrasesJ);
-
-	// CV and attributes
-	json_t *seqSavedJ = json_array();		
-	json_t *cvJ = json_array();
-	json_t *attributesJ = json_array();
-	for (int seqnRead = 0, seqnWrite = 0; seqnRead < MAX_SEQS; seqnRead++) {
-		if (dirty[seqnRead] == 0) {
-			json_array_insert_new(seqSavedJ, seqnRead, json_integer(0));
-		}
-		else {
-			json_array_insert_new(seqSavedJ, seqnRead, json_integer(1));
-			for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
-				json_array_insert_new(cvJ, stepn + (seqnWrite * MAX_STEPS), json_real(cv[seqnRead][stepn]));
-				json_array_insert_new(attributesJ, stepn + (seqnWrite * MAX_STEPS), json_integer(attributes[seqnRead][stepn].getAttribute()));
-			}
-			seqnWrite++;
-		}
-	}
-	json_object_set_new(rootJ, (ids + "seqSaved").c_str(), seqSavedJ);
-	json_object_set_new(rootJ, (ids + "cv").c_str(), cvJ);
-	json_object_set_new(rootJ, (ids + "attributes").c_str(), attributesJ);
-
-	// songBeginIndex
-	json_object_set_new(rootJ, (ids + "songBeginIndex").c_str(), json_integer(songBeginIndex));
-
-	// songEndIndex
-	json_object_set_new(rootJ, (ids + "songEndIndex").c_str(), json_integer(songEndIndex));
-
-	// seqIndexEdit
-	json_object_set_new(rootJ, (ids + "seqIndexEdit").c_str(), json_integer(seqIndexEdit));
-}
-
-
-void SequencerKernel::dataFromJson(json_t *rootJ) {
-	// pulsesPerStep
-	json_t *pulsesPerStepJ = json_object_get(rootJ, (ids + "pulsesPerStep").c_str());
-	if (pulsesPerStepJ)
-		pulsesPerStep = json_integer_value(pulsesPerStepJ);
-
-	// delay
-	json_t *delayJ = json_object_get(rootJ, (ids + "delay").c_str());
-	if (delayJ)
-		delay = json_integer_value(delayJ);
-
-	// runModeSong
-	json_t *runModeSongJ = json_object_get(rootJ, (ids + "runModeSong").c_str());
-	if (runModeSongJ)
-		runModeSong = json_integer_value(runModeSongJ);
-			
-	// sequences (attributes of a seqs)
-	json_t *sequencesJ = json_object_get(rootJ, (ids + "sequences").c_str());
-	if (sequencesJ) {
-		for (int i = 0; i < MAX_SEQS; i++)
-		{
-			json_t *sequencesArrayJ = json_array_get(sequencesJ, i);
-			if (sequencesArrayJ)
-				sequences[i].setSeqAttrib(json_integer_value(sequencesArrayJ));
-		}			
-	}		
-	
-	// phrases
-	json_t *phrasesJ = json_object_get(rootJ, (ids + "phrases").c_str());
-	if (phrasesJ)
-		for (int i = 0; i < MAX_PHRASES; i++)
-		{
-			json_t *phrasesArrayJ = json_array_get(phrasesJ, i);
-			if (phrasesArrayJ)
-				phrases[i].setPhraseJson(json_integer_value(phrasesArrayJ));
-		}
-	
-	// CV and attributes
-	json_t *seqSavedJ = json_object_get(rootJ, (ids + "seqSaved").c_str());
-	int seqSaved[MAX_SEQS];
-	if (seqSavedJ) {
-		int i;
-		for (i = 0; i < MAX_SEQS; i++)
-		{
-			json_t *seqSavedArrayJ = json_array_get(seqSavedJ, i);
-			if (seqSavedArrayJ)
-				seqSaved[i] = json_integer_value(seqSavedArrayJ);
-			else 
-				break;
-		}	
-		if (i == MAX_SEQS) {			
-			json_t *cvJ = json_object_get(rootJ, (ids + "cv").c_str());
-			json_t *attributesJ = json_object_get(rootJ, (ids + "attributes").c_str());
-			if (cvJ && attributesJ) {
-				for (int seqnFull = 0, seqnComp = 0; seqnFull < MAX_SEQS; seqnFull++) {
-					if (seqSaved[seqnFull]) {
-						for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
-							json_t *cvArrayJ = json_array_get(cvJ, stepn + (seqnComp * MAX_STEPS));
-							if (cvArrayJ)
-								cv[seqnFull][stepn] = json_number_value(cvArrayJ);
-							json_t *attributesArrayJ = json_array_get(attributesJ, stepn + (seqnComp * MAX_STEPS));
-							if (attributesArrayJ)
-								attributes[seqnFull][stepn].setAttribute(json_integer_value(attributesArrayJ));
-						}
-						dirty[seqnFull] = 1;
-						seqnComp++;
-					}
-					else {
-						for (int stepn = 0; stepn < MAX_STEPS; stepn++) {
-							cv[seqnFull][stepn] = INIT_CV;
-							attributes[seqnFull][stepn].init();
-						}
-						dirty[seqnFull] = 0;
-					}	
-				}
-			}
-		}
-	}		
-	
-	// songBeginIndex
-	json_t *songBeginIndexJ = json_object_get(rootJ, (ids + "songBeginIndex").c_str());
-	if (songBeginIndexJ)
-		songBeginIndex = json_integer_value(songBeginIndexJ);
-			
-	// songEndIndex
-	json_t *songEndIndexJ = json_object_get(rootJ, (ids + "songEndIndex").c_str());
-	if (songEndIndexJ)
-		songEndIndex = json_integer_value(songEndIndexJ);
-
-	// seqIndexEdit
-	json_t *seqIndexEditJ = json_object_get(rootJ, (ids + "seqIndexEdit").c_str());
-	if (seqIndexEditJ)
-		seqIndexEdit = json_integer_value(seqIndexEditJ);
-}
-
-
-void SequencerKernel::initRun(bool editingSequence) {
-	movePhraseIndexRun(true);// true means init 
-	moveStepIndexRunIgnore = false;
-	moveStepIndexRun(true, editingSequence);// true means init 
-	
-	ppqnCount = 0;
-	ppqnLeftToSkip = delay;
-	calcGateCode(editingSequence);// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
-	slideStepsRemain = 0ul;
 }
 
 

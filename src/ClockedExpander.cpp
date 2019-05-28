@@ -27,7 +27,7 @@ struct ClockedExpander : Module {
 	float producerMessage[1] = {};// mother will write into here
 
 
-	// No need to save
+	// No need to save, no reset
 	int panelTheme;
 	unsigned int expanderRefreshCounter = 0;
 

@@ -58,24 +58,26 @@ struct BigButtonSeq : Module {
 		NUM_LIGHTS
 	};
 	
-	// Need to save
+	// Need to save, no reset
 	int panelTheme;
-	int metronomeDiv = 4;
-	bool writeFillsToMemory;
-	bool quantizeBig;
+	
+	// Need to save, with reset
 	int indexStep;
 	int bank[6];
 	uint64_t gates[6][2];// channel , bank
+	int metronomeDiv;
+	bool writeFillsToMemory;
+	bool quantizeBig;
 	bool nextStepHits;
 	
-	// No need to save
+	// No need to save, with reset
 	long clockIgnoreOnReset;
 	double lastPeriod;//2.0 when not seen yet (init or stopped clock and went greater than 2s, which is max period supported for time-snap)
 	double clockTime;//clock time counter (time since last clock)
 	int pendingOp;// 0 means nothing pending, +1 means pending big button push, -1 means pending del
 	bool fillPressed;
 	
-
+	// No need to save, no reset
 	RefreshCounter refresh;	
 	float bigLight = 0.0f;
 	float metronomeLightStart = 0.0f;
@@ -125,15 +127,19 @@ struct BigButtonSeq : Module {
 
 	
 	void onReset() override {
-		writeFillsToMemory = false;
-		quantizeBig = true;
-		nextStepHits = false;
 		indexStep = 0;
 		for (int c = 0; c < 6; c++) {
 			bank[c] = 0;
 			gates[c][0] = 0;
 			gates[c][1] = 0;
 		}
+		metronomeDiv = 4;
+		writeFillsToMemory = false;
+		quantizeBig = true;
+		nextStepHits = false;
+		resetNonJson();
+	}
+	void resetNonJson() {
 		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 		lastPeriod = 2.0;
 		clockTime = 0.0;
@@ -150,6 +156,9 @@ struct BigButtonSeq : Module {
 	
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
+
+		// panelTheme
+		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
 
 		// indexStep
 		json_object_set_new(rootJ, "indexStep", json_integer(indexStep));
@@ -170,9 +179,6 @@ struct BigButtonSeq : Module {
 			}
 		json_object_set_new(rootJ, "gates", gatesJ);
 
-		// panelTheme
-		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
-
 		// metronomeDiv
 		json_object_set_new(rootJ, "metronomeDiv", json_integer(metronomeDiv));
 
@@ -190,6 +196,11 @@ struct BigButtonSeq : Module {
 
 
 	void dataFromJson(json_t *rootJ) override {
+		// panelTheme
+		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
+		if (panelThemeJ)
+			panelTheme = json_integer_value(panelThemeJ);
+
 		// indexStep
 		json_t *indexStepJ = json_object_get(rootJ, "indexStep");
 		if (indexStepJ)
@@ -221,11 +232,6 @@ struct BigButtonSeq : Module {
 			}
 		}
 		
-		// panelTheme
-		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
-		if (panelThemeJ)
-			panelTheme = json_integer_value(panelThemeJ);
-
 		// metronomeDiv
 		json_t *metronomeDivJ = json_object_get(rootJ, "metronomeDiv");
 		if (metronomeDivJ)
@@ -245,6 +251,8 @@ struct BigButtonSeq : Module {
 		json_t *nextStepHitsJ = json_object_get(rootJ, "nextStepHits");
 		if (nextStepHitsJ)
 			nextStepHits = json_is_true(nextStepHitsJ);
+
+		resetNonJson();// need this for load preset, which won't have onReset() called
 	}
 
 	
