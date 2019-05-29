@@ -718,7 +718,7 @@ struct Clocked : Module {
 			if (rightExpander.module && rightExpander.module->model == modelClockedExpander) {
 				float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
 				producerMessage[0] = (float)panelTheme;
-				// no flip request needed here since expander will regularly call flips
+				rightExpander.messageFlipRequested = true;
 			}
 		}// lightRefreshCounter
 	}// process()

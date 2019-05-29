@@ -1201,7 +1201,7 @@ struct Foundry : Module {
 				for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 					producerMessage[3 + trkn] = (editingSequence && ((writeMode & 0x1) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
 				}	
-				// no flip request needed here since expander will regularly call flips
+				rightExpander.messageFlipRequested = true;
 			}
 		}// lightRefreshCounter
 				
