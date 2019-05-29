@@ -45,9 +45,9 @@ struct GateSeq64Expander : Module {
 
 
 	void process(const ProcessArgs &args) override {		
-		expanderRefreshCounter++;
-		if (expanderRefreshCounter >= expanderRefreshStepSkips) {
-			expanderRefreshCounter = 0;
+		// expanderRefreshCounter++;
+		// if (expanderRefreshCounter >= expanderRefreshStepSkips) {
+			// expanderRefreshCounter = 0;
 			
 			bool motherPresent = (leftExpander.module && leftExpander.module->model == modelGateSeq64);
 			if (motherPresent) {
@@ -63,7 +63,7 @@ struct GateSeq64Expander : Module {
 				// From Mother
 				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
 			}		
-		}// expanderRefreshCounter
+		// }// expanderRefreshCounter
 	}// process()
 };
 

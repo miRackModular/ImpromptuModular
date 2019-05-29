@@ -64,9 +64,9 @@ struct FoundryExpander : Module {
 
 
 	void process(const ProcessArgs &args) override {		
-		expanderRefreshCounter++;
-		if (expanderRefreshCounter >= expanderRefreshStepSkips) {
-			expanderRefreshCounter = 0;
+		// expanderRefreshCounter++;
+		// if (expanderRefreshCounter >= expanderRefreshStepSkips) {
+			// expanderRefreshCounter = 0;
 			
 			bool motherPresent = leftExpander.module && leftExpander.module->model == modelFoundry;
 			if (motherPresent) {
@@ -93,7 +93,7 @@ struct FoundryExpander : Module {
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 				lights[WRITECV2_LIGHTS + trkn].setBrightness(motherPresent ? consumerMessage[trkn + 3] : 0.0f);
 			}	
-		}// expanderRefreshCounter
+		// }// expanderRefreshCounter
 	}// process()
 };
 

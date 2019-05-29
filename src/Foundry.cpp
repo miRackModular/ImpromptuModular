@@ -1192,18 +1192,18 @@ struct Foundry : Module {
 				revertDisplay--;
 			}
 			
-			// To Expander
-			if (rightExpander.module && rightExpander.module->model == modelFoundryExpander) {
-				float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
-				producerMessage[0] = (float)panelTheme;
-				producerMessage[1] = (((writeMode & 0x2) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 0].setBrightness()
-				producerMessage[2] = (((writeMode & 0x1) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 1].setBrightness()
-				for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-					producerMessage[3 + trkn] = (editingSequence && ((writeMode & 0x1) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
-				}	
-				rightExpander.messageFlipRequested = true;
-			}
 		}// lightRefreshCounter
+		// To Expander
+		if (rightExpander.module && rightExpander.module->model == modelFoundryExpander) {
+			float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
+			producerMessage[0] = (float)panelTheme;
+			producerMessage[1] = (((writeMode & 0x2) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 0].setBrightness()
+			producerMessage[2] = (((writeMode & 0x1) == 0) && editingSequence) ? 1.0f : 0.0f;// lights[WRITE_SEL_LIGHTS + 1].setBrightness()
+			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
+				producerMessage[3 + trkn] = (editingSequence && ((writeMode & 0x1) == 0) && (multiTracks || seq.getTrackIndexEdit() == trkn)) ? 1.0f : 0.0f;
+			}	
+			rightExpander.messageFlipRequested = true;
+		}
 				
 		if (clockIgnoreOnReset > 0l)
 			clockIgnoreOnReset--;

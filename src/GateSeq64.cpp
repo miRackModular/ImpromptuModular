@@ -1149,15 +1149,14 @@ struct GateSeq64 : Module {
 					blinkCount = 0l;
 					blinkNum--;
 				}
-			}
-			
-			// To Expander
-			if (rightExpander.module && rightExpander.module->model == modelGateSeq64Expander) {
-				float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
-				producerMessage[0] = (float)panelTheme;
-				rightExpander.messageFlipRequested = true;
-			}
+			}		
 		}// lightRefreshCounter
+		// To Expander
+		if (rightExpander.module && rightExpander.module->model == modelGateSeq64Expander) {
+			float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
+			producerMessage[0] = (float)panelTheme;
+			rightExpander.messageFlipRequested = true;
+		}
 
 		if (clockIgnoreOnReset > 0l)
 			clockIgnoreOnReset--;

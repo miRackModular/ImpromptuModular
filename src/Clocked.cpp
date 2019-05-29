@@ -714,13 +714,13 @@ struct Clocked : Module {
 			if (editingBpmMode < 0l)
 				editingBpmMode = 0l;
 			
-			// To Expander
-			if (rightExpander.module && rightExpander.module->model == modelClockedExpander) {
-				float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
-				producerMessage[0] = (float)panelTheme;
-				rightExpander.messageFlipRequested = true;
-			}
 		}// lightRefreshCounter
+		// To Expander
+		if (rightExpander.module && rightExpander.module->model == modelClockedExpander) {
+			float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
+			producerMessage[0] = (float)panelTheme;
+			rightExpander.messageFlipRequested = true;
+		}
 	}// process()
 };
 

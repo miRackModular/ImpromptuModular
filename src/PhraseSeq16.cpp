@@ -1488,15 +1488,14 @@ struct PhraseSeq16 : Module {
 				if (revertDisplay == 1)
 					displayState = DISP_NORMAL;
 				revertDisplay--;
-			}
-			
-			// To Expander
-			if (rightExpander.module && rightExpander.module->model == modelPhraseSeqExpander) {
-				float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
-				producerMessage[0] = (float)panelTheme;
-				rightExpander.messageFlipRequested = true;
-			}
+			}			
 		}// lightRefreshCounter
+		// To Expander
+		if (rightExpander.module && rightExpander.module->model == modelPhraseSeqExpander) {
+			float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
+			producerMessage[0] = (float)panelTheme;
+			rightExpander.messageFlipRequested = true;
+		}
 		
 		if (clockIgnoreOnReset > 0l)
 			clockIgnoreOnReset--;

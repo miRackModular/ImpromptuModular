@@ -46,9 +46,9 @@ struct PhraseSeqExpander : Module {
 
 
 	void process(const ProcessArgs &args) override {		
-		expanderRefreshCounter++;
-		if (expanderRefreshCounter >= expanderRefreshStepSkips) {
-			expanderRefreshCounter = 0;
+		// expanderRefreshCounter++;
+		// if (expanderRefreshCounter >= expanderRefreshStepSkips) {
+			// expanderRefreshCounter = 0;
 			
 			bool motherPresent = leftExpander.module && (leftExpander.module->model == modelPhraseSeq16 || leftExpander.module->model == modelPhraseSeq32);
 			if (motherPresent) {
@@ -64,7 +64,7 @@ struct PhraseSeqExpander : Module {
 				// From Mother
 				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
 			}		
-		}// expanderRefreshCounter			
+		// }// expanderRefreshCounter			
 	}// process()
 };
 
