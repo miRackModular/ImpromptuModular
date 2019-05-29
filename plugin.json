@@ -114,7 +114,7 @@
 			"slug": "Semi-Modular Synth",
 			"name": "SemiModular Synth",
 			"description": "Semi-modular monophonic synthesizer with sequencer",
-			"tags": ["Sequencer", "Vco"]
+			"tags": ["Synth voice"]
 		},
 		{
 			"slug": "Blank-Panel",
