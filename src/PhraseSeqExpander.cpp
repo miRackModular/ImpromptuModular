@@ -26,8 +26,7 @@ struct PhraseSeqExpander : Module {
 
 
 	// Expander
-	float consumerMessage[1] = {};// this module must read from here
-	float producerMessage[1] = {};// mother will write into here
+	float leftMessages[2][1] = {};// messages from mother
 
 
 	// No need to save
@@ -38,33 +37,34 @@ struct PhraseSeqExpander : Module {
 	PhraseSeqExpander() {
 		config(0, NUM_INPUTS, 0, 0);
 		
-		leftExpander.producerMessage = producerMessage;
-		leftExpander.consumerMessage = consumerMessage;
+		leftExpander.producerMessage = leftMessages[0];
+		leftExpander.consumerMessage = leftMessages[1];
 		
 		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 
 	void process(const ProcessArgs &args) override {		
-		// expanderRefreshCounter++;
-		// if (expanderRefreshCounter >= expanderRefreshStepSkips) {
-			// expanderRefreshCounter = 0;
+		expanderRefreshCounter++;
+		if (expanderRefreshCounter >= expanderRefreshStepSkips) {
+			expanderRefreshCounter = 0;
 			
 			bool motherPresent = leftExpander.module && (leftExpander.module->model == modelPhraseSeq16 || leftExpander.module->model == modelPhraseSeq32);
 			if (motherPresent) {
 				// To Mother
-				float *producerMessage = reinterpret_cast<float*>(leftExpander.module->rightExpander.producerMessage);
+				float *messagesToMother = (float*)leftExpander.module->rightExpander.producerMessage;
 				int i = 0;
 				for (; i < NUM_INPUTS - 1; i++) {
-					producerMessage[i] = inputs[i].getVoltage();
+					messagesToMother[i] = inputs[i].getVoltage();
 				}
-				producerMessage[i] = (inputs[i].isConnected() ? inputs[i].getVoltage() : std::numeric_limits<float>::quiet_NaN());
-				leftExpander.messageFlipRequested = true;
+				messagesToMother[i] = (inputs[i].isConnected() ? inputs[i].getVoltage() : std::numeric_limits<float>::quiet_NaN());
+				leftExpander.module->rightExpander.messageFlipRequested = true;
 					
 				// From Mother
-				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
+				float *messagesFromMother = (float*)leftExpander.consumerMessage;
+				panelTheme = clamp((int)(messagesFromMother[0] + 0.5f), 0, 1);
 			}		
-		// }// expanderRefreshCounter			
+		}// expanderRefreshCounter			
 	}// process()
 };
 

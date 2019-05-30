@@ -225,8 +225,7 @@ struct Clocked : Module {
 	
 	
 	// Expander
-	float consumerMessage[8] = {};// this module must read from here
-	float producerMessage[8] = {};// expander will write into here
+	float rightMessages[2][8] = {};// messages from expander
 		
 
 	// Constants
@@ -306,18 +305,19 @@ struct Clocked : Module {
 	
 	void updatePulseSwingDelay() {
 		bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelClockedExpander);
+		float *messagesFromExpander = (float*)rightExpander.consumerMessage;// could be invalid pointer when !expanderPresent, so read it only when expanderPresent
 		for (int i = 0; i < 4; i++) {
 			// Pulse Width
 			pulseWidth[i] = params[PW_PARAMS + i].getValue();
 			if (i < 3 && expanderPresent) {
-				pulseWidth[i] += (consumerMessage[i] / 10.0f);
+				pulseWidth[i] += (messagesFromExpander[i] / 10.0f);
 				pulseWidth[i] = clamp(pulseWidth[i], 0.0f, 1.0f);
 			}
 			
 			// Swing
 			swingAmount[i] = params[SWING_PARAMS + i].getValue();
 			if (i < 3 && expanderPresent) {
-				swingAmount[i] += (consumerMessage[i + 4] / 5.0f);
+				swingAmount[i] += (messagesFromExpander[i + 4] / 5.0f);
 				swingAmount[i] = clamp(swingAmount[i], -1.0f, 1.0f);
 			}
 		}
@@ -339,8 +339,8 @@ struct Clocked : Module {
 	Clocked() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		rightExpander.producerMessage = producerMessage;
-		rightExpander.consumerMessage = consumerMessage;
+		rightExpander.producerMessage = rightMessages[0];
+		rightExpander.consumerMessage = rightMessages[1];
 
 		configParam(RATIO_PARAMS + 0, (float)(bpmMin), (float)(bpmMax), 120.0f, "Master clock", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
@@ -714,13 +714,13 @@ struct Clocked : Module {
 			if (editingBpmMode < 0l)
 				editingBpmMode = 0l;
 			
+			// To Expander
+			if (rightExpander.module && rightExpander.module->model == modelClockedExpander) {
+				float *messageToExpander = (float*)(rightExpander.module->leftExpander.producerMessage);
+				messageToExpander[0] = (float)panelTheme;
+				rightExpander.module->leftExpander.messageFlipRequested = true;
+			}
 		}// lightRefreshCounter
-		// To Expander
-		if (rightExpander.module && rightExpander.module->model == modelClockedExpander) {
-			float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
-			producerMessage[0] = (float)panelTheme;
-			rightExpander.messageFlipRequested = true;
-		}
 	}// process()
 };
 

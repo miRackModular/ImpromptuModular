@@ -86,8 +86,7 @@ struct PhraseSeq32 : Module {
 	
 	
 	// Expander
-	float consumerMessage[5] = {};// this module must read from here
-	float producerMessage[5] = {};// expander will write into here
+	float rightMessages[2][5] = {};// messages from expander
 
 
 	// Constants
@@ -214,8 +213,8 @@ struct PhraseSeq32 : Module {
 	PhraseSeq32() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		rightExpander.producerMessage = producerMessage;
-		rightExpander.consumerMessage = consumerMessage;
+		rightExpander.producerMessage = rightMessages[0];
+		rightExpander.consumerMessage = rightMessages[1];
 
 		configParam(CONFIG_PARAM, 0.0f, 1.0f, PhraseSeq32::CONFIG_PARAM_INIT_VALUE, "Configuration (1, 2 chan)");
 		char strBuf[32];
@@ -662,6 +661,7 @@ struct PhraseSeq32 : Module {
 		static const float editGateLengthTime = 3.5f;// seconds
 		
 		bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelPhraseSeqExpander);
+		float *messagesFromExpander = (float*)rightExpander.consumerMessage;// could be invalid pointer when !expanderPresent, so read it only when expanderPresent
 
 		
 		//********** Buttons, knobs, switches and inputs **********
@@ -716,9 +716,9 @@ struct PhraseSeq32 : Module {
 			}
 			
 			// Mode CV input
-			float modeCVin = consumerMessage[4];
-			if (expanderPresent && !std::isnan(modeCVin)) {
-				if (editingSequence)
+			if (expanderPresent && editingSequence) {
+				float modeCVin = messagesFromExpander[4];
+				if (!std::isnan(modeCVin))
 					sequences[seqIndexEdit].setRunMode((int) clamp( std::round(modeCVin * ((float)NUM_MODES - 1.0f) / 10.0f), 0.0f, (float)NUM_MODES - 1.0f ));
 			}
 			
@@ -996,7 +996,7 @@ struct PhraseSeq32 : Module {
 					}
 					else if (displayState == DISP_MODE) {
 						if (editingSequence) {
-							if (!expanderPresent || std::isnan(consumerMessage[4])) {
+							if (!expanderPresent || std::isnan(messagesFromExpander[4])) {
 								sequences[seqIndexEdit].setRunMode(clamp(sequences[seqIndexEdit].getRunMode() + deltaKnob, 0, NUM_MODES - 1));
 							}
 						}
@@ -1154,7 +1154,7 @@ struct PhraseSeq32 : Module {
 			}
 
 			// Gate1, Gate1Prob, Gate2, Slide and Tied buttons
-			if (gate1Trigger.process(params[GATE1_PARAM].getValue() + (expanderPresent ? consumerMessage[0] : 0.0f))) {
+			if (gate1Trigger.process(params[GATE1_PARAM].getValue() + (expanderPresent ? messagesFromExpander[0] : 0.0f))) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					attributes[seqIndexEdit][stepIndexEdit].toggleGate1();
@@ -1169,13 +1169,13 @@ struct PhraseSeq32 : Module {
 						attributes[seqIndexEdit][stepIndexEdit].toggleGate1P();
 				}
 			}		
-			if (gate2Trigger.process(params[GATE2_PARAM].getValue() + (expanderPresent ? consumerMessage[1] : 0.0f))) {
+			if (gate2Trigger.process(params[GATE2_PARAM].getValue() + (expanderPresent ? messagesFromExpander[1] : 0.0f))) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					attributes[seqIndexEdit][stepIndexEdit].toggleGate2();
 				}
 			}		
-			if (slideTrigger.process(params[SLIDE_BTN_PARAM].getValue() + (expanderPresent ? consumerMessage[3] : 0.0f))) {
+			if (slideTrigger.process(params[SLIDE_BTN_PARAM].getValue() + (expanderPresent ? messagesFromExpander[3] : 0.0f))) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (attributes[seqIndexEdit][stepIndexEdit].getTied())
@@ -1184,7 +1184,7 @@ struct PhraseSeq32 : Module {
 						attributes[seqIndexEdit][stepIndexEdit].toggleSlide();
 				}
 			}		
-			if (tiedTrigger.process(params[TIE_PARAM].getValue() + (expanderPresent ? consumerMessage[2] : 0.0f))) {
+			if (tiedTrigger.process(params[TIE_PARAM].getValue() + (expanderPresent ? messagesFromExpander[2] : 0.0f))) {
 				if (editingSequence) {
 					displayState = DISP_NORMAL;
 					if (attributes[seqIndexEdit][stepIndexEdit].getTied()) {
@@ -1285,9 +1285,9 @@ struct PhraseSeq32 : Module {
 		int seq = editingSequence ? seqIndexEdit : phrase[phraseIndexRun];
 		int step0 = (editingSequence && !running) ? stepIndexEdit : stepIndexRun[0];
 		if (running) {
-			bool muteGate1A = !editingSequence && ((params[GATE1_PARAM].getValue() + (expanderPresent ? consumerMessage[0] : 0.0f)) > 0.5f);// live mute
+			bool muteGate1A = !editingSequence && ((params[GATE1_PARAM].getValue() + (expanderPresent ? messagesFromExpander[0] : 0.0f)) > 0.5f);// live mute
 			bool muteGate1B = muteGate1A;
-			bool muteGate2A = !editingSequence && ((params[GATE2_PARAM].getValue() + (expanderPresent ? consumerMessage[1] : 0.0f)) > 0.5f);// live mute
+			bool muteGate2A = !editingSequence && ((params[GATE2_PARAM].getValue() + (expanderPresent ? messagesFromExpander[1] : 0.0f)) > 0.5f);// live mute
 			bool muteGate2B = muteGate2A;
 			if (!attached && (muteGate1B || muteGate2B) && stepConfig == 1) {
 				// if not attached in 2x16, mute only the channel where phraseIndexEdit is located (hack since phraseIndexEdit's row has no relation to channels)
@@ -1585,14 +1585,15 @@ struct PhraseSeq32 : Module {
 				if (revertDisplay == 1)
 					displayState = DISP_NORMAL;
 				revertDisplay--;
-			}			
+			}		
+			
+			// To Expander
+			if (rightExpander.module && rightExpander.module->model == modelPhraseSeqExpander) {
+				float *messagesToExpander = (float*)(rightExpander.module->leftExpander.producerMessage);
+				messagesToExpander[0] = (float)panelTheme;
+				rightExpander.module->leftExpander.messageFlipRequested = true;
+			}
 		}// lightRefreshCounter
-		// To Expander
-		if (rightExpander.module && rightExpander.module->model == modelPhraseSeqExpander) {
-			float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
-			producerMessage[0] = (float)panelTheme;
-			rightExpander.messageFlipRequested = true;
-		}
 				
 		if (clockIgnoreOnReset > 0l)
 			clockIgnoreOnReset--;
@@ -1902,7 +1903,8 @@ struct PhraseSeq32Widget : ModuleWidget {
 				else if (module->displayState == PhraseSeq32::DISP_MODE) {
 					if (module->isEditingSequence()) {
 						bool expanderPresent = (module->rightExpander.module && module->rightExpander.module->model == modelPhraseSeqExpander);
-						if (!expanderPresent || std::isnan(module->consumerMessage[4])) {
+						float *messagesFromExpander = (float*)module->rightExpander.consumerMessage;// could be invalid pointer when !expanderPresent, so read it only when expanderPresent						
+						if (!expanderPresent || std::isnan(messagesFromExpander[4])) {
 							module->sequences[module->seqIndexEdit].setRunMode(MODE_FWD);
 						}
 					}

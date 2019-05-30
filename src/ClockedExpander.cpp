@@ -23,8 +23,7 @@ struct ClockedExpander : Module {
 
 
 	// Expander
-	float consumerMessage[1] = {};// this module must read from here
-	float producerMessage[1] = {};// mother will write into here
+	float leftMessages[2][1] = {};// messages from mother
 
 
 	// No need to save, no reset
@@ -35,31 +34,32 @@ struct ClockedExpander : Module {
 	ClockedExpander() {
 		config(0, NUM_INPUTS, 0, 0);
 		
-		leftExpander.producerMessage = producerMessage;
-		leftExpander.consumerMessage = consumerMessage;
+		leftExpander.producerMessage = leftMessages[0];
+		leftExpander.consumerMessage = leftMessages[1];
 		
 		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 
 	void process(const ProcessArgs &args) override {		
-		// expanderRefreshCounter++;
-		// if (expanderRefreshCounter >= expanderRefreshStepSkips) {
-			// expanderRefreshCounter = 0;
+		expanderRefreshCounter++;
+		if (expanderRefreshCounter >= expanderRefreshStepSkips) {
+			expanderRefreshCounter = 0;
 			
 			bool motherPresent = (leftExpander.module && leftExpander.module->model == modelClocked);
 			if (motherPresent) {
 				// To Mother
-				float *producerMessage = reinterpret_cast<float*>(leftExpander.module->rightExpander.producerMessage);
+				float *messagesToMother = (float*)leftExpander.module->rightExpander.producerMessage;
 				for (int i = 0; i < 8; i++) {
-					producerMessage[i] = inputs[i].getVoltage();
+					messagesToMother[i] = inputs[i].getVoltage();
 				}
-				leftExpander.messageFlipRequested = true;
+				leftExpander.module->rightExpander.messageFlipRequested = true;
 				
 				// From Mother
-				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);			
+				float *messagesFromMother = (float*)leftExpander.consumerMessage;
+				panelTheme = clamp((int)(messagesFromMother[0] + 0.5f), 0, 1);			
 			}		
-		// }// expanderRefreshCounter
+		}// expanderRefreshCounter
 	}// process()
 };
 

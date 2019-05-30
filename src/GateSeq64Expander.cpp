@@ -25,8 +25,7 @@ struct GateSeq64Expander : Module {
 
 
 	// Expander
-	float consumerMessage[1] = {};// this module must read from here
-	float producerMessage[1] = {};// mother will write into here
+	float leftMessages[2][1] = {};// messages from mother
 
 
 	// No need to save
@@ -37,33 +36,34 @@ struct GateSeq64Expander : Module {
 	GateSeq64Expander() {
 		config(0, NUM_INPUTS, 0, 0);
 		
-		leftExpander.producerMessage = producerMessage;
-		leftExpander.consumerMessage = consumerMessage;
+		leftExpander.producerMessage = leftMessages[0];
+		leftExpander.consumerMessage = leftMessages[1];
 		
 		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 
 	void process(const ProcessArgs &args) override {		
-		// expanderRefreshCounter++;
-		// if (expanderRefreshCounter >= expanderRefreshStepSkips) {
-			// expanderRefreshCounter = 0;
+		expanderRefreshCounter++;
+		if (expanderRefreshCounter >= expanderRefreshStepSkips) {
+			expanderRefreshCounter = 0;
 			
 			bool motherPresent = (leftExpander.module && leftExpander.module->model == modelGateSeq64);
 			if (motherPresent) {
 				// To Mother
-				float *producerMessage = reinterpret_cast<float*>(leftExpander.module->rightExpander.producerMessage);
-				producerMessage[0] = (inputs[0].isConnected() ? inputs[0].getVoltage() : std::numeric_limits<float>::quiet_NaN());
-				producerMessage[1] = (inputs[1].isConnected() ? inputs[1].getVoltage() : std::numeric_limits<float>::quiet_NaN());
+				float *messagesToMother = (float*)leftExpander.module->rightExpander.producerMessage;
+				messagesToMother[0] = (inputs[0].isConnected() ? inputs[0].getVoltage() : std::numeric_limits<float>::quiet_NaN());
+				messagesToMother[1] = (inputs[1].isConnected() ? inputs[1].getVoltage() : std::numeric_limits<float>::quiet_NaN());
 				for (int i = 2; i < NUM_INPUTS; i++) {
-					producerMessage[i] = inputs[i].getVoltage();
+					messagesToMother[i] = inputs[i].getVoltage();
 				}
-				leftExpander.messageFlipRequested = true;
+				leftExpander.module->rightExpander.messageFlipRequested = true;
 
 				// From Mother
-				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
+				float *messagesFromMother = (float*)leftExpander.consumerMessage;
+				panelTheme = clamp((int)(messagesFromMother[0] + 0.5f), 0, 1);
 			}		
-		// }// expanderRefreshCounter
+		}// expanderRefreshCounter
 	}// process()
 };
 

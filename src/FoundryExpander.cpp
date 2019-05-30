@@ -41,8 +41,7 @@ struct FoundryExpander : Module {
 	};
 	
 	// Expander
-	float consumerMessage[1 + 2 + Sequencer::NUM_TRACKS] = {};// this module must read from here
-	float producerMessage[1 + 2 + Sequencer::NUM_TRACKS] = {};// mother will write into here (panelTheme, WRITE_SEL_LIGHTS (2), WRITECV2_LIGHTS (4))
+	float leftMessages[2][1 + 2 + Sequencer::NUM_TRACKS] = {};// messages from mother
 
 
 	// No need to save
@@ -56,44 +55,45 @@ struct FoundryExpander : Module {
 		configParam(SYNC_SEQCV_PARAM, 0.0f, 1.0f, 0.0f, "Sync Seq#");// 1.0f is top position
 		configParam(WRITEMODE_PARAM, 0.0f, 1.0f, 0.0f, "Write mode");
 	
-		leftExpander.producerMessage = producerMessage;
-		leftExpander.consumerMessage = consumerMessage;
+		leftExpander.producerMessage = leftMessages[0];
+		leftExpander.consumerMessage = leftMessages[1];
 		
 		panelTheme = (loadDarkAsDefault() ? 1 : 0);
 	}
 
 
 	void process(const ProcessArgs &args) override {		
-		// expanderRefreshCounter++;
-		// if (expanderRefreshCounter >= expanderRefreshStepSkips) {
-			// expanderRefreshCounter = 0;
+		expanderRefreshCounter++;
+		if (expanderRefreshCounter >= expanderRefreshStepSkips) {
+			expanderRefreshCounter = 0;
 			
 			bool motherPresent = leftExpander.module && leftExpander.module->model == modelFoundry;
+			float *messagesFromMother = (float*)leftExpander.consumerMessage;// could be invalid pointer when !expanderPresent, so read it only when expanderPresent
 			if (motherPresent) {
 				// To Mother
-				float *producerMessage = reinterpret_cast<float*>(leftExpander.module->rightExpander.producerMessage);
+				float *messagesToMother = (float*)leftExpander.module->rightExpander.producerMessage;
 				int i = 0;
 				for (; i < GATECV_INPUT; i++) {
-					producerMessage[i] = (inputs[i].isConnected() ? inputs[i].getVoltage() : std::numeric_limits<float>::quiet_NaN());
+					messagesToMother[i] = (inputs[i].isConnected() ? inputs[i].getVoltage() : std::numeric_limits<float>::quiet_NaN());
 				}
 				for (; i < NUM_INPUTS; i++) {
-					producerMessage[i] = inputs[i].getVoltage();
+					messagesToMother[i] = inputs[i].getVoltage();
 				}
-				producerMessage[i++] = params[SYNC_SEQCV_PARAM].getValue();
-				producerMessage[i++] = params[WRITEMODE_PARAM].getValue();
-				leftExpander.messageFlipRequested = true;
+				messagesToMother[i++] = params[SYNC_SEQCV_PARAM].getValue();
+				messagesToMother[i++] = params[WRITEMODE_PARAM].getValue();
+				leftExpander.module->rightExpander.messageFlipRequested = true;
 
 				// From Mother
-				panelTheme = clamp((int)(consumerMessage[0] + 0.5f), 0, 1);
+				panelTheme = clamp((int)(messagesFromMother[0] + 0.5f), 0, 1);
 			}		
 
 			// From Mother
-			lights[WRITE_SEL_LIGHTS + 0].setBrightness(motherPresent ? consumerMessage[1] : 0.0f);
-			lights[WRITE_SEL_LIGHTS + 1].setBrightness(motherPresent ? consumerMessage[2] : 0.0f);			
+			lights[WRITE_SEL_LIGHTS + 0].setBrightness(motherPresent ? messagesFromMother[1] : 0.0f);
+			lights[WRITE_SEL_LIGHTS + 1].setBrightness(motherPresent ? messagesFromMother[2] : 0.0f);			
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
-				lights[WRITECV2_LIGHTS + trkn].setBrightness(motherPresent ? consumerMessage[trkn + 3] : 0.0f);
+				lights[WRITECV2_LIGHTS + trkn].setBrightness(motherPresent ? messagesFromMother[trkn + 3] : 0.0f);
 			}	
-		// }// expanderRefreshCounter
+		}// expanderRefreshCounter
 	}// process()
 };
 

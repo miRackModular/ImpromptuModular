@@ -55,8 +55,7 @@ struct GateSeq64 : Module {
 	
 	
 	// Expander
-	float consumerMessage[6] = {};// this module must read from here
-	float producerMessage[6] = {};// expander will write into here (GATE_INPUT needs connected, PROB_INPUT needs connected, WRITE_INPUT, WRITE1_INPUT, WRITE0_INPUT, STEPL_INPUT)
+	float rightMessages[2][6] = {};// messages from expander
 		
 
 	// Constants
@@ -176,8 +175,8 @@ struct GateSeq64 : Module {
 	GateSeq64() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		rightExpander.producerMessage = producerMessage;
-		rightExpander.consumerMessage = consumerMessage;
+		rightExpander.producerMessage = rightMessages[0];
+		rightExpander.consumerMessage = rightMessages[1];
 
 		char strBuf[32];
 		// Step LED buttons and GateMode lights
@@ -687,23 +686,24 @@ struct GateSeq64 : Module {
 			
 			// Write CV inputs 
 			bool expanderPresent = (rightExpander.module && rightExpander.module->model == modelGateSeq64Expander);
+			float *messagesFromExpander = (float*)rightExpander.consumerMessage;// could be invalid pointer when !expanderPresent, so read it only when expanderPresent
 			if (expanderPresent) {
-				bool writeTrig = writeTrigger.process(consumerMessage[2]);
-				bool write0Trig = write0Trigger.process(consumerMessage[4]);
-				bool write1Trig = write1Trigger.process(consumerMessage[3]);
+				bool writeTrig = writeTrigger.process(messagesFromExpander[2]);
+				bool write0Trig = write0Trigger.process(messagesFromExpander[4]);
+				bool write1Trig = write1Trigger.process(messagesFromExpander[3]);
 				if (writeTrig || write0Trig || write1Trig) {
 					if (editingSequence) {
 						blinkNum = blinkNumInit;
 						if (writeTrig) {// higher priority than write0 and write1
-							if (!std::isnan(consumerMessage[1])) {
-								attributes[sequence][stepIndexEdit].setGatePVal(clamp( (int)std::round(consumerMessage[1] * 10.0f), 0, 100) );
+							if (!std::isnan(messagesFromExpander[1])) {
+								attributes[sequence][stepIndexEdit].setGatePVal(clamp( (int)std::round(messagesFromExpander[1] * 10.0f), 0, 100) );
 								attributes[sequence][stepIndexEdit].setGateP(true);
 							}
 							else{
 								attributes[sequence][stepIndexEdit].setGateP(false);
 							}
-							if (!std::isnan(consumerMessage[0]))
-								attributes[sequence][stepIndexEdit].setGate(consumerMessage[0] >= 1.0f);
+							if (!std::isnan(messagesFromExpander[0]))
+								attributes[sequence][stepIndexEdit].setGate(messagesFromExpander[0] >= 1.0f);
 						}
 						else {// write1 or write0			
 							attributes[sequence][stepIndexEdit].setGate(write1Trig);
@@ -717,7 +717,7 @@ struct GateSeq64 : Module {
 			}
 
 			// Step left CV input
-			if (expanderPresent && stepLTrigger.process(consumerMessage[5])) {
+			if (expanderPresent && stepLTrigger.process(messagesFromExpander[5])) {
 				if (editingSequence) {
 					blinkNum = blinkNumInit;
 					stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit - 1, 64);					
@@ -1150,17 +1150,16 @@ struct GateSeq64 : Module {
 					blinkNum--;
 				}
 			}		
+			// To Expander
+			if (rightExpander.module && rightExpander.module->model == modelGateSeq64Expander) {
+				float *messagesToExpander = (float*)(rightExpander.module->leftExpander.producerMessage);
+				messagesToExpander[0] = (float)panelTheme;
+				rightExpander.module->leftExpander.messageFlipRequested = true;
+			}
 		}// lightRefreshCounter
-		// To Expander
-		if (rightExpander.module && rightExpander.module->model == modelGateSeq64Expander) {
-			float *producerMessage = reinterpret_cast<float*>(rightExpander.module->leftExpander.producerMessage);
-			producerMessage[0] = (float)panelTheme;
-			rightExpander.messageFlipRequested = true;
-		}
 
 		if (clockIgnoreOnReset > 0l)
 			clockIgnoreOnReset--;
-
 	}// process()
 	
 	inline void setGreenRed(int id, float green, float red) {
