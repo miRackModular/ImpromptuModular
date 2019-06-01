@@ -2350,12 +2350,13 @@ struct SemiModularSynthWidget : ModuleWidget {
 	}
 };
 
-Model *modelSemiModularSynth = createModel<SemiModularSynth, SemiModularSynthWidget>("Semi-Modular Synth");
+Model *modelSemiModularSynth = createModel<SemiModularSynth, SemiModularSynthWidget>("Semi-Modular-Synth");
 
 /*CHANGE LOG
 
 1.0.0:
 right-click keys to autostep replaced by double click
 add menu option to stop at end of song
+slug changed from "Semi-Modular Synth" to "Semi-Modular-Synth"
 
 */
