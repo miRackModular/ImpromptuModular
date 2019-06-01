@@ -220,7 +220,7 @@ struct GateSeq64 : Module {
 		stopAtEndOfSong = false;
 		resetNonJson(false);
 	}
-	void resetNonJson(bool delayedInitRun) {
+	void resetNonJson(bool delayed) {// delay thread sensitive parts (i.e. schedule them so that process() will do them)
 		displayState = DISP_GATE;
 		seqAttribCPbuffer.init(16, MODE_FWD);
 		for (int i = 0; i < 64; i++) {
@@ -237,7 +237,7 @@ struct GateSeq64 : Module {
 		blinkCount = 0l;
 		blinkNum = blinkNumInit;
 		editingPhraseSongRunning = 0l;
-		if (delayedInitRun) {
+		if (delayed) {
 			stepConfigSync = 1;// signal a sync from dataFromJson so that step will get lengths from seqAttribBuffer			
 		}
 		else {

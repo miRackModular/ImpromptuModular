@@ -91,68 +91,69 @@ struct PhraseSeq32 : Module {
 
 	// Constants
 	enum DisplayStateIds {DISP_NORMAL, DISP_MODE, DISP_LENGTH, DISP_TRANSPOSE, DISP_ROTATE};
-	static constexpr float CONFIG_PARAM_INIT_VALUE = 0.0f;// so that module constructor is coherent with widget initialization, since module created before widget
 
 
-	// Need to save
+	// Need to save, no reset
 	int panelTheme;
+	
+	// Need to save, with reset
 	bool autoseq;
 	bool autostepLen;
 	bool holdTiedNotes;
 	int seqCVmethod;// 0 is 0-10V, 1 is C4-G6, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
-	SeqAttributes sequences[32];
 	int runModeSong;
+	int stepIndexEdit;
 	int seqIndexEdit;
-	int phrase[32];// This is the song (series of phases; a phrase is a patten number)
+	int phraseIndexEdit;
 	int phrases;//1 to 32
+	SeqAttributes sequences[32];
+	int phrase[32];// This is the song (series of phases; a phrase is a patten number)
 	float cv[32][32];// [-3.0 : 3.917]. First index is patten number, 2nd index is step
 	StepAttributes attributes[32][32];// First index is patten number, 2nd index is step (see enum AttributeBitMasks for details)
 	bool resetOnRun;
 	bool attached;
 	bool stopAtEndOfSong;
 
-	// No need to save
-	int stepIndexEdit;
-	int stepIndexRun[2];
-	int phraseIndexEdit;
-	int phraseIndexRun;
-	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
-	unsigned long editingGate;// 0 when no edit gate, downward step counter timer when edit gate
-	float editingGateCV;// no need to initialize, this is a companion to editingGate (output this only when editingGate > 0)
-	int editingGateKeyLight;// no need to initialize, this is a companion to editingGate (use this only when editingGate > 0)
-	int editingChannel;// 0 means channel A, 1 means channel B. no need to initialize, this is a companion to editingGate
-	unsigned long editingType;// similar to editingGate, but just for showing remanent gate type (nothing played); uses editingGateKeyLight
-	unsigned long stepIndexRunHistory;
-	unsigned long phraseIndexRunHistory;
+	// No need to save, with reset
 	int displayState;
-	unsigned long slideStepsRemain[2];// 0 when no slide under way, downward step counter when sliding
-	float slideCVdelta[2];// no need to initialize, this is a companion to slideStepsRemain
 	float cvCPbuffer[32];// copy paste buffer for CVs
 	StepAttributes attribCPbuffer[32];
+	int phraseCPbuffer[32];
 	SeqAttributes seqAttribCPbuffer;
 	bool seqCopied;
-	int phraseCPbuffer[32];
 	int countCP;// number of steps to paste (in case CPMODE_PARAM changes between copy and paste)
 	int startCP;
-	long clockIgnoreOnReset;
+	unsigned long editingGate;// 0 when no edit gate, downward step counter timer when edit gate
+	unsigned long editingType;// similar to editingGate, but just for showing remanent gate type (nothing played); uses editingGateKeyLight
+	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
 	unsigned long clockPeriod;// counts number of step() calls upward from last clock (reset after clock processed)
 	long tiedWarning;// 0 when no warning, positive downward step counter timer when warning
 	long attachedWarning;// 0 when no warning, positive downward step counter timer when warning
-	int gate1Code[2];
-	int gate2Code[2];
-	bool attachedChanB;
 	long revertDisplay;
 	long editingGateLength;// 0 when no info, positive when gate1, negative when gate2
 	long lastGateEdit;
 	long editingPpqn;// 0 when no info, positive downward step counter timer when editing ppqn
-	int ppqnCount;
+	bool attachedChanB;
 	int stepConfig;
+	long clockIgnoreOnReset;
+	int phraseIndexRun;	
+	unsigned long phraseIndexRunHistory;
+	int stepIndexRun[2];
+	unsigned long stepIndexRunHistory;
+	int ppqnCount;
+	int gate1Code[2];
+	int gate2Code[2];
+	unsigned long slideStepsRemain[2];// 0 when no slide under way, downward step counter when sliding
 	
-
+	// No need to save, no reset
 	int stepConfigSync = 0;// 0 means no sync requested, 1 means soft sync (no reset lengths), 2 means hard (reset lengths)
 	RefreshCounter refresh;
+	float slideCVdelta[2];// no need to initialize, this is a companion to slideStepsRemain	
+	float editingGateCV;// no need to initialize, this is a companion to editingGate (output this only when editingGate > 0)
+	int editingGateKeyLight;// no need to initialize, this is a companion to editingGate (use this only when editingGate > 0)
+	int editingChannel;// 0 means channel A, 1 means channel B. no need to initialize, this is a companion to editingGate
 	float resetLight = 0.0f;
 	int sequenceKnob = 0;
 	Trigger resetTrigger;
@@ -183,20 +184,20 @@ struct PhraseSeq32 : Module {
 	SeqAttributes seqAttribBuffer[32];// buffer from Json for thread safety
 
 
-	inline bool isEditingSequence(void) {return params[EDIT_PARAM].getValue() > 0.5f;}
-	inline int getStepConfig(float paramValue) {// 1 = 2x16 = 1.0f,  2 = 1x32 = 0.0f
-		return (paramValue > 0.5f) ? 1 : 2;
+	bool isEditingSequence(void) {return params[EDIT_PARAM].getValue() > 0.5f;}
+	int getStepConfig() {// 1 = 2x16 = 1.0f,  2 = 1x32 = 0.0f
+		return (params[CONFIG_PARAM].getValue() > 0.5f) ? 1 : 2;
 	}
 
 	
-	inline void fillStepIndexRunVector(int runMode, int len) {
+	void fillStepIndexRunVector(int runMode, int len) {
 		if (runMode != MODE_RN2) 
 			stepIndexRun[1] = stepIndexRun[0];
 		else
 			stepIndexRun[1] = random::u32() % len;
 	}
 	
-	inline void moveStepIndexEdit(int delta, bool _autostepLen) {// 2nd param is for rotate that uses this method also
+	void moveStepIndexEdit(int delta, bool _autostepLen) {// 2nd param is for rotate that uses this method also
 		if (stepConfig == 2 || !_autostepLen) // 32
 			stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + delta, _autostepLen ? sequences[seqIndexEdit].getLength() : 32);
 		else {// here 1x16 and _autostepLen limit wanted
@@ -216,7 +217,7 @@ struct PhraseSeq32 : Module {
 		rightExpander.producerMessage = rightMessages[0];
 		rightExpander.consumerMessage = rightMessages[1];
 
-		configParam(CONFIG_PARAM, 0.0f, 1.0f, PhraseSeq32::CONFIG_PARAM_INIT_VALUE, "Configuration (1, 2 chan)");
+		configParam(CONFIG_PARAM, 0.0f, 1.0f, 0.0f, "Configuration (1, 2 chan)");
 		char strBuf[32];
 		for (int x = 0; x < 16; x++) {
 			snprintf(strBuf, 32, "Step/phrase %i", x + 1);
@@ -274,10 +275,7 @@ struct PhraseSeq32 : Module {
 	}
 
 	
-	// widgets are not yet created when module is created (and when onReset() is called by constructor)
-	// onReset() is also called when right-click initialization of module
 	void onReset() override {
-		stepConfig = getStepConfig(CONFIG_PARAM_INIT_VALUE);
 		autoseq = false;
 		autostepLen = false;
 		holdTiedNotes = true;
@@ -286,21 +284,29 @@ struct PhraseSeq32 : Module {
 		running = true;
 		runModeSong = MODE_FWD;
 		stepIndexEdit = 0;
-		phraseIndexEdit = 0;
 		seqIndexEdit = 0;
+		phraseIndexEdit = 0;
 		phrases = 4;
 		for (int i = 0; i < 32; i++) {
+			sequences[i].init(16 * getStepConfig(), MODE_FWD);
+			phrase[i] = 0;
 			for (int s = 0; s < 32; s++) {
 				cv[i][s] = 0.0f;
 				attributes[i][s].init();
 			}
-			sequences[i].init(16 * stepConfig, MODE_FWD);
-			phrase[i] = 0;
+		}
+		resetOnRun = false;
+		attached = false;
+		stopAtEndOfSong = false;
+		resetNonJson(false);
+	}
+	void resetNonJson(bool delayed) {// delay thread sensitive parts (i.e. schedule them so that process() will do them)
+		displayState = DISP_NORMAL;
+		for (int i = 0; i < 32; i++) {
 			cvCPbuffer[i] = 0.0f;
 			attribCPbuffer[i].init();
 			phraseCPbuffer[i] = 0;
 		}
-		initRun();
 		seqAttribCPbuffer.init(32, MODE_FWD);
 		seqCopied = true;
 		countCP = 32;
@@ -308,38 +314,23 @@ struct PhraseSeq32 : Module {
 		editingGate = 0ul;
 		editingType = 0ul;
 		infoCopyPaste = 0l;
-		displayState = DISP_NORMAL;
-		slideStepsRemain[0] = 0ul;
-		slideStepsRemain[1] = 0ul;
-		attached = false;
-		stopAtEndOfSong = false;
 		clockPeriod = 0ul;
 		tiedWarning = 0ul;
 		attachedWarning = 0l;
-		attachedChanB = false;
 		revertDisplay = 0l;
-		resetOnRun = false;
 		editingGateLength = 0l;
 		lastGateEdit = 1l;
 		editingPpqn = 0l;
-	}
-	
-	
-	void onRandomize() override {
-		if (isEditingSequence()) {
-			for (int s = 0; s < 32; s++) {
-				cv[seqIndexEdit][s] = ((float)(random::u32() % 7)) + ((float)(random::u32() % 12)) / 12.0f - 3.0f;
-				attributes[seqIndexEdit][s].randomize();
-				// if (attributes[seqIndexEdit][s].getTied()) {
-					// activateTiedStep(seqIndexEdit, s);
-				// }
-			}
-			sequences[seqIndexEdit].randomize(16 * stepConfig, NUM_MODES);// ok to use stepConfig since CONFIG_PARAM is not randomizable		
+		attachedChanB = false;
+		if (delayed) {
+			stepConfigSync = 1;// signal a sync from dataFromJson so that step will get lengths from seqAttribBuffer
+		}
+		else {
+			stepConfig = getStepConfig();
+			initRun();
 		}
 	}
-	
-	
-	void initRun() {// run button activated or run edge in run input jack
+	void initRun() {// run button activated, or run edge in run input jack, or stepConfig switch changed, or fromJson()
 		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 		phraseIndexRun = (runModeSong == MODE_REV ? phrases - 1 : 0);
 		phraseIndexRunHistory = 0;
@@ -358,6 +349,17 @@ struct PhraseSeq32 : Module {
 		slideStepsRemain[1] = 0ul;
 	}	
 
+	
+	void onRandomize() override {
+		if (isEditingSequence()) {
+			for (int s = 0; s < 32; s++) {
+				cv[seqIndexEdit][s] = ((float)(random::u32() % 7)) + ((float)(random::u32() % 12)) / 12.0f - 3.0f;
+				attributes[seqIndexEdit][s].randomize();
+			}
+			sequences[seqIndexEdit].randomize(16 * stepConfig, NUM_MODES);// ok to use stepConfig since CONFIG_PARAM is not randomizable		
+		}
+	}
+	
 	
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -623,7 +625,7 @@ struct PhraseSeq32 : Module {
 		if (phraseIndexEditJ)
 			phraseIndexEdit = json_integer_value(phraseIndexEditJ);
 		
-		stepConfigSync = 1;// signal a sync from dataFromJson so that step will get lengths from seqAttribBuffer
+		resetNonJson(true);
 	}
 
 	void rotateSeq(int seqNum, bool directionRight, int seqLength, bool chanB_16) {
@@ -684,7 +686,7 @@ struct PhraseSeq32 : Module {
 		if (refresh.processInputs()) {
 			// Config switch
 			if (stepConfigSync != 0) {
-				stepConfig = getStepConfig(params[CONFIG_PARAM].getValue());
+				stepConfig = getStepConfig();
 				if (stepConfigSync == 1) {// sync from dataFromJson, so read lengths from seqAttribBuffer
 					for (int i = 0; i < 32; i++)
 						sequences[i].setSeqAttrib(seqAttribBuffer[i].getSeqAttrib());

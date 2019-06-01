@@ -382,7 +382,7 @@ struct Clocked : Module {
 		resetClockOutputsHigh = true;
 		resetNonJson(false);
 	}
-	void resetNonJson(bool delayed) {
+	void resetNonJson(bool delayed) {// delay thread sensitive parts (i.e. schedule them so that process() will do them)
 		editingBpmMode = 0l;
 		if (delayed) {
 			scheduledReset = true;// will be a soft reset

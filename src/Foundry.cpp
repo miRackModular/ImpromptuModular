@@ -241,8 +241,6 @@ struct Foundry : Module {
 	}
 
 	
-	// widgets are not yet created when module is created (and when onReset() is called by constructor)
-	// onReset() is also called when right-click initialization of module
 	void onReset() override {
 		velocityMode = 0;
 		velocityBipol = false;
