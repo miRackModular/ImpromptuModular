@@ -58,17 +58,18 @@ struct WriteSeq64 : Module {
 		NUM_LIGHTS
 	};
 
-	// Need to save
+	// Need to save, no reset
 	int panelTheme;
+	
+	// Need to save, with reset
 	bool running;
-	//int indexChannel;
 	int indexStep[5];// [0;63] each
 	int indexSteps[5];// [1;64] each
 	float cv[5][64];
 	int gates[5][64];
 	bool resetOnRun;
 
-	// No need to save
+	// No need to save, with reset
 	float cvCPbuffer[64];// copy paste buffer for CVs
 	int gateCPbuffer[64];// copy paste buffer for gates
 	int stepsCPbuffer;
@@ -76,7 +77,7 @@ struct WriteSeq64 : Module {
 	int pendingPaste;// 0 = nothing to paste, 1 = paste on clk, 2 = paste on seq, destination channel in next msbits
 	long clockIgnoreOnReset;
 
-
+	// No need to save, no reset
 	RefreshCounter refresh;	
 	int stepKnob = 0;
 	int stepsKnob = 0;
@@ -129,7 +130,6 @@ struct WriteSeq64 : Module {
 	
 	void onReset() override {
 		running = true;
-		//indexChannel = 0;
 		for (int c = 0; c < 5; c++) {
 			indexStep[c] = 0;
 			indexSteps[c] = 64;
@@ -138,6 +138,11 @@ struct WriteSeq64 : Module {
 				gates[c][s] = 1;
 			}
 		}
+		resetOnRun = false;
+		resetNonJson();
+	}
+	void resetNonJson() {
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 		for (int s = 0; s < 64; s++) {
 			cvCPbuffer[s] = 0.0f;
 			gateCPbuffer[s] = 1;
@@ -145,8 +150,6 @@ struct WriteSeq64 : Module {
 		stepsCPbuffer = 64;
 		infoCopyPaste = 0l;
 		pendingPaste = 0;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
-		resetOnRun = false;
 	}
 
 	
@@ -169,9 +172,6 @@ struct WriteSeq64 : Module {
 		// running
 		json_object_set_new(rootJ, "running", json_boolean(running));
 
-		// indexChannel
-		//json_object_set_new(rootJ, "indexChannel", json_integer(indexChannel));
-		
 		// indexStep
 		json_t *indexStepJ = json_array();
 		for (int c = 0; c < 5; c++)
@@ -217,11 +217,6 @@ struct WriteSeq64 : Module {
 		json_t *runningJ = json_object_get(rootJ, "running");
 		if (runningJ)
 			running = json_is_true(runningJ);
-		
-		// indexChannel
-		// json_t *indexChannelJ = json_object_get(rootJ, "indexChannel");
-		// if (indexChannelJ)
-			// indexChannel = json_integer_value(indexChannelJ);
 		
 		// indexStep
 		json_t *indexStepJ = json_object_get(rootJ, "indexStep");
@@ -269,6 +264,8 @@ struct WriteSeq64 : Module {
 		json_t *resetOnRunJ = json_object_get(rootJ, "resetOnRun");
 		if (resetOnRunJ)
 			resetOnRun = json_is_true(resetOnRunJ);
+
+		resetNonJson();
 	}
 	
 	
@@ -286,11 +283,10 @@ struct WriteSeq64 : Module {
 			//pendingPaste = 0;// no pending pastes across run state toggles
 			if (running) {
 				if (resetOnRun) {
+					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
 					for (int c = 0; c < 5; c++) 
 						indexStep[c] = 0;
 				}
-				if (resetOnRun || clockIgnoreOnRun)
-					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
 			}
 		}
 	
@@ -423,11 +419,11 @@ struct WriteSeq64 : Module {
 		
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].getVoltage() + params[RESET_PARAM].getValue())) {
+			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
 			for (int t = 0; t < 5; t++)
 				indexStep[t] = 0;
 			resetLight = 1.0f;
 			pendingPaste = 0;
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
 			clock12Trigger.reset();
 			clock34Trigger.reset();
 		}

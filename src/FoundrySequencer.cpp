@@ -21,24 +21,23 @@ void Sequencer::onReset(bool editingSequence) {
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
 		sek[trkn].onReset(editingSequence);
 	}
-	resetNonJson(editingSequence);
+	resetNonJson(editingSequence, false);// no need to propagate initRun calls in kernels, since sek[trkn].onReset() have initRun() in them
 }
-void Sequencer::resetNonJson(bool editingSequence) {
+void Sequencer::resetNonJson(bool editingSequence, bool propagateInitRun) {
 	editingType = 0ul;
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
 		editingGate[trkn] = 0ul;
 	}
 	seqCPbuf.reset();
 	songCPbuf.reset();
-	initRun(editingSequence);// seks' initRun() will be called twice when coming from this.onReset() (since the seks' initRun() is also called in the seks' onReset()),
-								// but ok since small code. Same effect when this.dataFromJson() occurs, since the seks' initRun() is also called in the seks' dataFromJson().
-								// This exception occurs since sek is a Need-to-save with both a reset and no-reset component.
+	initRun(editingSequence, propagateInitRun);
 }
-
-void Sequencer::initRun(bool editingSequence) {
+void Sequencer::initRun(bool editingSequence, bool propagateInitRun) {
 	initDelayedSeqNumberRequest();
-	for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
-		sek[trkn].initRun(editingSequence);
+	if (propagateInitRun) {
+		for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
+			sek[trkn].initRun(editingSequence);
+	}
 }
 void Sequencer::initDelayedSeqNumberRequest() {
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++) {
@@ -81,7 +80,7 @@ void Sequencer::dataFromJson(json_t *rootJ, bool editingSequence) {
 	for (int trkn = 0; trkn < NUM_TRACKS; trkn++)
 		sek[trkn].dataFromJson(rootJ, editingSequence);
 	
-	resetNonJson(editingSequence);
+	resetNonJson(editingSequence, false);// no need to propagate initRun calls in kernels, since sek[trkn].dataFromJson() have initRun() in them
 }
 
 

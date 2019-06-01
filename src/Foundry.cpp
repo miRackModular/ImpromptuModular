@@ -116,13 +116,13 @@ struct Foundry : Module {
 
 	// No need to save, with reset
 	int displayState;
-	long clockIgnoreOnReset;
 	long tiedWarning;// 0 when no warning, positive downward step counter timer when warning
 	long attachedWarning;// 0 when no warning, positive downward step counter timer when warning
 	long revertDisplay;
 	bool multiSteps;
 	int clkInSources[Sequencer::NUM_TRACKS];// first index is always 0 and will never change
 	int cpSeqLength;
+	long clockIgnoreOnReset;
 	
 	// No need to save, no reset
 	int cpSongStart;// no need to initialize
@@ -259,11 +259,10 @@ struct Foundry : Module {
 		writeMode = 0;
 		stopAtEndOfSong = 4;// this means option is turned off (0-3 is on)
 		seq.onReset(isEditingSequence());
-		resetNonJson();
+		resetNonJson(false);// no need to propagate initRun calls in seq, since seq.onReset() has initRun() in it
 	}
-	void resetNonJson() {
+	void resetNonJson(bool propagateInitRun) {
 		displayState = DISP_NORMAL;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 		tiedWarning = 0l;
 		attachedWarning = 0l;
 		revertDisplay = 0l;
@@ -272,6 +271,13 @@ struct Foundry : Module {
 			clkInSources[trkn] = 0;
 		}
 		cpSeqLength = getCPMode();
+		initRun(propagateInitRun);
+	}
+	void initRun(bool propagateInitRun) {
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
+		if (propagateInitRun) {
+			seq.initRun(isEditingSequence(), true);
+		}
 	}
 	
 	
@@ -418,7 +424,7 @@ struct Foundry : Module {
 		// seq
 		seq.dataFromJson(rootJ, isEditingSequence());
 		
-		resetNonJson();
+		resetNonJson(false);// no need to propagate initRun calls in seq, since seq.dataFromJson() has initRun() in it
 	}
 
 
@@ -438,10 +444,9 @@ struct Foundry : Module {
 		if (runningTrigger.process(params[RUN_PARAM].getValue() + inputs[RUNCV_INPUT].getVoltage())) {// no input refresh here, don't want to introduce startup skew
 			running = !running;
 			if (running) {
-				if (resetOnRun)
-					seq.initRun(editingSequence);
-				if (resetOnRun || clockIgnoreOnRun)
-					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
+				if (resetOnRun) {
+					initRun(true);
+				}
 			}
 			else
 				seq.initDelayedSeqNumberRequest();
@@ -968,10 +973,9 @@ struct Foundry : Module {
 				
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].getVoltage() + params[RESET_PARAM].getValue())) {
-			seq.initRun(editingSequence);
+			initRun(true);
 			resetLight = 1.0f;
 			displayState = DISP_NORMAL;
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			for (int trkn = 0; trkn < Sequencer::NUM_TRACKS; trkn++) {
 				clockTriggers[trkn].reset();	
 				if (expanderPresent && !std::isnan(messagesFromExpander[Sequencer::NUM_TRACKS + trkn]) && seqCVmethod == 2)

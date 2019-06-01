@@ -94,61 +94,64 @@ struct PhraseSeq16 : Module {
 	enum DisplayStateIds {DISP_NORMAL, DISP_MODE, DISP_LENGTH, DISP_TRANSPOSE, DISP_ROTATE};
 
 
-	// Need to save
+	// Need to save, no reset
 	int panelTheme;
+	
+	// Need to save, with reset
 	bool autoseq;
 	bool autostepLen;
 	bool holdTiedNotes;
 	int seqCVmethod;// 0 is 0-10V, 1 is C4-D5#, 2 is TrigIncr
 	int pulsesPerStep;// 1 means normal gate mode, alt choices are 4, 6, 12, 24 PPS (Pulses per step)
 	bool running;
-	SeqAttributes sequences[16];
 	int runModeSong;
+	int stepIndexEdit;
 	int seqIndexEdit;
-	int phrase[16];// This is the song (series of phases; a phrase is a patten number)
+	int phraseIndexEdit;
 	int phrases;//1 to 16
+	SeqAttributes sequences[16];
+	int phrase[16];// This is the song (series of phases; a phrase is a patten number)
 	float cv[16][16];// [-3.0 : 3.917]. First index is patten number, 2nd index is step
 	StepAttributes attributes[16][16];// First index is patten number, 2nd index is step (see enum AttributeBitMasks for details)
 	bool resetOnRun;
 	bool attached;
 	bool stopAtEndOfSong;
 
-	// No need to save
-	int stepIndexEdit;
-	int stepIndexRun;
-	int phraseIndexEdit;
-	int phraseIndexRun;
-	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
-	unsigned long editingGate;// 0 when no edit gate, downward step counter timer when edit gate
-	float editingGateCV;// no need to initialize, this is a companion to editingGate (output this only when editingGate > 0)
-	int editingGateKeyLight;// no need to initialize, this is a companion to editingGate (use this only when editingGate > 0)
-	unsigned long editingType;// similar to editingGate, but just for showing remanent gate type (nothing played); uses editingGateKeyLight
-	unsigned long stepIndexRunHistory;
-	unsigned long phraseIndexRunHistory;
+	// No need to save, with reset
 	int displayState;
-	unsigned long slideStepsRemain;// 0 when no slide under way, downward step counter when sliding
-	float slideCVdelta;// no need to initialize, this is a companion to slideStepsRemain
 	float cvCPbuffer[16];// copy paste buffer for CVs
 	StepAttributes attribCPbuffer[16];
+	int phraseCPbuffer[16];
 	SeqAttributes seqAttribCPbuffer;
 	bool seqCopied;
-	int phraseCPbuffer[16];
 	int countCP;// number of steps to paste (in case CPMODE_PARAM changes between copy and paste)
 	int startCP;
-	long clockIgnoreOnReset;
+	unsigned long editingGate;// 0 when no edit gate, downward step counter timer when edit gate
+	unsigned long editingType;// similar to editingGate, but just for showing remanent gate type (nothing played); uses editingGateKeyLight
+	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
 	unsigned long clockPeriod;// counts number of step() calls upward from last clock (reset after clock processed)
 	long tiedWarning;// 0 when no warning, positive downward step counter timer when warning
 	long attachedWarning;// 0 when no warning, positive downward step counter timer when warning
-	int gate1Code;
-	int gate2Code;
 	long revertDisplay;
 	long editingGateLength;// 0 when no info, positive when gate1, negative when gate2
 	long lastGateEdit;
 	long editingPpqn;// 0 when no info, positive downward step counter timer when editing ppqn
+	long clockIgnoreOnReset;
+	int phraseIndexRun;
+	unsigned long phraseIndexRunHistory;
+	int stepIndexRun;
+	unsigned long stepIndexRunHistory;
 	int ppqnCount;
+	int gate1Code;
+	int gate2Code;
+	unsigned long slideStepsRemain;// 0 when no slide under way, downward step counter when sliding
 
-	
+
+	// No need to save, no reset
 	RefreshCounter refresh;
+	float slideCVdelta;// no need to initialize, this goes with slideStepsRemain
+	float editingGateCV;// no need to initialize, this goes with editingGate (output this only when editingGate > 0)
+	int editingGateKeyLight;// no need to initialize, this goes with editingGate (use this only when editingGate > 0)
 	float resetLight = 0.0f;
 	int sequenceKnob = 0;
 	Trigger resetTrigger;
@@ -249,21 +252,29 @@ struct PhraseSeq16 : Module {
 		running = true;
 		runModeSong = MODE_FWD;
 		stepIndexEdit = 0;
-		phraseIndexEdit = 0;
 		seqIndexEdit = 0;
+		phraseIndexEdit = 0;
 		phrases = 4;
 		for (int i = 0; i < 16; i++) {
+			sequences[i].init(16, MODE_FWD);
+			phrase[i] = 0;
 			for (int s = 0; s < 16; s++) {
 				cv[i][s] = 0.0f;
 				attributes[i][s].init();
 			}
-			sequences[i].init(16, MODE_FWD);
-			phrase[i] = 0;
+		}
+		resetOnRun = false;
+		attached = false;
+		stopAtEndOfSong = false;
+		resetNonJson();
+	}
+	void resetNonJson() {
+		displayState = DISP_NORMAL;
+		for (int i = 0; i < 16; i++) {
 			cvCPbuffer[i] = 0.0f;
 			attribCPbuffer[i].init();
 			phraseCPbuffer[i] = 0;
 		}
-		initRun();
 		seqAttribCPbuffer.init(16, MODE_FWD);
 		seqCopied = true;
 		countCP = 16;
@@ -271,37 +282,17 @@ struct PhraseSeq16 : Module {
 		editingGate = 0ul;
 		editingType = 0ul;
 		infoCopyPaste = 0l;
-		displayState = DISP_NORMAL;
-		slideStepsRemain = 0ul;
-		attached = false;
-		stopAtEndOfSong = false;
 		clockPeriod = 0ul;
 		tiedWarning = 0ul;
 		attachedWarning = 0l;
 		revertDisplay = 0l;
-		resetOnRun = false;
 		editingGateLength = 0l;
 		lastGateEdit = 1l;
 		editingPpqn = 0l;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
+		initRun();
 	}
-
-	
-	void onRandomize() override {
-		if (isEditingSequence()) {
-			for (int s = 0; s < 16; s++) {
-				cv[seqIndexEdit][s] = ((float)(random::u32() % 7)) + ((float)(random::u32() % 12)) / 12.0f - 3.0f;
-				attributes[seqIndexEdit][s].randomize();
-				// if (attributes[seqIndexEdit][s].getTied()) {
-					// activateTiedStep(seqIndexEdit, s);
-				// }
-			}
-			sequences[seqIndexEdit].randomize(16, NUM_MODES - 1);
-		}
-	}
-	
-	
 	void initRun() {// run button activated or run edge in run input jack
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 		phraseIndexRun = (runModeSong == MODE_REV ? phrases - 1 : 0);
 		phraseIndexRunHistory = 0;
 
@@ -316,17 +307,28 @@ struct PhraseSeq16 : Module {
 	}
 	
 	
+	void onRandomize() override {
+		if (isEditingSequence()) {
+			for (int s = 0; s < 16; s++) {
+				cv[seqIndexEdit][s] = ((float)(random::u32() % 7)) + ((float)(random::u32() % 12)) / 12.0f - 3.0f;
+				attributes[seqIndexEdit][s].randomize();
+			}
+			sequences[seqIndexEdit].randomize(16, NUM_MODES - 1);
+		}
+	}
+	
+	
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		// panelTheme
 		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
 
-		// autostepLen
-		json_object_set_new(rootJ, "autostepLen", json_boolean(autostepLen));
-		
 		// autoseq
 		json_object_set_new(rootJ, "autoseq", json_boolean(autoseq));
+		
+		// autostepLen
+		json_object_set_new(rootJ, "autostepLen", json_boolean(autostepLen));
 		
 		// holdTiedNotes
 		json_object_set_new(rootJ, "holdTiedNotes", json_boolean(holdTiedNotes));
@@ -343,17 +345,29 @@ struct PhraseSeq16 : Module {
 		// runModeSong
 		json_object_set_new(rootJ, "runModeSong3", json_integer(runModeSong));
 
+		// stepIndexEdit
+		json_object_set_new(rootJ, "stepIndexEdit", json_integer(stepIndexEdit));
+	
 		// seqIndexEdit
 		json_object_set_new(rootJ, "sequence", json_integer(seqIndexEdit));
 
+		// phraseIndexEdit
+		json_object_set_new(rootJ, "phraseIndexEdit", json_integer(phraseIndexEdit));
+
+		// phrases
+		json_object_set_new(rootJ, "phrases", json_integer(phrases));
+
+		// sequences
+		json_t *sequencesJ = json_array();
+		for (int i = 0; i < 16; i++)
+			json_array_insert_new(sequencesJ, i, json_integer(sequences[i].getSeqAttrib()));
+		json_object_set_new(rootJ, "sequences", sequencesJ);
+		
 		// phrase 
 		json_t *phraseJ = json_array();
 		for (int i = 0; i < 16; i++)
 			json_array_insert_new(phraseJ, i, json_integer(phrase[i]));
 		json_object_set_new(rootJ, "phrase", phraseJ);
-
-		// phrases
-		json_object_set_new(rootJ, "phrases", json_integer(phrases));
 
 		// CV
 		json_t *cvJ = json_array();
@@ -371,27 +385,15 @@ struct PhraseSeq16 : Module {
 			}
 		json_object_set_new(rootJ, "attributes", attributesJ);
 
+		// resetOnRun
+		json_object_set_new(rootJ, "resetOnRun", json_boolean(resetOnRun));
+		
 		// attached
 		json_object_set_new(rootJ, "attached", json_boolean(attached));
 
 		// stopAtEndOfSong
 		json_object_set_new(rootJ, "stopAtEndOfSong", json_boolean(stopAtEndOfSong));
 
-		// resetOnRun
-		json_object_set_new(rootJ, "resetOnRun", json_boolean(resetOnRun));
-		
-		// stepIndexEdit
-		json_object_set_new(rootJ, "stepIndexEdit", json_integer(stepIndexEdit));
-	
-		// phraseIndexEdit
-		json_object_set_new(rootJ, "phraseIndexEdit", json_integer(phraseIndexEdit));
-
-		// sequences
-		json_t *sequencesJ = json_array();
-		for (int i = 0; i < 16; i++)
-			json_array_insert_new(sequencesJ, i, json_integer(sequences[i].getSeqAttrib()));
-		json_object_set_new(rootJ, "sequences", sequencesJ);
-		
 		return rootJ;
 	}
 
@@ -401,15 +403,15 @@ struct PhraseSeq16 : Module {
 		if (panelThemeJ)
 			panelTheme = json_integer_value(panelThemeJ);
 
-		// autostepLen
-		json_t *autostepLenJ = json_object_get(rootJ, "autostepLen");
-		if (autostepLenJ)
-			autostepLen = json_is_true(autostepLenJ);
-
 		// autoseq
 		json_t *autoseqJ = json_object_get(rootJ, "autoseq");
 		if (autoseqJ)
 			autoseq = json_is_true(autoseqJ);
+
+		// autostepLen
+		json_t *autostepLenJ = json_object_get(rootJ, "autostepLen");
+		if (autostepLenJ)
+			autostepLen = json_is_true(autostepLenJ);
 
 		// holdTiedNotes
 		json_t *holdTiedNotesJ = json_object_get(rootJ, "holdTiedNotes");
@@ -433,6 +435,39 @@ struct PhraseSeq16 : Module {
 		if (runningJ)
 			running = json_is_true(runningJ);
 
+		// runModeSong
+		json_t *runModeSongJ = json_object_get(rootJ, "runModeSong3");
+		if (runModeSongJ)
+			runModeSong = json_integer_value(runModeSongJ);
+		else {// legacy
+			runModeSongJ = json_object_get(rootJ, "runModeSong");
+			if (runModeSongJ) {
+				runModeSong = json_integer_value(runModeSongJ);
+				if (runModeSong >= MODE_PEN)// this mode was not present in original version
+					runModeSong++;
+			}
+		}
+		
+		// stepIndexEdit
+		json_t *stepIndexEditJ = json_object_get(rootJ, "stepIndexEdit");
+		if (stepIndexEditJ)
+			stepIndexEdit = json_integer_value(stepIndexEditJ);
+		
+		// seqIndexEdit
+		json_t *seqIndexEditJ = json_object_get(rootJ, "sequence");
+		if (seqIndexEditJ)
+			seqIndexEdit = json_integer_value(seqIndexEditJ);
+		
+		// phraseIndexEdit
+		json_t *phraseIndexEditJ = json_object_get(rootJ, "phraseIndexEdit");
+		if (phraseIndexEditJ)
+			phraseIndexEdit = json_integer_value(phraseIndexEditJ);
+		
+		// phrases
+		json_t *phrasesJ = json_object_get(rootJ, "phrases");
+		if (phrasesJ)
+			phrases = json_integer_value(phrasesJ);
+		
 		// sequences
 		json_t *sequencesJ = json_object_get(rootJ, "sequences");
 		if (sequencesJ) {
@@ -520,24 +555,6 @@ struct PhraseSeq16 : Module {
 			}
 		}
 		
-		// runModeSong
-		json_t *runModeSongJ = json_object_get(rootJ, "runModeSong3");
-		if (runModeSongJ)
-			runModeSong = json_integer_value(runModeSongJ);
-		else {// legacy
-			runModeSongJ = json_object_get(rootJ, "runModeSong");
-			if (runModeSongJ) {
-				runModeSong = json_integer_value(runModeSongJ);
-				if (runModeSong >= MODE_PEN)// this mode was not present in original version
-					runModeSong++;
-			}
-		}
-		
-		// seqIndexEdit
-		json_t *seqIndexEditJ = json_object_get(rootJ, "sequence");
-		if (seqIndexEditJ)
-			seqIndexEdit = json_integer_value(seqIndexEditJ);
-		
 		// phrase
 		json_t *phraseJ = json_object_get(rootJ, "phrase");
 		if (phraseJ)
@@ -548,11 +565,6 @@ struct PhraseSeq16 : Module {
 					phrase[i] = json_integer_value(phraseArrayJ);
 			}
 			
-		// phrases
-		json_t *phrasesJ = json_object_get(rootJ, "phrases");
-		if (phrasesJ)
-			phrases = json_integer_value(phrasesJ);
-		
 		// CV
 		json_t *cvJ = json_object_get(rootJ, "cv");
 		if (cvJ) {
@@ -630,6 +642,11 @@ struct PhraseSeq16 : Module {
 			}
 		}
 	
+		// resetOnRun
+		json_t *resetOnRunJ = json_object_get(rootJ, "resetOnRun");
+		if (resetOnRunJ)
+			resetOnRun = json_is_true(resetOnRunJ);
+		
 		// attached
 		json_t *attachedJ = json_object_get(rootJ, "attached");
 		if (attachedJ)
@@ -640,23 +657,7 @@ struct PhraseSeq16 : Module {
 		if (stopAtEndOfSongJ)
 			stopAtEndOfSong = json_is_true(stopAtEndOfSongJ);
 		
-		// resetOnRun
-		json_t *resetOnRunJ = json_object_get(rootJ, "resetOnRun");
-		if (resetOnRunJ)
-			resetOnRun = json_is_true(resetOnRunJ);
-		
-		// stepIndexEdit
-		json_t *stepIndexEditJ = json_object_get(rootJ, "stepIndexEdit");
-		if (stepIndexEditJ)
-			stepIndexEdit = json_integer_value(stepIndexEditJ);
-		
-		// phraseIndexEdit
-		json_t *phraseIndexEditJ = json_object_get(rootJ, "phraseIndexEdit");
-		if (phraseIndexEditJ)
-			phraseIndexEdit = json_integer_value(phraseIndexEditJ);
-		
-		// Initialize dependants after everything loaded
-		initRun();
+		resetNonJson();
 	}
 
 
@@ -705,10 +706,9 @@ struct PhraseSeq16 : Module {
 		if (runningTrigger.process(params[RUN_PARAM].getValue() + inputs[RUNCV_INPUT].getVoltage())) {// no input refresh here, don't want to introduce startup skew
 			running = !running;
 			if (running) {
-				if (resetOnRun)
+				if (resetOnRun) {
 					initRun();
-				if (resetOnRun || clockIgnoreOnRun)
-					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
+				}
 			}
 			displayState = DISP_NORMAL;
 		}
@@ -1241,7 +1241,6 @@ struct PhraseSeq16 : Module {
 			initRun();// must be after sequence reset
 			resetLight = 1.0f;
 			displayState = DISP_NORMAL;
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			clockTrigger.reset();
 			if (inputs[SEQCV_INPUT].isConnected() && seqCVmethod == 2)
 				seqIndexEdit = 0;

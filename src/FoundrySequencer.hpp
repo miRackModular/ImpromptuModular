@@ -44,9 +44,9 @@ class Sequencer {
 	void construct(bool* _holdTiedNotesPtr, int* _velocityModePtr, int* _stopAtEndOfSongPtr);
 
 	void onReset(bool editingSequence);
-	void resetNonJson(bool editingSequence);
+	void resetNonJson(bool editingSequence, bool propagateInitRun);
 	void onRandomize(bool editingSequence) {sek[trackIndexEdit].onRandomize(editingSequence);}
-	void initRun(bool editingSequence);
+	void initRun(bool editingSequence, bool propagateInitRun);
 	void initDelayedSeqNumberRequest();
 	void dataToJson(json_t *rootJ);
 	void dataFromJson(json_t *rootJ, bool editingSequence);

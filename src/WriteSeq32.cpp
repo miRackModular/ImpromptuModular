@@ -58,8 +58,10 @@ struct WriteSeq32 : Module {
 		NUM_LIGHTS
 	};
 
-	// Need to save
+	// Need to save, no reset
 	int panelTheme;
+	
+	// Need to save, with reset
 	bool running;
 	int indexStep;
 	int indexStepStage;
@@ -68,14 +70,14 @@ struct WriteSeq32 : Module {
 	int gates[4][32];
 	bool resetOnRun;
 
-	// No need to save
+	// No need to save, with reset
+	long clockIgnoreOnReset;
 	float cvCPbuffer[32];// copy paste buffer for CVs
 	int gateCPbuffer[32];// copy paste buffer for gates
 	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
 	int pendingPaste;// 0 = nothing to paste, 1 = paste on clk, 2 = paste on seq, destination channel in next msbits
-	long clockIgnoreOnReset;
 
-
+	// No need to save, no reset
 	RefreshCounter refresh;	
 	Trigger clockTrigger;
 	Trigger resetTrigger;
@@ -138,13 +140,18 @@ struct WriteSeq32 : Module {
 				cv[c][s] = 0.0f;
 				gates[c][s] = 1;
 			}
+		}
+		resetOnRun = false;
+		resetNonJson();
+	}
+	void resetNonJson() {
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
+		for (int s = 0; s < 32; s++) {
 			cvCPbuffer[s] = 0.0f;
 			gateCPbuffer[s] = 1;
 		}
 		infoCopyPaste = 0l;
 		pendingPaste = 0;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
-		resetOnRun = false;
 	}
 
 	
@@ -249,6 +256,8 @@ struct WriteSeq32 : Module {
 		json_t *resetOnRunJ = json_object_get(rootJ, "resetOnRun");
 		if (resetOnRunJ)
 			resetOnRun = json_is_true(resetOnRunJ);
+		
+		resetNonJson();
 	}
 
 	
@@ -267,11 +276,10 @@ struct WriteSeq32 : Module {
 			//pendingPaste = 0;// no pending pastes across run state toggles
 			if (running) {
 				if (resetOnRun) {
+					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
 					indexStep = 0;
 					indexStepStage = 0;
 				}
-				if (resetOnRun || clockIgnoreOnRun)
-					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
 			}
 		}
 		
@@ -402,10 +410,10 @@ struct WriteSeq32 : Module {
 		
 		// Reset
 		if (resetTrigger.process(inputs[RESET_INPUT].getVoltage())) {
+			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
 			indexStep = 0;
 			indexStepStage = 0;	
 			pendingPaste = 0;
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
 			clockTrigger.reset();
 		}		
 		

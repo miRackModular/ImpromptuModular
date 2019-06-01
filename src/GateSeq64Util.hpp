@@ -92,4 +92,26 @@ inline bool calcGate(int gateCode, Trigger clockTrigger) {
 }		
 
 
+//										1/4		DUO			D2			TR1		TR2		TR3 		TR23	   TRI
+const uint32_t advGateHitMaskGS[8] = {0x00003F, 0x03F03F, 0x03F000, 0x00000F, 0x000F00, 0x0F0000, 0x0F0F00, 0x0F0F0F};
+
+int getAdvGateGS(int ppqnCount, int pulsesPerStep, int gateMode) { 
+	uint32_t shiftAmt = ppqnCount * (24 / pulsesPerStep);
+	return (int)((advGateHitMaskGS[gateMode] >> shiftAmt) & (uint32_t)0x1);
+}	
+
+
+int calcGateCode(StepAttributesGS attribute, int ppqnCount, int pulsesPerStep) {
+	// -1 = gate off for whole step, 0 = gate off for current ppqn, 1 = gate on, 2 = clock high
+	if (ppqnCount == 0 && attribute.getGateP() && !(random::uniform() < ((float)(attribute.getGatePVal())/100.0f)))// random::uniform is [0.0, 1.0), see include/util/common.hpp
+		return -1;
+	if (!attribute.getGate())
+		return 0;
+	if (pulsesPerStep == 1)
+		return 2;// clock high
+	return getAdvGateGS(ppqnCount, pulsesPerStep, attribute.getGateMode());
+}		
+
+
+
 #endif

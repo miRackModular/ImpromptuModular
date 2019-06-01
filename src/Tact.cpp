@@ -42,17 +42,19 @@ struct Tact : Module {
 		NUM_LIGHTS
 	};
 		
-	// Need to save
+	// Need to save, no reset
 	int panelTheme;
+	
+	// Need to save, with reset
 	double cv[2];// actual Tact CV since Tactknob can be different than these when transitioning
 	float storeCV[2];
 	float rateMultiplier;
 	bool levelSensitiveTopBot;
 
-	// No need to save
+	// No need to save, with reset
 	long infoStore;// 0 when no info, positive downward step counter when store left channel, negative upward for right
 	
-	
+	// No need to save, no reset
 	float infoCVinLight[2] = {0.0f, 0.0f};
 	RefreshCounter refresh;
 	Trigger topTriggers[2];
@@ -97,9 +99,12 @@ struct Tact : Module {
 		}
 		rateMultiplier = 1.0f;
 		levelSensitiveTopBot = false;
-		infoStore = 0l;
+		resetNonJson();
 	}
-
+	void resetNonJson() {
+		infoStore = 0l;		
+	}
+	
 	
 	void onRandomize() override {
 		for (int i = 0; i < 2; i++) {
@@ -110,6 +115,9 @@ struct Tact : Module {
 	
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
+
+		// panelTheme
+		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
 
 		// cv
 		json_object_set_new(rootJ, "cv0", json_real(cv[0]));
@@ -122,9 +130,6 @@ struct Tact : Module {
 		// rateMultiplier
 		json_object_set_new(rootJ, "rateMultiplier", json_real(rateMultiplier));
 		
-		// panelTheme
-		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
-
 		// levelSensitiveTopBot
 		json_object_set_new(rootJ, "levelSensitiveTopBot", json_boolean(levelSensitiveTopBot));
 
@@ -133,7 +138,11 @@ struct Tact : Module {
 
 	
 	void dataFromJson(json_t *rootJ) override {
-
+		// panelTheme
+		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
+		if (panelThemeJ)
+			panelTheme = json_integer_value(panelThemeJ);
+		
 		// cv
 		json_t *cv0J = json_object_get(rootJ, "cv0");
 		if (cv0J)
@@ -155,15 +164,12 @@ struct Tact : Module {
 		if (rateMultiplierJ)
 			rateMultiplier = json_number_value(rateMultiplierJ);
 
-		// panelTheme
-		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
-		if (panelThemeJ)
-			panelTheme = json_integer_value(panelThemeJ);
-		
 		// levelSensitiveTopBot
 		json_t *levelSensitiveTopBotJ = json_object_get(rootJ, "levelSensitiveTopBot");
 		if (levelSensitiveTopBotJ)
 			levelSensitiveTopBot = json_is_true(levelSensitiveTopBotJ);
+		
+		resetNonJson();
 	}
 
 	
@@ -553,12 +559,17 @@ struct Tact1 : Module {
 		NUM_LIGHTS
 	};
 		
-	// Need to save
+	// Need to save, no reset
 	int panelTheme;
+	
+	// Need to save, with reset
 	double cv;// actual Tact CV since Tactknob can be different than these when transitioning
 	float rateMultiplier;
 
-	// No need to save
+	// No need to save, with reset
+	// none
+	
+	// No need to save, no reset
 	RefreshCounter refresh;	
 	
 	inline bool isExpSliding(void) {return params[EXP_PARAM].getValue() > 0.5f;}
@@ -581,7 +592,11 @@ struct Tact1 : Module {
 	void onReset() override {
 		cv = 0.0f;
 		rateMultiplier = 1.0f;
+		// resetNonJson();
 	}
+	// void resetNonJson() {
+		// none
+	// }
 
 	
 	void onRandomize() override {
@@ -592,20 +607,24 @@ struct Tact1 : Module {
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
+		// panelTheme
+		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
+
 		// cv
 		json_object_set_new(rootJ, "cv", json_real(cv));
 		
 		// rateMultiplier
 		json_object_set_new(rootJ, "rateMultiplier", json_real(rateMultiplier));
 		
-		// panelTheme
-		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
-
 		return rootJ;
 	}
 
 	
 	void dataFromJson(json_t *rootJ) override {
+		// panelTheme
+		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
+		if (panelThemeJ)
+			panelTheme = json_integer_value(panelThemeJ);
 
 		// cv
 		json_t *cvJ = json_object_get(rootJ, "cv");
@@ -616,11 +635,8 @@ struct Tact1 : Module {
 		json_t *rateMultiplierJ = json_object_get(rootJ, "rateMultiplier");
 		if (rateMultiplierJ)
 			rateMultiplier = json_number_value(rateMultiplierJ);
-
-		// panelTheme
-		json_t *panelThemeJ = json_object_get(rootJ, "panelTheme");
-		if (panelThemeJ)
-			panelTheme = json_integer_value(panelThemeJ);
+		
+		// resetNonJson();
 	}
 
 	

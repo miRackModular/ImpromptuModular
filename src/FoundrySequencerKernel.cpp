@@ -56,6 +56,15 @@ void SequencerKernel::resetNonJson(bool editingSequence) {
 	clockPeriod = 0ul;
 	initRun(editingSequence);
 }
+void SequencerKernel::initRun(bool editingSequence) {
+	movePhraseIndexRun(true);// true means init 
+	moveStepIndexRunIgnore = false;
+	moveStepIndexRun(true, editingSequence);// true means init 
+	ppqnCount = 0;
+	ppqnLeftToSkip = delay;
+	calcGateCode(editingSequence);// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
+	slideStepsRemain = 0ul;
+}
 
 
 void SequencerKernel::onRandomize(bool editingSequence) {
@@ -69,16 +78,6 @@ void SequencerKernel::onRandomize(bool editingSequence) {
 	initRun(editingSequence);
 }
 	
-void SequencerKernel::initRun(bool editingSequence) {
-	movePhraseIndexRun(true);// true means init 
-	moveStepIndexRunIgnore = false;
-	moveStepIndexRun(true, editingSequence);// true means init 
-	ppqnCount = 0;
-	ppqnLeftToSkip = delay;
-	calcGateCode(editingSequence);// uses stepIndexRun as the step and {phraseIndexRun or seqIndexEdit} to determine the seq
-	slideStepsRemain = 0ul;
-}
-
 
 void SequencerKernel::dataToJson(json_t *rootJ) {
 	// pulsesPerStep

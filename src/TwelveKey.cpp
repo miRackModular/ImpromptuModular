@@ -42,19 +42,20 @@ struct TwelveKey : Module {
 		NUM_LIGHTS
 	};
 	
-	// Need to save
+	// Need to save, no reset
 	int panelTheme;
+	
+	// Need to save, with reset
 	int octaveNum;// 0 to 9
 	float cv;
 	bool stateInternal;// false when pass through CV and Gate, true when CV and gate from this module
 	
-	// No need to save
+	// No need to save, with reset
 	unsigned long noteLightCounter;// 0 when no key to light, downward step counter timer when key lit
-	int lastKeyPressed;// 0 to 11
 
-	
+	// No need to save, no reset
 	RefreshCounter refresh;
-	//float gateLight = 0.0f;
+	int lastKeyPressed = 0;// 0 to 11
 	Trigger keyTriggers[12];
 	Trigger gateInputTrigger;
 	Trigger octIncTrigger;
@@ -90,16 +91,16 @@ struct TwelveKey : Module {
 		octaveNum = 4;
 		cv = 0.0f;
 		stateInternal = inputs[GATE_INPUT].isConnected() ? false : true;
+		resetNonJson();
+	}
+	void resetNonJson() {
 		noteLightCounter = 0ul;
-		lastKeyPressed = 0;
 	}
 
 	void onRandomize() override {
 		octaveNum = random::u32() % 10;
 		cv = ((float)(octaveNum - 4)) + ((float)(random::u32() % 12)) / 12.0f;
 		stateInternal = inputs[GATE_INPUT].isConnected() ? false : true;
-		noteLightCounter = 0ul;
-		lastKeyPressed = 0;
 	}
 
 	json_t *dataToJson() override {
@@ -108,11 +109,11 @@ struct TwelveKey : Module {
 		// panelTheme
 		json_object_set_new(rootJ, "panelTheme", json_integer(panelTheme));
 
-		// cv
-		json_object_set_new(rootJ, "cv", json_real(cv));
-		
 		// octave
 		json_object_set_new(rootJ, "octave", json_integer(octaveNum));
+		
+		// cv
+		json_object_set_new(rootJ, "cv", json_real(cv));
 		
 		// stateInternal
 		json_object_set_new(rootJ, "stateInternal", json_boolean(stateInternal));
@@ -126,20 +127,22 @@ struct TwelveKey : Module {
 		if (panelThemeJ)
 			panelTheme = json_integer_value(panelThemeJ);
 
-		// cv
-		json_t *cvJ = json_object_get(rootJ, "cv");
-		if (cvJ)
-			cv = json_number_value(cvJ);
-		
 		// octave
 		json_t *octaveJ = json_object_get(rootJ, "octave");
 		if (octaveJ)
 			octaveNum = json_integer_value(octaveJ);
 
+		// cv
+		json_t *cvJ = json_object_get(rootJ, "cv");
+		if (cvJ)
+			cv = json_number_value(cvJ);
+		
 		// stateInternal
 		json_t *stateInternalJ = json_object_get(rootJ, "stateInternal");
 		if (stateInternalJ)
 			stateInternal = json_is_true(stateInternalJ);
+		
+		resetNonJson();
 	}
 
 	
@@ -352,8 +355,6 @@ struct TwelveKeyWidget : ModuleWidget {
 		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler2), true, module, TwelveKey::OCT_INPUT, module ? &module->panelTheme : NULL));
 
 		// Middle
-		// Press LED (moved other controls below up by 16 px when removed, to better center)
-		//addChild(createLight<MediumLight<GreenLight>>(Vec(columnRulerM + offsetMediumLight, rowRuler0 - 31 + offsetMediumLight), module, TwelveKey::PRESS_LIGHT));
 		// Octave display
 		OctaveNumDisplayWidget *octaveNumDisplay = new OctaveNumDisplayWidget();
 		octaveNumDisplay->box.pos = Vec(columnRulerM + 2, rowRuler1 - 27 + vOffsetDisplay);

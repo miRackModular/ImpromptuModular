@@ -61,8 +61,6 @@ struct GateSeq64 : Module {
 	// Constants
 	enum DisplayStateIds {DISP_GATE, DISP_LENGTH, DISP_MODES};
 	static const int MAX_SEQS = 32;
-	//										1/4		DUO			D2			TR1		TR2		TR3 		TR23	   TRI
-	const uint32_t advGateHitMaskGS[8] = {0x00003F, 0x03F03F, 0x03F000, 0x00000F, 0x000F00, 0x0F0000, 0x0F0F00, 0x0F0F0F};
 	static const int blinkNumInit = 15;// init number of blink cycles for cursor
 
 	// Need to save, no reset
@@ -86,27 +84,27 @@ struct GateSeq64 : Module {
 
 	// No need to save, with reset
 	int displayState;
-	int stepIndexRun[4];
-	int phraseIndexRun;
-	unsigned long stepIndexRunHistory;
-	unsigned long phraseIndexRunHistory;
-	StepAttributesGS attribCPbuffer[64];
 	SeqAttributesGS seqAttribCPbuffer;
-	bool seqCopied;
+	StepAttributesGS attribCPbuffer[64];
 	int phraseCPbuffer[64];
+	bool seqCopied;
 	int countCP;// number of steps to paste (in case CPMODE_PARAM changes between copy and paste)
 	int startCP;
-	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
-	long clockIgnoreOnReset;
 	long displayProbInfo;// downward step counter for displayProb feedback
-	int gateCode[4];
+	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
 	long revertDisplay;
 	long editingPpqn;// 0 when no info, positive downward step counter timer when editing ppqn
-	int ppqnCount;
 	long blinkCount;// positive upward counter, reset to 0 when max reached
 	int blinkNum;// number of blink cycles to do, downward counter
-	int stepConfig;
 	long editingPhraseSongRunning;// downward step counter
+	int stepConfig;
+	long clockIgnoreOnReset;
+	int phraseIndexRun;
+	unsigned long phraseIndexRunHistory;
+	int stepIndexRun[4];
+	unsigned long stepIndexRunHistory;
+	int ppqnCount;
+	int gateCode[4];
 
 	// No need to save, no reset
 	int stepConfigSync = 0;// 0 means no sync requested, 1 means soft sync (no reset lengths), 2 means hard (reset lengths)
@@ -129,34 +127,20 @@ struct GateSeq64 : Module {
 	Trigger seqCVTrigger;
 	dsp::BooleanTrigger editingSequenceTrigger;
 	HoldDetect modeHoldDetect;
-	SeqAttributesGS seqAttribBuffer[MAX_SEQS];// buffer from Json for thread safety
+	SeqAttributesGS seqAttribBuffer[MAX_SEQS];// buffer for dataFromJson for thread safety
 	int lastStep = 0;// for mouse painting
 	bool lastValue = false;// for mouse painting
 
 	
-	inline bool isEditingSequence(void) {return params[EDIT_PARAM].getValue() > 0.5f;}
-	inline int getStepConfig() {// 1 = 4x16 = 0.0f,  2 = 2x32 = 1.0f,  4 = 1x64 = 2.0f
+	bool isEditingSequence(void) {return params[EDIT_PARAM].getValue() > 0.5f;}
+	int getStepConfig() {// 1 = 4x16 = 0.0f,  2 = 2x32 = 1.0f,  4 = 1x64 = 2.0f
 		float paramValue = params[CONFIG_PARAM].getValue();
 		if (paramValue < 0.5f) return 1;
 		else if (paramValue < 1.5f) return 2;
 		return 4;
 	}
 	
-	inline int getAdvGateGS(int ppqnCount, int pulsesPerStep, int gateMode) { 
-		uint32_t shiftAmt = ppqnCount * (24 / pulsesPerStep);
-		return (int)((advGateHitMaskGS[gateMode] >> shiftAmt) & (uint32_t)0x1);
-	}	
-	inline int calcGateCode(StepAttributesGS attribute, int ppqnCount, int pulsesPerStep) {
-		// -1 = gate off for whole step, 0 = gate off for current ppqn, 1 = gate on, 2 = clock high
-		if (ppqnCount == 0 && attribute.getGateP() && !(random::uniform() < ((float)(attribute.getGatePVal())/100.0f)))// random::uniform is [0.0, 1.0), see include/util/common.hpp
-			return -1;
-		if (!attribute.getGate())
-			return 0;
-		if (pulsesPerStep == 1)
-			return 2;// clock high
-		return getAdvGateGS(ppqnCount, pulsesPerStep, attribute.getGateMode());
-	}		
-	inline void fillStepIndexRunVector(int runMode, int len) {
+	void fillStepIndexRunVector(int runMode, int len) {
 		if (runMode != MODE_RN2) {
 			stepIndexRun[1] = stepIndexRun[0];
 			stepIndexRun[2] = stepIndexRun[0];
@@ -168,10 +152,11 @@ struct GateSeq64 : Module {
 			stepIndexRun[3] = random::u32() % len;
 		}
 	}
-	inline bool ppsRequirementMet(int gateButtonIndex) {
+	bool ppsRequirementMet(int gateButtonIndex) {
 		return !( (pulsesPerStep < 2) || (pulsesPerStep == 4 && gateButtonIndex > 2) || (pulsesPerStep == 6 && gateButtonIndex <= 2) ); 
 	}
 		
+
 	GateSeq64() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
@@ -213,7 +198,6 @@ struct GateSeq64 : Module {
 
 	
 	void onReset() override {
-		stepConfig = getStepConfig();
 		autoseq = false;
 		seqCVmethod = 0;
 		pulsesPerStep = 1;
@@ -227,21 +211,22 @@ struct GateSeq64 : Module {
 			for (int s = 0; s < 64; s++) {
 				attributes[i][s].init();
 			}
-			sequences[i].init(16 * stepConfig, MODE_FWD);
+			sequences[i].init(16 * getStepConfig(), MODE_FWD);
 		}
 		for (int i = 0; i < 64; i++) {
 			phrase[i] = 0;
-			attribCPbuffer[i].init();
-			phraseCPbuffer[i] = 0;
 		}
 		resetOnRun = false;
 		stopAtEndOfSong = false;
-		
-		// this next code should go in new method resetNonJson(), however, can't call resetNonJson() at end of this.dataFromJson() since the initRun()
-		//   uses sequences[].getLength() and setting length() is deffered to process() via stepConfigSync so invalid value will be used
-		// but initRun() is called in process when stepConfigSync!
+		resetNonJson(false);
+	}
+	void resetNonJson(bool delayedInitRun) {
 		displayState = DISP_GATE;
 		seqAttribCPbuffer.init(16, MODE_FWD);
+		for (int i = 0; i < 64; i++) {
+			attribCPbuffer[i].init();
+			phraseCPbuffer[i] = 0;
+		}
 		seqCopied = true;
 		countCP = 64;
 		startCP = 0;
@@ -252,22 +237,16 @@ struct GateSeq64 : Module {
 		blinkCount = 0l;
 		blinkNum = blinkNumInit;
 		editingPhraseSongRunning = 0l;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
-		initRun();
-	}
-
-	
-	void onRandomize() override {
-		if (isEditingSequence()) {
-			for (int s = 0; s < 64; s++) {
-				attributes[sequence][s].randomize();
-			}
-			sequences[sequence].randomize(16 * stepConfig, NUM_MODES);// ok to use stepConfig since CONFIG_PARAM is not randomizable		
+		if (delayedInitRun) {
+			stepConfigSync = 1;// signal a sync from dataFromJson so that step will get lengths from seqAttribBuffer			
+		}
+		else {
+			stepConfig = getStepConfig();
+			initRun();
 		}
 	}
-
-
-	void initRun() {// run button activated or run edge in run input jack
+	void initRun() {// run button activated, or run edge in run input jack, or stepConfig switch changed, or fromJson()
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 		phraseIndexRun = (runModeSong == MODE_REV ? phrases - 1 : 0);
 		phraseIndexRunHistory = 0;
 
@@ -279,6 +258,16 @@ struct GateSeq64 : Module {
 		ppqnCount = 0;
 		for (int i = 0; i < 4; i += stepConfig)
 			gateCode[i] = calcGateCode(attributes[seq][(i * 16) + stepIndexRun[i]], 0, pulsesPerStep);
+	}
+	
+	
+	void onRandomize() override {
+		if (isEditingSequence()) {
+			for (int s = 0; s < 64; s++) {
+				attributes[sequence][s].randomize();
+			}
+			sequences[sequence].randomize(16 * stepConfig, NUM_MODES);// ok to use stepConfig since CONFIG_PARAM is not randomizable		
+		}
 	}
 	
 	
@@ -522,7 +511,7 @@ struct GateSeq64 : Module {
 		if (stopAtEndOfSongJ)
 			stopAtEndOfSong = json_is_true(stopAtEndOfSongJ);
 		
-		stepConfigSync = 1;// signal a sync from dataFromJson so that step will get lengths from seqAttribBuffer
+		resetNonJson(true);
 	}
 
 	
@@ -545,10 +534,9 @@ struct GateSeq64 : Module {
 		if (runningTrigger.process(params[RUN_PARAM].getValue() + inputs[RUNCV_INPUT].getVoltage())) {// no input refresh here, don't want to introduce startup skew
 			running = !running;
 			if (running) {
-				if (resetOnRun)
+				if (resetOnRun) {
 					initRun();
-				if (resetOnRun || clockIgnoreOnRun)
-					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
+				}
 			}
 			else
 				blinkNum = blinkNumInit;
@@ -985,7 +973,6 @@ struct GateSeq64 : Module {
 			initRun();// must be before SEQCV_INPUT below
 			resetLight = 1.0f;
 			displayState = DISP_GATE;
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			clockTrigger.reset();
 			if (inputs[SEQCV_INPUT].isConnected() && seqCVmethod == 2)
 				sequence = 0;

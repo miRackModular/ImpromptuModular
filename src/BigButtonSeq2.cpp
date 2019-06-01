@@ -351,7 +351,7 @@ struct BigButtonSeq2 : Module {
 		if (sampleAndHoldJ)
 			sampleAndHold = json_is_true(sampleAndHoldJ);
 		
-		resetNonJson();// need this for load preset, which won't have onReset() called
+		resetNonJson();
 	}
 
 	
@@ -473,12 +473,12 @@ struct BigButtonSeq2 : Module {
 		
 		// Reset
 		if (resetTrigger.process(params[RESET_PARAM].getValue() + inputs[RESET_INPUT].getVoltage())) {
+			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
 			indexStep = 0;
 			//outPulse.trigger(0.001f);
 			outLightPulse.trigger(0.02f);
 			metronomeLightStart = 1.0f;
 			metronomeLightDiv = 0.0f;
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * args.sampleRate);
 			clockTrigger.reset();
 		}		
 		

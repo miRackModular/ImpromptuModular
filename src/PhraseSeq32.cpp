@@ -322,7 +322,6 @@ struct PhraseSeq32 : Module {
 		editingGateLength = 0l;
 		lastGateEdit = 1l;
 		editingPpqn = 0l;
-		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 	}
 	
 	
@@ -341,6 +340,7 @@ struct PhraseSeq32 : Module {
 	
 	
 	void initRun() {// run button activated or run edge in run input jack
+		clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * APP->engine->getSampleRate());
 		phraseIndexRun = (runModeSong == MODE_REV ? phrases - 1 : 0);
 		phraseIndexRunHistory = 0;
 
@@ -673,10 +673,9 @@ struct PhraseSeq32 : Module {
 		if (runningTrigger.process(params[RUN_PARAM].getValue() + inputs[RUNCV_INPUT].getVoltage())) {// no input refresh here, don't want to introduce startup skew
 			running = !running;
 			if (running) {
-				if (resetOnRun)
+				if (resetOnRun) {
 					initRun();
-				if (resetOnRun || clockIgnoreOnRun)
-					clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
+				}
 				attachedChanB = stepIndexEdit >= 16;
 			}
 			displayState = DISP_NORMAL;
@@ -1272,7 +1271,6 @@ struct PhraseSeq32 : Module {
 			initRun();// must be before SEQCV_INPUT below
 			resetLight = 1.0f;
 			displayState = DISP_NORMAL;
-			clockIgnoreOnReset = (long) (clockIgnoreOnResetDuration * sampleRate);
 			clockTrigger.reset();
 			if (inputs[SEQCV_INPUT].isConnected() && seqCVmethod == 2)
 				seqIndexEdit = 0;

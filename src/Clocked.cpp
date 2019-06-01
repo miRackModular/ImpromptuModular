@@ -335,7 +335,6 @@ struct Clocked : Module {
 	}
 	
 	
-	// called from the main thread (step() can not be called until all modules created)
 	Clocked() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
@@ -493,7 +492,7 @@ struct Clocked : Module {
 		if (resetClockOutputsHighJ)
 			resetClockOutputsHigh = json_is_true(resetClockOutputsHighJ);
 
-		resetNonJson(true);// need this for load preset, which won't have onReset() called
+		resetNonJson(true);
 	}
 
 	
