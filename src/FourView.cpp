@@ -133,12 +133,8 @@ struct FourViewWidget : ModuleWidget {
 
 	struct PanelThemeItem : MenuItem {
 		FourView *module;
-		int theme;
 		void onAction(const event::Action &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
+			module->panelTheme ^= 0x1;
 		}
 	};
 	struct SharpItem : MenuItem {
@@ -158,16 +154,8 @@ struct FourViewWidget : ModuleWidget {
 		themeLabel->text = "Panel Theme";
 		menu->addChild(themeLabel);
 
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
+		PanelThemeItem *darkItem = createMenuItem<PanelThemeItem>(darkPanelID, CHECKMARK(module->panelTheme));
 		darkItem->module = module;
-		darkItem->theme = 1;
 		menu->addChild(darkItem);
 		
 		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
