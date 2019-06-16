@@ -284,6 +284,7 @@ struct GiantLight2 : BASE {
 
 // Other widgets
 
+
 struct InvisibleKey : Switch {
 	InvisibleKey() {
 		momentary = true;

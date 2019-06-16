@@ -17,23 +17,103 @@
 #include "ImpromptuModular.hpp"
 
 
+
+
+struct PianoKeyInfo {
+	bool gate = false;// use a dsp::BooleanTrigger to detect rising edge
+	bool isRight = false;
+	int key = 0;// key number that was pressed, typically 0 to 11 is stored here
+	float vel = 0.0f;// 0.0f to 10.0f velocity
+};
+
+struct PianoKeyBase : OpaqueWidget {
+	int keyNumber;
+	PianoKeyInfo *pkInfo;
+	float dragY;
+	float dragValue;
+	
+	void onButton(const event::Button &e) override {
+		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
+			if (e.action == GLFW_PRESS) {
+				pkInfo->gate = true;
+				pkInfo->isRight = e.button == GLFW_MOUSE_BUTTON_RIGHT;
+				pkInfo->key = keyNumber;
+				pkInfo->vel = rescale(e.pos.y, box.size.y, 0.0f, 10.0f, 0.0f);
+				e.consume(this);
+				return;
+			}
+			else if (e.action == GLFW_RELEASE) {
+				pkInfo->gate = false;
+				e.consume(this);
+				return;
+			}
+		}
+		OpaqueWidget::onButton(e);
+	}
+	
+	void onDragStart(const event::DragStart &e) override {
+		if (pkInfo) {
+			dragY = APP->scene->rack->mousePos.y;
+			dragValue = pkInfo->vel;
+			e.consume(this);// Must consume to set the widget as dragged
+		}
+	}
+	
+	void onDragMove(const event::DragMove &e) override {
+		if (pkInfo) {
+			float newDragY = APP->scene->rack->mousePos.y;
+			float delta = (newDragY - dragY) * 10.0f / box.size.y;
+			dragY = newDragY;
+			dragValue += delta;
+			float dragValueClamped = clampSafe(dragValue, 0.0f, 10.0f);
+			pkInfo->vel = dragValueClamped;
+		}
+		e.consume(this);
+	}
+
+};
+
+struct PianoKeyBig : PianoKeyBase {
+	PianoKeyBig() {
+		box.size = Vec(34, 72);
+	}
+};
+
+struct PianoKeySmall : PianoKeyBase {
+	PianoKeySmall() {
+		box.size = Vec(23, 38);
+	}
+};
+
+
+template <class TWidget>
+TWidget* createPianoKey(Vec pos, int _keyNumber, PianoKeyInfo* _pkInfo) {
+	TWidget *pkWidget = createWidget<TWidget>(pos);
+	pkWidget->pkInfo = _pkInfo;
+	pkWidget->keyNumber = _keyNumber;
+	return pkWidget;
+}
+
+
 struct TwelveKey : Module {
 	enum ParamIds {
 		OCTINC_PARAM,
 		OCTDEC_PARAM,
-		ENUMS(KEY_PARAMS, 12),
+		ENUMS(KEY_PARAMS, 12),// unused
 		NUM_PARAMS
 	};
 	enum InputIds {
 		GATE_INPUT,
 		CV_INPUT,	
 		OCT_INPUT,
+		VEL_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
 		GATE_OUTPUT,
 		CV_OUTPUT,	
 		OCT_OUTPUT,
+		VEL_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -48,6 +128,7 @@ struct TwelveKey : Module {
 	// Need to save, with reset
 	int octaveNum;// 0 to 9
 	float cv;
+	float vel;
 	bool stateInternal;// false when pass through CV and Gate, true when CV and gate from this module
 	
 	// No need to save, with reset
@@ -55,30 +136,16 @@ struct TwelveKey : Module {
 
 	// No need to save, no reset
 	RefreshCounter refresh;
-	int lastKeyPressed = 0;// 0 to 11
-	Trigger keyTriggers[12];
 	Trigger gateInputTrigger;
 	Trigger octIncTrigger;
 	Trigger octDecTrigger;
+	dsp::BooleanTrigger keyTrigger;
+	PianoKeyInfo pkInfo;
 	
 
 	TwelveKey() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		configParam(KEY_PARAMS + 1, 0.0, 1.0, 0.0, "C# key");
-		configParam(KEY_PARAMS + 3, 0.0, 1.0, 0.0, "D# key");
-		configParam(KEY_PARAMS + 6, 0.0, 1.0, 0.0, "F# key");
-		configParam(KEY_PARAMS + 8, 0.0, 1.0, 0.0, "G# key");
-		configParam(KEY_PARAMS + 10, 0.0, 1.0, 0.0, "A# key");
-
-		configParam(KEY_PARAMS + 0, 0.0, 1.0, 0.0, "C key");
-		configParam(KEY_PARAMS + 2, 0.0, 1.0, 0.0, "D key");
-		configParam(KEY_PARAMS + 4, 0.0, 1.0, 0.0, "E key");
-		configParam(KEY_PARAMS + 5, 0.0, 1.0, 0.0, "F key");
-		configParam(KEY_PARAMS + 7, 0.0, 1.0, 0.0, "G key");
-		configParam(KEY_PARAMS + 9, 0.0, 1.0, 0.0, "A key");
-		configParam(KEY_PARAMS + 11, 0.0, 1.0, 0.0, "B key");
-
 		configParam(OCTDEC_PARAM, 0.0, 1.0, 0.0, "Oct down");
 		configParam(OCTINC_PARAM, 0.0, 1.0, 0.0, "Oct up");
 		
@@ -90,6 +157,8 @@ struct TwelveKey : Module {
 	void onReset() override {
 		octaveNum = 4;
 		cv = 0.0f;
+		vel = 10.0f;
+		pkInfo.vel = 10.0f;
 		stateInternal = inputs[GATE_INPUT].isConnected() ? false : true;
 		resetNonJson();
 	}
@@ -100,6 +169,8 @@ struct TwelveKey : Module {
 	void onRandomize() override {
 		octaveNum = random::u32() % 10;
 		cv = ((float)(octaveNum - 4)) + ((float)(random::u32() % 12)) / 12.0f;
+		vel = random::uniform() * 10.0f;
+		pkInfo.vel = vel;
 		stateInternal = inputs[GATE_INPUT].isConnected() ? false : true;
 	}
 
@@ -114,6 +185,9 @@ struct TwelveKey : Module {
 		
 		// cv
 		json_object_set_new(rootJ, "cv", json_real(cv));
+		
+		// vel
+		json_object_set_new(rootJ, "vel", json_real(vel));
 		
 		// stateInternal
 		json_object_set_new(rootJ, "stateInternal", json_boolean(stateInternal));
@@ -136,6 +210,13 @@ struct TwelveKey : Module {
 		json_t *cvJ = json_object_get(rootJ, "cv");
 		if (cvJ)
 			cv = json_number_value(cvJ);
+		
+		// vel
+		json_t *velJ = json_object_get(rootJ, "vel");
+		if (velJ) {
+			vel = json_number_value(velJ);
+			pkInfo.vel = vel;
+		}
 		
 		// stateInternal
 		json_t *stateInternalJ = json_object_get(rootJ, "stateInternal");
@@ -160,13 +241,10 @@ struct TwelveKey : Module {
 			downOctTrig = octDecTrigger.process(params[OCTDEC_PARAM].getValue());
 				
 			// Keyboard buttons and gate input
-			for (int i = 0; i < 12; i++) {
-				if (keyTriggers[i].process(params[KEY_PARAMS + i].getValue())) {
-					cv = ((float)(octaveNum - 4)) + ((float) i) / 12.0f;
-					stateInternal = true;
-					noteLightCounter = (unsigned long) (noteLightTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
-					lastKeyPressed = i;
-				}
+			if (keyTrigger.process(pkInfo.gate)) {
+				cv = ((float)(octaveNum - 4)) + ((float) pkInfo.key) / 12.0f;
+				stateInternal = true;
+				noteLightCounter = (unsigned long) (noteLightTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
 			}
 		}// userInputs refresh
 		
@@ -181,7 +259,7 @@ struct TwelveKey : Module {
 		if (octaveNum < 0) octaveNum = 0;
 		
 		if (gateInputTrigger.process(inputs[GATE_INPUT].getVoltage())) {// no input refresh here, don't want propagation lag in long 12-key chain
-			cv = inputs[CV_INPUT].getVoltage();			
+			cv = inputs[CV_INPUT].getVoltage();
 			stateInternal = false;
 		}
 		
@@ -191,13 +269,17 @@ struct TwelveKey : Module {
 		// cv output
 		outputs[CV_OUTPUT].setVoltage(cv);
 		
-		// gate output
+		
+		// gate and velocity outputs
 		if (stateInternal == false) {// if receiving a key from left chain
 			outputs[GATE_OUTPUT].setVoltage(inputs[GATE_INPUT].getVoltage());
+			vel = inputs[VEL_INPUT].getVoltage();
 		}
 		else {// key from this
-			outputs[GATE_OUTPUT].setVoltage((params[KEY_PARAMS + lastKeyPressed].getValue() > 0.5f) ? 10.0f : 0.0f);
+			outputs[GATE_OUTPUT].setVoltage(pkInfo.gate ? 10.0f : 0.0f);
+			vel = pkInfo.vel;
 		}
+		outputs[VEL_OUTPUT].setVoltage(vel);
 		
 		// Octave output
 		outputs[OCT_OUTPUT].setVoltage(std::round( (float)(octaveNum + 1) ));
@@ -206,7 +288,7 @@ struct TwelveKey : Module {
 		if (refresh.processLights()) {
 			// Key lights
 			for (int i = 0; i < 12; i++)
-				lights[KEY_LIGHTS + i].setBrightness(( i == lastKeyPressed && (noteLightCounter > 0ul || params[KEY_PARAMS + i].getValue() > 0.5f)) ? 1.0f : 0.0f);
+				lights[KEY_LIGHTS + i].setBrightness(( i == pkInfo.key && (noteLightCounter > 0ul || pkInfo.gate)) ? 1.0f : 0.0f);
 			
 			if (noteLightCounter > 0ul)
 				noteLightCounter--;
@@ -275,7 +357,7 @@ struct TwelveKeyWidget : ModuleWidget {
         setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/TwelveKey.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
-			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/TwelveKey_dark.svg")));
+			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/TwelveKey.svg")));//"res/dark/TwelveKey_dark.svg")));
 			darkPanel->visible = false;
 			addChild(darkPanel);
 		}
@@ -294,70 +376,72 @@ struct TwelveKeyWidget : ModuleWidget {
 		static const int offsetKeyLEDy = 41;
 
 		// Black keys
-		addParam(createParam<InvisibleKey>(Vec(30, 40), module, TwelveKey::KEY_PARAMS + 1));
+		addChild(createPianoKey<PianoKeyBig>(Vec(30, 40), 1, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(30+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 1));
-		addParam(createParam<InvisibleKey>(Vec(71, 40), module, TwelveKey::KEY_PARAMS + 3));
+		addChild(createPianoKey<PianoKeyBig>(Vec(71, 40), 3, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(71+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 3));
-		addParam(createParam<InvisibleKey>(Vec(154, 40), module, TwelveKey::KEY_PARAMS + 6));
+		addChild(createPianoKey<PianoKeyBig>(Vec(154, 40), 6, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(154+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 6));
-		addParam(createParam<InvisibleKey>(Vec(195, 40), module, TwelveKey::KEY_PARAMS + 8));
+		addChild(createPianoKey<PianoKeyBig>(Vec(195, 40), 8, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(195+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 8));
-		addParam(createParam<InvisibleKey>(Vec(236, 40), module, TwelveKey::KEY_PARAMS + 10));
+		addChild(createPianoKey<PianoKeyBig>(Vec(236, 40), 10, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(236+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 10));
 
 		// White keys
-		addParam(createParam<InvisibleKey>(Vec(10, 112), module, TwelveKey::KEY_PARAMS + 0));
+		addChild(createPianoKey<PianoKeyBig>(Vec(10, 112), 0, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(10+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 0));
-		addParam(createParam<InvisibleKey>(Vec(51, 112), module, TwelveKey::KEY_PARAMS + 2));
+		addChild(createPianoKey<PianoKeyBig>(Vec(51, 112), 2, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(51+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 2));
-		addParam(createParam<InvisibleKey>(Vec(92, 112), module, TwelveKey::KEY_PARAMS + 4));
+		addChild(createPianoKey<PianoKeyBig>(Vec(92, 112), 4, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(92+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 4));
-		addParam(createParam<InvisibleKey>(Vec(133, 112), module, TwelveKey::KEY_PARAMS + 5));
+		addChild(createPianoKey<PianoKeyBig>(Vec(133, 112), 5, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(133+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 5));
-		addParam(createParam<InvisibleKey>(Vec(174, 112), module, TwelveKey::KEY_PARAMS + 7));
+		addChild(createPianoKey<PianoKeyBig>(Vec(174, 112), 7, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(174+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 7));
-		addParam(createParam<InvisibleKey>(Vec(215, 112), module, TwelveKey::KEY_PARAMS + 9));
+		addChild(createPianoKey<PianoKeyBig>(Vec(215, 112), 9, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(215+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 9));
-		addParam(createParam<InvisibleKey>(Vec(256, 112), module, TwelveKey::KEY_PARAMS + 11));
+		addChild(createPianoKey<PianoKeyBig>(Vec(256, 112), 11, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(256+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 11));
 		
 		
 		// ****** Bottom portion ******
 
 		// Column rulers (horizontal positions)
-		static const int columnRulerL = 30;
-		static const int columnRulerR = box.size.x - 25 - columnRulerL;
-		static const int columnRulerM = box.size.x / 2 - 14;
+		float colRulerCenter = box.size.x / 2.0f;
+		static const int columnRulerL1 = 42;
+		static const int columnRulerR1 = box.size.x - columnRulerL1;
+		static const int columnRulerL2 = 110;
+		static const int columnRulerR2 = box.size.x - columnRulerL2;
 		
 		// Row rulers (vertical positions)
-		static const int rowRuler0 = 220;
+		static const int rowRuler0 = 232;
 		static const int rowRulerStep = 49;
 		static const int rowRuler1 = rowRuler0 + rowRulerStep;
 		static const int rowRuler2 = rowRuler1 + rowRulerStep;
 		
 		// Left side inputs
-		
-		
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler0), true, module, TwelveKey::CV_INPUT, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler1), true, module, TwelveKey::GATE_INPUT, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPort<IMPort>(Vec(columnRulerL, rowRuler2), true, module, TwelveKey::OCT_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL1, rowRuler0), true, module, TwelveKey::CV_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL1, rowRuler1), true, module, TwelveKey::GATE_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL1, rowRuler2), true, module, TwelveKey::VEL_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL2, rowRuler2), true, module, TwelveKey::OCT_INPUT, module ? &module->panelTheme : NULL));
 
 		// Middle
 		// Octave display
 		OctaveNumDisplayWidget *octaveNumDisplay = new OctaveNumDisplayWidget();
-		octaveNumDisplay->box.pos = Vec(columnRulerM + 2, rowRuler1 - 27 + vOffsetDisplay);
 		octaveNumDisplay->box.size = Vec(24, 30);// 1 character
+		octaveNumDisplay->box.pos = Vec(colRulerCenter - octaveNumDisplay->box.size.x / 2, rowRuler1 - 20);
 		octaveNumDisplay->octaveNum = module ? &module->octaveNum : NULL;
 		addChild(octaveNumDisplay);
 		
 		// Octave buttons
-		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRulerM - 20 + offsetCKD6b, rowRuler2 - 26 + offsetCKD6b), module, TwelveKey::OCTDEC_PARAM, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParam<IMBigPushButton>(Vec(columnRulerM + 22 + offsetCKD6b, rowRuler2 - 26 + offsetCKD6b), module, TwelveKey::OCTINC_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerL2, rowRuler0), module, TwelveKey::OCTDEC_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerR2, rowRuler0), module, TwelveKey::OCTINC_PARAM, module ? &module->panelTheme : NULL));
 		
 		// Right side outputs
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler0), false, module, TwelveKey::CV_OUTPUT, module ? &module->panelTheme : NULL));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler1), false, module, TwelveKey::GATE_OUTPUT, module ? &module->panelTheme : NULL));
-		addOutput(createDynamicPort<IMPort>(Vec(columnRulerR, rowRuler2), false, module, TwelveKey::OCT_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR1, rowRuler0), false, module, TwelveKey::CV_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR1, rowRuler1), false, module, TwelveKey::GATE_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR1, rowRuler2), false, module, TwelveKey::VEL_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR2, rowRuler2), false, module, TwelveKey::OCT_OUTPUT, module ? &module->panelTheme : NULL));
 	}
 	
 	void step() override {
