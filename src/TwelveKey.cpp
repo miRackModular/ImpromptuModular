@@ -52,15 +52,15 @@ struct PianoKeyBase : OpaqueWidget {
 	}
 	
 	void onDragStart(const event::DragStart &e) override {
-		if (pkInfo) {
+		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
 			dragY = APP->scene->rack->mousePos.y;
 			dragValue = pkInfo->vel;
-			e.consume(this);// Must consume to set the widget as dragged
 		}
+		e.consume(this);// Must consume to set the widget as dragged
 	}
 	
 	void onDragMove(const event::DragMove &e) override {
-		if (pkInfo) {
+		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
 			float newDragY = APP->scene->rack->mousePos.y;
 			float delta = (newDragY - dragY) * 10.0f / box.size.y;
 			dragY = newDragY;
@@ -70,6 +70,23 @@ struct PianoKeyBase : OpaqueWidget {
 		}
 		e.consume(this);
 	}
+
+	void onDragEnter(const event::DragEnter &e) override {
+		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
+			// dragY = APP->scene->rack->mousePos.y;
+			pkInfo->gate = true;
+			pkInfo->key = keyNumber;
+		}
+		e.consume(this);
+	}
+	
+	void onDragLeave(const event::DragLeave &e) override {
+		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
+			pkInfo->gate = false;
+		}
+		e.consume(this);
+	}
+	
 
 };
 
@@ -240,28 +257,30 @@ struct TwelveKey : Module {
 			upOctTrig = octIncTrigger.process(params[OCTINC_PARAM].getValue());
 			downOctTrig = octDecTrigger.process(params[OCTDEC_PARAM].getValue());
 				
-			// Keyboard buttons and gate input
-			if (keyTrigger.process(pkInfo.gate)) {
-				cv = ((float)(octaveNum - 4)) + ((float) pkInfo.key) / 12.0f;
-				stateInternal = true;
-				noteLightCounter = (unsigned long) (noteLightTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
-			}
 		}// userInputs refresh
-		
-		
-		if (inputs[OCT_INPUT].isConnected())
-			octaveNum = ((int) std::floor(inputs[OCT_INPUT].getVoltage()));
-		else if (upOctTrig)
-			octaveNum++;
-		else if (downOctTrig)
-			octaveNum--;
-		if (octaveNum > 9) octaveNum = 9;
-		if (octaveNum < 0) octaveNum = 0;
-		
+
+		// Keyboard buttons and gate input (don't put in refresh scope or else trigger will go out to next module before cv and cv)
+		if (keyTrigger.process(pkInfo.gate)) {
+			cv = ((float)(octaveNum - 4)) + ((float) pkInfo.key) / 12.0f;
+			stateInternal = true;
+			noteLightCounter = (unsigned long) (noteLightTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
+		}
 		if (gateInputTrigger.process(inputs[GATE_INPUT].getVoltage())) {// no input refresh here, don't want propagation lag in long 12-key chain
 			cv = inputs[CV_INPUT].getVoltage();
 			stateInternal = false;
 		}
+		
+		// octave buttons or input
+		if (inputs[OCT_INPUT].isConnected())
+			octaveNum = ((int) std::floor(inputs[OCT_INPUT].getVoltage()));
+		else {
+			if (upOctTrig)
+				octaveNum++;
+			else if (downOctTrig)
+				octaveNum--;
+		}
+		octaveNum = clamp(octaveNum, 0, 9);
+		
 		
 		
 		//********** Outputs and lights **********
@@ -269,21 +288,29 @@ struct TwelveKey : Module {
 		// cv output
 		outputs[CV_OUTPUT].setVoltage(cv);
 		
-		
-		// gate and velocity outputs
+		// velocity output
 		if (stateInternal == false) {// if receiving a key from left chain
-			outputs[GATE_OUTPUT].setVoltage(inputs[GATE_INPUT].getVoltage());
 			vel = inputs[VEL_INPUT].getVoltage();
 		}
 		else {// key from this
-			outputs[GATE_OUTPUT].setVoltage(pkInfo.gate ? 10.0f : 0.0f);
-			vel = pkInfo.vel;
+			vel = (pkInfo.vel);
+			// vel = (pkInfo.vel - 5.0f) * 0.2f * (1.0f / 12.0f);
 		}
 		outputs[VEL_OUTPUT].setVoltage(vel);
-		
+
 		// Octave output
 		outputs[OCT_OUTPUT].setVoltage(std::round( (float)(octaveNum + 1) ));
 		
+		
+		// gate output
+		if (stateInternal == false) {// if receiving a key from left chain
+			outputs[GATE_OUTPUT].setVoltage(inputs[GATE_INPUT].getVoltage());
+		}
+		else {// key from this
+			outputs[GATE_OUTPUT].setVoltage(pkInfo.gate ? 10.0f : 0.0f);
+		}
+
+
 		// lights
 		if (refresh.processLights()) {
 			// Key lights
@@ -373,7 +400,7 @@ struct TwelveKeyWidget : ModuleWidget {
 		// ****** Top portion (keys) ******
 
 		static const int offsetKeyLEDx = 12;
-		static const int offsetKeyLEDy = 41;
+		static const int offsetKeyLEDy = 32;//41;
 
 		// Black keys
 		addChild(createPianoKey<PianoKeyBig>(Vec(30, 40), 1, module ? &module->pkInfo : NULL));
