@@ -70,7 +70,14 @@ struct PianoKeyBase : OpaqueWidget {
 		}
 		e.consume(this);
 	}
-
+	
+	void onDragEnd(const event::DragEnd &e) override {
+		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
+			pkInfo->gate = false;
+		}
+		e.consume(this);
+	}
+/*
 	void onDragEnter(const event::DragEnter &e) override {
 		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
 			// dragY = APP->scene->rack->mousePos.y;
@@ -86,7 +93,7 @@ struct PianoKeyBase : OpaqueWidget {
 		}
 		e.consume(this);
 	}
-	
+*/
 
 };
 
@@ -456,7 +463,7 @@ struct TwelveKeyWidget : ModuleWidget {
 		// Octave display
 		OctaveNumDisplayWidget *octaveNumDisplay = new OctaveNumDisplayWidget();
 		octaveNumDisplay->box.size = Vec(24, 30);// 1 character
-		octaveNumDisplay->box.pos = Vec(colRulerCenter - octaveNumDisplay->box.size.x / 2, rowRuler1 - 20);
+		octaveNumDisplay->box.pos = Vec(colRulerCenter - octaveNumDisplay->box.size.x / 2, rowRuler1 - 25);
 		octaveNumDisplay->octaveNum = module ? &module->octaveNum : NULL;
 		addChild(octaveNumDisplay);
 		
