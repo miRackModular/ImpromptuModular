@@ -35,24 +35,24 @@ class Clock {
 		reset();
 	}
 	
-	inline void reset() {
+	void reset() {
 		step = -1.0;
 	}
-	inline bool isReset() {
+	bool isReset() {
 		return step == -1.0;
 	}
-	inline double getStep() {
+	double getStep() {
 		return step;
 	}
 	void setup(Clock* clkGiven, bool *resetClockOutputsHighPtr) {
 		syncSrc = clkGiven;
 		resetClockOutputsHigh = resetClockOutputsHighPtr;
 	}
-	inline void start() {
+	void start() {
 		step = 0.0;
 	}
 	
-	inline void setup(double lengthGiven, int iterationsGiven, double sampleTimeGiven) {
+	void setup(double lengthGiven, int iterationsGiven, double sampleTimeGiven) {
 		length = lengthGiven;
 		iterations = iterationsGiven;
 		sampleTime = sampleTimeGiven;
@@ -344,8 +344,8 @@ struct Clocked : Module {
 		configParam(RATIO_PARAMS + 0, (float)(bpmMin), (float)(bpmMax), 120.0f, "Master clock", " BPM");// must be a snap knob, code in step() assumes that a rounded value is read from the knob	(chaining considerations vs BPM detect)
 		configParam(RESET_PARAM, 0.0f, 1.0f, 0.0f, "Reset");
 		configParam(RUN_PARAM, 0.0f, 1.0f, 0.0f, "Run");
-		configParam(BPMMODE_DOWN_PARAM, 0.0f, 1.0f, 0.0f, "Bpm mode next");
-		configParam(BPMMODE_UP_PARAM, 0.0f, 1.0f, 0.0f,  "Bpm mode prev");
+		configParam(BPMMODE_DOWN_PARAM, 0.0f, 1.0f, 0.0f, "Bpm mode prev");
+		configParam(BPMMODE_UP_PARAM, 0.0f, 1.0f, 0.0f,  "Bpm mode next");
 		configParam(SWING_PARAMS + 0, -1.0f, 1.0f, 0.0f, "Swing clk 0");
 		configParam(PW_PARAMS + 0, 0.0f, 1.0f, 0.5f, "Pulse width clk 0");			
 		char strBuf[32];
