@@ -23,7 +23,7 @@ struct PianoKeyInfo {
 	bool gate = false;// use a dsp::BooleanTrigger to detect rising edge
 	bool isRight = false;
 	int key = 0;// key number that was pressed, typically 0 to 11 is stored here
-	float vel = 0.0f;// 0.0f to 10.0f velocity
+	float vel = 0.0f;// 0.0f to 1.0f velocity
 };
 
 struct PianoKeyBase : OpaqueWidget {
@@ -38,7 +38,7 @@ struct PianoKeyBase : OpaqueWidget {
 				pkInfo->gate = true;
 				pkInfo->isRight = e.button == GLFW_MOUSE_BUTTON_RIGHT;
 				pkInfo->key = keyNumber;
-				pkInfo->vel = rescale(e.pos.y, box.size.y, 0.0f, 10.0f, 0.0f);
+				pkInfo->vel = rescale(e.pos.y, box.size.y, 0.0f, 1.0f, 0.0f);
 				e.consume(this);
 				return;
 			}
@@ -62,10 +62,10 @@ struct PianoKeyBase : OpaqueWidget {
 	void onDragMove(const event::DragMove &e) override {
 		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
 			float newDragY = APP->scene->rack->mousePos.y;
-			float delta = (newDragY - dragY) * 10.0f / box.size.y;
+			float delta = (newDragY - dragY) / box.size.y;
 			dragY = newDragY;
 			dragValue += delta;
-			float dragValueClamped = clampSafe(dragValue, 0.0f, 10.0f);
+			float dragValueClamped = clampSafe(dragValue, 0.0f, 1.0f);
 			pkInfo->vel = dragValueClamped;
 		}
 		e.consume(this);
@@ -123,7 +123,8 @@ struct TwelveKey : Module {
 	enum ParamIds {
 		OCTINC_PARAM,
 		OCTDEC_PARAM,
-		ENUMS(KEY_PARAMS, 12),// unused
+		MAXVEL_PARAM,
+		VELPOL_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -143,6 +144,7 @@ struct TwelveKey : Module {
 	enum LightIds {
 		PRESS_LIGHT,// no longer used
 		ENUMS(KEY_LIGHTS, 12),
+		ENUMS(MAXVEL_LIGHTS, 5),
 		NUM_LIGHTS
 	};
 	
@@ -152,7 +154,8 @@ struct TwelveKey : Module {
 	// Need to save, with reset
 	int octaveNum;// 0 to 9
 	float cv;
-	float vel;
+	float vel;// 0 to 1.0f
+	float maxVel;// in volts
 	bool stateInternal;// false when pass through CV and Gate, true when CV and gate from this module
 	
 	// No need to save, with reset
@@ -163,15 +166,21 @@ struct TwelveKey : Module {
 	Trigger gateInputTrigger;
 	Trigger octIncTrigger;
 	Trigger octDecTrigger;
+	Trigger maxVelTrigger;
 	dsp::BooleanTrigger keyTrigger;
 	PianoKeyInfo pkInfo;
 	
+
+	bool isBipol(void) {return params[VELPOL_PARAM].getValue() > 0.5f;}
+
 
 	TwelveKey() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
 		configParam(OCTDEC_PARAM, 0.0, 1.0, 0.0, "Oct down");
 		configParam(OCTINC_PARAM, 0.0, 1.0, 0.0, "Oct up");
+		configParam(MAXVEL_PARAM, 0.0, 1.0, 0.0, "Max velocity");
+		configParam(VELPOL_PARAM, 0.0, 1.0, 0.0, "Velocity polarity");
 		
 		onReset();
 		
@@ -181,8 +190,9 @@ struct TwelveKey : Module {
 	void onReset() override {
 		octaveNum = 4;
 		cv = 0.0f;
-		vel = 10.0f;
-		pkInfo.vel = 10.0f;
+		vel = 1.0f;
+		pkInfo.vel = vel;
+		maxVel = 10.0f;
 		stateInternal = inputs[GATE_INPUT].isConnected() ? false : true;
 		resetNonJson();
 	}
@@ -193,8 +203,9 @@ struct TwelveKey : Module {
 	void onRandomize() override {
 		octaveNum = random::u32() % 10;
 		cv = ((float)(octaveNum - 4)) + ((float)(random::u32() % 12)) / 12.0f;
-		vel = random::uniform() * 10.0f;
+		vel = random::uniform();
 		pkInfo.vel = vel;
+		maxVel = 10.0f;
 		stateInternal = inputs[GATE_INPUT].isConnected() ? false : true;
 	}
 
@@ -212,6 +223,9 @@ struct TwelveKey : Module {
 		
 		// vel
 		json_object_set_new(rootJ, "vel", json_real(vel));
+		
+		// maxVel
+		json_object_set_new(rootJ, "maxVel", json_real(maxVel));
 		
 		// stateInternal
 		json_object_set_new(rootJ, "stateInternal", json_boolean(stateInternal));
@@ -242,6 +256,11 @@ struct TwelveKey : Module {
 			pkInfo.vel = vel;
 		}
 		
+		// maxVel
+		json_t *maxVelJ = json_object_get(rootJ, "maxVel");
+		if (maxVelJ)
+			maxVel = json_number_value(maxVelJ);
+		
 		// stateInternal
 		json_t *stateInternalJ = json_object_get(rootJ, "stateInternal");
 		if (stateInternalJ)
@@ -263,7 +282,14 @@ struct TwelveKey : Module {
 			// Octave buttons and input
 			upOctTrig = octIncTrigger.process(params[OCTINC_PARAM].getValue());
 			downOctTrig = octDecTrigger.process(params[OCTDEC_PARAM].getValue());
-				
+			
+			if (maxVelTrigger.process(params[MAXVEL_PARAM].getValue())) {
+				if (maxVel > 7.5f) maxVel = 5.0f;
+				else if (maxVel > 3.0f) maxVel = 1.0f;
+				else if (maxVel > 0.5f) maxVel = 2.0f/12.0f;
+				else if (maxVel > 1.5f/12.0f) maxVel = 1.0f/12.0f;
+				else maxVel = 10.0f;
+			}
 		}// userInputs refresh
 
 		// Keyboard buttons and gate input (don't put in refresh scope or else trigger will go out to next module before cv and cv)
@@ -297,13 +323,17 @@ struct TwelveKey : Module {
 		
 		// velocity output
 		if (stateInternal == false) {// if receiving a key from left chain
-			vel = inputs[VEL_INPUT].getVoltage();
+			outputs[VEL_OUTPUT].setVoltage(inputs[VEL_INPUT].getVoltage());
 		}
 		else {// key from this
-			vel = (pkInfo.vel);
-			// vel = (pkInfo.vel - 5.0f) * 0.2f * (1.0f / 12.0f);
+			vel = pkInfo.vel;
+			float velVolt = vel * maxVel;
+			if (isBipol()) {
+				velVolt = velVolt * 2.0f - maxVel;
+			}
+			outputs[VEL_OUTPUT].setVoltage(velVolt);
 		}
-		outputs[VEL_OUTPUT].setVoltage(vel);
+		
 
 		// Octave output
 		outputs[OCT_OUTPUT].setVoltage(std::round( (float)(octaveNum + 1) ));
@@ -321,11 +351,25 @@ struct TwelveKey : Module {
 		// lights
 		if (refresh.processLights()) {
 			// Key lights
-			for (int i = 0; i < 12; i++)
+			for (int i = 0; i < 12; i++) {
 				lights[KEY_LIGHTS + i].setBrightness(( i == pkInfo.key && (noteLightCounter > 0ul || pkInfo.gate)) ? 1.0f : 0.0f);
+			}
+			
+			// Max velocity lights
+			if (maxVel > 7.5f) setMaxVelLights(0);
+			else if (maxVel > 3.0f) setMaxVelLights(1);
+			else if (maxVel > 0.5f) setMaxVelLights(2);
+			else if (maxVel > 1.5f/12.0f) setMaxVelLights(3);
+			else setMaxVelLights(4);
 			
 			if (noteLightCounter > 0ul)
 				noteLightCounter--;
+		}
+	}
+	
+	void setMaxVelLights(int toSet) {
+		for (int i = 0; i < 5; i++) {
+			lights[MAXVEL_LIGHTS + i].setBrightness(i == toSet ? 1.0f : 0.0f);
 		}
 	}
 };
@@ -444,7 +488,7 @@ struct TwelveKeyWidget : ModuleWidget {
 		float colRulerCenter = box.size.x / 2.0f;
 		static const int columnRulerL1 = 42;
 		static const int columnRulerR1 = box.size.x - columnRulerL1;
-		static const int columnRulerL2 = 110;
+		static const int columnRulerL2 = 96;
 		static const int columnRulerR2 = box.size.x - columnRulerL2;
 		
 		// Row rulers (vertical positions)
@@ -454,28 +498,37 @@ struct TwelveKeyWidget : ModuleWidget {
 		static const int rowRuler2 = rowRuler1 + rowRulerStep;
 		
 		// Left side inputs
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL1, rowRuler0), true, module, TwelveKey::CV_INPUT, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL1, rowRuler1), true, module, TwelveKey::GATE_INPUT, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL1, rowRuler2), true, module, TwelveKey::VEL_INPUT, module ? &module->panelTheme : NULL));
-		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL2, rowRuler2), true, module, TwelveKey::OCT_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL1, rowRuler0), true, module, TwelveKey::OCT_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL1, rowRuler1), true, module, TwelveKey::CV_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL1, rowRuler2), true, module, TwelveKey::GATE_INPUT, module ? &module->panelTheme : NULL));
+		addInput(createDynamicPortCentered<IMPort>(Vec(columnRulerL2, rowRuler2), true, module, TwelveKey::VEL_INPUT, module ? &module->panelTheme : NULL));
 
-		// Middle
+		// Octave buttons
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerL2, rowRuler0), module, TwelveKey::OCTDEC_PARAM, module ? &module->panelTheme : NULL));
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(colRulerCenter, rowRuler0), module, TwelveKey::OCTINC_PARAM, module ? &module->panelTheme : NULL));
+		
 		// Octave display
 		OctaveNumDisplayWidget *octaveNumDisplay = new OctaveNumDisplayWidget();
 		octaveNumDisplay->box.size = Vec(24, 30);// 1 character
-		octaveNumDisplay->box.pos = Vec(colRulerCenter - octaveNumDisplay->box.size.x / 2, rowRuler1 - 25);
+		octaveNumDisplay->box.pos = Vec(columnRulerR2 - octaveNumDisplay->box.size.x / 2, rowRuler0 - octaveNumDisplay->box.size.y / 2);
 		octaveNumDisplay->octaveNum = module ? &module->octaveNum : NULL;
 		addChild(octaveNumDisplay);
 		
-		// Octave buttons
-		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerL2, rowRuler0), module, TwelveKey::OCTDEC_PARAM, module ? &module->panelTheme : NULL));
-		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerR2, rowRuler0), module, TwelveKey::OCTINC_PARAM, module ? &module->panelTheme : NULL));
+		// Max velocity button and lights
+		addParam(createDynamicParamCentered<IMBigPushButton>(Vec(columnRulerL2, rowRuler1), module, TwelveKey::MAXVEL_PARAM, module ? &module->panelTheme : NULL));
+		for (int i = 0; i < 5; i++) {
+			addChild(createLightCentered<MediumLight<GreenLight>>(Vec(colRulerCenter - 15 + 19 * i, rowRuler1), module, TwelveKey::MAXVEL_LIGHTS + i));	
+		}		
+
+
+		// Velocity polarity
+		addParam(createParamCentered<CKSSNoRandom>(Vec(colRulerCenter, rowRuler2), module, TwelveKey::VELPOL_PARAM));
 		
 		// Right side outputs
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR1, rowRuler0), false, module, TwelveKey::CV_OUTPUT, module ? &module->panelTheme : NULL));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR1, rowRuler1), false, module, TwelveKey::GATE_OUTPUT, module ? &module->panelTheme : NULL));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR1, rowRuler2), false, module, TwelveKey::VEL_OUTPUT, module ? &module->panelTheme : NULL));
-		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR2, rowRuler2), false, module, TwelveKey::OCT_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR1, rowRuler0), false, module, TwelveKey::OCT_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR1, rowRuler1), false, module, TwelveKey::CV_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR1, rowRuler2), false, module, TwelveKey::GATE_OUTPUT, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(columnRulerR2, rowRuler2), false, module, TwelveKey::VEL_OUTPUT, module ? &module->panelTheme : NULL));
 	}
 	
 	void step() override {
