@@ -2,6 +2,7 @@
 
 - Added velocity to TwelveKey
 - Fixed mouse painting bug in GateSeq64
+- Reninstated expander launching in right-click menu of modules that have expanders
 
 
 ### 1.0.0 (2019-05-31)

@@ -186,9 +186,7 @@ A 0V CV is initially stored in the CV memory and the slide switches are in the o
 
 ![IM](res/img/TwelveKey.jpg)
 
-A chainable keyboard controller for your virtual Rack. When multiple TwelveKey modules are connected in series from left to right, only the octave of the left-most module needs to be set, all other down-chain modules' octaves are set automatically. The aggregate output is that of the right-most module. To set up a chain of TwelveKey modules, simply connect the four outputs on the right side of a module to the four inputs of the next module beside it (typically to the right). With creative patching, the velocity output can be used to modulate a filter, to perform pitch bends, etc. Like in typical DAWs, the velocity is controlled by pressing the keys at different vertical positions within the guide marks on the keys.
-
-For a brief tutorial on setting up the controller, please see [this segment](https://www.youtube.com/watch?v=KOpo2oUPTjg&t=874s) or [this segment](https://www.youtube.com/watch?v=hbxlK07PQAI&t=4614s) of Nigel Sixsmith's Talking Rackheads series.
+A chainable keyboard controller for your virtual Rack. When multiple TwelveKey modules are connected in series from left to right, only the octave of the left-most module needs to be set, all other down-chain modules' octaves are set automatically. The aggregate output is that of the right-most module. To set up a chain of TwelveKey modules, simply connect the four outputs on the right side of a module to the four inputs of the next module beside it (typically to the right). With creative patching, the velocity output can be used to modulate a filter, to perform pitch bends, etc. The velocity is controlled by pressing the keys at different vertical positions within the guide marks on the keys.
 
 * **CV**: The CV output from the keyboard or its CV input, depending on which key was last pressed, i.e. an up-chain key (from a module to the left) or a key of the given keyboard module.
 
@@ -202,7 +200,7 @@ For a brief tutorial on setting up the controller, please see [this segment](htt
 
 * **VEL**: The velocity output from the keyboard or its velocity input, depending on which key was last pressed, i.e. an up-chain key (from a module to the left) or a key of the given keyboard module. The velocity is a voltage corresponding to the vertical position of the mouse click on the key. The voltage range is determined by the BIPOL and MAX VEL settings.
 
-* **MAX VEL**: maximum voltage of the velocity output. ST is shorthand for semi-tone. 
+* **MAX VEL**: Maximum voltage of the velocity output. "ST" is shorthand for semi-tone. 
 
 * **BIPOL**: allows the selection of unipolar velocity (bottom position), or bipolar velocity (top position). For example, with a maximum velocity voltage of 10V, the velocity range of a key is 0 to 10V in unipolar mode, or -10V to 10V in bipolar mode.
 

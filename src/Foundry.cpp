@@ -1704,6 +1704,18 @@ struct FoundryWidget : ModuleWidget {
 		AutoseqItem *aseqItem = createMenuItem<AutoseqItem>("AutoSeq when writing via CV inputs", CHECKMARK(module->autoseq));
 		aseqItem->module = module;
 		menu->addChild(aseqItem);
+		
+		menu->addChild(new MenuLabel());// empty line
+
+		MenuLabel *expLabel = new MenuLabel();
+		expLabel->text = "Expander module";
+		menu->addChild(expLabel);
+		
+
+		InstantiateExpanderItem *expItem = createMenuItem<InstantiateExpanderItem>("Add expander (10HP right side)", "");
+		expItem->model = modelFoundryExpander;
+		expItem->posit = box.pos.plus(math::Vec(box.size.x,0));
+		menu->addChild(expItem);	
 	}	
 		
 	struct CKSSNotify : CKSSNoRandom {

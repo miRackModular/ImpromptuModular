@@ -871,6 +871,18 @@ struct ClockedWidget : ModuleWidget {
 		ResetHighItem *rhItem = createMenuItem<ResetHighItem>("Outputs reset high when not running", CHECKMARK(module->resetClockOutputsHigh));
 		rhItem->module = module;
 		menu->addChild(rhItem);
+		
+		menu->addChild(new MenuLabel());// empty line
+
+		MenuLabel *expLabel = new MenuLabel();
+		expLabel->text = "Expander module";
+		menu->addChild(expLabel);
+		
+
+		InstantiateExpanderItem *expItem = createMenuItem<InstantiateExpanderItem>("Add expander (4HP right side)", "");
+		expItem->model = modelClockedExpander;
+		expItem->posit = box.pos.plus(math::Vec(box.size.x,0));
+		menu->addChild(expItem);	
 	}	
 	
 	struct IMSmallKnobNotify : IMSmallKnob {

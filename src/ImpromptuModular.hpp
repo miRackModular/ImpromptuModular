@@ -389,4 +389,22 @@ struct DarkDefaultItem : MenuItem {
 	}
 };	
 
+struct InstantiateExpanderItem : MenuItem {
+	Model *model;
+	Vec posit;
+	
+	void onAction(const event::Action &e) override {
+		ModuleWidget *mw = model->createModuleWidget();
+		if (mw) {
+			APP->scene->rack->setModulePosNearest(mw, posit);
+			APP->scene->rack->addModule(mw);
+			history::ModuleAdd *h = new history::ModuleAdd;
+			h->name = "create expander module";
+			h->setModule(mw);
+			APP->history->push(h);
+		}
+	}
+};
+
+
 #endif
