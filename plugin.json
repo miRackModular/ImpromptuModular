@@ -11,6 +11,7 @@
 	"manualUrl": "https://github.com/MarcBoule/ImpromptuModular/tree/v1#modules-",
 	"sourceUrl": "https://github.com/MarcBoule/ImpromptuModular/tree/v1",
 	"donateUrl": "https://www.paypal.me/marcboule",
+	"changelogUrl": "https://github.com/MarcBoule/ImpromptuModular/tree/v1/CHANGELOG.md",
 	"modules": [
 		{
 			"slug": "Tact",
