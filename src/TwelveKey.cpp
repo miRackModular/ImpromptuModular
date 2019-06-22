@@ -28,21 +28,29 @@ struct PianoKeyInfo {
 };
 
 struct PianoKeyBase : OpaqueWidget {
-	int keyNumber;
-	PianoKeyInfo *pkInfo;
+	int keyNumber = 0;
+	bool isBlackKey = false;
+	PianoKeyInfo *pkInfo = NULL;
 	float dragY;
 	float dragValue;
 	
-	// void draw(const DrawArgs &args) override {
-		// if (pkInfo->showVelRange) {
-			// NVGcolor borderColor = nvgRGBAf(0.5, 0.5, 0.5, 0.8);
-			// nvgBeginPath(args.vg);
-			// nvgRect(args.vg, 0.5, 0.5, box.size.x - 1.0, box.size.y - 1.0);
-			// nvgStrokeColor(args.vg, borderColor);
-			// nvgStrokeWidth(args.vg, 1.0);
-			// nvgStroke(args.vg);
-		// }
-	// }
+	void draw(const DrawArgs &args) override {
+		static const int xPos = 12;
+		static const int xSize = 10;
+		if (pkInfo && pkInfo->showVelRange) {
+			float col = isBlackKey ? 0.4f : 0.5f;
+			NVGcolor borderColor = nvgRGBf(col, col, col);
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, xPos, 0.5f); nvgLineTo(args.vg, xPos + xSize, 0.5f);// top
+			nvgMoveTo(args.vg, xPos, box.size.y / 2); nvgLineTo(args.vg, xPos + xSize, box.size.y / 2);// mid
+			if (isBlackKey) {
+				nvgMoveTo(args.vg, xPos, box.size.y - 0.5f); nvgLineTo(args.vg, xPos + xSize, box.size.y - 0.5f);// bot
+			}
+			nvgStrokeColor(args.vg, borderColor);
+			nvgStrokeWidth(args.vg, 1.0);
+			nvgStroke(args.vg);
+		}
+	}
 
 	void onButton(const event::Button &e) override {
 		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
@@ -93,13 +101,7 @@ struct PianoKeyBase : OpaqueWidget {
 
 struct PianoKeyBig : PianoKeyBase {
 	PianoKeyBig() {
-		box.size = Vec(34, 72);
-	}
-};
-
-struct PianoKeySmall : PianoKeyBase {
-	PianoKeySmall() {
-		box.size = Vec(23, 38);
+		box.size = Vec(34, 70);
 	}
 };
 
@@ -109,6 +111,7 @@ TWidget* createPianoKey(Vec pos, int _keyNumber, PianoKeyInfo* _pkInfo) {
 	TWidget *pkWidget = createWidget<TWidget>(pos);
 	pkWidget->pkInfo = _pkInfo;
 	pkWidget->keyNumber = _keyNumber;
+	pkWidget->isBlackKey = (_keyNumber == 1 || _keyNumber == 3 || _keyNumber == 6 || _keyNumber == 8 || _keyNumber == 10);
 	return pkWidget;
 }
 
@@ -447,35 +450,38 @@ struct TwelveKeyWidget : ModuleWidget {
 		// ****** Top portion (keys) ******
 
 		static const int offsetKeyLEDx = 12;
-		static const int offsetKeyLEDy = 32;//41;
+		static const int offsetKeyLEDy = 41;// 32
+		
+		static const int posWhiteY = 115;
+		static const int posBlackY = 40;
 
 		// Black keys
-		addChild(createPianoKey<PianoKeyBig>(Vec(30, 40), 1, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(30+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 1));
-		addChild(createPianoKey<PianoKeyBig>(Vec(71, 40), 3, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(71+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 3));
-		addChild(createPianoKey<PianoKeyBig>(Vec(154, 40), 6, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(154+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 6));
-		addChild(createPianoKey<PianoKeyBig>(Vec(195, 40), 8, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(195+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 8));
-		addChild(createPianoKey<PianoKeyBig>(Vec(236, 40), 10, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(236+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 10));
+		addChild(createPianoKey<PianoKeyBig>(Vec(30, posBlackY), 1, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(30+offsetKeyLEDx, posBlackY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 1));
+		addChild(createPianoKey<PianoKeyBig>(Vec(71, posBlackY), 3, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(71+offsetKeyLEDx, posBlackY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 3));
+		addChild(createPianoKey<PianoKeyBig>(Vec(154, posBlackY), 6, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(154+offsetKeyLEDx, posBlackY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 6));
+		addChild(createPianoKey<PianoKeyBig>(Vec(195, posBlackY), 8, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(195+offsetKeyLEDx, posBlackY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 8));
+		addChild(createPianoKey<PianoKeyBig>(Vec(236, posBlackY), 10, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(236+offsetKeyLEDx, posBlackY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 10));
 
 		// White keys
-		addChild(createPianoKey<PianoKeyBig>(Vec(10, 113), 0, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(10+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 0));
-		addChild(createPianoKey<PianoKeyBig>(Vec(51, 113), 2, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(51+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 2));
-		addChild(createPianoKey<PianoKeyBig>(Vec(92, 113), 4, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(92+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 4));
-		addChild(createPianoKey<PianoKeyBig>(Vec(133, 113), 5, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(133+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 5));
-		addChild(createPianoKey<PianoKeyBig>(Vec(174, 113), 7, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(174+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 7));
-		addChild(createPianoKey<PianoKeyBig>(Vec(215, 113), 9, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(215+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 9));
-		addChild(createPianoKey<PianoKeyBig>(Vec(256, 113), 11, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(256+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 11));
+		addChild(createPianoKey<PianoKeyBig>(Vec(10, posWhiteY), 0, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(10+offsetKeyLEDx, posWhiteY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 0));
+		addChild(createPianoKey<PianoKeyBig>(Vec(51, posWhiteY), 2, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(51+offsetKeyLEDx, posWhiteY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 2));
+		addChild(createPianoKey<PianoKeyBig>(Vec(92, posWhiteY), 4, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(92+offsetKeyLEDx, posWhiteY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 4));
+		addChild(createPianoKey<PianoKeyBig>(Vec(133, posWhiteY), 5, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(133+offsetKeyLEDx, posWhiteY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 5));
+		addChild(createPianoKey<PianoKeyBig>(Vec(174, posWhiteY), 7, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(174+offsetKeyLEDx, posWhiteY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 7));
+		addChild(createPianoKey<PianoKeyBig>(Vec(215, posWhiteY), 9, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(215+offsetKeyLEDx, posWhiteY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 9));
+		addChild(createPianoKey<PianoKeyBig>(Vec(256, posWhiteY), 11, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(256+offsetKeyLEDx, posWhiteY+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 11));
 		
 		
 		// ****** Bottom portion ******
