@@ -1433,7 +1433,8 @@ struct GateSeq64Widget : ModuleWidget {
 			LEDButton::onDragStart(e);
 		}
 		void onDragEnter(const event::DragEnter &e) override {
-			if (paramQuantity) {
+			LEDButtonGS *orig = dynamic_cast<LEDButtonGS*>(e.origin);
+			if (orig && paramQuantity) {
 				GateSeq64 *module = dynamic_cast<GateSeq64*>(paramQuantity->module);
 				if (module->isEditingSequence() && module->displayState != GateSeq64::DISP_LENGTH && module->displayState != GateSeq64::DISP_MODES) {
 					int step = paramQuantity->paramId - GateSeq64::STEP_PARAMS;

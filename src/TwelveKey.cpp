@@ -24,6 +24,7 @@ struct PianoKeyInfo {
 	bool isRight = false;
 	int key = 0;// key number that was pressed, typically 0 to 11 is stored here
 	float vel = 0.0f;// 0.0f to 1.0f velocity
+	bool showVelRange = false;
 };
 
 struct PianoKeyBase : OpaqueWidget {
@@ -32,6 +33,17 @@ struct PianoKeyBase : OpaqueWidget {
 	float dragY;
 	float dragValue;
 	
+	// void draw(const DrawArgs &args) override {
+		// if (pkInfo->showVelRange) {
+			// NVGcolor borderColor = nvgRGBAf(0.5, 0.5, 0.5, 0.8);
+			// nvgBeginPath(args.vg);
+			// nvgRect(args.vg, 0.5, 0.5, box.size.x - 1.0, box.size.y - 1.0);
+			// nvgStrokeColor(args.vg, borderColor);
+			// nvgStrokeWidth(args.vg, 1.0);
+			// nvgStroke(args.vg);
+		// }
+	// }
+
 	void onButton(const event::Button &e) override {
 		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
 			if (e.action == GLFW_PRESS) {
@@ -77,24 +89,6 @@ struct PianoKeyBase : OpaqueWidget {
 		}
 		e.consume(this);
 	}
-/*
-	void onDragEnter(const event::DragEnter &e) override {
-		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
-			// dragY = APP->scene->rack->mousePos.y;
-			pkInfo->gate = true;
-			pkInfo->key = keyNumber;
-		}
-		e.consume(this);
-	}
-	
-	void onDragLeave(const event::DragLeave &e) override {
-		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
-			pkInfo->gate = false;
-		}
-		e.consume(this);
-	}
-*/
-
 };
 
 struct PianoKeyBig : PianoKeyBase {
@@ -290,6 +284,8 @@ struct TwelveKey : Module {
 				else if (maxVel > 1.5f/12.0f) maxVel = 1.0f/12.0f;
 				else maxVel = 10.0f;
 			}
+			
+			pkInfo.showVelRange = outputs[VEL_OUTPUT].isConnected();
 		}// userInputs refresh
 
 		// Keyboard buttons and gate input (don't put in refresh scope or else trigger will go out to next module before cv and cv)
@@ -435,7 +431,7 @@ struct TwelveKeyWidget : ModuleWidget {
         setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/TwelveKey.svg")));
         if (module) {
 			darkPanel = new SvgPanel();
-			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/TwelveKey.svg")));//"res/dark/TwelveKey_dark.svg")));
+			darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/TwelveKey_dark.svg")));
 			darkPanel->visible = false;
 			addChild(darkPanel);
 		}
@@ -466,20 +462,20 @@ struct TwelveKeyWidget : ModuleWidget {
 		addChild(createLight<MediumLight<GreenLight>>(Vec(236+offsetKeyLEDx, 40+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 10));
 
 		// White keys
-		addChild(createPianoKey<PianoKeyBig>(Vec(10, 112), 0, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(10+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 0));
-		addChild(createPianoKey<PianoKeyBig>(Vec(51, 112), 2, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(51+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 2));
-		addChild(createPianoKey<PianoKeyBig>(Vec(92, 112), 4, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(92+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 4));
-		addChild(createPianoKey<PianoKeyBig>(Vec(133, 112), 5, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(133+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 5));
-		addChild(createPianoKey<PianoKeyBig>(Vec(174, 112), 7, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(174+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 7));
-		addChild(createPianoKey<PianoKeyBig>(Vec(215, 112), 9, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(215+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 9));
-		addChild(createPianoKey<PianoKeyBig>(Vec(256, 112), 11, module ? &module->pkInfo : NULL));
-		addChild(createLight<MediumLight<GreenLight>>(Vec(256+offsetKeyLEDx, 112+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 11));
+		addChild(createPianoKey<PianoKeyBig>(Vec(10, 113), 0, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(10+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 0));
+		addChild(createPianoKey<PianoKeyBig>(Vec(51, 113), 2, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(51+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 2));
+		addChild(createPianoKey<PianoKeyBig>(Vec(92, 113), 4, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(92+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 4));
+		addChild(createPianoKey<PianoKeyBig>(Vec(133, 113), 5, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(133+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 5));
+		addChild(createPianoKey<PianoKeyBig>(Vec(174, 113), 7, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(174+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 7));
+		addChild(createPianoKey<PianoKeyBig>(Vec(215, 113), 9, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(215+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 9));
+		addChild(createPianoKey<PianoKeyBig>(Vec(256, 113), 11, module ? &module->pkInfo : NULL));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(256+offsetKeyLEDx, 113+offsetKeyLEDy), module, TwelveKey::KEY_LIGHTS + 11));
 		
 		
 		// ****** Bottom portion ******
