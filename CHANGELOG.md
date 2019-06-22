@@ -1,6 +1,7 @@
 ### 1.0.1 (2019-06-22)
 
 -- Add velocity to TwelveKey
+
 -- Fix mouse painting bug in GateSeq64
 
 
