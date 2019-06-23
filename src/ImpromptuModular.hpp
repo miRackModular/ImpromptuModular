@@ -57,7 +57,6 @@ static const int vOffsetCKSS = 2;
 static const int vOffsetCKSSThree = -2;
 static const int hOffsetCKSSH = 2;
 static const int vOffsetCKSSH = 5;
-static const int offsetCKD6 = -1;//does both h and v
 static const int offsetCKD6b = 0;//does both h and v
 static const int vOffsetDisplay = -2;
 static const int offsetIMBigKnob = -6;//does both h and v
@@ -69,7 +68,6 @@ static const int offsetTL1105 = 4;//does both h and v
 static const int offsetLEDbezel = 1;//does both h and v
 static const float offsetLEDbezelLight = 2.2f;//does both h and v
 static const float offsetLEDbezelBig = -11;//does both h and v
-static const int offsetTrimpot = 3;//does both h and v
 
 static const float blurRadiusRatio = 0.06f;
 
@@ -285,13 +283,6 @@ struct GiantLight2 : BASE {
 // Other widgets
 
 
-struct InvisibleKey : Switch {
-	InvisibleKey() {
-		momentary = true;
-		box.size = Vec(34, 72);
-	}
-};
-
 struct InvisibleKeySmall : Switch {
 	InvisibleKeySmall() {
 		momentary = true;
@@ -392,18 +383,7 @@ struct DarkDefaultItem : MenuItem {
 struct InstantiateExpanderItem : MenuItem {
 	Model *model;
 	Vec posit;
-	
-	void onAction(const event::Action &e) override {
-		ModuleWidget *mw = model->createModuleWidget();
-		if (mw) {
-			APP->scene->rack->setModulePosNearest(mw, posit);
-			APP->scene->rack->addModule(mw);
-			history::ModuleAdd *h = new history::ModuleAdd;
-			h->name = "create expander module";
-			h->setModule(mw);
-			APP->history->push(h);
-		}
-	}
+	void onAction(const event::Action &e) override;
 };
 
 
