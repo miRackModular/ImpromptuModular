@@ -154,6 +154,7 @@ struct TwelveKey : Module {
 	float vel;// 0 to 1.0f
 	float maxVel;// in volts
 	bool stateInternal;// false when pass through CV and Gate, true when CV and gate from this module
+	bool invertVel;// range is inverted (min vel is end of key)
 	
 	// No need to save, with reset
 	unsigned long noteLightCounter;// 0 when no key to light, downward step counter timer when key lit
@@ -191,6 +192,7 @@ struct TwelveKey : Module {
 		pkInfo.vel = vel;
 		maxVel = 10.0f;
 		stateInternal = inputs[GATE_INPUT].isConnected() ? false : true;
+		invertVel = false;
 		resetNonJson();
 	}
 	void resetNonJson() {
@@ -227,6 +229,9 @@ struct TwelveKey : Module {
 		// stateInternal
 		json_object_set_new(rootJ, "stateInternal", json_boolean(stateInternal));
 
+		// invertVel
+		json_object_set_new(rootJ, "invertVel", json_boolean(invertVel));
+
 		return rootJ;
 	}
 
@@ -262,6 +267,11 @@ struct TwelveKey : Module {
 		json_t *stateInternalJ = json_object_get(rootJ, "stateInternal");
 		if (stateInternalJ)
 			stateInternal = json_is_true(stateInternalJ);
+		
+		// invertVel
+		json_t *invertVelJ = json_object_get(rootJ, "invertVel");
+		if (invertVelJ)
+			invertVel = json_is_true(invertVelJ);
 		
 		resetNonJson();
 	}
@@ -325,7 +335,7 @@ struct TwelveKey : Module {
 			outputs[VEL_OUTPUT].setVoltage(inputs[VEL_INPUT].getVoltage());
 		}
 		else {// key from this
-			vel = pkInfo.vel;
+			vel = invertVel ? (1.0f - pkInfo.vel) : pkInfo.vel;
 			float velVolt = vel * maxVel;
 			if (isBipol()) {
 				velVolt = velVolt * 2.0f - maxVel;
@@ -408,6 +418,12 @@ struct TwelveKeyWidget : ModuleWidget {
 			module->panelTheme ^= 0x1;
 		}
 	};
+	struct InvertVelItem : MenuItem {
+		TwelveKey *module;
+		void onAction(const event::Action &e) override {
+			module->invertVel ^= 0x1;
+		}
+	};
 	void appendContextMenu(Menu *menu) override {
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
@@ -424,6 +440,16 @@ struct TwelveKeyWidget : ModuleWidget {
 		menu->addChild(darkItem);
 		
 		menu->addChild(createMenuItem<DarkDefaultItem>("Dark as default", CHECKMARK(loadDarkAsDefault())));
+		
+		menu->addChild(new MenuLabel());// empty line
+		
+		MenuLabel *settingsLabel = new MenuLabel();
+		settingsLabel->text = "Settings";
+		menu->addChild(settingsLabel);
+		
+		InvertVelItem *invertItem = createMenuItem<InvertVelItem>("Inverted velocity range", CHECKMARK(module->invertVel));
+		invertItem->module = module;
+		menu->addChild(invertItem);		
 	}	
 	
 	

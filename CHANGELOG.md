@@ -1,3 +1,8 @@
+### 1.0.2 (in development)
+
+- Added option in right-click menu to inverty velocity range
+
+
 ### 1.0.1 (2019-06-23)
 
 - Added velocity to TwelveKey
