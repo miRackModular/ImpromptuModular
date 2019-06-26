@@ -177,6 +177,11 @@ struct Foundry : Module {
 		
 		rightExpander.producerMessage = rightMessages[0];
 		rightExpander.consumerMessage = rightMessages[1];
+		
+		// must init those that have no-connect info to non-connected, or else mother may read 0.0 init value if ever refresh limiters make it such that after a connection of expander the mother reads before the first pass through the expander's writing code, and this may do something undesired (ex: change track in Foundry on expander connected while track CV jack is empty)
+		for (int i = 0; i < (Sequencer::NUM_TRACKS * 2 + 1); i++) {
+			rightMessages[1][i] = std::numeric_limits<float>::quiet_NaN();
+		}
 
 		char strBuf[32];
 		const int numX = SequencerKernel::MAX_STEPS / 2;
