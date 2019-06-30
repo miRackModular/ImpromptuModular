@@ -293,16 +293,17 @@ struct InvisibleKeySmall : Switch {
 };
 
 struct IMTactile : ParamWidget {
-	// Note: double-click initialize doesn't work in this setup because onDragMove() gets calls after onDoubleClick()
-	float dragY;
-	float dragValue;
+	// Note: double-click initialize makes no sense in this type of controller since clicking is not an offset for a param but a direct position action
+	// Note: double-click initialize doesn't work in this setup because onDragMove() gets some calls after onDoubleClick() and since it works differently that a Knob.hpp the double click happens but gets re-written over afterwards 
+	float onButtonMouseY;
+	float onButtonPosY;
 	static const int padWidth = 45;
-	static const int padHeight = 200;
+	static const int padHeight = 200;// 1/12th of vertical height is used as overflow top, same for bottom
 	
 	IMTactile();
-	void onDragStart(const event::DragStart &e) override;
 	void onDragMove(const event::DragMove &e) override;
 	void onButton(const event::Button &e) override;
+	void setTactParam(float posY);
 	void reset() override;
 	void randomize() override;
 };

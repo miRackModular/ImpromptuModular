@@ -73,8 +73,8 @@ struct Tact : Module {
 	Tact() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		configParam(TACT_PARAMS + 1, -1.0f, 11.0f, 0.0f, "Tact pad (right)");
-		configParam(TACT_PARAMS + 0, -1.0f, 11.0f, 0.0f, "Tact pad (left)");
+		configParam(TACT_PARAMS + 0, 0.0f, 10.0f, 0.0f, "Tact pad (left)");
+		configParam(TACT_PARAMS + 1, 0.0f, 10.0f, 0.0f, "Tact pad (right)");
 		configParam(SLIDE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Slide (left)");		
 		configParam(SLIDE_PARAMS + 1, 0.0f, 1.0f, 0.0f, "Slide (right)");		
 		configParam(STORE_PARAMS + 0, 0.0f, 1.0f, 0.0f, "Store (left)");
@@ -108,7 +108,7 @@ struct Tact : Module {
 	
 	void onRandomize() override {
 		for (int i = 0; i < 2; i++) {
-			cv[i] = clamp(params[TACT_PARAMS + i].getValue(), 0.0f, 10.0f);
+			cv[i] = params[TACT_PARAMS + i].getValue();
 		}
 	}
 
@@ -228,8 +228,9 @@ struct Tact : Module {
 		// cv
 		bool expSliding = isExpSliding();
 		for (int i = 0; i < 2; i++) {
-			float newParamValue = clamp(params[TACT_PARAMS + i].getValue(), 0.0f, 10.0f);
+			float newParamValue = params[TACT_PARAMS + i].getValue();
 			if (newParamValue != cv[i]) {
+				newParamValue = clamp(newParamValue, 0.0f, 10.0f);// legacy for when range was -1.0f to 11.0f
 				double transitionRate = params[RATE_PARAMS + i].getValue() * rateMultiplier; // s/V
 				double dt = args.sampleTime;
 				if ((newParamValue - cv[i]) > 0.001f && transitionRate > 0.001) {
@@ -293,10 +294,6 @@ struct Tact : Module {
 				lights[CVIN_LIGHTS + i * 2].setSmoothBrightness(infoCVinLight[i], args.sampleTime * (RefreshCounter::displayRefreshStepSkips >> 2));
 				infoCVinLight[i] = 0.0f;
 			}
-		}
-		
-		if (isLinked()) {
-			cv[1] = clamp(params[TACT_PARAMS + 1].getValue(), 0.0f, 10.0f);
 		}
 	}
 	
@@ -566,7 +563,7 @@ struct Tact1 : Module {
 	Tact1() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
-		configParam(TACT_PARAM, -1.0f, 11.0f, 0.0f, "Tact pad");
+		configParam(TACT_PARAM, 0.0f, 10.0f, 0.0f, "Tact pad");
 		configParam(ATTV_PARAM, -1.0f, 1.0f, 1.0f, "Attenuverter");
 		configParam(RATE_PARAM, 0.0f, 4.0f, 0.2f, "Rate");
 		configParam(EXP_PARAM, 0.0f, 1.0f, 0.0f, "Exponential");			
@@ -588,7 +585,7 @@ struct Tact1 : Module {
 
 	
 	void onRandomize() override {
-		cv = clamp(params[TACT_PARAM].getValue(), 0.0f, 10.0f);
+		cv = params[TACT_PARAM].getValue();
 	}
 
 	
@@ -630,13 +627,13 @@ struct Tact1 : Module {
 	
 	void process(const ProcessArgs &args) override {		
 		// cv
-		bool expSliding = isExpSliding();
-		float newParamValue = clamp(params[TACT_PARAM].getValue(), 0.0f, 10.0f);
+		float newParamValue = params[TACT_PARAM].getValue();
 		if (newParamValue != cv) {
+			newParamValue = clamp(newParamValue, 0.0f, 10.0f);// legacy for when range was -1.0f to 11.0f
 			double transitionRate = params[RATE_PARAM].getValue() * rateMultiplier; // s/V
 			double dt = args.sampleTime;
 			if ((newParamValue - cv) > 0.001f && transitionRate > 0.001) {
-				double dV = expSliding ? (cv + 1.0) * (pow(11.0, dt / (10.0 * transitionRate)) - 1.0) : dt/transitionRate;
+				double dV = isExpSliding() ? (cv + 1.0) * (pow(11.0, dt / (10.0 * transitionRate)) - 1.0) : dt/transitionRate;
 				double newCV = cv + dV;
 				if (newCV > newParamValue)
 					cv = newParamValue;
@@ -645,7 +642,7 @@ struct Tact1 : Module {
 			}
 			else if ((newParamValue - cv) < -0.001f && transitionRate > 0.001) {
 				dt *= -1.0;
-				double dV = expSliding ? (cv + 1.0) * (pow(11.0, dt / (10.0 * transitionRate)) - 1.0) : dt/transitionRate;
+				double dV = isExpSliding() ? (cv + 1.0) * (pow(11.0, dt / (10.0 * transitionRate)) - 1.0) : dt/transitionRate;
 				double newCV = cv + dV;
 				if (newCV < newParamValue)
 					cv = newParamValue;

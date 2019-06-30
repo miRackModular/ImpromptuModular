@@ -124,33 +124,41 @@ IMTactile::IMTactile() {
 	box.size = Vec(padWidth, padHeight);
 }
 
-void IMTactile::onDragStart(const event::DragStart &e) {
-	if (paramQuantity) {
-		dragValue = paramQuantity->getValue();
-		dragY = APP->scene->rack->mousePos.y;
-	}
-	e.consume(this);// Must consume to set the widget as dragged
-}
-
 void IMTactile::onDragMove(const event::DragMove &e) {
-	if (paramQuantity) {
-		float rangeValue = paramQuantity->getMaxValue() - paramQuantity->getMinValue();// infinite not supported (not relevant)
-		float newDragY = APP->scene->rack->mousePos.y;
-		float delta = -(newDragY - dragY) * rangeValue / box.size.y;
-		dragY = newDragY;
-		dragValue += delta;
-		float dragValueClamped = clampSafe(dragValue, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
-		paramQuantity->setValue(dragValueClamped);
+	if (paramQuantity && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+		float dragMouseY = APP->scene->rack->mousePos.y;
+		setTactParam(onButtonPosY + dragMouseY - onButtonMouseY);
 	}
-	e.consume(this);
+	ParamWidget::onDragMove(e);
 }
 
 void IMTactile::onButton(const event::Button &e) {
-	if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT && paramQuantity) {
-		float val = rescale(e.pos.y, box.size.y, 0.0f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
-		paramQuantity->setValue(val);
+	if (paramQuantity) {
+		onButtonMouseY = APP->scene->rack->mousePos.y;
+		onButtonPosY = e.pos.y;
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+			setTactParam(onButtonPosY);
+		}
 	}
 	ParamWidget::onButton(e);
+}
+
+void IMTactile::setTactParam(float posY) { // posY in pixel space
+	float oneTwelvethBoxY = box.size.y / 12.0f;
+	float val = paramQuantity->getMinValue();
+	if (posY <= oneTwelvethBoxY) { // overflow area top
+		val = paramQuantity->getMaxValue();
+	}
+	else {
+		float posYAdjusted = (posY - oneTwelvethBoxY);
+		float tenTwelveths = oneTwelvethBoxY * 10.0f;
+		if (posYAdjusted <= tenTwelveths) { // normal range
+			val = rescale(posYAdjusted, tenTwelveths, 0.0f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
+			val = clamp(val, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
+		}
+	}
+	// else overflow area bottom, nothing to since val already at minValue
+	paramQuantity->setValue(val);	
 }
 
 void IMTactile::reset() {
