@@ -109,7 +109,3 @@ struct PhraseSeqExpanderWidget : ModuleWidget {
 };
 
 Model *modelPhraseSeqExpander = createModel<PhraseSeqExpander, PhraseSeqExpanderWidget>("Phrase-Seq-Expander");
-
-/*CHANGE LOG
-
-*/

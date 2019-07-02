@@ -10,7 +10,7 @@
 
 
 #include "ImpromptuModular.hpp"
-
+#include "comp/TactPad.hpp"
 
 struct Tact : Module {
 	static const int numLights = 10;// number of lights per channel
@@ -377,7 +377,7 @@ struct TactWidget : ModuleWidget {
 		menu->addChild(levelSensItem);
 	}	
 	
-	struct IMTactile2 : IMTactile {
+	struct TactPad2 : TactPad {
 		static const int padInterSpace = 18;
 		static const int padWidthWide = padWidth * 2 + padInterSpace;
 
@@ -420,9 +420,9 @@ struct TactWidget : ModuleWidget {
 		
 		// Tactile touch pads
 		// Right (no dynamic width, but must do first so that left will get mouse events when wider overlaps)
-		addParam(createParam<IMTactile2>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1));
+		addParam(createParam<TactPad2>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1));
 		// Left (with width dependant on Link value)	
-		addParam(createParam<IMTactile2>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0));
+		addParam(createParam<TactPad2>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0));
 			
 
 			
@@ -746,7 +746,7 @@ struct Tact1Widget : ModuleWidget {
 		static const int colRulerPad = 14;
 		
 		// Tactile touch pad
-		addParam(createParam<IMTactile>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM));
+		addParam(createParam<TactPad>(Vec(colRulerPad, rowRuler0), module, Tact1::TACT_PARAM));
 			
 		static const int colRulerLed = colRulerPad + 56;
 		static const int lightsOffsetY = 19;
@@ -786,7 +786,3 @@ struct Tact1Widget : ModuleWidget {
 Model *modelTact = createModel<Tact, TactWidget>("Tact");
 
 Model *modelTact1 = createModel<Tact1, Tact1Widget>("Tact1");
-
-/*CHANGE LOG
-
-*/

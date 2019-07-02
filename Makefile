@@ -13,7 +13,7 @@ LDFLAGS +=
 
 # Add .cpp files to the build
 #SOURCES += src/IMWidgets.cpp src/ImpromptuModular.cpp src/BigButtonSeq2.cpp src/FoundrySequencerKernel.cpp src/FoundrySequencer.cpp src/Foundry.cpp src/FoundryExpander.cpp
-SOURCES += $(wildcard src/*.cpp)
+SOURCES += $(wildcard src/comp/*.cpp) $(wildcard src/*.cpp) 
 
 # Add files to the ZIP package when running `make dist`
 # The compiled plugin and "plugin.json" are automatically added.

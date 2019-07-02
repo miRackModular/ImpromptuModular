@@ -188,7 +188,3 @@ struct FoundryExpanderWidget : ModuleWidget {
 };
 
 Model *modelFoundryExpander = createModel<FoundryExpander, FoundryExpanderWidget>("Foundry-Expander");
-
-/*CHANGE LOG
-
-*/

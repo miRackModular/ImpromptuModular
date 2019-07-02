@@ -113,5 +113,4 @@ int calcGateCode(StepAttributesGS attribute, int ppqnCount, int pulsesPerStep) {
 }		
 
 
-
 #endif

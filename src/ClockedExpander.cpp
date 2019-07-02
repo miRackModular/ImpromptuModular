@@ -105,7 +105,3 @@ struct ClockedExpanderWidget : ModuleWidget {
 };
 
 Model *modelClockedExpander = createModel<ClockedExpander, ClockedExpanderWidget>("Clocked-Expander");
-
-/*CHANGE LOG
-
-*/

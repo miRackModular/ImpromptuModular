@@ -552,5 +552,3 @@ bool Sequencer::clockStep(int trkn, bool editingSequence) {// returns true to si
 	}
 	return false;
 }
-
-

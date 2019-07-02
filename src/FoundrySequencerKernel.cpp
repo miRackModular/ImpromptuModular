@@ -898,6 +898,3 @@ void SongCPbuffer::reset() {
 	runModeSong = SequencerKernel::MODE_FWD;
 	storedLength = SequencerKernel::MAX_PHRASES;
 }
-
-
-

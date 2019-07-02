@@ -39,144 +39,7 @@ void init(rack::Plugin *p) {
 }
 
 
-// Screws
-
-// nothing
-
-
-
-// Ports
-
-// nothing
-
-
-
-// Buttons and switches
-
-
-CKSSH::CKSSH() {
-	shadow->opacity = 0.0;
-	fb->removeChild(sw);
-	
-	TransformWidget *tw = new TransformWidget();
-	tw->addChild(sw);
-	fb->addChild(tw);
-
-	Vec center = sw->box.getCenter();
-	tw->translate(center);
-	tw->rotate(M_PI/2.0f);
-	tw->translate(Vec(center.y, sw->box.size.x).neg());
-	
-	tw->box.size = sw->box.size.flip();
-	box.size = tw->box.size;
-}
-
-
-LEDBezelBig::LEDBezelBig() {
-	momentary = true;
-	float ratio = 2.13f;
-	addFrame(APP->window->loadSvg(asset::system("res/ComponentLibrary/LEDBezel.svg")));
-	sw->box.size = sw->box.size.mult(ratio);
-	fb->removeChild(sw);
-	tw = new TransformWidget();
-	tw->addChild(sw);
-	tw->scale(Vec(ratio, ratio));
-	tw->box.size = sw->box.size; 
-	fb->addChild(tw);
-	box.size = sw->box.size; 
-}
-
-
-
-// Knobs
-
-// nothing
-
-
-
-// Lights
-
-// nothing
-
-
-
-// Other widgets
-
-// Invisible key
-
-void InvisibleKeySmall::onButton(const event::Button &e) {
-	if (e.action == GLFW_PRESS && paramQuantity) {
-		paramQuantity->maxValue = 1.0f;
-	}
-	Switch::onButton(e);
-}
-void InvisibleKeySmall::onDoubleClick(const event::DoubleClick &e) {
-	if (paramQuantity) {
-		paramQuantity->maxValue = 2.0f;
-	}
-	Switch::onDoubleClick(e);
-}
-
-
-// Tactile pad
-
-IMTactile::IMTactile() {
-	box.size = Vec(padWidth, padHeight);
-}
-
-void IMTactile::onDragMove(const event::DragMove &e) {
-	if (paramQuantity && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-		float dragMouseY = APP->scene->rack->mousePos.y;
-		setTactParam(onButtonPosY + dragMouseY - onButtonMouseY);
-	}
-	ParamWidget::onDragMove(e);
-}
-
-void IMTactile::onButton(const event::Button &e) {
-	if (paramQuantity) {
-		onButtonMouseY = APP->scene->rack->mousePos.y;
-		onButtonPosY = e.pos.y;
-		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			setTactParam(onButtonPosY);
-		}
-	}
-	ParamWidget::onButton(e);
-}
-
-void IMTactile::setTactParam(float posY) { // posY in pixel space
-	float oneTwelvethBoxY = box.size.y / 12.0f;
-	float val = paramQuantity->getMinValue();
-	if (posY <= oneTwelvethBoxY) { // overflow area top
-		val = paramQuantity->getMaxValue();
-	}
-	else {
-		float posYAdjusted = (posY - oneTwelvethBoxY);
-		float tenTwelveths = oneTwelvethBoxY * 10.0f;
-		if (posYAdjusted <= tenTwelveths) { // normal range
-			val = rescale(posYAdjusted, tenTwelveths, 0.0f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
-			val = clamp(val, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
-		}
-	}
-	// else overflow area bottom, nothing to since val already at minValue
-	paramQuantity->setValue(val);	
-}
-
-void IMTactile::reset() {
-	if (paramQuantity) {
-		paramQuantity->reset();
-	}
-}
-
-void IMTactile::randomize() {
-	if (paramQuantity) {
-		float value = math::rescale(random::uniform(), 0.f, 1.f, paramQuantity->getMinValue(), paramQuantity->getMaxValue());
-		paramQuantity->setValue(value);
-	}
-}
-
-
-
-// Other objects
+// General objects
 
 
 bool Trigger::process(float in) {
@@ -212,7 +75,7 @@ bool HoldDetect::process(float paramValue) {
 }
 
 
-// Other functions
+// General functions
 
 
 NVGcolor prepareDisplay(NVGcontext *vg, Rect *box, int fontSize) {

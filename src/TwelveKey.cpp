@@ -15,105 +15,7 @@
 
 
 #include "ImpromptuModular.hpp"
-
-
-
-
-struct PianoKeyInfo {
-	bool gate = false;// use a dsp::BooleanTrigger to detect rising edge
-	bool isRight = false;
-	int key = 0;// key number that was pressed, typically 0 to 11 is stored here
-	float vel = 0.0f;// 0.0f to 1.0f velocity
-	bool showVelRange = false;
-};
-
-struct PianoKeyBase : OpaqueWidget {
-	int keyNumber = 0;
-	bool isBlackKey = false;
-	PianoKeyInfo *pkInfo = NULL;
-	float dragY;
-	float dragValue;
-	
-	void draw(const DrawArgs &args) override {
-		static const int xPos = 12;
-		static const int xSize = 10;
-		if (pkInfo && pkInfo->showVelRange) {
-			float col = isBlackKey ? 0.4f : 0.5f;
-			NVGcolor borderColor = nvgRGBf(col, col, col);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, xPos, 0.5f); nvgLineTo(args.vg, xPos + xSize, 0.5f);// top
-			nvgMoveTo(args.vg, xPos, box.size.y / 2); nvgLineTo(args.vg, xPos + xSize, box.size.y / 2);// mid
-			if (isBlackKey) {
-				nvgMoveTo(args.vg, xPos, box.size.y - 0.5f); nvgLineTo(args.vg, xPos + xSize, box.size.y - 0.5f);// bot
-			}
-			nvgStrokeColor(args.vg, borderColor);
-			nvgStrokeWidth(args.vg, 1.0);
-			nvgStroke(args.vg);
-		}
-	}
-
-	void onButton(const event::Button &e) override {
-		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
-			if (e.action == GLFW_PRESS) {
-				pkInfo->gate = true;
-				pkInfo->isRight = e.button == GLFW_MOUSE_BUTTON_RIGHT;
-				pkInfo->key = keyNumber;
-				pkInfo->vel = rescale(e.pos.y, box.size.y, 0.0f, 1.0f, 0.0f);
-				e.consume(this);
-				return;
-			}
-			else if (e.action == GLFW_RELEASE) {
-				pkInfo->gate = false;
-				e.consume(this);
-				return;
-			}
-		}
-		OpaqueWidget::onButton(e);
-	}
-	
-	void onDragStart(const event::DragStart &e) override {
-		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
-			dragY = APP->scene->rack->mousePos.y;
-			dragValue = pkInfo->vel;
-		}
-		e.consume(this);// Must consume to set the widget as dragged
-	}
-	
-	void onDragMove(const event::DragMove &e) override {
-		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
-			float newDragY = APP->scene->rack->mousePos.y;
-			float delta = (newDragY - dragY) / box.size.y;
-			dragY = newDragY;
-			dragValue += delta;
-			float dragValueClamped = clampSafe(dragValue, 0.0f, 1.0f);
-			pkInfo->vel = dragValueClamped;
-		}
-		e.consume(this);
-	}
-	
-	void onDragEnd(const event::DragEnd &e) override {
-		if ( (e.button == GLFW_MOUSE_BUTTON_LEFT || e.button == GLFW_MOUSE_BUTTON_RIGHT) && pkInfo) {
-			pkInfo->gate = false;
-		}
-		e.consume(this);
-	}
-};
-
-struct PianoKeyBig : PianoKeyBase {
-	PianoKeyBig() {
-		box.size = Vec(34, 70);
-	}
-};
-
-
-template <class TWidget>
-TWidget* createPianoKey(Vec pos, int _keyNumber, PianoKeyInfo* _pkInfo) {
-	TWidget *pkWidget = createWidget<TWidget>(pos);
-	pkWidget->pkInfo = _pkInfo;
-	pkWidget->keyNumber = _keyNumber;
-	pkWidget->isBlackKey = (_keyNumber == 1 || _keyNumber == 3 || _keyNumber == 6 || _keyNumber == 8 || _keyNumber == 10);
-	return pkWidget;
-}
+#include "comp/PianoKey.hpp"
 
 
 struct TwelveKey : Module {
@@ -569,7 +471,3 @@ struct TwelveKeyWidget : ModuleWidget {
 };
 
 Model *modelTwelveKey = createModel<TwelveKey, TwelveKeyWidget>("Twelve-Key");
-
-/*CHANGE LOG
-
-*/

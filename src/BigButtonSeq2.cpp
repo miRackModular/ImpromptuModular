@@ -848,10 +848,3 @@ struct BigButtonSeq2Widget : ModuleWidget {
 };
 
 Model *modelBigButtonSeq2 = createModel<BigButtonSeq2, BigButtonSeq2Widget>("Big-Button-Seq2");
-
-/*CHANGE LOG
-
-1.0.0:
-add right menu option to enter big and del on next step
-
-*/

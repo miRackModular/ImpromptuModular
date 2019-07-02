@@ -13,6 +13,7 @@
 
 
 #include "PhraseSeqUtil.hpp"
+#include "comp/PianoKey.hpp"
 
 
 struct PhraseSeq32 : Module {
@@ -33,7 +34,7 @@ struct PhraseSeq32 : Module {
 		SLIDE_KNOB_PARAM,
 		ATTACH_PARAM,
 		AUTOSTEP_PARAM,
-		ENUMS(KEY_PARAMS, 12),
+		ENUMS(KEY_PARAMS, 12),// no longer used
 		RUNMODE_PARAM,
 		TRAN_ROT_PARAM,
 		GATE1_KNOB_PARAM,
@@ -167,7 +168,7 @@ struct PhraseSeq32 : Module {
 	Trigger gate1ProbTrigger;
 	Trigger gate2Trigger;
 	Trigger slideTrigger;
-	Trigger keyTriggers[12];
+	dsp::BooleanTrigger keyTrigger;
 	Trigger writeTrigger;
 	Trigger attachedTrigger;
 	Trigger copyTrigger;
@@ -182,6 +183,7 @@ struct PhraseSeq32 : Module {
 	Trigger seqCVTrigger;
 	HoldDetect modeHoldDetect;
 	SeqAttributes seqAttribBuffer[32];// buffer from Json for thread safety
+	PianoKeyInfo pkInfo;
 
 
 	bool isEditingSequence(void) {return params[EDIT_PARAM].getValue() > 0.5f;}
@@ -235,19 +237,6 @@ struct PhraseSeq32 : Module {
 			snprintf(strBuf, 32, "Octave %i", i + 1);
 			configParam(OCTAVE_PARAM + i, 0.0f, 1.0f, 0.0f, strBuf);
 		}
-		configParam(KEY_PARAMS + 1, 0.0, 1.0, 0.0, "C# key");
-		configParam(KEY_PARAMS + 3, 0.0, 1.0, 0.0, "D# key");
-		configParam(KEY_PARAMS + 6, 0.0, 1.0, 0.0, "F# key");
-		configParam(KEY_PARAMS + 8, 0.0, 1.0, 0.0, "G# key");
-		configParam(KEY_PARAMS + 10, 0.0, 1.0, 0.0, "A# key");
-
-		configParam(KEY_PARAMS + 0, 0.0, 1.0, 0.0, "C key");
-		configParam(KEY_PARAMS + 2, 0.0, 1.0, 0.0, "D key");
-		configParam(KEY_PARAMS + 4, 0.0, 1.0, 0.0, "E key");
-		configParam(KEY_PARAMS + 5, 0.0, 1.0, 0.0, "F key");
-		configParam(KEY_PARAMS + 7, 0.0, 1.0, 0.0, "G key");
-		configParam(KEY_PARAMS + 9, 0.0, 1.0, 0.0, "A key");
-		configParam(KEY_PARAMS + 11, 0.0, 1.0, 0.0, "B key");
 		
 		configParam(EDIT_PARAM, 0.0f, 1.0f, 1.0f, "Seq/song mode");
 		configParam(RUNMODE_PARAM, 0.0f, 1.0f, 0.0f, "Length / run mode");
@@ -1098,48 +1087,46 @@ struct PhraseSeq32 : Module {
 			}
 			
 			// Keyboard buttons
-			for (int i = 0; i < 12; i++) {
-				if (keyTriggers[i].process(params[KEY_PARAMS + i].getValue())) {
-					if (editingSequence) {
-						displayState = DISP_NORMAL;
-						if (editingGateLength != 0l) {
-							int newMode = keyIndexToGateMode(i, pulsesPerStep);
-							if (newMode != -1) {
-								editingPpqn = 0l;
-								attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
-								if (paramQuantities[KEY_PARAMS + i]->getMaxValue() > 1.5f) {// if double-click
-									stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
-									editingType = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
-									editingGateKeyLight = i;
-									if ((APP->window->getMods() & RACK_MOD_MASK) == RACK_MOD_CTRL)
-										attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
-								}
-							}
-							else
-								editingPpqn = (long) (editGateLengthTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
-						}
-						else if (attributes[seqIndexEdit][stepIndexEdit].getTied()) {
-							if (paramQuantities[KEY_PARAMS + i]->getMaxValue() > 1.5f)// if double-click
+			if (keyTrigger.process(pkInfo.gate)) {
+				if (editingSequence) {
+					displayState = DISP_NORMAL;
+					if (editingGateLength != 0l) {
+						int newMode = keyIndexToGateMode(pkInfo.key, pulsesPerStep);
+						if (newMode != -1) {
+							editingPpqn = 0l;
+							attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
+							if (pkInfo.isRightClick) {
 								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
-							else
-								tiedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
-						}
-						else {			
-							float newCV = std::floor(cv[seqIndexEdit][stepIndexEdit]) + ((float) i) / 12.0f;
-							cv[seqIndexEdit][stepIndexEdit] = newCV;
-							propagateCVtoTied(seqIndexEdit, stepIndexEdit);
-							editingGate = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
-							editingGateCV = cv[seqIndexEdit][stepIndexEdit];
-							editingGateKeyLight = -1;
-							editingChannel = (stepIndexEdit >= 16 * stepConfig) ? 1 : 0;
-							if (paramQuantities[KEY_PARAMS + i]->getMaxValue() > 1.5f) {// if double-click
-								stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
-								editingGateKeyLight = i;
+								editingType = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
+								editingGateKeyLight = pkInfo.key;
 								if ((APP->window->getMods() & RACK_MOD_MASK) == RACK_MOD_CTRL)
-									cv[seqIndexEdit][stepIndexEdit] = newCV;
+									attributes[seqIndexEdit][stepIndexEdit].setGateMode(newMode, editingGateLength > 0l);
 							}
-						}						
+						}
+						else
+							editingPpqn = (long) (editGateLengthTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
 					}
+					else if (attributes[seqIndexEdit][stepIndexEdit].getTied()) {
+						if (pkInfo.isRightClick)
+							stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
+						else
+							tiedWarning = (long) (warningTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
+					}
+					else {			
+						float newCV = std::floor(cv[seqIndexEdit][stepIndexEdit]) + ((float) pkInfo.key) / 12.0f;
+						cv[seqIndexEdit][stepIndexEdit] = newCV;
+						propagateCVtoTied(seqIndexEdit, stepIndexEdit);
+						editingGate = (unsigned long) (gateTime * sampleRate / RefreshCounter::displayRefreshStepSkips);
+						editingGateCV = cv[seqIndexEdit][stepIndexEdit];
+						editingGateKeyLight = -1;
+						editingChannel = (stepIndexEdit >= 16 * stepConfig) ? 1 : 0;
+						if (pkInfo.isRightClick) {
+							stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + 1, 32);
+							editingGateKeyLight = pkInfo.key;
+							if ((APP->window->getMods() & RACK_MOD_MASK) == RACK_MOD_CTRL)
+								cv[seqIndexEdit][stepIndexEdit] = newCV;
+						}
+					}						
 				}
 			}
 			
@@ -2011,30 +1998,30 @@ struct PhraseSeq32Widget : ModuleWidget {
 		static const int offsetKeyLEDx = 6;
 		static const int offsetKeyLEDy = 16;
 		// Black keys and lights
-		addParam(createParam<InvisibleKeySmall>(			Vec(65+keyNudgeX, KeyBlackY), module, PhraseSeq32::KEY_PARAMS + 1));
+		addChild(createPianoKey<PianoKeySmall>(Vec(65+keyNudgeX, KeyBlackY), 1, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(65+keyNudgeX+offsetKeyLEDx, KeyBlackY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 1 * 2));
-		addParam(createParam<InvisibleKeySmall>(			Vec(93+keyNudgeX, KeyBlackY), module, PhraseSeq32::KEY_PARAMS + 3));
+		addChild(createPianoKey<PianoKeySmall>(Vec(93+keyNudgeX, KeyBlackY), 3, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(93+keyNudgeX+offsetKeyLEDx, KeyBlackY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 3 * 2));
-		addParam(createParam<InvisibleKeySmall>(			Vec(150+keyNudgeX, KeyBlackY), module, PhraseSeq32::KEY_PARAMS + 6));
+		addChild(createPianoKey<PianoKeySmall>(Vec(150+keyNudgeX, KeyBlackY), 6, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(150+keyNudgeX+offsetKeyLEDx, KeyBlackY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 6 * 2));
-		addParam(createParam<InvisibleKeySmall>(			Vec(178+keyNudgeX, KeyBlackY), module, PhraseSeq32::KEY_PARAMS + 8));
+		addChild(createPianoKey<PianoKeySmall>(Vec(178+keyNudgeX, KeyBlackY), 8, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(178+keyNudgeX+offsetKeyLEDx, KeyBlackY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 8 * 2));
-		addParam(createParam<InvisibleKeySmall>(			Vec(206+keyNudgeX, KeyBlackY), module, PhraseSeq32::KEY_PARAMS + 10));
+		addChild(createPianoKey<PianoKeySmall>(Vec(206+keyNudgeX, KeyBlackY), 10, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(206+keyNudgeX+offsetKeyLEDx, KeyBlackY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 10 * 2));
 		// White keys and lights
-		addParam(createParam<InvisibleKeySmall>(			Vec(51+keyNudgeX, KeyWhiteY), module, PhraseSeq32::KEY_PARAMS + 0));
+		addChild(createPianoKey<PianoKeySmall>(Vec(51+keyNudgeX, KeyWhiteY), 0, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(51+keyNudgeX+offsetKeyLEDx, KeyWhiteY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 0 * 2));
-		addParam(createParam<InvisibleKeySmall>(			Vec(79+keyNudgeX, KeyWhiteY), module, PhraseSeq32::KEY_PARAMS + 2));
+		addChild(createPianoKey<PianoKeySmall>(Vec(79+keyNudgeX, KeyWhiteY), 2, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(79+keyNudgeX+offsetKeyLEDx, KeyWhiteY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 2 * 2));
-		addParam(createParam<InvisibleKeySmall>(			Vec(107+keyNudgeX, KeyWhiteY), module, PhraseSeq32::KEY_PARAMS + 4));
+		addChild(createPianoKey<PianoKeySmall>(Vec(107+keyNudgeX, KeyWhiteY), 4, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(107+keyNudgeX+offsetKeyLEDx, KeyWhiteY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 4 * 2));
-		addParam(createParam<InvisibleKeySmall>(			Vec(136+keyNudgeX, KeyWhiteY), module, PhraseSeq32::KEY_PARAMS + 5));
+		addChild(createPianoKey<PianoKeySmall>(Vec(136+keyNudgeX, KeyWhiteY), 5, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(136+keyNudgeX+offsetKeyLEDx, KeyWhiteY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 5 * 2));
-		addParam(createParam<InvisibleKeySmall>(			Vec(164+keyNudgeX, KeyWhiteY), module, PhraseSeq32::KEY_PARAMS + 7));
+		addChild(createPianoKey<PianoKeySmall>(Vec(164+keyNudgeX, KeyWhiteY), 7, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(164+keyNudgeX+offsetKeyLEDx, KeyWhiteY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 7 * 2));
-		addParam(createParam<InvisibleKeySmall>(			Vec(192+keyNudgeX, KeyWhiteY), module, PhraseSeq32::KEY_PARAMS + 9));
+		addChild(createPianoKey<PianoKeySmall>(Vec(192+keyNudgeX, KeyWhiteY), 9, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(192+keyNudgeX+offsetKeyLEDx, KeyWhiteY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 9 * 2));
-		addParam(createParam<InvisibleKeySmall>(			Vec(220+keyNudgeX, KeyWhiteY), module, PhraseSeq32::KEY_PARAMS + 11));
+		addChild(createPianoKey<PianoKeySmall>(Vec(220+keyNudgeX, KeyWhiteY), 11, module ? &module->pkInfo : NULL));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(220+keyNudgeX+offsetKeyLEDx, KeyWhiteY+offsetKeyLEDy), module, PhraseSeq32::KEY_LIGHTS + 11 * 2));
 		
 		// Key mode LED buttons	
@@ -2169,12 +2156,3 @@ struct PhraseSeq32Widget : ModuleWidget {
 };
 
 Model *modelPhraseSeq32 = createModel<PhraseSeq32, PhraseSeq32Widget>("Phrase-Seq-32");
-
-/*CHANGE LOG
-
-1.0.0:
-expansion panel replaced by a separate expander module
-right-click keys to autostep replaced by double click
-add menu option to stop at end of song
-
-*/

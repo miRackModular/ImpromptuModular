@@ -218,7 +218,3 @@ struct FourViewWidget : ModuleWidget {
 };
 
 Model *modelFourView = createModel<FourView, FourViewWidget>("Four-View");
-
-/*CHANGE LOG
-
-*/

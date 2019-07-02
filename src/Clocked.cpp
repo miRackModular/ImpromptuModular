@@ -7,7 +7,6 @@
 //See ./res/fonts/ for font licenses
 //
 //Module concept and design by Marc Boulé, Nigel Sixsmith, Xavier Belmont and Steve Baker
-//
 //***********************************************************************************************
 
 
@@ -266,6 +265,7 @@ struct Clocked : Module {
 	long delaySamples[4];
 	float newMasterLength;
 	float masterLength;
+	float clkOutputs[4];
 	
 	// No need to save, no reset
 	bool scheduledReset = false;
@@ -406,7 +406,7 @@ struct Clocked : Module {
 				delay[i].reset(resetClockOutputsHigh);
 			syncRatios[i] = false;
 			ratiosDoubled[i] = getRatioDoubled(i);
-			outputs[CLK_OUTPUTS + i].setVoltage((resetClockOutputsHigh ? 10.0f : 0.0f));
+			clkOutputs[i] = resetClockOutputsHigh ? 10.0f : 0.0f;
 		}
 		updatePulseSwingDelay();
 		extPulseNumber = -1;
@@ -627,7 +627,7 @@ struct Clocked : Module {
 		}
 		
 		
-		// main clock engine and outputs
+		// main clock engine
 		if (running) {
 			// See if clocks finished their prescribed number of iteratios of double periods (and syncWait for sub) or 
 			//    if they were forced reset and if so, recalc and restart them
@@ -645,7 +645,7 @@ struct Clocked : Module {
 				clk[0].setup(masterLength, 1, sampleTime);// must call setup before start. length = double_period
 				clk[0].start();
 			}
-			outputs[CLK_OUTPUTS + 0].setVoltage(clk[0].isHigh(swingAmount[0], pulseWidth[0]) ? 10.0f : 0.0f);		
+			clkOutputs[0] = clk[0].isHigh(swingAmount[0], pulseWidth[0]) ? 10.0f : 0.0f;		
 			
 			// Sub clocks
 			for (int i = 1; i < 4; i++) {
@@ -667,15 +667,18 @@ struct Clocked : Module {
 					clk[i].start();
 				}
 				delay[i - 1].write(clk[i].isHigh(swingAmount[i], pulseWidth[i]));
-				outputs[CLK_OUTPUTS + i].setVoltage(delay[i - 1].read(delaySamples[i]) ? 10.0f : 0.0f);
+				clkOutputs[i] = delay[i - 1].read(delaySamples[i]) ? 10.0f : 0.0f;
 			}
 
 			// Step clocks
 			for (int i = 0; i < 4; i++)
 				clk[i].stepClock();
 		}
-			
-		// Chaining outputs
+		
+		// outputs
+		for (int i = 0; i < 4; i++) {
+			outputs[CLK_OUTPUTS + i].setVoltage(clkOutputs[i]);
+		}
 		outputs[RESET_OUTPUT].setVoltage((resetPulse.process((float)sampleTime) ? 10.0f : 0.0f));
 		outputs[RUN_OUTPUT].setVoltage((runPulse.process((float)sampleTime) ? 10.0f : 0.0f));
 		outputs[BPM_OUTPUT].setVoltage( inputs[BPM_INPUT].isConnected() ? inputs[BPM_INPUT].getVoltage() : log2f(1.0f / masterLength));
@@ -1053,11 +1056,3 @@ struct ClockedWidget : ModuleWidget {
 };
 
 Model *modelClocked = createModel<Clocked, ClockedWidget>("Clocked");
-
-/*CHANGE LOG
-
-1.0.0:
-expansion panel replaced by a separate expander module
-change cv levels in expansion panel (now 0V for no effect instead of 5V)
-
-*/

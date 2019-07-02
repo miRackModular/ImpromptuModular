@@ -109,7 +109,3 @@ struct GateSeq64ExpanderWidget : ModuleWidget {
 };
 
 Model *modelGateSeq64Expander = createModel<GateSeq64Expander, GateSeq64ExpanderWidget>("Gate-Seq-64-Expander");
-
-/*CHANGE LOG
-
-*/
