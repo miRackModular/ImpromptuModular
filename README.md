@@ -2,7 +2,7 @@
 
 Modules for [VCV Rack](https://vcvrack.com), available in the [plugin manager](https://vcvrack.com/plugins.html).
 
-Version 1.0.1
+Version 1.1.0
 
 [//]: # (!!!!!UPDATE VERSION NUMBER IN MAKEFILE ALSO!!!!!   120% Zoom for jpgs)
 
@@ -160,7 +160,7 @@ Further information for developpers is available in a short summary of the [code
 
 A touch-like controller module with dual CV outputs and variable rate of change. With a fast rate of change, the controller offers an alternative to knobs for setting parameters, and with a slow rate of change it can be used to automate in-out fades, for example, freeing the performer to work elsewhere in the patch. Tact-1 is a single channel version of Tact with fewer options. 
 
-* **RATE**: Transition time of CV, from 0 (instant transition) to 4 seconds per volt. Transition time is the inverse of slew rate. This knob can be turned in real time to affect the rate of change of a transition already under way. An option in the right click menu called **Rate knob x3** can be used for even slower transitions, in which case a full transition from 0 to 10V (or vice versa) will last 2 minutes instead of 40 seconds in the default setting.
+* **RATE**: Transition time of CV, from 0 (instant transition) to 4 seconds per volt. Transition time is the inverse of slew rate. This knob can be turned in real time to affect the rate of change of a transition already under way. An option in the right-click menu called **Rate knob x3** can be used for even slower transitions, in which case a full transition from 0 to 10V (or vice versa) will last 2 minutes instead of 40 seconds in the default setting.
 
 * **LINK**: Both controls are linked and will be synchronized to the same value. Useful when controlling stereo sounds. Only the left side controls have an effect in this mode; however, both touch pads can be used to change the single CV (which is sent to both output jacks).
 
@@ -224,7 +224,7 @@ For a tutorial on Clocked regarding chaining, clock multiplications and division
 
 * **PW**: Pulse width is dependent on the swing knob, but can be used to control the general duration of the clock pulse. In the worst-case knob settings, the pulse width is guaranteed to be a minimum of 1ms, with a minimum 1ms pause between pulses. 
 
-* **DELAY**: Clock delay can be used to offset a sub-clock relative to the master clock, and is expressed in fractions of the clock period of the given sub-clock. Using the right click menu, the delay value can also be displayed in notes, where one quarter note corresponds to a clock period. It is important to keep in mind, however, that the ratio knobs in Clocked are not PPQN settings as such, they are general clock frequency selectors. For example, setting a ratio to x24 with a master tempo at 120 BPM, the clock delay will be applied on a very fast clock, which is practically imperceptible: in this example, a clock delay of 1/16 note is actually equal to a quarter of a clock interval at 2880 BPM! (2880 = 120 x 24) 
+* **DELAY**: Clock delay can be used to offset a sub-clock relative to the master clock, and is expressed in fractions of the clock period of the given sub-clock. Using the right-click menu, the delay value can also be displayed in notes, where one quarter note corresponds to a clock period. It is important to keep in mind, however, that the ratio knobs in Clocked are not PPQN settings as such, they are general clock frequency selectors. For example, setting a ratio to x24 with a master tempo at 120 BPM, the clock delay will be applied on a very fast clock, which is practically imperceptible: in this example, a clock delay of 1/16 note is actually equal to a quarter of a clock interval at 2880 BPM! (2880 = 120 x 24) 
 
 In place of a detailed explanation of these three main controls, it is recommended to connect the outputs to a scope or a logic analyzer, such as the Fundamental Scope (pictured above) or the SubmarineFree LA-108, to observe the effects of the different controls.
 
@@ -256,7 +256,7 @@ When using external clock synchronization, Clocked syncs itself to the incoming 
 
 A 4-track phrase sequencer with 32 steps per sequence, 64 sequences per track, 99 phrases per song. A phrase is a sequence number and a repetition count. Each track holds one song and can be independently clocked and edited. The SEL and ALL buttons allow the selection and simultaneous editing across multiple steps and tracks respectively. 
 
-CVs can be entered into the sequencer via CV inputs when using an external keyboard controller or via the built-in controls on the module itself. When notes are entered on the built-in keyboard using double-clicks instead of single clicks of the mouse, the sequencer automatically moves to the next step. Holding ctrl while double-clicking also copies the current note/gate-type over when moving to the next step. Right-click defaults are also supported on the three main knobs.
+CVs can be entered into the sequencer via CV inputs when using an external keyboard controller or via the built-in controls on the module itself. When notes are entered on the built-in keyboard using right-clicks of the mouse, the sequencer automatically moves to the next step. Holding ctrl while right-clicking also copies the current note/gate-type over when moving to the next step. Double-click defaults are supported on the three main knobs.
 
 Although this sequencer has many similarities to [PhraseSeq32](#phrase-seq-32), a few differences must also be kept in mind for existing PhraseSeq users. Notably:
 
@@ -282,7 +282,7 @@ Here are some further details on the different functions of the sequencer. It is
 
 * **RUN MODE**: Used to set the run mode of the selected sequence when in SEQ mode, or of the song (selected track) when in SONG mode. The modes are: FWD (forward), REV (reverse), PPG (ping-pong, also called forward-reverse), PEN (pendulum, like PPG but the first and last steps are not played twice), BRN (Brownian random), RND (random), TKA (use the step/phrase run positions of track A). The TKA mode can be used to ensure chord notes are randomized together across tracks. The TKA mode reverts to FWD in track A, since it is undefined.
 
-* **CV2**: These secondary CV outputs can be used for accents, velocities or any other auxiliary control voltage. CV2 is a 0V to 10V control voltage by defaut, but by checking the Bipolar option in the right-click menu, they can be -5V to 5V outputs. Three modes are available in the right click menu:
+* **CV2**: These secondary CV outputs can be used for accents, velocities or any other auxiliary control voltage. CV2 is a 0V to 10V control voltage by defaut, but by checking the Bipolar option in the right-click menu, they can be -5V to 5V outputs. Three modes are available in the right-click menu:
     * Volts: direct control of the CV2 output voltages, with 0.05V resolution;
     * 0-127: midi-like numbered levels, mapped to 0V to 10V or -5V to 5V on the CV2 outputs;
     * Notes: same as 0-127 but rescales the CV2 outputs to semitones.
@@ -319,7 +319,7 @@ By default the sequencer always restarts the song when in song mode; however, th
 
 ![IM](res/img/PhraseSeq16.jpg)
 
-A 16 phrase sequencer module, where each phrase is an index into a set of 16 sequences of 16 steps (maximum). CVs can be entered via a CV input when using an external keyboard controller or via the built-in keyboard on the module itself. Using the song mode, a 256-step sequence can be created. With two separate gates per step, gate 2 is perfect for use as an accent if desired. When notes are entered on the built-in keyboard using double-clicks instead of single clicks of the mouse, the sequencer automatically moves to the next step. Holding ctrl while double-clicking also copies the current note/gate-type over when moving to the next step. Right-click defaults are also supported on the main knob.
+A 16 phrase sequencer module, where each phrase is an index into a set of 16 sequences of 16 steps (maximum). CVs can be entered via a CV input when using an external keyboard controller or via the built-in keyboard on the module itself. Using the song mode, a 256-step sequence can be created. With two separate gates per step, gate 2 is perfect for use as an accent if desired. When notes are entered on the built-in keyboard using right-clicks, the sequencer automatically moves to the next step. Holding ctrl while right-clicking also copies the current note/gate-type over when moving to the next step. Double-click defaults are supported on the main knob.
 
 The following block diagram shows how sequences and phrases relate to each other to create a song. In the diagram, a 12-bar blues pattern is created by setting the song length to 12, the step lengths to 8 (not visible in the figure), and then creating 4 sequences. The 12 phrases are indexes into the 4 sequences that were created.
 
@@ -383,7 +383,7 @@ For a video introduction to the advanced gate mode, please see Omri Cohen's [adv
 
 Holding the MODE button for **two seconds** allows the selection of the clock resolution, in number of pulses per step (PPS). When set to a value greater than 1, which unlocks the advanced gate mode, the sequencer will skip this many clock pulses before advancing to the next step. In such cases, a multiplied clock must be supplied in order to keep the same tempo in the sequencer. In advanced gate mode, the pulse width of the clock is not used and has no effect on the gates.
 
-In the advanced gate mode, the Gate1 and Gate2 lights will be a different color, and the onboard keyboard can be used not only to enter note values, but also to select one of the 12 types of gates for a given step. To enter gates, make sure the LED button located right above the E and F keys is activated (pressing this button multiple times alternates between gate 1 and gate 2); to enter notes again, press the LED button above the B key. Advanced gates can only be set while in Seq mode. Here are the different gate types and their minimum PPS requirements.
+In the advanced gate mode, the Gate1 and Gate2 lights will be a different color, and the onboard keyboard can be used not only to enter note values, but also to select one of the 12 types of gates for a given step. To enter gates, make sure the LED button located above the E and F keys is activated (pressing this button multiple times alternates between gate 1 and gate 2); to enter notes again, press the LED button above the B key. Advanced gates can only be set while in Seq mode. Here are the different gate types and their minimum PPS requirements.
 
 ![IM](res/img/AdvancedGateDetails.jpg)
 
