@@ -29,24 +29,22 @@ TWidget* createDynamicWidget(Vec pos, int* mode) {
 	return dynWidget;
 }
 
-struct ScrewCircle : TransparentWidget {
-	void draw(const DrawArgs &args) override;
-};
-struct DynamicSVGScrew : FramebufferWidget {
+struct DynamicSVGScrew : SvgScrew {
     int* mode = NULL;
     int oldMode = -1;
-	SvgWidget *sw;// for random rotated screw used in primary mode
-	SvgWidget* swAlt;// for fixed svg screw used in alternate mode
-	
-    DynamicSVGScrew();
-    void addSVGalt(std::shared_ptr<Svg> svg);
+    std::vector<std::shared_ptr<Svg>> frames;
+	std::string frameAltName;
+
+    void addFrame(std::shared_ptr<Svg> svg);
+    void addFrameAlt(std::string filename) {frameAltName = filename;}
     void step() override;
 };
 
 
 struct IMScrew : DynamicSVGScrew {
 	IMScrew() {
-		addSVGalt(APP->window->loadSvg(asset::plugin(pluginInstance, "res/dark/comp/ScrewSilver.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/light/comp/ScrewSilver.svg")));
+		addFrameAlt(asset::plugin(pluginInstance, "res/dark/comp/ScrewSilver.svg"));
 	}
 };
 

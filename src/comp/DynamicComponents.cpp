@@ -9,68 +9,26 @@
 
 
 
-// Dynamic SVGScrew
+// Dynamic SVGWidget
 
-void ScrewCircle::draw(const DrawArgs &args) {
-	NVGcolor backgroundColor = nvgRGB(0x72, 0x72, 0x72); 
-	NVGcolor borderColor = nvgRGB(0x72, 0x72, 0x72);
-	nvgBeginPath(args.vg);
-	nvgCircle(args.vg, box.size.x/2.0f, box.size.y/2.0f, 1.2f);// box, radius
-	nvgFillColor(args.vg, backgroundColor);
-	nvgFill(args.vg);
-	nvgStrokeWidth(args.vg, 1.0);
-	nvgStrokeColor(args.vg, borderColor);
-	nvgStroke(args.vg);
-}
-
-DynamicSVGScrew::DynamicSVGScrew() {
-	sw = new SvgWidget();
-	sw->setSvg(APP->window->loadSvg(asset::system("res/ComponentLibrary/ScrewSilver.svg")));
-	
-	ScrewCircle *sc = new ScrewCircle();
-	sc->box.size = sw->box.size;
-	
-	TransformWidget *tw = new TransformWidget();
-	tw->addChild(sw);
-	tw->addChild(sc);
-	addChild(tw);
-	
-	box.size = sw->box.size;
-	tw->box.size = sw->box.size; 
-	// Rotate SVG
-	Vec center = sw->box.getCenter();
-	tw->identity();
-	tw->translate(center);
-	tw->rotate(M_PI/4.0f);
-	tw->translate(center.neg());	
-
-	// for fixed svg screw used in alternate mode
-	// **********
-	swAlt = new SvgWidget();
-	swAlt->visible = false;
-    addChild(swAlt);
-}
-
-void DynamicSVGScrew::addSVGalt(std::shared_ptr<Svg> svg) {
-    if(!swAlt->svg) {
-        swAlt->setSvg(svg);
-    }
+void DynamicSVGScrew::addFrame(std::shared_ptr<Svg> svg) {
+	frames.push_back(svg);
+    if(frames.size() == 1) {
+        sw->setSvg(svg);
+	}
 }
 
 void DynamicSVGScrew::step() {
     if(mode != NULL && *mode != oldMode) {
-        if ((*mode) == 0) {
-			sw->visible = true;
-			swAlt->visible = false;
+        if (*mode > 0 && !frameAltName.empty()) {// JIT loading of alternate skin
+			frames.push_back(APP->window->loadSvg(frameAltName));
+			frameAltName.clear();// don't reload!
 		}
-		else {
-			sw->visible = false;
-			swAlt->visible = true;
-		}
+        sw->setSvg(frames[*mode]);
         oldMode = *mode;
-        dirty = true;
+        fb->dirty = true;
     }
-	FramebufferWidget::step();
+	SvgScrew::step();
 }
 
 
@@ -94,7 +52,7 @@ void DynamicSVGPort::step() {
         oldMode = *mode;
         fb->dirty = true;
     }
-	PortWidget::step();
+	SvgPort::step();
 }
 
 
