@@ -226,7 +226,7 @@ For a tutorial on Clocked regarding chaining, clock multiplications and division
 
 * **DELAY**: Clock delay can be used to offset a sub-clock relative to the master clock, and is expressed in fractions of the clock period of the given sub-clock. Using the right-click menu, the delay value can also be displayed in notes, where one quarter note corresponds to a clock period. It is important to keep in mind, however, that the ratio knobs in Clocked are not PPQN settings as such, they are general clock frequency selectors. For example, setting a ratio to x24 with a master tempo at 120 BPM, the clock delay will be applied on a very fast clock, which is practically imperceptible: in this example, a clock delay of 1/16 note is actually equal to a quarter of a clock interval at 2880 BPM! (2880 = 120 x 24) 
 
-In place of a detailed explanation of these three main controls, it is recommended to connect the outputs to a scope or a logic analyzer, such as the Fundamental Scope (pictured above) or the SubmarineFree LA-108, to observe the effects of the different controls.
+In place of a detailed explanation of these three main controls, it is recommended to connect the outputs to a scope or a logic analyzer, such as the VCV Scope (pictured above) or the SubmarineFree LA-108, to observe the effects of the different controls.
 
 PW and Swing CV inputs are aso avaialable in the Clocked [expander module](#expanders). These inputs have a range of -5V to 5V when the corresponding knobs are be in their default position. With the corresponding knobs turned full left, the usable range on the inputs becomes 0V to 10V, with no-swing and normal-pulse-width correspond to 5V on the CV inputs.
 
@@ -325,7 +325,7 @@ The following block diagram shows how sequences and phrases relate to each other
 
 ![IM](res/img/PhraseSeq16BlockDiag.jpg)
 
-Familiarity with the Fundamental SEQ-3 sequencer is recommended, as some operating principles are similar in both sequencers. It is also strongly recommended to read the section [general concepts](#general-concepts) for more relevant information that is not repeated here. For an in depth review of the sequencer's capabilities, please see Nigel Sixsmith's [Talking Rackheads episode 8](https://www.youtube.com/watch?v=KOpo2oUPTjg) or Omri Cohen's [PhraseSeq tutorial](https://www.youtube.com/watch?v=N8_rMNzsS7w).
+Familiarity with the VCV SEQ-3 sequencer is recommended, as some operating principles are similar in both sequencers. It is also strongly recommended to read the section [general concepts](#general-concepts) for more relevant information that is not repeated here. For an in depth review of the sequencer's capabilities, please see Nigel Sixsmith's [Talking Rackheads episode 8](https://www.youtube.com/watch?v=KOpo2oUPTjg) or Omri Cohen's [PhraseSeq tutorial](https://www.youtube.com/watch?v=N8_rMNzsS7w).
 
 * **SEQ / SONG**: This is the main switch that controls the two major modes of the sequencer. Seq mode allows the currently selected sequence to be played/edited. In this mode, all controls are available (run mode, transpose, rotate, copy-paste, gates, slide, octave, notes) and the content of a sequence can be modified even when the sequencer is running. Song mode allows the creation of a series of sequence numbers (called phrases). In this mode, the run mode and length of the song and the sequence index numbers themselves can be modified (whether the sequence is running or not); some of the other aforementioned controls are unavailable and the actual contents of the sequences cannot be modified.
 
@@ -556,7 +556,7 @@ A 6-channel 128-step gate and CV sequencer based on [BigButtonSeq](#big-button-s
 
 ![IM](res/img/SemiModularSynth.jpg)
 
-An all-in-one pre-patched semi-modular synthesizer. Based on the [Fundamental](https://vcvrack.com/Fundamental.html) modules by VCV and the [PhraseSeq16](#phrase-seq-16) sequencer (above). Please see those links for the respective manuals, while keeping in mind that not all features of the Fundamental modules were implemented in Semi-Modular Synth 16 (SMS16). A typical signal flow is internally patched by default, as shown by the interconnecting lines on the faceplate of the module. The majority of the internal connections can be overridden by any cables patched into those related jacks. 
+An all-in-one pre-patched semi-modular synthesizer. Based on the [VCV Fundamental](https://vcvrack.com/Fundamental.html) modules by VCV and the [PhraseSeq16](#phrase-seq-16) sequencer (above). Please see those links for the respective manuals, while keeping in mind that not all features of the Fundamental modules were implemented in Semi-Modular Synth 16 (SMS16). A typical signal flow is internally patched by default, as shown by the interconnecting lines on the faceplate of the module. The majority of the internal connections can be overridden by any cables patched into those related jacks. 
 
 This module can be used for quickly exploring ideas for sequences, and is also useful for those new to modular synthesis before learning how to fill the screen with cables! Also note that the final output is the low-pass output of the VCF module (Voltage Controlled Filter). The VCF is purposely placed after the VCA (Voltage Controlled Amplifier) in the signal flow, such that the VCF can be lightly saturated, producing a thicker sound, especially when the Drive knob is turned up.
 
@@ -572,7 +572,7 @@ The SMS16 also features the advanced gate mode of the PhraseSeq16. When changing
 
 ![IM](res/img/WriteSeqs.jpg)
 
-WriteSeq32 is a three-channel 32-step writable sequencer module. Although the display shows note names (ex. C4#, D5, etc.), any voltage within the -10V to 10V range can be stored/played in the sequencer, whether it is used as a pitch CV or not, and whether it is quantized or not. Gate states and window selection can be done by pressing the 8 and 4 LED buttons respectively located below and above the main display. Familiarity with the Fundamental SEQ-3 sequencer is recommended, as some operating principles are similar in both sequencers. It is also strongly recommended to read the section [general concepts](#general-concepts) for more relevant information that is not repeated here. 
+WriteSeq32 is a three-channel 32-step writable sequencer module. Although the display shows note names (ex. C4#, D5, etc.), any voltage within the -10V to 10V range can be stored/played in the sequencer, whether it is used as a pitch CV or not, and whether it is quantized or not. Gate states and window selection can be done by pressing the 8 and 4 LED buttons respectively located below and above the main display. Familiarity with the VCV SEQ-3 sequencer is recommended, as some operating principles are similar in both sequencers. It is also strongly recommended to read the section [general concepts](#general-concepts) for more relevant information that is not repeated here. 
 
 * **WINDOW**: LED buttons to display/select the active 8-step window within the 32 step sequence (hence four windows). No effect on channels 1 to 3 when the sequencer is running.
 
@@ -592,7 +592,9 @@ WriteSeq32 is a three-channel 32-step writable sequencer module. Although the di
 
 * **RUN 1-3**: Start/stop the sequencer. When running, the sequencer responds to rising edges of the clock input and will step all channels except the staging area (channel 4). A rising edge on the RUN input will also toggle the run mode.
 
-* **GATE IN**: Can be used to also set/clear the gate of the current step/channel during a Write (see [General Concepts](#general-concepts) above). If no wire is connected, the input is ignored and the currently stored gate is unaffected. No effect on channels 1 to 3 when the sequencer is running.
+* **WRITE / CV IN**: please see [General Concepts](#general-concepts) above for information on how to write notes into the sequencer.
+
+* **GATE IN**: Can be used to also set/clear the gate of the current step/channel during a Write. If no wire is connected, the input is ignored and the currently stored gate is unaffected. No effect on channels 1 to 3 when the sequencer is running.
 
 * **STEPS**: Sets the number of steps for all the sequences (sequence length).
 
