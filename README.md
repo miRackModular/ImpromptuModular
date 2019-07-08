@@ -258,17 +258,11 @@ A 4-track phrase sequencer with 32 steps per sequence, 64 sequences per track, 9
 
 CVs can be entered into the sequencer via CV inputs when using an external keyboard controller or via the built-in controls on the module itself. When notes are entered on the built-in keyboard using right-clicks of the mouse, the sequencer automatically moves to the next step. Holding ctrl while right-clicking also copies the current note/gate-type over when moving to the next step. Double-click defaults are supported on the three main knobs.
 
-Although this sequencer has many similarities to [PhraseSeq32](#phrase-seq-32), a few differences must also be kept in mind for existing PhraseSeq users. Notably:
-
-* Song phrases are now in a separate display/knob instead of in the steps at the top left.
-* The Copy/Paste ALL setting was replaced with an CUST setting (more details are given below).
-* The sequence repetitions are no longer in the run modes (formerly FW2, FW3, FW4), but are instead specified in the phrases. This allows the repetition of any run mode up to 99 times.
-
 The following block diagram shows how the different sequencer elements are hierarchically related.
  
 ![IM](res/img/FoundryBlockDiag.jpg)
 
-Here are some further details on the different functions of the sequencer. It is also strongly recommended to read the section [general concepts](#general-concepts) for more relevant information that is not repeated here. For an overview of the sequencer's functionality, please see Omri Cohen's [Foundry tutorial](https://www.youtube.com/watch?v=56w_mlNlKE4) (the tutorial was made with a previous version of Foundry wherein the main SEQ/SONG switch had an alternate behavior). 
+Here are some further details on the different functions of the sequencer. It is also strongly recommended to read the section [general concepts](#general-concepts) for more relevant information that is not repeated here. For an overview of the sequencer's functionality, please see Omri Cohen's [Foundry tutorial](https://www.youtube.com/watch?v=56w_mlNlKE4) (the tutorial was made with a previous version of Foundry wherein the main SEQ/SONG switch had an alternate behavior) and a [quick followup video](https://www.youtube.com/watch?v=ijVg73LH88U) explaining more recent additions to the sequencer.
 
 * **CLK**: The clock inputs for each track. When the input is unconnected in a track, the track automatically uses the clock source of the preceding track (indicated by arrows above each clock input). It is good practice that the clock for track A be connected as directly as possible to the main clock source, and when a chained series of clock modules are used, the clock input of track A should be connected to a clock output from the *first* clock module of the chain.
 
@@ -278,9 +272,9 @@ Here are some further details on the different functions of the sequencer. It is
 
 * **BEG / END**: The BEG and END buttons set the endpoints of the song, such that when working on a long song, we can more easily work on a section of it, which is more practical.
 
-* **LEN / REP**: Sequence lengths can be set by clicking the button when in SEQ mode, and then either turning the main knob below the main display or clicking the desired length directly in the steps (the second method is the recommended way since the display will automatically return to its default state afterwards). The sequences can have different lengths. When in Song mode, the same button instead serves to set the number of repetitions of the current phrase. To skip the give phrase when the song plays, set the number of repetitions to 0.
+* **LEN / REP**: Sequence lengths can be set by clicking the button when in SEQ mode, and then either turning the main knob below the main display or clicking the desired length directly in the steps (the second method is the recommended way since the display will automatically return to its default state afterwards). The sequences can have different lengths. When in Song mode, the same button instead serves to set the number of repetitions of the current phrase; this allows the repetition of a sequence up to 99 times, for any run mode selected. To skip the given phrase when the song plays, set the number of repetitions to 0.
 
-* **RUN MODE**: Used to set the run mode of the selected sequence when in SEQ mode, or of the song (selected track) when in SONG mode. The modes are: FWD (forward), REV (reverse), PPG (ping-pong, also called forward-reverse), PEN (pendulum, like PPG but the first and last steps are not played twice), BRN (Brownian random), RND (random), TKA (use the step/phrase run positions of track A). The TKA mode can be used to ensure chord notes are randomized together across tracks. The TKA mode reverts to FWD in track A, since it is undefined.
+* **RUN MODE**: Used to set the run mode of the selected sequence when in SEQ mode, or of the song (selected track) when in SONG mode. The modes are: FWD (forward), REV (reverse), PPG (ping-pong, also called forward-reverse), PEN (pendulum, like PPG but the first and last steps are not played twice), BRN (Brownian random), RND (random), TKA (use the step/phrase run positions of track A). The TKA mode can be used to ensure chord notes are randomized together across tracks. For track A, the TKA mode is equivalent to FWD.
 
 * **CV2**: These secondary CV outputs can be used for accents, velocities or any other auxiliary control voltage. CV2 is a 0V to 10V control voltage by defaut, but by checking the Bipolar option in the right-click menu, they can be -5V to 5V outputs. Three modes are available in the right-click menu:
     * Volts: direct control of the CV2 output voltages, with 0.05V resolution;
