@@ -54,7 +54,7 @@ class SeqAttributesGS {
 	static const unsigned short SEQ_MSK_RUNMODE =   0x0000FF00, runModeShift = 8;
 	
 	inline void init(int length, int runMode) {attributes = ((length) | (((unsigned short)runMode) << runModeShift));}
-	inline void randomize(int maxSteps, int numModes) {attributes = ( (1 + (random::u32() % maxSteps)) | (((unsigned short)(random::u32() % numModes) << runModeShift)) );}
+	inline void randomize(int maxSteps, int numModes) {attributes = ( (2 + (random::u32() % (maxSteps - 1))) | (((unsigned short)(random::u32() % numModes) << runModeShift)) );}
 	
 	inline int getLength() {return (int)(attributes & SEQ_MSK_LENGTH);}
 	inline int getRunMode() {return (int)((attributes & SEQ_MSK_RUNMODE) >> runModeShift);}

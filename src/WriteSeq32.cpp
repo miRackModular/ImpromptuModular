@@ -124,7 +124,7 @@ struct WriteSeq32 : Module {
 		configParam(STEPR_PARAM, 0.0f, 1.0f, 0.0f, "Step right");	
 		configParam(WRITE_PARAM, 0.0f, 1.0f, 0.0f, "Write");
 		configParam(STEPS_PARAM, 1.0f, 32.0f, 32.0f, "Number of steps");		
-		configParam(MONITOR_PARAM, 0.0f, 1.0f, 0.0f, "Monitor");		
+		configParam(MONITOR_PARAM, 0.0f, 1.0f, 1.0f, "Monitor");		
 		
 		onReset();
 		
@@ -266,7 +266,7 @@ struct WriteSeq32 : Module {
 	
 	void process(const ProcessArgs &args) override {
 		static const float copyPasteInfoTime = 0.7f;// seconds
-		static const float gateTime = 0.4f;// seconds
+		static const float gateTime = 0.15f;// seconds
 		
 		
 		//********** Buttons, knobs, switches and inputs **********
@@ -491,8 +491,14 @@ struct WriteSeq32 : Module {
 				if (infoCopyPaste < 0l)
 					infoCopyPaste ++;
 			}
-			if (editingGate > 0ul)
+			if (editingGate > 0ul) {
 				editingGate--;
+				if (editingGate == 0ul) {
+					if (stepRTrigger.isHigh() || stepLTrigger.isHigh() || writeTrigger.isHigh()) {
+						editingGate = 1ul;
+					}
+				}
+			}
 		}// lightRefreshCounter
 		
 		if (clockIgnoreOnReset > 0l)

@@ -1,3 +1,9 @@
+### 1.1.1 (in development)
+
+- Fixed WriteSeq32/64 gate outputs when not running (they are now off but will give a pulse on every write or movement of the active step)
+- Disallow random sequence length of 1 in all Phrase/Gate sequencers, and Foundry
+
+
 ### 1.1.0 (2019-07-04)
 
 - Added option in right-click menu to inverty velocity range in TwelveKey

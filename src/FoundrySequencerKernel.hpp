@@ -103,7 +103,7 @@ class SeqAttributes {
 	static const unsigned long SEQ_MSK_ROTSIGN =   0x80000000;// manually implement sign bit (+ is right, - is left)
 	
 	void init(int length, int runMode) {attributes = ((length) | (((unsigned long)runMode) << runModeShift));}
-	void randomize(int maxSteps, int numModes) {attributes = ( (1 + (random::u32() % maxSteps)) | (((unsigned long)(random::u32() % numModes) << runModeShift)) );}
+	void randomize(int maxSteps, int numModes) {attributes = ( (2 + (random::u32() % (maxSteps - 1))) | (((unsigned long)(random::u32() % numModes) << runModeShift)) );}
 	
 	int getLength() {return (int)(attributes & SEQ_MSK_LENGTH);}
 	int getRunMode() {return (int)((attributes & SEQ_MSK_RUNMODE) >> runModeShift);}

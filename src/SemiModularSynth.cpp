@@ -453,9 +453,6 @@ struct SemiModularSynth : Module {
 			for (int s = 0; s < 16; s++) {
 				cv[seqIndexEdit][s] = ((float)(random::u32() % 7)) + ((float)(random::u32() % 12)) / 12.0f - 3.0f;
 				attributes[seqIndexEdit][s].randomize();
-				// if (attributes[seqIndexEdit][s].getTied()) {
-					// activateTiedStep(seqIndexEdit, s);
-				// }
 			}
 			sequences[seqIndexEdit].randomize(16, NUM_MODES - 1);
 		}
