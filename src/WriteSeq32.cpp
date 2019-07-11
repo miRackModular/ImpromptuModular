@@ -69,6 +69,7 @@ struct WriteSeq32 : Module {
 	float cv[4][32];
 	int gates[4][32];
 	bool resetOnRun;
+	unsigned long editingGate;// 0 when no edit gate, downward step counter timer when edit gate
 
 	// No need to save, with reset
 	long clockIgnoreOnReset;
@@ -79,6 +80,7 @@ struct WriteSeq32 : Module {
 
 	// No need to save, no reset
 	RefreshCounter refresh;	
+	float editingGateCV;// no need to initialize, this goes with editingGate (output this only when editingGate > 0)
 	Trigger clockTrigger;
 	Trigger resetTrigger;
 	Trigger runningTrigger;
@@ -152,6 +154,7 @@ struct WriteSeq32 : Module {
 		}
 		infoCopyPaste = 0l;
 		pendingPaste = 0;
+		editingGate = 0ul;
 	}
 
 	
@@ -263,6 +266,7 @@ struct WriteSeq32 : Module {
 	
 	void process(const ProcessArgs &args) override {
 		static const float copyPasteInfoTime = 0.7f;// seconds
+		static const float gateTime = 0.4f;// seconds
 		
 		
 		//********** Buttons, knobs, switches and inputs **********
@@ -345,6 +349,9 @@ struct WriteSeq32 : Module {
 					// Gate
 					if (inputs[GATE_INPUT].isConnected())
 						gates[indexChannel][index] = (inputs[GATE_INPUT].getVoltage() >= 1.0f) ? 1 : 0;
+					// Editing gate
+					editingGate = (unsigned long) (gateTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
+					editingGateCV = cv[indexChannel][index];
 					// Autostep
 					if (params[AUTOSTEP_PARAM].getValue() > 0.5f) {
 						if (indexChannel == 3)
@@ -354,23 +361,23 @@ struct WriteSeq32 : Module {
 					}
 				}
 			}		
-			// Step L button
+			// Step L and R buttons
+			int delta = 0;
 			if (stepLTrigger.process(params[STEPL_PARAM].getValue() + inputs[STEPL_INPUT].getVoltage())) {
-				if (canEdit) {		
-					if (indexChannel == 3)
-						indexStepStage = moveIndex(indexStepStage, indexStepStage - 1, numSteps);
-					else 
-						indexStep = moveIndex(indexStep, indexStep - 1, numSteps);
-				}
+				delta = -1;
 			}
-			// Step R button
 			if (stepRTrigger.process(params[STEPR_PARAM].getValue() + inputs[STEPR_INPUT].getVoltage())) {
-				if (canEdit) {		
-					if (indexChannel == 3)
-						indexStepStage = moveIndex(indexStepStage, indexStepStage + 1, numSteps);
-					else 
-						indexStep = moveIndex(indexStep, indexStep + 1, numSteps);
-				}
+				delta = +1;
+			}
+			if (delta != 0 && canEdit) {		
+				if (indexChannel == 3)
+					indexStepStage = moveIndex(indexStepStage, indexStepStage + delta, numSteps);
+				else 
+					indexStep = moveIndex(indexStep, indexStep + delta, numSteps);
+				// Editing gate
+				int index = (indexChannel == 3 ? indexStepStage : indexStep);
+				editingGate = (unsigned long) (gateTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
+				editingGateCV = cv[indexChannel][index];
 			}
 			
 			// Window buttons
@@ -429,16 +436,15 @@ struct WriteSeq32 : Module {
 			}
 		}
 		else {			
-			bool muteGate = false;// (params[WRITE_PARAM].getValue() + params[STEPL_PARAM].getValue() + params[STEPR_PARAM].getValue()) > 0.5f; // set to false if don't want mute gate on button push
 			for (int i = 0; i < 3; i++) {
 				// CV
-				if (params[MONITOR_PARAM].getValue() > 0.5f)
-					outputs[CV_OUTPUTS + i].setVoltage(cv[i][indexStep]);// each CV out monitors the current step CV of that channel
+				if (params[MONITOR_PARAM].getValue() > 0.5f) // if monitor switch is set to SEQ
+					outputs[CV_OUTPUTS + i].setVoltage((editingGate > 0ul) ? editingGateCV : cv[i][indexStep]);// each CV out monitors the current step CV of that channel
 				else
 					outputs[CV_OUTPUTS + i].setVoltage(quantize(inputs[CV_INPUT].getVoltage(), params[QUANTIZE_PARAM].getValue() > 0.5f));// all CV outs monitor the CV in (only current channel will have a gate though)
 				
 				// Gate
-				outputs[GATE_OUTPUTS + i].setVoltage(((i == indexChannel) && !muteGate) ? 10.0f : 0.0f);
+				outputs[GATE_OUTPUTS + i].setVoltage(((i == indexChannel) && (editingGate > 0ul)) ? 10.0f : 0.0f);
 			}
 		}
 
@@ -485,6 +491,8 @@ struct WriteSeq32 : Module {
 				if (infoCopyPaste < 0l)
 					infoCopyPaste ++;
 			}
+			if (editingGate > 0ul)
+				editingGate--;
 		}// lightRefreshCounter
 		
 		if (clockIgnoreOnReset > 0l)

@@ -867,15 +867,13 @@ struct PhraseSeq32 : Module {
 			int delta = 0;
 			if (leftTrigger.process(inputs[LEFTCV_INPUT].getVoltage())) { 
 				delta = -1;
-				if (displayState != DISP_LENGTH)
-					displayState = DISP_NORMAL;
 			}
 			if (rightTrigger.process(inputs[RIGHTCV_INPUT].getVoltage())) {
 				delta = +1;
-				if (displayState != DISP_LENGTH)
-					displayState = DISP_NORMAL;
 			}
 			if (delta != 0) {
+				if (displayState != DISP_LENGTH)
+					displayState = DISP_NORMAL;
 				if (!running || !attached) {// don't move heads when attach and running
 					if (editingSequence) {
 						stepIndexEdit = moveIndex(stepIndexEdit, stepIndexEdit + delta, 32);

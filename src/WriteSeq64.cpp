@@ -76,9 +76,11 @@ struct WriteSeq64 : Module {
 	long infoCopyPaste;// 0 when no info, positive downward step counter timer when copy, negative upward when paste
 	int pendingPaste;// 0 = nothing to paste, 1 = paste on clk, 2 = paste on seq, destination channel in next msbits
 	long clockIgnoreOnReset;
+	unsigned long editingGate;// 0 when no edit gate, downward step counter timer when edit gate
 
 	// No need to save, no reset
 	RefreshCounter refresh;	
+	float editingGateCV;// no need to initialize, this goes with editingGate (output this only when editingGate > 0)
 	int stepKnob = 0;
 	int stepsKnob = 0;
 	float resetLight = 0.0f;
@@ -150,6 +152,7 @@ struct WriteSeq64 : Module {
 		stepsCPbuffer = 64;
 		infoCopyPaste = 0l;
 		pendingPaste = 0;
+		editingGate = 0ul;
 	}
 
 	
@@ -271,6 +274,7 @@ struct WriteSeq64 : Module {
 	
 	void process(const ProcessArgs &args) override {
 		static const float copyPasteInfoTime = 0.7f;// seconds
+		static const float gateTime = 0.4f;// seconds
 		
 		
 		//********** Buttons, knobs, switches and inputs **********
@@ -362,22 +366,27 @@ struct WriteSeq64 : Module {
 					// Gate
 					if (inputs[GATE_INPUT].isConnected())
 						gates[indexChannel][indexStep[indexChannel]] = (inputs[GATE_INPUT].getVoltage() >= 1.0f) ? 1 : 0;
+					// Editing gate
+					editingGate = (unsigned long) (gateTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
+					editingGateCV = cv[indexChannel][indexStep[indexChannel]];
 					// Autostep
 					if (params[AUTOSTEP_PARAM].getValue() > 0.5f)
 						indexStep[indexChannel] = moveIndex(indexStep[indexChannel], indexStep[indexChannel] + 1, indexSteps[indexChannel]);
 				}
 			}
-			// Step L button
+			// Step L and R buttons
+			int delta = 0;
 			if (stepLTrigger.process(params[STEPL_PARAM].getValue() + inputs[STEPL_INPUT].getVoltage())) {
-				if (canEdit) {		
-					indexStep[indexChannel] = moveIndex(indexStep[indexChannel], indexStep[indexChannel] - 1, indexSteps[indexChannel]); 
-				}
+				delta = -1;
 			}
-			// Step R button
 			if (stepRTrigger.process(params[STEPR_PARAM].getValue() + inputs[STEPR_INPUT].getVoltage())) {
-				if (canEdit) {		
-					indexStep[indexChannel] = moveIndex(indexStep[indexChannel], indexStep[indexChannel] + 1, indexSteps[indexChannel]); 
-				}
+				delta = +1;
+			}
+			if (delta != 0 && canEdit) {		
+				indexStep[indexChannel] = moveIndex(indexStep[indexChannel], indexStep[indexChannel] + delta, indexSteps[indexChannel]); 
+				// Editing gate
+				editingGate = (unsigned long) (gateTime * args.sampleRate / RefreshCounter::displayRefreshStepSkips);
+				editingGateCV = cv[indexChannel][indexStep[indexChannel]];
 			}
 		}// userInputs refresh
 		
@@ -442,16 +451,15 @@ struct WriteSeq64 : Module {
 			}
 		}
 		else {
-			bool muteGate = false;// (params[WRITE_PARAM].getValue() + params[STEPL_PARAM].getValue() + params[STEPR_PARAM].getValue()) > 0.5f; // set to false if don't want mute gate on button push
 			for (int i = 0; i < 4; i++) {
 				// CV
-				if (params[MONITOR_PARAM].getValue() > 0.5f)
-					outputs[CV_OUTPUTS + i].setVoltage(cv[i][indexStep[i]]);// each CV out monitors the current step CV of that channel
+				if (params[MONITOR_PARAM].getValue() > 0.5f) // if monitor switch is set to SEQ
+					outputs[CV_OUTPUTS + i].setVoltage((editingGate > 0ul) ? editingGateCV : cv[i][indexStep[i]]);// each CV out monitors the current step CV of that channel
 				else
 					outputs[CV_OUTPUTS + i].setVoltage(quantize(inputs[CV_INPUT].getVoltage(), params[QUANTIZE_PARAM].getValue() > 0.5f));// all CV outs monitor the CV in (only current channel will have a gate though)
 				
 				// Gate
-				outputs[GATE_OUTPUTS + i].setVoltage(((i == indexChannel) && !muteGate) ? 10.0f : 0.0f);
+				outputs[GATE_OUTPUTS + i].setVoltage(((i == indexChannel) && (editingGate > 0ul)) ? 10.0f : 0.0f);
 			}
 		}
 		
@@ -487,6 +495,8 @@ struct WriteSeq64 : Module {
 				if (infoCopyPaste < 0l)
 					infoCopyPaste ++;
 			}
+			if (editingGate > 0ul)
+				editingGate--;
 		}// lightRefreshCounter
 		
 		if (clockIgnoreOnReset > 0l)
