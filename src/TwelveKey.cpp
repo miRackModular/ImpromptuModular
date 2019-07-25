@@ -47,8 +47,14 @@ struct TwelveKey : Module {
 		NUM_LIGHTS
 	};
 	
+	
+	// Expander
+	float leftMessages[2][3] = {};// messages from TwelveKey placed to the left (Max Vel, Invert Vel, Bipol)
+		
+	
 	// Need to save, no reset
 	int panelTheme;
+	
 	
 	// Need to save, with reset
 	int octaveNum;// 0 to 9
@@ -57,9 +63,12 @@ struct TwelveKey : Module {
 	float maxVel;// in volts
 	bool stateInternal;// false when pass through CV and Gate, true when CV and gate from this module
 	bool invertVel;// range is inverted (min vel is end of key)
+	bool linkVelSettings;
+	
 	
 	// No need to save, with reset
 	unsigned long noteLightCounter;// 0 when no key to light, downward step counter timer when key lit
+
 
 	// No need to save, no reset
 	RefreshCounter refresh;
@@ -77,6 +86,9 @@ struct TwelveKey : Module {
 	TwelveKey() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		
+		leftExpander.producerMessage = leftMessages[0];
+		leftExpander.consumerMessage = leftMessages[1];
+
 		configParam(OCTDEC_PARAM, 0.0, 1.0, 0.0, "Oct down");
 		configParam(OCTINC_PARAM, 0.0, 1.0, 0.0, "Oct up");
 		configParam(MAXVEL_PARAM, 0.0, 1.0, 0.0, "Max velocity");
@@ -95,6 +107,7 @@ struct TwelveKey : Module {
 		maxVel = 10.0f;
 		stateInternal = inputs[GATE_INPUT].isConnected() ? false : true;
 		invertVel = false;
+		linkVelSettings = false;
 		resetNonJson();
 	}
 	void resetNonJson() {
@@ -133,6 +146,9 @@ struct TwelveKey : Module {
 
 		// invertVel
 		json_object_set_new(rootJ, "invertVel", json_boolean(invertVel));
+
+		// linkVelSettings
+		json_object_set_new(rootJ, "linkVelSettings", json_boolean(linkVelSettings));
 
 		return rootJ;
 	}
@@ -175,6 +191,11 @@ struct TwelveKey : Module {
 		if (invertVelJ)
 			invertVel = json_is_true(invertVelJ);
 		
+		// linkVelSettings
+		json_t *linkVelSettingsJ = json_object_get(rootJ, "linkVelSettings");
+		if (linkVelSettingsJ)
+			linkVelSettings = json_is_true(linkVelSettingsJ);
+		
 		resetNonJson();
 	}
 
@@ -188,6 +209,15 @@ struct TwelveKey : Module {
 		bool downOctTrig = false;
 		
 		if (refresh.processInputs()) {
+			// From previous TwelveKey to the left
+			if (linkVelSettings && leftExpander.module && leftExpander.module->model == modelTwelveKey) {
+				// Get consumer message
+				float *message = (float*) leftExpander.consumerMessage;
+				maxVel = message[0];
+				invertVel = message[1] > 0.5f;
+				params[VELPOL_PARAM].setValue(message[2]);
+			}
+
 			// Octave buttons and input
 			upOctTrig = octIncTrigger.process(params[OCTINC_PARAM].getValue());
 			downOctTrig = octDecTrigger.process(params[OCTDEC_PARAM].getValue());
@@ -275,7 +305,16 @@ struct TwelveKey : Module {
 			
 			if (noteLightCounter > 0ul)
 				noteLightCounter--;
-		}
+			
+			// To next TweleveKey to the right
+			if (rightExpander.module && rightExpander.module->model == modelTwelveKey) {
+				float *messageToExpander = (float*)(rightExpander.module->leftExpander.producerMessage);
+				messageToExpander[0] = maxVel;
+				messageToExpander[1] = (float)invertVel;
+				messageToExpander[2] = params[VELPOL_PARAM].getValue();
+				rightExpander.module->leftExpander.messageFlipRequested = true;
+			}
+		}// processLights()
 	}
 	
 	void setMaxVelLights(int toSet) {
@@ -323,7 +362,13 @@ struct TwelveKeyWidget : ModuleWidget {
 	struct InvertVelItem : MenuItem {
 		TwelveKey *module;
 		void onAction(const event::Action &e) override {
-			module->invertVel ^= 0x1;
+			module->invertVel = !module->invertVel;
+		}
+	};
+	struct LinkVelItem : MenuItem {
+		TwelveKey *module;
+		void onAction(const event::Action &e) override {
+			module->linkVelSettings = !module->linkVelSettings;
 		}
 	};
 	void appendContextMenu(Menu *menu) override {
@@ -349,9 +394,14 @@ struct TwelveKeyWidget : ModuleWidget {
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
+		LinkVelItem *linkItem = createMenuItem<LinkVelItem>("Link velocity settings from left", CHECKMARK(module->linkVelSettings));
+		linkItem->module = module;
+		menu->addChild(linkItem);	
+		
 		InvertVelItem *invertItem = createMenuItem<InvertVelItem>("Inverted velocity range", CHECKMARK(module->invertVel));
 		invertItem->module = module;
-		menu->addChild(invertItem);		
+		invertItem->disabled = (module->linkVelSettings && module->leftExpander.module && module->leftExpander.module->model == modelTwelveKey);
+		menu->addChild(invertItem);	
 	}	
 	
 	

@@ -204,6 +204,12 @@ A chainable keyboard controller for your virtual Rack. When multiple TwelveKey m
 
 * **BIPOL**: allows the selection of unipolar velocity (bottom position), or bipolar velocity (top position). For example, with a maximum velocity voltage of 10V, the velocity range of a key is 0 to 10V in unipolar mode, or -10V to 10V in bipolar mode.
 
+Two options are also available in the right-click menu:
+
+* **Inverted velocity range**: When this option is active, the maximum velocity will be at the top-most part of the keys, instead of at the default bottom-most part of the keys.
+
+* **Link velocity settings from left**: When linking multiple TwelveKey, this option can be activated to propagate the velocity settings (Max Vel, Bipol and Velocity Inversion) from the first module in the chain down to all the other ones placed to the right; no spaces between modules are allowed in this case.
+
 ([Back to module list](#modules))
 
 
