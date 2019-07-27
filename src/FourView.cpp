@@ -105,9 +105,9 @@ struct FourViewWidget : ModuleWidget {
 			font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Segment14.ttf"));
 		}
 		
-		void cvToStr(int index2) {
-			if (module != NULL && module->inputs[FourView::CV_INPUTS + baseIndex + index2].isConnected()) {
-				float cvVal = module->inputs[FourView::CV_INPUTS + baseIndex + index2].getVoltage();
+		void cvToStr() {
+			if (module != NULL && module->inputs[FourView::CV_INPUTS + baseIndex].isConnected()) {
+				float cvVal = module->inputs[FourView::CV_INPUTS + baseIndex].getVoltage();
 				printNote(cvVal, text, module->showSharp);
 			}
 			else
@@ -119,14 +119,12 @@ struct FourViewWidget : ModuleWidget {
 			nvgFontFaceId(args.vg, font->handle);
 			nvgTextLetterSpacing(args.vg, -1.5);
 
-			for (int i = 0; i < 2; i++) {
-				Vec textPos = Vec(7.0f + i * 46.0f, 23.4f);
-				nvgFillColor(args.vg, nvgTransRGBA(textColor, displayAlpha));
-				nvgText(args.vg, textPos.x, textPos.y, "~~~", NULL);
-				nvgFillColor(args.vg, textColor);
-				cvToStr(i);
-				nvgText(args.vg, textPos.x, textPos.y, text, NULL);
-			}
+			Vec textPos = Vec(7.0f, 23.4f);
+			nvgFillColor(args.vg, nvgTransRGBA(textColor, displayAlpha));
+			nvgText(args.vg, textPos.x, textPos.y, "~~~", NULL);
+			nvgFillColor(args.vg, textColor);
+			cvToStr();
+			nvgText(args.vg, textPos.x, textPos.y, text, NULL);
 		}
 	};
 
@@ -191,21 +189,30 @@ struct FourViewWidget : ModuleWidget {
 		addChild(createDynamicWidget<IMScrew>(Vec(box.size.x-30, 365), module ? &module->panelTheme : NULL));
 
 		const int centerX = box.size.x / 2;
-
-		// Notes display
-		NotesDisplayWidget *displayNotes12 = new NotesDisplayWidget(Vec(centerX, 66), Vec(99, 29), module, 0);
-		addChild(displayNotes12);
-		NotesDisplayWidget *displayNotes34 = new NotesDisplayWidget(Vec(centerX, 122), Vec(99, 29), module, 2);
-		addChild(displayNotes34);
-
-		static const int rowRulerPort = 193;
-		static const int portSpacingY = 45;
-		static const int portOffsetX = 28;
+		static const int rowRulerTop = 60;
+		static const int spacingY = 48;
+		static const int offsetXL = 32;
+		static const int offsetXR = 24;
 		
+		// Notes displays and inputs
+		NotesDisplayWidget* displayNotes[4];
 		for (int i = 0; i < 4; i++) {
-			addInput(createDynamicPortCentered<IMPort>(Vec(centerX - portOffsetX, rowRulerPort + i * portSpacingY), true, module, FourView::CV_INPUTS + i, module ? &module->panelTheme : NULL));	
-			addOutput(createDynamicPortCentered<IMPort>(Vec(centerX + portOffsetX, rowRulerPort + i * portSpacingY), false, module, FourView::CV_OUTPUTS + i, module ? &module->panelTheme : NULL));
+			displayNotes[i] = new NotesDisplayWidget(Vec(centerX + offsetXR - 4, rowRulerTop + i * spacingY), Vec(52, 29), module, i);
+			addChild(displayNotes[i]);
+
+			addInput(createDynamicPortCentered<IMPort>(Vec(centerX - offsetXL, rowRulerTop + i * spacingY), true, module, FourView::CV_INPUTS + i, module ? &module->panelTheme : NULL));	
 		}
+
+
+		static const int spacingY2 = 46;
+		static const int offsetX = 28;
+		static const int posY2 = 280;
+
+		// Thru outputs
+		addOutput(createDynamicPortCentered<IMPort>(Vec(centerX - offsetX, posY2), false, module, FourView::CV_OUTPUTS + 0, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(centerX - offsetX, posY2 + spacingY2), false, module, FourView::CV_OUTPUTS + 1, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(centerX + offsetX, posY2), false, module, FourView::CV_OUTPUTS + 2, module ? &module->panelTheme : NULL));
+		addOutput(createDynamicPortCentered<IMPort>(Vec(centerX + offsetX, posY2 + spacingY2), false, module, FourView::CV_OUTPUTS + 3, module ? &module->panelTheme : NULL));
 	}
 	
 	void step() override {
