@@ -1,9 +1,9 @@
-### 1.1.1 (in development)
+### 1.1.1 (2019-08-03)
 
 - Fixed WriteSeq32/64 gate outputs when not running (they are now off but will give a pulse on every write or movement of the active step)
 - Disallow random sequence length of 1 in all Phrase/Gate sequencers, and Foundry
 - Added option for chaining velocity settings in TwelveKey via right-click menu
-- Improved layout of Four-View
+- Redo and improve layout of Four-View
 
 
 ### 1.1.0 (2019-07-04)
