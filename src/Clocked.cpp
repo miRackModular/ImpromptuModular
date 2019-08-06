@@ -245,7 +245,8 @@ struct Clocked : Module {
 	bool running;
 	bool displayDelayNoteMode;
 	bool bpmDetectionMode;
-	bool emitResetOnStopRun;
+	bool restartOnStopRun;
+	bool sendResetOnStopRun;
 	int ppqn;
 	bool resetClockOutputsHigh;
 
@@ -377,7 +378,8 @@ struct Clocked : Module {
 		running = true;
 		displayDelayNoteMode = true;
 		bpmDetectionMode = false;
-		emitResetOnStopRun = false;
+		restartOnStopRun = false;
+		sendResetOnStopRun = false;
 		ppqn = 4;
 		resetClockOutputsHigh = true;
 		resetNonJson(false);
@@ -443,8 +445,11 @@ struct Clocked : Module {
 		// bpmDetectionMode
 		json_object_set_new(rootJ, "bpmDetectionMode", json_boolean(bpmDetectionMode));
 		
-		// emitResetOnStopRun
-		json_object_set_new(rootJ, "emitResetOnStopRun", json_boolean(emitResetOnStopRun));
+		// restartOnStopRun
+		json_object_set_new(rootJ, "emitResetOnStopRun", json_boolean(restartOnStopRun));
+		
+		// sendResetOnStopRun
+		json_object_set_new(rootJ, "sendResetOnStopRun", json_boolean(sendResetOnStopRun));
 		
 		// ppqn
 		json_object_set_new(rootJ, "ppqn", json_integer(ppqn));
@@ -477,10 +482,17 @@ struct Clocked : Module {
 		if (bpmDetectionModeJ)
 			bpmDetectionMode = json_is_true(bpmDetectionModeJ);
 
-		// emitResetOnStopRun
-		json_t *emitResetOnStopRunJ = json_object_get(rootJ, "emitResetOnStopRun");
-		if (emitResetOnStopRunJ)
-			emitResetOnStopRun = json_is_true(emitResetOnStopRunJ);
+		// restartOnStopRun
+		json_t *restartOnStopRunJ = json_object_get(rootJ, "emitResetOnStopRun");
+		if (restartOnStopRunJ)
+			restartOnStopRun = json_is_true(restartOnStopRunJ);
+
+		// sendResetOnStopRun
+		json_t *sendResetOnStopRunJ = json_object_get(rootJ, "sendResetOnStopRun");
+		if (sendResetOnStopRunJ)
+			sendResetOnStopRun = json_is_true(sendResetOnStopRunJ);
+		else
+			sendResetOnStopRun = restartOnStopRun;
 
 		// ppqn
 		json_t *ppqnJ = json_object_get(rootJ, "ppqn");
@@ -513,10 +525,12 @@ struct Clocked : Module {
 			if (!(bpmDetectionMode && inputs[BPM_INPUT].isConnected()) || running) {// toggle when not BPM detect, turn off only when BPM detect (allows turn off faster than timeout if don't want any trailing beats after stoppage). If allow manually start in bpmDetectionMode   the clock will not know which pulse is the 1st of a ppqn set, so only allow stop
 				running = !running;
 				runPulse.trigger(0.001f);
-				if (!running && emitResetOnStopRun) {
+				if (!running && restartOnStopRun) {
 					resetClocked(false);
-					resetPulse.trigger(0.001f);
-					resetLight = 1.0f;
+					if (sendResetOnStopRun) {
+						resetPulse.trigger(0.001f);
+						resetLight = 1.0f;
+					}
 				}
 			}
 			else
@@ -601,10 +615,12 @@ struct Clocked : Module {
 					if (extIntervalTime > timeoutTime) {
 						running = false;
 						runPulse.trigger(0.001f);
-						if (emitResetOnStopRun) {
+						if (restartOnStopRun) {
 							resetClocked(false);
-							resetPulse.trigger(0.001f);
-							resetLight = 1.0f;
+							if (sendResetOnStopRun) {
+								resetPulse.trigger(0.001f);
+								resetLight = 1.0f;
+							}
 						}
 					}
 				}
@@ -827,10 +843,16 @@ struct ClockedWidget : ModuleWidget {
 			module->displayDelayNoteMode = !module->displayDelayNoteMode;
 		}
 	};
-	struct EmitResetItem : MenuItem {
+	struct RestartOnStopItem : MenuItem {
 		Clocked *module;
 		void onAction(const event::Action &e) override {
-			module->emitResetOnStopRun = !module->emitResetOnStopRun;
+			module->restartOnStopRun = !module->restartOnStopRun;
+		}
+	};	
+	struct SendResetOnRestartItem : MenuItem {
+		Clocked *module;
+		void onAction(const event::Action &e) override {
+			module->sendResetOnStopRun = !module->sendResetOnStopRun;
 		}
 	};	
 	struct ResetHighItem : MenuItem {
@@ -867,9 +889,14 @@ struct ClockedWidget : ModuleWidget {
 		ddnItem->module = module;
 		menu->addChild(ddnItem);
 
-		EmitResetItem *erItem = createMenuItem<EmitResetItem>("Reset when run is turned off", CHECKMARK(module->emitResetOnStopRun));
+		RestartOnStopItem *erItem = createMenuItem<RestartOnStopItem>("Restart when run is turned off", CHECKMARK(module->restartOnStopRun));
 		erItem->module = module;
 		menu->addChild(erItem);
+
+		SendResetOnRestartItem *sendItem = createMenuItem<SendResetOnRestartItem>("Send reset pulse when restart", module->restartOnStopRun ? CHECKMARK(module->sendResetOnStopRun) : "");
+		sendItem->module = module;
+		sendItem->disabled = !module->restartOnStopRun;
+		menu->addChild(sendItem);
 
 		ResetHighItem *rhItem = createMenuItem<ResetHighItem>("Outputs reset high when not running", CHECKMARK(module->resetClockOutputsHigh));
 		rhItem->module = module;
