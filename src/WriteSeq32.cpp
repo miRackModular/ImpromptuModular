@@ -543,7 +543,7 @@ struct WriteSeq32Widget : ModuleWidget {
 
 
 	struct StepsDisplayWidget : TransparentWidget {
-		float *valueKnob;
+		Param *valueParam;
 		std::shared_ptr<Font> font;
 		
 		StepsDisplayWidget() {
@@ -560,22 +560,13 @@ struct WriteSeq32Widget : ModuleWidget {
 			nvgText(vg, textPos.x, textPos.y, "~~", NULL);
 			nvgFillColor(vg, textColor);
 			char displayStr[3];
-			snprintf(displayStr, 3, "%2u", (unsigned) clamp(roundf(*valueKnob), 1.0f, 32.0f) );
+			snprintf(displayStr, 3, "%2u", (unsigned) clamp(roundf(valueParam->value.target), 1.0f, 32.0f) );
+			// snprintf(displayStr, 3, "%2u", (unsigned) clamp(roundf(valueParam->value), 1.0f, 32.0f) );
 			nvgText(vg, textPos.x, textPos.y, displayStr, NULL);
 		}
 	};
 
 	
-	struct PanelThemeItem : MenuItem {
-		WriteSeq32 *module;
-		int theme;
-		void onAction(EventAction &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
 	struct ResetOnRunItem : MenuItem {
 		WriteSeq32 *module;
 		void onAction(EventAction &e) override {
@@ -585,29 +576,11 @@ struct WriteSeq32Widget : ModuleWidget {
 	Menu *createContextMenu() override {
 		Menu *menu = ModuleWidget::createContextMenu();
 
-		MenuLabel *spacerLabel = new MenuLabel();
+		MenuEntry *spacerLabel = new MenuEntry();
 		menu->addChild(spacerLabel);
 
 		WriteSeq32 *module = dynamic_cast<WriteSeq32*>(this->module);
 		assert(module);
-
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-
-		menu->addChild(new MenuLabel());// empty line
 		
 		MenuLabel *settingsLabel = new MenuLabel();
 		settingsLabel->text = "Settings";
@@ -622,13 +595,7 @@ struct WriteSeq32Widget : ModuleWidget {
 	
 	
 	WriteSeq32Widget(WriteSeq32 *module) : ModuleWidget(module) {
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/WriteSeq32.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/WriteSeq32_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = &module->panelTheme;
-        addChild(panel);
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/WriteSeq32.svg")));
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
@@ -752,7 +719,7 @@ struct WriteSeq32Widget : ModuleWidget {
 		StepsDisplayWidget *displaySteps = new StepsDisplayWidget();
 		displaySteps->box.pos = Vec(columnRuler3-7, rowRuler0+vOffsetDisplay);
 		displaySteps->box.size = Vec(40, 30);// 2 characters
-		displaySteps->valueKnob = &module->params[WriteSeq32::STEPS_PARAM].value;
+		displaySteps->valueParam = &module->params[WriteSeq32::STEPS_PARAM];
 		addChild(displaySteps);
 		// Steps knob
 		addParam(createDynamicParam<IMBigSnapKnob>(Vec(columnRuler3+offsetIMBigKnob, rowRuler1+offsetIMBigKnob), module, WriteSeq32::STEPS_PARAM, 1.0f, 32.0f, 32.0f, &module->panelTheme));		
@@ -781,7 +748,7 @@ struct WriteSeq32Widget : ModuleWidget {
 	}
 };
 
-Model *modelWriteSeq32 = Model::create<WriteSeq32, WriteSeq32Widget>("Impromptu Modular", "Write-Seq-32", "SEQ - WriteSeq32", SEQUENCER_TAG);
+Model *modelWriteSeq32 = Model::create<WriteSeq32, WriteSeq32Widget>("Impromptu Modular", "Write-Seq-32", "WriteSeq32", SEQUENCER_TAG);
 
 /*CHANGE LOG
 

@@ -46,54 +46,8 @@ struct BlankPanel : Module {
 
 struct BlankPanelWidget : ModuleWidget {
 
-	// struct PanelThemeItem : MenuItem {
-		// BlankPanel *module;
-		// int theme;
-		// void onAction(EventAction &e) override {
-			// module->panelTheme = theme;
-		// }
-		// void step() override {
-			// rightText = (module->panelTheme == theme) ? "✔" : "";
-		// }
-	// };
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
-
-		BlankPanel *module = dynamic_cast<BlankPanel*>(this->module);
-		assert(module);
-
-		// MenuLabel *spacerLabel = new MenuLabel();
-		// menu->addChild(spacerLabel);
-
-		// MenuLabel *themeLabel = new MenuLabel();
-		// themeLabel->text = "Panel Theme";
-		// menu->addChild(themeLabel);
-
-		// PanelThemeItem *lightItem = new PanelThemeItem();
-		// lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		// lightItem->module = module;
-		// lightItem->theme = 0;
-		// menu->addChild(lightItem);
-
-		// PanelThemeItem *darkItem = new PanelThemeItem();
-		// darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		// darkItem->module = module;
-		// darkItem->theme = 1;
-		// menu->addChild(darkItem);
-
-		return menu;
-	}	
-
-
 	BlankPanelWidget(BlankPanel *module) : ModuleWidget(module) {
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        //panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/BlankPanel.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/BlankPanel_dark.svg")));
-        box.size = panel->box.size;
-        //panel->mode = &module->panelTheme;
-        addChild(panel);
-
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/BlankPanel.svg")));
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
@@ -104,4 +58,4 @@ struct BlankPanelWidget : ModuleWidget {
 	}
 };
 
-Model *modelBlankPanel = Model::create<BlankPanel, BlankPanelWidget>("Impromptu Modular", "Blank-Panel", "MISC - BlankPanel", BLANK_TAG);
+Model *modelBlankPanel = Model::create<BlankPanel, BlankPanelWidget>("Impromptu Modular", "Blank-Panel", "BlankPanel", BLANK_TAG);

@@ -940,7 +940,7 @@ struct GateSeq64 : Module {
 			if (infoCopyPaste != 0l) {
 				for (int i = 0; i < 64; i++) {
 					if (i >= startCP && i < (startCP + countCP))
-						setGreenRed3(STEP_LIGHTS + i * 3, 0.5f, 0.0f);
+						setGreenRed3(STEP_LIGHTS + i * 3, 0.71f, 0.0f);
 					else
 						setGreenRed3(STEP_LIGHTS + i * 3, 0.0f, 0.0f);
 				}
@@ -956,14 +956,14 @@ struct GateSeq64 : Module {
 					if (editingSequence) {
 						if (displayState == DISP_LENGTH) {
 							if (col < (sequences[sequence].getLength() - 1))
-								setGreenRed3(STEP_LIGHTS + i * 3, 0.1f, 0.0f);
+								setGreenRed3(STEP_LIGHTS + i * 3, 0.32f, 0.0f);
 							else if (col == (sequences[sequence].getLength() - 1))
 								setGreenRed3(STEP_LIGHTS + i * 3, 1.0f, 0.0f);
 							else 
 								setGreenRed3(STEP_LIGHTS + i * 3, 0.0f, 0.0f);
 						}
 						else {
-							float stepHereOffset = ((stepIndexRun[row] == col) && running) ? 0.5f : 1.0f;
+							float stepHereOffset = ((stepIndexRun[row] == col) && running) ? 0.71f : 1.0f;
 							long blinkCountMarker = (long) (0.67f * sampleRate / displayRefreshStepSkips);							
 							if (attributes[sequence][i].getGate()) {
 								bool blinkEnableOn = (displayState != DISP_MODES) && (blinkCount < blinkCountMarker);
@@ -982,9 +982,9 @@ struct GateSeq64 : Module {
 							}
 							else {
 								if (i == stepIndexEdit && blinkCount > blinkCountMarker && displayState != DISP_MODES)
-									setGreenRed3(STEP_LIGHTS + i * 3, 0.05f, 0.0f);
+									setGreenRed3(STEP_LIGHTS + i * 3, 0.22f, 0.0f);
 								else
-									setGreenRed3(STEP_LIGHTS + i * 3, ((stepIndexRun[row] == col) && running) ? 0.1f : 0.0f, 0.0f);
+									setGreenRed3(STEP_LIGHTS + i * 3, ((stepIndexRun[row] == col) && running) ? 0.32f : 0.0f, 0.0f);
 							}
 						}
 					}
@@ -992,7 +992,7 @@ struct GateSeq64 : Module {
 						if (displayState == DISP_LENGTH) {
 							col = i & 0xF;//i % 16;// optimized
 							if (i < (phrases - 1))
-								setGreenRed3(STEP_LIGHTS + i * 3, 0.1f, 0.0f);
+								setGreenRed3(STEP_LIGHTS + i * 3, 0.32f, 0.0f);
 							else if (i == (phrases - 1))
 								setGreenRed3(STEP_LIGHTS + i * 3, 1.0f, 0.0f);
 							else 
@@ -1001,11 +1001,11 @@ struct GateSeq64 : Module {
 						else {
 							float green = (i == (phraseIndexRun) && running) ? 1.0f : 0.0f;
 							float red = (i == (phraseIndexEdit) && ((editingPhraseSongRunning > 0l) || !running)) ? 1.0f : 0.0f;
-							green += ((running && (col == stepIndexRun[row]) && i != (phraseIndexEdit)) ? 0.1f : 0.0f);
+							green += ((running && (col == stepIndexRun[row]) && i != (phraseIndexEdit)) ? 0.32f : 0.0f);
 							setGreenRed3(STEP_LIGHTS + i * 3, clamp(green, 0.0f, 1.0f), red);
 							if (green == 0.0f && red == 0.0f && displayState != DISP_MODES){
-								lights[STEP_LIGHTS + i * 3 + 2].value = (attributes[phrase[phraseIndexRun]][i].getGate() ? 0.2f : 0.0f);
-								lights[STEP_LIGHTS + i * 3 + 2].value -= (attributes[phrase[phraseIndexRun]][i].getGateP() ? 0.18f : 0.0f);
+								lights[STEP_LIGHTS + i * 3 + 2].value = (attributes[phrase[phraseIndexRun]][i].getGate() ? 0.45f : 0.0f);
+								lights[STEP_LIGHTS + i * 3 + 2].value -= (attributes[phrase[phraseIndexRun]][i].getGateP() ? 0.31f : 0.0f);
 							}
 						}				
 					}
@@ -1096,7 +1096,6 @@ struct GateSeq64 : Module {
 
 struct GateSeq64Widget : ModuleWidget {
 	GateSeq64 *module;
-	DynamicSVGPanel *panel;
 	int oldExpansion;
 	int expWidth = 60;
 	IMPort* expPorts[6];
@@ -1193,16 +1192,6 @@ struct GateSeq64Widget : ModuleWidget {
 		}
 	};	
 		
-	struct PanelThemeItem : MenuItem {
-		GateSeq64 *module;
-		int theme;
-		void onAction(EventAction &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
 	struct ExpansionItem : MenuItem {
 		GateSeq64 *module;
 		void onAction(EventAction &e) override {
@@ -1230,40 +1219,22 @@ struct GateSeq64Widget : ModuleWidget {
 		}
 		void step() override {
 			if (module->seqCVmethod == 0)
-				text = "Seq CV in: <0-10V>,  C4-G6,  Trig-Incr";
+				rightText = "[0-10V] · C4-G6 · Trig-Incr";
 			else if (module->seqCVmethod == 1)
-				text = "Seq CV in: 0-10V,  <C4-G6>,  Trig-Incr";
+				rightText = "0-10V · [C4-G6] · Trig-Incr";
 			else
-				text = "Seq CV in: 0-10V,  C4-G6,  <Trig-Incr>";
+				rightText = "0-10V · C4-G6 · [Trig-Incr]";
 		}	
 	};
 	Menu *createContextMenu() override {
 		Menu *menu = ModuleWidget::createContextMenu();
 
-		MenuLabel *spacerLabel = new MenuLabel();
+		MenuEntry *spacerLabel = new MenuEntry();
 		menu->addChild(spacerLabel);
 
 		GateSeq64 *module = dynamic_cast<GateSeq64*>(this->module);
 		assert(module);
 
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-
-		menu->addChild(new MenuLabel());// empty line
-		
 		MenuLabel *settingsLabel = new MenuLabel();
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
@@ -1276,15 +1247,15 @@ struct GateSeq64Widget : ModuleWidget {
 		aseqItem->module = module;
 		menu->addChild(aseqItem);
 
-		SeqCVmethodItem *seqcvItem = MenuItem::create<SeqCVmethodItem>("Seq CV in: ", "");
+		SeqCVmethodItem *seqcvItem = MenuItem::create<SeqCVmethodItem>("Seq CV in", "[0-10V] · C4-G6 · Trig-Incr");
 		seqcvItem->module = module;
 		menu->addChild(seqcvItem);
 		
-		menu->addChild(new MenuLabel());// empty line
+		// menu->addChild(new MenuLabel());// empty line
 		
-		MenuLabel *expansionLabel = new MenuLabel();
-		expansionLabel->text = "Expansion module";
-		menu->addChild(expansionLabel);
+		// MenuLabel *expansionLabel = new MenuLabel();
+		// expansionLabel->text = "Expansion module";
+		// menu->addChild(expansionLabel);
 
 		ExpansionItem *expItem = MenuItem::create<ExpansionItem>(expansionMenuLabel, CHECKMARK(module->expansion != 0));
 		expItem->module = module;
@@ -1300,8 +1271,8 @@ struct GateSeq64Widget : ModuleWidget {
 					gRackWidget->wireContainer->removeAllWires(expPorts[i]);
 			}
 			oldExpansion = module->expansion;		
+			box.size.x = panel->box.size.x = (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth;
 		}
-		box.size.x = panel->box.size.x - (1 - module->expansion) * expWidth;
 		Widget::step();
 	}
 
@@ -1365,27 +1336,22 @@ struct GateSeq64Widget : ModuleWidget {
 		}
 	};			
 
+	float fullPanelWidth;
 	GateSeq64Widget(GateSeq64 *module) : ModuleWidget(module) {		
 		this->module = module;
 		oldExpansion = -1;
 		
-		// Main panel from Inkscape
-        panel = new DynamicSVGPanel();
-        panel->mode = &module->panelTheme;
-		panel->expWidth = &expWidth;
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/GateSeq64.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/GateSeq64_dark.svg")));
-        box.size = panel->box.size;
-		box.size.x = box.size.x - (1 - module->expansion) * expWidth;
-        addChild(panel);		
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/GateSeq64.svg")));
+        fullPanelWidth = box.size.x;
+		box.size.x = panel->box.size.x = (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth;
 		
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30, 0), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30-expWidth, 0), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30-expWidth, 365), &module->panelTheme));
 		
 		
 		// ****** Top portion (LED button array and gate type LED buttons) ******
@@ -1504,7 +1470,7 @@ struct GateSeq64Widget : ModuleWidget {
 };
 
 
-Model *modelGateSeq64 = Model::create<GateSeq64, GateSeq64Widget>("Impromptu Modular", "Gate-Seq-64", "SEQ - GateSeq64", SEQUENCER_TAG);
+Model *modelGateSeq64 = Model::create<GateSeq64, GateSeq64Widget>("Impromptu Modular", "Gate-Seq-64", "GateSeq64", SEQUENCER_TAG);
 
 /*CHANGE LOG
 

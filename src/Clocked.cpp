@@ -246,6 +246,7 @@ struct Clocked : Module {
 	int ppqn;
 	bool running;
 	bool resetClockOutputsHigh;
+	bool momentaryRunInput;
 
 	
 	// No need to save
@@ -355,6 +356,7 @@ struct Clocked : Module {
 		ppqn = 4;
 		running = true;
 		resetClockOutputsHigh = true;
+		momentaryRunInput = false;
 		editingBpmMode = 0l;
 		resetClocked(true);		
 	}
@@ -421,6 +423,9 @@ struct Clocked : Module {
 		// resetClockOutputsHigh
 		json_object_set_new(rootJ, "resetClockOutputsHigh", json_boolean(resetClockOutputsHigh));
 		
+		// momentaryRunInput
+		json_object_set_new(rootJ, "momentaryRunInput", json_boolean(momentaryRunInput));
+
 		return rootJ;
 	}
 
@@ -466,6 +471,11 @@ struct Clocked : Module {
 		if (resetClockOutputsHighJ)
 			resetClockOutputsHigh = json_is_true(resetClockOutputsHighJ);
 
+		// momentaryRunInput
+		json_t *momentaryRunInputJ = json_object_get(rootJ, "momentaryRunInput");
+		if (momentaryRunInputJ)
+			momentaryRunInput = json_is_true(momentaryRunInputJ);
+
 		scheduledReset = true;
 	}
 
@@ -486,7 +496,12 @@ struct Clocked : Module {
 		}
 		
 		// Run button
-		if (runTrigger.process(params[RUN_PARAM].value + inputs[RUN_INPUT].value)) {// no input refresh here, don't want to introduce clock skew
+		bool triggerRun;
+		if (momentaryRunInput && inputs[RUN_INPUT].active)
+			triggerRun = (inputs[RUN_INPUT].value >= 1 && !running) || (inputs[RUN_INPUT].value <= 0.1 && running);
+		else
+			triggerRun = runTrigger.process(params[RUN_PARAM].value + inputs[RUN_INPUT].value);
+		if (triggerRun) {// no input refresh here, don't want to introduce clock skew
 			if (!(bpmDetectionMode && inputs[BPM_INPUT].active) || running) {// toggle when not BPM detect, turn off only when BPM detect (allows turn off faster than timeout if don't want any trailing beats after stoppage). If allow manually start in bpmDetectionMode   the clock will not know which pulse is the 1st of a ppqn set, so only allow stop
 				running = !running;
 				runPulse.trigger(0.001f);
@@ -653,6 +668,12 @@ struct Clocked : Module {
 			for (int i = 0; i < 4; i++)
 				clk[i].stepClock();
 		}
+		else
+		{
+			outputs[CLK_OUTPUTS + 0].value = 0.f;
+			for (int i = 1; i < 4; i++)
+				outputs[CLK_OUTPUTS + i].value = 0.f;
+		}
 			
 		// Chaining outputs
 		outputs[RESET_OUTPUT].value = (resetPulse.process((float)sampleTime) ? 10.0f : 0.0f);
@@ -700,7 +721,6 @@ struct Clocked : Module {
 
 struct ClockedWidget : ModuleWidget {
 	Clocked *module;
-	DynamicSVGPanel *panel;
 	int oldExpansion;
 	int expWidth = 60;
 	IMPort* expPorts[6];
@@ -785,16 +805,6 @@ struct ClockedWidget : ModuleWidget {
 		}
 	};		
 	
-	struct PanelThemeItem : MenuItem {
-		Clocked *module;
-		int theme;
-		void onAction(EventAction &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
 	struct ExpansionItem : MenuItem {
 		Clocked *module;
 		void onAction(EventAction &e) override {
@@ -820,54 +830,40 @@ struct ClockedWidget : ModuleWidget {
 			module->resetClocked(true);
 		}
 	};	
+	struct RunInputModeItem : MenuItem {
+		Clocked *module;
+		void onAction(EventAction &e) override {
+			module->momentaryRunInput = !module->momentaryRunInput;
+		}
+	};	
 	Menu *createContextMenu() override {
 		Menu *menu = ModuleWidget::createContextMenu();
 
-		MenuLabel *spacerLabel = new MenuLabel();
+		MenuEntry *spacerLabel = new MenuEntry();
 		menu->addChild(spacerLabel);
 
 		Clocked *module = dynamic_cast<Clocked*>(this->module);
 		assert(module);
-
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-
-		menu->addChild(new MenuLabel());// empty line
 		
 		MenuLabel *settingsLabel = new MenuLabel();
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
 		
+		RunInputModeItem *runModeItem = MenuItem::create<RunInputModeItem>("Momentary RUN input", CHECKMARK(module->momentaryRunInput));
+		runModeItem->module = module;
+		menu->addChild(runModeItem);
+
 		DelayDisplayNoteItem *ddnItem = MenuItem::create<DelayDisplayNoteItem>("Display delay values in notes", CHECKMARK(module->displayDelayNoteMode));
 		ddnItem->module = module;
 		menu->addChild(ddnItem);
 
-		EmitResetItem *erItem = MenuItem::create<EmitResetItem>("Reset when run is turned off", CHECKMARK(module->emitResetOnStopRun));
+		EmitResetItem *erItem = MenuItem::create<EmitResetItem>("Reset when RUN is turned off", CHECKMARK(module->emitResetOnStopRun));
 		erItem->module = module;
 		menu->addChild(erItem);
 
-		ResetHighItem *rhItem = MenuItem::create<ResetHighItem>("Outputs reset high when not running", CHECKMARK(module->resetClockOutputsHigh));
+		ResetHighItem *rhItem = MenuItem::create<ResetHighItem>("Output RESET high when not running", CHECKMARK(module->resetClockOutputsHigh));
 		rhItem->module = module;
 		menu->addChild(rhItem);
-
-		menu->addChild(new MenuLabel());// empty line
-		
-		MenuLabel *expansionLabel = new MenuLabel();
-		expansionLabel->text = "Expansion module";
-		menu->addChild(expansionLabel);
 
 		ExpansionItem *expItem = MenuItem::create<ExpansionItem>(expansionMenuLabel, CHECKMARK(module->expansion != 0));
 		expItem->module = module;
@@ -883,8 +879,8 @@ struct ClockedWidget : ModuleWidget {
 					gRackWidget->wireContainer->removeAllWires(expPorts[i]);
 			}
 			oldExpansion = module->expansion;		
+			box.size.x = panel->box.size.x = (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth;
 		}
-		box.size.x = panel->box.size.x - (1 - module->expansion) * expWidth;
 		Widget::step();
 	}
 	
@@ -924,28 +920,23 @@ struct ClockedWidget : ModuleWidget {
 		}
 	};
 
-	
+	float fullPanelWidth;
 	ClockedWidget(Clocked *module) : ModuleWidget(module) {
  		this->module = module;
 		oldExpansion = -1;
 		
-		// Main panel from Inkscape
-        panel = new DynamicSVGPanel();
-        panel->mode = &module->panelTheme;
-		panel->expWidth = &expWidth;
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/Clocked.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/Clocked_dark.svg")));
-        box.size = panel->box.size;
-		box.size.x = box.size.x - (1 - module->expansion) * expWidth;
-        addChild(panel);		
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/Clocked.svg")));
+        fullPanelWidth = box.size.x;
+		box.size.x = panel->box.size.x = (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth;
+
 		
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30, 0), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30-expWidth, 0), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30-expWidth, 365), &module->panelTheme));
 
 
 		static const int rowRuler0 = 50;//reset,run inputs, master knob and bpm display
@@ -1056,7 +1047,7 @@ struct ClockedWidget : ModuleWidget {
 	}
 };
 
-Model *modelClocked = Model::create<Clocked, ClockedWidget>("Impromptu Modular", "Clocked", "CLK - Clocked", CLOCK_TAG);
+Model *modelClocked = Model::create<Clocked, ClockedWidget>("Impromptu Modular", "Clocked", "Clocked", CLOCK_TAG);
 
 /*CHANGE LOG
 

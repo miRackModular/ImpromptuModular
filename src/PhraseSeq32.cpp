@@ -1581,7 +1581,6 @@ struct PhraseSeq32 : Module {
 
 struct PhraseSeq32Widget : ModuleWidget {
 	PhraseSeq32 *module;
-	DynamicSVGPanel *panel;
 	int oldExpansion;
 	int expWidth = 60;
 	IMPort* expPorts[5];
@@ -1667,16 +1666,6 @@ struct PhraseSeq32Widget : ModuleWidget {
 		}
 	};		
 	
-	struct PanelThemeItem : MenuItem {
-		PhraseSeq32 *module;
-		int theme;
-		void onAction(EventAction &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
 	struct ExpansionItem : MenuItem {
 		PhraseSeq32 *module;
 		void onAction(EventAction &e) override {
@@ -1726,30 +1715,12 @@ struct PhraseSeq32Widget : ModuleWidget {
 	Menu *createContextMenu() override {
 		Menu *menu = ModuleWidget::createContextMenu();
 
-		MenuLabel *spacerLabel = new MenuLabel();
+		MenuEntry *spacerLabel = new MenuEntry();
 		menu->addChild(spacerLabel);
 
 		PhraseSeq32 *module = dynamic_cast<PhraseSeq32*>(this->module);
 		assert(module);
 
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-
-		menu->addChild(new MenuLabel());// empty line
-		
 		MenuLabel *settingsLabel = new MenuLabel();
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
@@ -1774,11 +1745,11 @@ struct PhraseSeq32Widget : ModuleWidget {
 		seqcvItem->module = module;
 		menu->addChild(seqcvItem);
 		
-		menu->addChild(new MenuLabel());// empty line
+		// menu->addChild(new MenuLabel());// empty line
 		
-		MenuLabel *expansionLabel = new MenuLabel();
-		expansionLabel->text = "Expansion module";
-		menu->addChild(expansionLabel);
+		// MenuLabel *expansionLabel = new MenuLabel();
+		// expansionLabel->text = "Expansion module";
+		// menu->addChild(expansionLabel);
 
 		ExpansionItem *expItem = MenuItem::create<ExpansionItem>(expansionMenuLabel, CHECKMARK(module->expansion != 0));
 		expItem->module = module;
@@ -1794,8 +1765,8 @@ struct PhraseSeq32Widget : ModuleWidget {
 					gRackWidget->wireContainer->removeAllWires(expPorts[i]);
 			}
 			oldExpansion = module->expansion;		
+			box.size.x = panel->box.size.x = (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth;
 		}
-		box.size.x = panel->box.size.x - (1 - module->expansion) * expWidth;
 		Widget::step();
 	}
 	
@@ -1869,27 +1840,22 @@ struct PhraseSeq32Widget : ModuleWidget {
 			// ModuleWidget::onHoverKey(e);
 	// }
 	
+	float fullPanelWidth;
 	PhraseSeq32Widget(PhraseSeq32 *module) : ModuleWidget(module) {
 		this->module = module;
 		oldExpansion = -1;
 		
-		// Main panel from Inkscape
-        panel = new DynamicSVGPanel();
-        panel->mode = &module->panelTheme;
-		panel->expWidth = &expWidth;
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/PhraseSeq32.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/PhraseSeq32_dark.svg")));
-        box.size = panel->box.size;
-		box.size.x = box.size.x - (1 - module->expansion) * expWidth;
-        addChild(panel);
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/PhraseSeq32.svg")));
+        fullPanelWidth = box.size.x;
+		box.size.x = panel->box.size.x = (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth;
 		
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30, 0), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30-expWidth, 0), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30-expWidth, 365), &module->panelTheme));
 
 		
 		
@@ -2099,7 +2065,7 @@ struct PhraseSeq32Widget : ModuleWidget {
 	}
 };
 
-Model *modelPhraseSeq32 = Model::create<PhraseSeq32, PhraseSeq32Widget>("Impromptu Modular", "Phrase-Seq-32", "SEQ - PhraseSeq32", SEQUENCER_TAG);
+Model *modelPhraseSeq32 = Model::create<PhraseSeq32, PhraseSeq32Widget>("Impromptu Modular", "Phrase-Seq-32", "PhraseSeq32", SEQUENCER_TAG);
 
 /*CHANGE LOG
 

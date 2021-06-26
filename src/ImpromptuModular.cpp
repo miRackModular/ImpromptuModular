@@ -32,12 +32,12 @@ void init(rack::Plugin *p) {
 	p->addModel(modelBigButtonSeq2);
 	p->addModel(modelFourView);
 	p->addModel(modelSemiModularSynth);
-	p->addModel(modelBlankPanel);
+	// p->addModel(modelBlankPanel);
 }
 
 
 void IMBigPushButtonWithRClick::onMouseDown(EventMouseDown &e)  {
-	if (e.button == 1) {// if right button (see events.hpp)
+	if (windowIsShiftPressed()) {// if right button (see events.hpp)
 		maxValue = 2.0f;
 		// Simulate MomentarySwitch::onDragStart() since not called for right clicks:
 		setValue(maxValue);
@@ -51,10 +51,6 @@ void IMBigPushButtonWithRClick::onMouseDown(EventMouseDown &e)  {
 	e.target = this;
 }
 void IMBigPushButtonWithRClick::onMouseUp(EventMouseUp &e) {
-	if (e.button == 1) {// if right button (see events.hpp)
-		// Simulate MomentarySwitch::onDragEnd() since not called for right clicks:
-		setValue(minValue);
-	}
 	ParamWidget::onMouseUp(e);
 }		
 
@@ -76,7 +72,7 @@ LEDBezelBig::LEDBezelBig() {
 
 
 void InvisibleKeySmall::onMouseDown(EventMouseDown &e) {
-	if (e.button == 1) {// if right button (see events.hpp)
+	if (windowIsShiftPressed()) {// if right button (see events.hpp)
 		maxValue = 2.0f;
 		// Simulate MomentarySwitch::onDragStart() since not called for right clicks:
 		setValue(maxValue);
@@ -90,17 +86,13 @@ void InvisibleKeySmall::onMouseDown(EventMouseDown &e) {
 	e.target = this;
 }
 void InvisibleKeySmall::onMouseUp(EventMouseUp &e) {
-	if (e.button == 1) {// if right button (see events.hpp)
-		// Simulate MomentarySwitch::onDragEnd() since not called for right clicks:
-		setValue(minValue);
-	}
 	ParamWidget::onMouseUp(e);
 }
 
 
 
 void LEDButtonWithRClick::onMouseDown(EventMouseDown &e)  {
-	if (e.button == 1) {// if right button (see events.hpp)
+	if (windowIsShiftPressed()) {// if right button (see events.hpp)
 		maxValue = 2.0f;
 		// Simulate MomentarySwitch::onDragStart() since not called for right clicks:
 		setValue(maxValue);
@@ -114,56 +106,11 @@ void LEDButtonWithRClick::onMouseDown(EventMouseDown &e)  {
 	e.target = this;
 }
 void LEDButtonWithRClick::onMouseUp(EventMouseUp &e) {
-	if (e.button == 1) {// if right button (see events.hpp)
-		// Simulate MomentarySwitch::onDragEnd() since not called for right clicks:
-		setValue(minValue);
-	}
 	ParamWidget::onMouseUp(e);
 }		
 
 
-ScrewSilverRandomRot::ScrewSilverRandomRot() {
-	float angle0_90 = randomUniform()*M_PI/2.0f;
-	//float angle0_90 = randomUniform() > 0.5f ? M_PI/4.0f : 0.0f;// for testing
-	
-	tw = new TransformWidget();
-	addChild(tw);
-	
-	sw = new SVGWidget();
-	tw->addChild(sw);
-	//sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw0.svg")));
-	sw->setSVG(SVG::load(assetGlobal("res/ComponentLibrary/ScrewSilver.svg")));
-	
-	sc = new ScrewCircle(angle0_90);
-	sc->box.size = sw->box.size;
-	tw->addChild(sc);
-	
-	box.size = sw->box.size;
-	tw->box.size = sw->box.size; 
-	tw->identity();
-	// Rotate SVG
-	Vec center = sw->box.getCenter();
-	tw->translate(center);
-	tw->rotate(angle0_90);
-	tw->translate(center.neg());	
-}
 
-
-ScrewHole::ScrewHole(Vec posGiven) {
-	box.size = Vec(16, 7);
-	box.pos = Vec(posGiven.x, posGiven.y + 4);// nudgeX for realism, 0 = no nudge
-}
-void ScrewHole::draw(NVGcontext *vg) {
-	NVGcolor backgroundColor = nvgRGB(0x10, 0x10, 0x10); 
-	NVGcolor borderColor = nvgRGB(0x20, 0x20, 0x20);
-	nvgBeginPath(vg);
-	nvgRoundedRect(vg, 0.0, 0.0, box.size.x, box.size.y, 2.5f);
-	nvgFillColor(vg, backgroundColor);
-	nvgFill(vg);
-	nvgStrokeWidth(vg, 1.0);
-	nvgStrokeColor(vg, borderColor);
-	nvgStroke(vg);
-}
 
 
 NVGcolor prepareDisplay(NVGcontext *vg, Rect *box, int fontSize) {

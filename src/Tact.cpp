@@ -317,16 +317,6 @@ struct Tact : Module {
 
 struct TactWidget : ModuleWidget {
 
-	struct PanelThemeItem : MenuItem {
-		Tact *module;
-		int theme;
-		void onAction(EventAction &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
 	struct ExtendRateItem : MenuItem {
 		Tact *module;
 		void onAction(EventAction &e) override {
@@ -345,29 +335,11 @@ struct TactWidget : ModuleWidget {
 	Menu *createContextMenu() override {
 		Menu *menu = ModuleWidget::createContextMenu();
 
-		MenuLabel *spacerLabel = new MenuLabel();
+		MenuEntry *spacerLabel = new MenuEntry();
 		menu->addChild(spacerLabel);
 
 		Tact *module = dynamic_cast<Tact*>(this->module);
 		assert(module);
-
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-
-		menu->addChild(new MenuLabel());// empty line
 		
 		MenuLabel *settingsLabel = new MenuLabel();
 		settingsLabel->text = "Settings";
@@ -385,13 +357,7 @@ struct TactWidget : ModuleWidget {
 	}	
 	
 	TactWidget(Tact *module) : ModuleWidget(module) {
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/Tact.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/Tact_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = &module->panelTheme;
-        addChild(panel);
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/Tact.svg")));
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
@@ -408,7 +374,7 @@ struct TactWidget : ModuleWidget {
 		// Right (no dynamic width, but must do first so that left will get mouse events when wider overlaps)
 		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadR, rowRuler0), module, Tact::TACT_PARAMS + 1, -1.0f, 11.0f, 0.0f, nullptr, &module->paramReadRequest[1]));
 		// Left (with width dependant on Link value)	
-		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0, -1.0f, 11.0f, 0.0f,  &module->params[Tact::LINK_PARAM].value, &module->paramReadRequest[0]));
+		addParam(createDynamicParam2<IMTactile>(Vec(colRulerPadL, rowRuler0), module, Tact::TACT_PARAMS + 0, -1.0f, 11.0f, 0.0f,  &module->params[Tact::LINK_PARAM], &module->paramReadRequest[0]));
 			
 
 			
@@ -643,16 +609,6 @@ struct Tact1 : Module {
 
 struct Tact1Widget : ModuleWidget {
 
-	struct PanelThemeItem : MenuItem {
-		Tact1 *module;
-		int theme;
-		void onAction(EventAction &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
 	struct ExtendRateItem : MenuItem {
 		Tact1 *module;
 		void onAction(EventAction &e) override {
@@ -665,30 +621,12 @@ struct Tact1Widget : ModuleWidget {
 	Menu *createContextMenu() override {
 		Menu *menu = ModuleWidget::createContextMenu();
 
-		MenuLabel *spacerLabel = new MenuLabel();
+		MenuEntry *spacerLabel = new MenuEntry();
 		menu->addChild(spacerLabel);
 
 		Tact1 *module = dynamic_cast<Tact1*>(this->module);
 		assert(module);
 
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-
-		menu->addChild(new MenuLabel());// empty line
-		
 		MenuLabel *settingsLabel = new MenuLabel();
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
@@ -701,13 +639,7 @@ struct Tact1Widget : ModuleWidget {
 	}	
 	
 	Tact1Widget(Tact1 *module) : ModuleWidget(module) {
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/Tact1.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/Tact1_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = &module->panelTheme;
-        addChild(panel);
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/Tact1.svg")));
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
@@ -749,8 +681,8 @@ struct Tact1Widget : ModuleWidget {
 
 //*****************************************************************************
 
-Model *modelTact = Model::create<Tact, TactWidget>("Impromptu Modular", "Tact", "CTRL - Tact", CONTROLLER_TAG);
-Model *modelTact1 = Model::create<Tact1, Tact1Widget>("Impromptu Modular", "Tact1", "CTRL - Tact1", CONTROLLER_TAG);
+Model *modelTact = Model::create<Tact, TactWidget>("Impromptu Modular", "Tact", "Tact", CONTROLLER_TAG);
+Model *modelTact1 = Model::create<Tact1, Tact1Widget>("Impromptu Modular", "Tact1", "Tact1", CONTROLLER_TAG);
 
 /*CHANGE LOG
 

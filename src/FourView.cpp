@@ -128,16 +128,6 @@ struct FourViewWidget : ModuleWidget {
 	};
 
 
-	struct PanelThemeItem : MenuItem {
-		FourView *module;
-		int theme;
-		void onAction(EventAction &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
 	struct SharpItem : MenuItem {
 		FourView *module;
 		void onAction(EventAction &e) override {
@@ -147,29 +137,11 @@ struct FourViewWidget : ModuleWidget {
 	Menu *createContextMenu() override {
 		Menu *menu = ModuleWidget::createContextMenu();
 
-		MenuLabel *spacerLabel = new MenuLabel();
+		MenuEntry *spacerLabel = new MenuEntry();
 		menu->addChild(spacerLabel);
 
 		FourView *module = dynamic_cast<FourView*>(this->module);
 		assert(module);
-
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-
-		menu->addChild(new MenuLabel());// empty line
 		
 		MenuLabel *settingsLabel = new MenuLabel();
 		settingsLabel->text = "Settings";
@@ -186,13 +158,7 @@ struct FourViewWidget : ModuleWidget {
 	FourViewWidget(FourView *module) : ModuleWidget(module) {
 		this->module = module;
 		
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/FourView.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/FourView_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = &module->panelTheme;
-        addChild(panel);
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/FourView.svg")));
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
@@ -219,7 +185,7 @@ struct FourViewWidget : ModuleWidget {
 	}
 };
 
-Model *modelFourView = Model::create<FourView, FourViewWidget>("Impromptu Modular", "Four-View", "VIS - FourView", VISUAL_TAG);
+Model *modelFourView = Model::create<FourView, FourViewWidget>("Impromptu Modular", "Four-View", "FourView", VISUAL_TAG);
 
 /*CHANGE LOG
 

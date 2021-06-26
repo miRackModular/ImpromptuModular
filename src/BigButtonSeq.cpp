@@ -455,16 +455,6 @@ struct BigButtonSeqWidget : ModuleWidget {
 		}
 	};
 	
-	struct PanelThemeItem : MenuItem {
-		BigButtonSeq *module;
-		int theme;
-		void onAction(EventAction &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
 	struct MetronomeItem : MenuItem {
 		BigButtonSeq *module;
 		int div;
@@ -478,31 +468,11 @@ struct BigButtonSeqWidget : ModuleWidget {
 	Menu *createContextMenu() override {
 		Menu *menu = ModuleWidget::createContextMenu();
 
-		MenuLabel *spacerLabel = new MenuLabel();
+		MenuEntry *spacerLabel = new MenuEntry();
 		menu->addChild(spacerLabel);
 
 		BigButtonSeq *module = dynamic_cast<BigButtonSeq*>(this->module);
 		assert(module);
-
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		std::string hotRodLabel = " Hot-rod";
-		hotRodLabel.insert(0, darkPanelID);// ImpromptuModular.hpp
-		darkItem->text = hotRodLabel;
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-		
-		menu->addChild(new MenuLabel());// empty line
 		
 		MenuLabel *metronomeLabel = new MenuLabel();
 		metronomeLabel->text = "Metronome light";
@@ -538,13 +508,7 @@ struct BigButtonSeqWidget : ModuleWidget {
 	
 	
 	BigButtonSeqWidget(BigButtonSeq *module) : ModuleWidget(module) {
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/BigButtonSeq.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/BigButtonSeq_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = &module->panelTheme;
-        addChild(panel);
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/BigButtonSeq.svg")));
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
@@ -664,7 +628,7 @@ struct BigButtonSeqWidget : ModuleWidget {
 	}
 };
 
-Model *modelBigButtonSeq = Model::create<BigButtonSeq, BigButtonSeqWidget>("Impromptu Modular", "Big-Button-Seq", "SEQ - BigButtonSeq", SEQUENCER_TAG);
+Model *modelBigButtonSeq = Model::create<BigButtonSeq, BigButtonSeqWidget>("Impromptu Modular", "Big-Button-Seq", "BigButtonSeq", SEQUENCER_TAG);
 
 /*CHANGE LOG
 

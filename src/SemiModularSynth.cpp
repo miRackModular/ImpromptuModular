@@ -1654,7 +1654,7 @@ struct SemiModularSynth : Module {
 
 struct SemiModularSynthWidget : ModuleWidget {
 	SemiModularSynth *module;
-	DynamicSVGPanel *panel;
+	// DynamicSVGPanel *panel;
 
 	struct SequenceDisplayWidget : TransparentWidget {
 		SemiModularSynth *module;
@@ -1737,16 +1737,6 @@ struct SemiModularSynthWidget : ModuleWidget {
 		}
 	};		
 	
-	struct PanelThemeItem : MenuItem {
-		SemiModularSynth *module;
-		int panelTheme;
-		void onAction(EventAction &e) override {
-			module->panelTheme = panelTheme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == panelTheme) ? "✔" : "";
-		}
-	};
 	struct ResetOnRunItem : MenuItem {
 		SemiModularSynth *module;
 		void onAction(EventAction &e) override {
@@ -1774,36 +1764,12 @@ struct SemiModularSynthWidget : ModuleWidget {
 	Menu *createContextMenu() override {
 		Menu *menu = ModuleWidget::createContextMenu();
 
-		MenuLabel *spacerLabel = new MenuLabel();
+		MenuEntry *spacerLabel = new MenuEntry();
 		menu->addChild(spacerLabel);
 
 		SemiModularSynth *module = dynamic_cast<SemiModularSynth*>(this->module);
 		assert(module);
 
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *classicItem = new PanelThemeItem();
-		classicItem->text = lightPanelID;// ImpromptuModular.hpp
-		classicItem->module = module;
-		classicItem->panelTheme = 0;
-		menu->addChild(classicItem);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = "Light";
-		lightItem->module = module;
-		lightItem->panelTheme = 1;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		darkItem->module = module;
-		darkItem->panelTheme = 2;
-		menu->addChild(darkItem);
-
-		menu->addChild(new MenuLabel());// empty line
-		
 		MenuLabel *settingsLabel = new MenuLabel();
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
@@ -1891,14 +1857,7 @@ struct SemiModularSynthWidget : ModuleWidget {
 		
 		// SEQUENCER 
 		
-		// Main panel from Inkscape
-        panel = new DynamicSVGPanel();
-        panel->mode = &module->panelTheme;
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/SemiModular.svg")));
-		panel->dupPanel();
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/SemiModular_dark.svg")));
-        box.size = panel->box.size;
-        addChild(panel);		
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/SemiModular.svg")));
 		
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
@@ -2194,7 +2153,7 @@ struct SemiModularSynthWidget : ModuleWidget {
 	}
 };
 
-Model *modelSemiModularSynth = Model::create<SemiModularSynth, SemiModularSynthWidget>("Impromptu Modular", "Semi-Modular Synth", "MISC - SemiModular Synth", SEQUENCER_TAG, OSCILLATOR_TAG);
+Model *modelSemiModularSynth = Model::create<SemiModularSynth, SemiModularSynthWidget>("Impromptu Modular", "Semi-Modular Synth", "SemiModular Synth", SYNTH_VOICE_TAG, OSCILLATOR_TAG);
 
 /*CHANGE LOG
 

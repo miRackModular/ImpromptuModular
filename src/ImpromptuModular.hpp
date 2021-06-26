@@ -44,7 +44,7 @@ static const float lightLambda = 0.075f;
 static const int displayAlpha = 23;
 static const std::string lightPanelID = "Classic";
 static const std::string darkPanelID = "Dark-valor";
-static const std::string expansionMenuLabel = "Extra CVs (requires +4HP to the right!)";// note: Foundry has a copy of this string also since bigger HP
+static const std::string expansionMenuLabel = "Extra CVs (+4HP to the right)";// note: Foundry has a copy of this string also since bigger HP
 static const unsigned int displayRefreshStepSkips = 256;
 static const unsigned int userInputsStepSkipMask = 0xF;// sub interval of displayRefreshStepSkips, since inputs should be more responsive than lights
 // above value should make it such that inputs are sampled > 1kHz so as to not miss 1ms triggers
@@ -77,25 +77,11 @@ static const int offsetTrimpot = 3;//does both h and v
 
 
 // Screws
-
-struct IMScrew : DynamicSVGScrew {
-	IMScrew() {
-		addSVGalt(SVG::load(assetPlugin(plugin, "res/dark/comp/ScrewSilver.svg")));
-	}
-};
+typedef ScrewSilver IMScrew;
 
 
 // Ports
-
-struct IMPort : DynamicSVGPort {
-	IMPort() {
-		//addFrame(SVG::load(assetGlobal("res/ComponentLibrary/PJ301M.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/light/comp/PJ301M.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/dark/comp/PJ301M.svg")));
-		shadow->blurRadius = 10.0;
-		shadow->opacity = 0.8;
-	}
-};
+typedef Port IMPort;
 
 
 // Buttons and switches
@@ -105,28 +91,9 @@ struct CKSSNoRandom : CKSS {
 	void randomize() override {}
 };
 
-struct CKSSH : SVGSwitch, ToggleSwitch {
-	CKSSH() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/comp/CKSSH_0.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/comp/CKSSH_1.svg")));
-		sw->wrap();
-		box.size = sw->box.size;
-	}
-};
-
 struct CKSSHNoRandom : CKSSH {
 	CKSSHNoRandom() {}
 	void randomize() override {}
-};
-
-struct CKSSHThree : SVGSwitch, ToggleSwitch {
-	CKSSHThree() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/comp/CKSSHThree_0.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/comp/CKSSHThree_1.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/comp/CKSSHThree_2.svg")));
-		sw->wrap();
-		box.size = sw->box.size;
-	}
 };
 
 struct CKSSThreeInv : SVGSwitch, ToggleSwitch {
@@ -144,10 +111,8 @@ struct CKSSThreeInvNoRandom : CKSSThreeInv {
 
 struct IMBigPushButton : DynamicSVGSwitch, MomentarySwitch {
 	IMBigPushButton() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/CKD6b_0.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/CKD6b_1.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/CKD6b_0.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/CKD6b_1.svg")));	
+		addFrame(SVG::load(assetGlobal("res/ComponentLibrary/CKD6_0.svg")));
+		addFrame(SVG::load(assetGlobal("res/ComponentLibrary/CKD6_1.svg")));
 	}
 };
 
@@ -158,10 +123,8 @@ struct IMBigPushButtonWithRClick : IMBigPushButton {// with right click that set
 
 struct IMPushButton : DynamicSVGSwitch, MomentarySwitch {
 	IMPushButton() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/TL1105_0.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/TL1105_1.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/TL1105_0.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/TL1105_1.svg")));	
+		addFrame(SVG::load(assetGlobal("res/ComponentLibrary/TL1105_0.svg")));
+		addFrame(SVG::load(assetGlobal("res/ComponentLibrary/TL1105_1.svg")));
 	}
 };
 
@@ -184,9 +147,7 @@ struct IMKnob : DynamicSVGKnob {
 
 struct IMBigKnob : IMKnob {
 	IMBigKnob() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/BlackKnobLargeWithMark.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/BlackKnobLargeWithMark.svg")));
-		addEffect(SVG::load(assetPlugin(plugin, "res/dark/comp/BlackKnobLargeWithMarkEffects.svg")));
+		setSVG(SVG::load(assetPlugin(plugin, "res/light/comp/BlackKnobLargeWithMark.svg")));
 	}
 };
 struct IMBigSnapKnob : IMBigKnob {
@@ -199,9 +160,7 @@ struct IMBigSnapKnob : IMBigKnob {
 
 struct IMBigKnobInf : IMKnob {
 	IMBigKnobInf() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/BlackKnobLarge.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/BlackKnobLarge.svg")));
-		addEffect(SVG::load(assetPlugin(plugin, "res/dark/comp/BlackKnobLargeEffects.svg")));
+		setSVG(SVG::load(assetPlugin(plugin, "res/light/comp/BlackKnobLarge.svg")));
 		speed = 0.9f;				
 		//smooth = false;
 	}
@@ -209,9 +168,7 @@ struct IMBigKnobInf : IMKnob {
 
 struct IMSmallKnob : IMKnob {
 	IMSmallKnob() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/RoundSmallBlackKnob.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/RoundSmallBlackKnob.svg")));
-		addEffect(SVG::load(assetPlugin(plugin, "res/dark/comp/RoundSmallBlackKnobEffects.svg")));		
+		setSVG(SVG::load(assetPlugin(plugin, "res/light/comp/RoundSmallBlackKnob.svg")));
 		shadow->box.pos = Vec(0.0, box.size.y * 0.15);
 	}
 };
@@ -225,9 +182,7 @@ struct IMSmallSnapKnob : IMSmallKnob {
 
 struct IMMediumKnobInf : IMKnob {
 	IMMediumKnobInf() {
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/light/comp/RoundMediumBlackKnobNoMark.svg")));
-		addFrameAll(SVG::load(assetPlugin(plugin, "res/dark/comp/RoundMediumBlackKnobNoMark.svg")));
-		addEffect(SVG::load(assetPlugin(plugin, "res/dark/comp/RoundMediumBlackKnobNoMarkEffects.svg")));
+		setSVG(SVG::load(assetPlugin(plugin, "res/light/comp/RoundMediumBlackKnobNoMark.svg")));
 		shadow->box.pos = Vec(0.0, box.size.y * 0.15);
 		speed = 0.9f;				
 		//smooth = false;
@@ -313,21 +268,6 @@ struct LEDButtonWithRClick : LEDButton {// with right click that sets value to 2
 	void onMouseDown(EventMouseDown &e) override;
 	void onMouseUp(EventMouseUp &e) override;
 };
-
-
-struct ScrewSilverRandomRot : FramebufferWidget {// location: include/app.hpp and src/app/SVGScrew.cpp [some code also from src/app/SVGKnob.cpp]
-	SVGWidget *sw;
-	TransformWidget *tw;
-	ScrewCircle *sc;
-	ScrewSilverRandomRot();
-};
-
-struct ScrewHole : TransparentWidget {
-	ScrewHole(Vec posGiven);
-	void draw(NVGcontext *vg) override;
-};	
-
-
 
 // Other
 

@@ -222,53 +222,8 @@ struct TwelveKeyWidget : ModuleWidget {
 	};
 	
 	
-	struct PanelThemeItem : MenuItem {
-		TwelveKey *module;
-		int theme;
-		void onAction(EventAction &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
-
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
-
-		TwelveKey *module = dynamic_cast<TwelveKey*>(this->module);
-		assert(module);
-
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-
-		return menu;
-	}	
-	
-	
 	TwelveKeyWidget(TwelveKey *module) : ModuleWidget(module) {
-		// Main panel from Inkscape
-        DynamicSVGPanel *panel = new DynamicSVGPanel();
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/TwelveKey.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/TwelveKey_dark.svg")));
-        box.size = panel->box.size;
-        panel->mode = &module->panelTheme;
-        addChild(panel);
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/TwelveKey.svg")));
 
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
@@ -282,6 +237,11 @@ struct TwelveKeyWidget : ModuleWidget {
 
 		static const int offsetKeyLEDx = 12;
 		static const int offsetKeyLEDy = 41;
+
+		// To prevent module entering move state when pressing between keys
+		OpaqueWidget *w = new OpaqueWidget();
+		w->box = Rect(Vec(4,35), Vec(292,155));
+		addChild(w);
 
 		// Black keys
 		addParam(ParamWidget::create<InvisibleKey>(Vec(30, 40), module, TwelveKey::KEY_PARAMS + 1, 0.0, 1.0, 0.0));
@@ -353,7 +313,7 @@ struct TwelveKeyWidget : ModuleWidget {
 	}
 };
 
-Model *modelTwelveKey = Model::create<TwelveKey, TwelveKeyWidget>("Impromptu Modular", "Twelve-Key", "CTRL - TwelveKey", CONTROLLER_TAG);
+Model *modelTwelveKey = Model::create<TwelveKey, TwelveKeyWidget>("Impromptu Modular", "Twelve-Key", "TwelveKey", CONTROLLER_TAG);
 
 /*CHANGE LOG
 

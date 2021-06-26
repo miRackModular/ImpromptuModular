@@ -1152,10 +1152,10 @@ struct Foundry : Module {
 
 struct FoundryWidget : ModuleWidget {
 	Foundry *module;
-	DynamicSVGPanel *panel;
 	int oldExpansion;
 	int expWidth = 150;
 	IMPort* expPorts[16];
+	LightWidget *expLights[6];
 	
 	template <int NUMCHAR>
 	struct DisplayWidget : TransparentWidget {// a centered display, must derive from this
@@ -1411,16 +1411,6 @@ struct FoundryWidget : ModuleWidget {
 	};
 	
 
-	struct PanelThemeItem : MenuItem {
-		Foundry *module;
-		int theme;
-		void onAction(EventAction &e) override {
-			module->panelTheme = theme;
-		}
-		void step() override {
-			rightText = (module->panelTheme == theme) ? "✔" : "";
-		}
-	};
 	struct ExpansionItem : MenuItem {
 		Foundry *module;
 		void onAction(EventAction &e) override {
@@ -1454,11 +1444,11 @@ struct FoundryWidget : ModuleWidget {
 		}
 		void step() override {
 			if (module->seqCVmethod == 0)
-				text = "Seq CV in: <0-10V>,  C2-D7#,  Trig-Incr";
+				rightText = "[0-10V] · C2-D7# · Trig-Incr";
 			else if (module->seqCVmethod == 1)
-				text = "Seq CV in: 0-10V,  <C2-D7#>,  Trig-Incr";
+				rightText = "0-10V · [C2-D7#] · Trig-Incr";
 			else
-				text = "Seq CV in: 0-10V,  C2-D7#,  <Trig-Incr>";
+				rightText = "0-10V · C2-D7# · [Trig-Incr]";
 		}	
 	};
 	struct VelModeItem : MenuItem {
@@ -1470,11 +1460,11 @@ struct FoundryWidget : ModuleWidget {
 		}
 		void step() override {
 			if (module->velocityMode == 0)
-				text = "CV2 mode: <Volts>,  0-127,  Notes";
+				rightText = "[Volts] · 0-127 · Notes";
 			else if (module->velocityMode == 1)
-				text = "CV2 mode: Volts,  <0-127>,  Notes";
+				rightText = "Volts · [0-127] · Notes";
 			else
-				text = "CV2 mode: Volts,  0-127,  <Notes>";
+				rightText = "Volts · 0-127 · [Notes]";
 		}	
 	};
 	struct VelBipolItem : MenuItem {
@@ -1492,30 +1482,12 @@ struct FoundryWidget : ModuleWidget {
 	Menu *createContextMenu() override {
 		Menu *menu = ModuleWidget::createContextMenu();
 
-		MenuLabel *spacerLabel = new MenuLabel();
+		MenuEntry *spacerLabel = new MenuEntry();
 		menu->addChild(spacerLabel);
 
 		Foundry *module = dynamic_cast<Foundry*>(this->module);
 		assert(module);
 
-		MenuLabel *themeLabel = new MenuLabel();
-		themeLabel->text = "Panel Theme";
-		menu->addChild(themeLabel);
-
-		PanelThemeItem *lightItem = new PanelThemeItem();
-		lightItem->text = lightPanelID;// ImpromptuModular.hpp
-		lightItem->module = module;
-		lightItem->theme = 0;
-		menu->addChild(lightItem);
-
-		PanelThemeItem *darkItem = new PanelThemeItem();
-		darkItem->text = darkPanelID;// ImpromptuModular.hpp
-		darkItem->module = module;
-		darkItem->theme = 1;
-		menu->addChild(darkItem);
-
-		menu->addChild(new MenuLabel());// empty line
-		
 		MenuLabel *settingsLabel = new MenuLabel();
 		settingsLabel->text = "Settings";
 		menu->addChild(settingsLabel);
@@ -1540,21 +1512,15 @@ struct FoundryWidget : ModuleWidget {
 		bipolItem->module = module;
 		menu->addChild(bipolItem);
 		
-		VelModeItem *velItem = MenuItem::create<VelModeItem>("CV2 mode: ", "");
+		VelModeItem *velItem = MenuItem::create<VelModeItem>("CV2 mode", "[Volts] · 0-127 · Notes");
 		velItem->module = module;
 		menu->addChild(velItem);
 		
-		SeqCVmethodItem *seqcvItem = MenuItem::create<SeqCVmethodItem>("Seq CV in: ", "");
+		SeqCVmethodItem *seqcvItem = MenuItem::create<SeqCVmethodItem>("Seq CV in", "[0-10V] · C2-D7# · Trig-Incr");
 		seqcvItem->module = module;
 		menu->addChild(seqcvItem);
 		
-		menu->addChild(new MenuLabel());// empty line
-		
-		MenuLabel *expansionLabel = new MenuLabel();
-		expansionLabel->text = "Expansion module";
-		menu->addChild(expansionLabel);
-
-		ExpansionItem *expItem = MenuItem::create<ExpansionItem>("Extra CVs (requires +11HP to the right!)", CHECKMARK(module->expansion != 0));
+		ExpansionItem *expItem = MenuItem::create<ExpansionItem>("Extra CVs (+11HP to the right)", CHECKMARK(module->expansion != 0));
 		expItem->module = module;
 		menu->addChild(expItem);
 		
@@ -1568,9 +1534,13 @@ struct FoundryWidget : ModuleWidget {
 					gRackWidget->wireContainer->removeAllWires(expPorts[i]);
 				module->writeMode = 0;
 			}
-			oldExpansion = module->expansion;		
+			
+			for (int i = 0; i < 6; i++)
+				expLights[i]->visible = (module->expansion == 1);
+			
+			oldExpansion = module->expansion;
+			box.size.x = panel->box.size.x = (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth;
 		}
-		box.size.x = panel->box.size.x - (1 - module->expansion) * expWidth;
 		Widget::step();
 	}
 	
@@ -1703,30 +1673,25 @@ struct FoundryWidget : ModuleWidget {
 			ParamWidget::onMouseDown(e);
 		}
 	};
-		
+	
+	float fullPanelWidth;
 	FoundryWidget(Foundry *module) : ModuleWidget(module) {
 		this->module = module;
 		oldExpansion = -1;
 		
-		// Main panel from Inkscape
-        panel = new DynamicSVGPanel();
-        panel->mode = &module->panelTheme;
-		panel->expWidth = &expWidth;
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/light/Foundry.svg")));
-        panel->addPanel(SVG::load(assetPlugin(plugin, "res/dark/Foundry_dark.svg")));
-        box.size = panel->box.size;
-		box.size.x = box.size.x - (1 - module->expansion) * expWidth;
-        addChild(panel);
+        setPanel(SVG::load(assetPlugin(plugin, "res/light/Foundry.svg")));
+        fullPanelWidth = box.size.x;
+		box.size.x = panel->box.size.x = (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth;
 		
 		// Screws
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 0), &module->panelTheme));
 		addChild(createDynamicScrew<IMScrew>(Vec(15, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-30-expWidth, 365), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-expWidth + 15, 0), &module->panelTheme));
-		addChild(createDynamicScrew<IMScrew>(Vec(panel->box.size.x-expWidth + 15, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30, 0), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30-expWidth, 0), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-30-expWidth, 365), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-expWidth + 15, 0), &module->panelTheme));
+		addChild(createDynamicScrew<IMScrew>(Vec(fullPanelWidth-expWidth + 15, 365), &module->panelTheme));
 
 		
 		
@@ -1989,7 +1954,7 @@ struct FoundryWidget : ModuleWidget {
 		
 		// Expansion module
 		static const int rowSpacingExp = 49;
-		static const int colRulerExp = panel->box.size.x - expWidth / 2;
+		static const int colRulerExp = fullPanelWidth - expWidth / 2;
 		static const int colOffsetX = 44;
 		static const int se = -10;
 		
@@ -2021,29 +1986,29 @@ struct FoundryWidget : ModuleWidget {
 		
 		// before-last row
 		addInput(expPorts[11] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBHigh), Port::INPUT, module, Foundry::VEL_INPUTS + 0, &module->panelTheme));
-		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - colOffsetX + writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 0));
+		addChild(expLights[0] = createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - colOffsetX + writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 0));
 		
 		addInput(expPorts[12] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBHigh), Port::INPUT, module, Foundry::VEL_INPUTS + 2, &module->panelTheme));
-		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 2));
+		addChild(expLights[1] = createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - writeLEDoffsetX, rowRulerBHigh + writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 2));
 
 		addParam(createDynamicParamCentered<IMPushButton>(Vec(colRulerExp + colOffsetX, rowRulerBHigh + 18), module, Foundry::WRITEMODE_PARAM, 0.0f, 1.0f, 0.0f, &module->panelTheme));
-		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp + colOffsetX - 12, rowRulerBHigh + 3), module, Foundry::WRITE_SEL_LIGHTS + 0));
-		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp + colOffsetX + 12, rowRulerBHigh + 3), module, Foundry::WRITE_SEL_LIGHTS + 1));
+		addChild(expLights[2] = createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp + colOffsetX - 12, rowRulerBHigh + 3), module, Foundry::WRITE_SEL_LIGHTS + 0));
+		addChild(expLights[3] = createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp + colOffsetX + 12, rowRulerBHigh + 3), module, Foundry::WRITE_SEL_LIGHTS + 1));
 		
 		
 		
 		// last row
 		addInput(expPorts[13] = createDynamicPortCentered<IMPort>(Vec(colRulerExp - colOffsetX, rowRulerBLow), Port::INPUT, module, Foundry::VEL_INPUTS + 1, &module->panelTheme));
-		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - colOffsetX + writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 1));
+		addChild(expLights[4] = createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - colOffsetX + writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 1));
 
 		addInput(expPorts[14] = createDynamicPortCentered<IMPort>(Vec(colRulerExp, rowRulerBLow), Port::INPUT, module, Foundry::VEL_INPUTS + 3, &module->panelTheme));
-		addChild(createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 3));
+		addChild(expLights[5] = createLightCentered<SmallLight<RedLight>>(Vec(colRulerExp - writeLEDoffsetX, rowRulerBLow - writeLEDoffsetY), module, Foundry::WRITECV2_LIGHTS + 3));
 		
 		addInput(expPorts[15] = createDynamicPortCentered<IMPort>(Vec(colRulerExp + colOffsetX, rowRulerBLow), Port::INPUT, module, Foundry::WRITE_SRC_INPUT, &module->panelTheme));
 	}
 };
 
-Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular", "Foundry", "SEQ - Foundry", SEQUENCER_TAG);
+Model *modelFoundry = Model::create<Foundry, FoundryWidget>("Impromptu Modular", "Foundry", "Foundry", SEQUENCER_TAG);
 
 /*CHANGE LOG
 
