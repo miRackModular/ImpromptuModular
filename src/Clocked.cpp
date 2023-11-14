@@ -22,6 +22,7 @@ class Clock {
 
 	
 	double step;// -1.0 when stopped, [0 to 2*period[ for clock steps (*2 is because of swing, so we do groups of 2 periods)
+	double remainder = 0;
 	double length;// double period
 	double sampleTime;
 	int iterations;// run this many double periods before going into sync if sub-clock
@@ -35,8 +36,10 @@ class Clock {
 		reset();
 	}
 	
-	inline void reset() {
+	inline void reset(bool hard = false) {
 		step = -1.0;
+		if (hard)
+			remainder = 0;
 	}
 	inline bool isReset() {
 		return step == -1.0;
@@ -49,7 +52,7 @@ class Clock {
 		resetClockOutputsHigh = resetClockOutputsHighPtr;
 	}
 	inline void start() {
-		step = 0.0;
+		step = syncSrc ? 0.0 : remainder;
 	}
 	
 	inline void setup(double lengthGiven, int iterationsGiven, double sampleTimeGiven) {
@@ -71,7 +74,11 @@ class Clock {
 					iterations--;
 					step -= length;
 					if (iterations <= 0) 
+					{
+						if (!syncSrc)
+							remainder = step;
 						reset();// frame done
+					}
 				}
 			}
 		}
@@ -189,7 +196,7 @@ class ClockDelay {
 //*****************************************************************************
 
 
-struct Clocked : Module {
+struct Clocked : Module, TransportDelegate {
 	enum ParamIds {
 		ENUMS(RATIO_PARAMS, 4),// master is index 0
 		ENUMS(SWING_PARAMS, 4),// master is index 0
@@ -369,7 +376,7 @@ struct Clocked : Module {
 	
 	void resetClocked(bool hardReset) {// set hardReset to true to revert learned BPM to 120 in sync mode, or else when false, learned bmp will stay persistent
 		for (int i = 0; i < 4; i++) {
-			clk[i].reset();
+			clk[i].reset(true);
 			if (i < 3) 
 				delay[i].reset(resetClockOutputsHigh);
 			syncRatios[i] = false;
@@ -392,9 +399,27 @@ struct Clocked : Module {
 		else
 			newMasterLength = 120.0f / getBpmKnob();
 		newMasterLength = clamp(newMasterLength, masterLengthMin, masterLengthMax);
-		masterLength = newMasterLength;
+		if (masterLength != newMasterLength)
+		{
+			masterLength = newMasterLength;
+			transportBPMChanged();
+		}
+		transportReset();
 	}	
 	
+
+	bool isRunning() override {
+		return running;
+	}
+
+	double bpm() override {
+		return (unsigned)((120.0f / masterLength) + 0.5f);
+	}
+
+	double phase() override {
+		return clk[0].getStep() / masterLength * 2.;
+	}
+
 	
 	json_t *toJson() override {
 		json_t *rootJ = json_object();
@@ -508,8 +533,13 @@ struct Clocked : Module {
 				if (!running && emitResetOnStopRun) {
 					resetClocked(false);
 					resetPulse.trigger(0.001f);
+					// transportReset();
 					resetLight = 1.0f;
 				}
+				if (running)
+					transportStarted();
+				else
+					transportStopped();
 			}
 			else
 				cantRunWarning = (long) (0.7 * sampleRate / displayRefreshStepSkips);
@@ -519,6 +549,7 @@ struct Clocked : Module {
 		if (resetTrigger.process(inputs[RESET_INPUT].value + params[RESET_PARAM].value)) {
 			resetLight = 1.0f;
 			resetPulse.trigger(0.001f);
+			// transportReset();
 			resetClocked(false);	
 		}	
 
@@ -598,6 +629,7 @@ struct Clocked : Module {
 						if (emitResetOnStopRun) {
 							resetClocked(false);
 							resetPulse.trigger(0.001f);
+							// transportReset();
 							resetLight = 1.0f;
 						}
 					}
@@ -618,6 +650,7 @@ struct Clocked : Module {
 				clk[i].applyNewLength(lengthStretchFactor);
 			}
 			masterLength = newMasterLength;
+			transportBPMChanged();
 		}
 		
 		
@@ -878,8 +911,9 @@ struct ClockedWidget : ModuleWidget {
 				for (int i = 0; i < 6; i++)
 					gRackWidget->wireContainer->removeAllWires(expPorts[i]);
 			}
-			oldExpansion = module->expansion;		
-			box.size.x = panel->box.size.x = (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth;
+			oldExpansion = module->expansion;
+			gRackWidget->changeModuleWidth(this, (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth);
+			panel->box.size.x = box.size.x;
 		}
 		Widget::step();
 	}
@@ -927,7 +961,8 @@ struct ClockedWidget : ModuleWidget {
 		
         setPanel(SVG::load(assetPlugin(plugin, "res/light/Clocked.svg")));
         fullPanelWidth = box.size.x;
-		box.size.x = panel->box.size.x = (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth;
+		box.size.x = (*std::next(panel->children.begin(),1))->box.size.x = fullPanelWidth - (1 - module->expansion) * expWidth;
+		panel->box.size.x = box.size.x;
 
 		
 		// Screws
