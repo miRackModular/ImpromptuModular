@@ -11,7 +11,7 @@
 #include "ImpromptuModular.hpp"
 
 
-struct FourView : Module {
+struct FourView : ModuleV1 {
 	enum ParamIds {
 		NUM_PARAMS
 	};
@@ -30,6 +30,8 @@ struct FourView : Module {
 	// Need to save
 	int panelTheme = 0;
 	bool showSharp = true;
+	float values[4];
+	const float no_value = -100.f;
 
 	// No need to save
 	// none
@@ -40,7 +42,8 @@ struct FourView : Module {
 	}
 	
 	
-	FourView() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	FourView() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		onReset();
 	}
 	
@@ -79,8 +82,12 @@ struct FourView : Module {
 
 	
 	void step() override {
+		int ch1 = inputs[CV_INPUTS+0].getChannels();
 		for (int i = 0; i < 4; i++)
+		{
+			values[i] = inputs[CV_INPUTS + i].active ? inputs[CV_INPUTS + i].value : (i < ch1 ? inputs[CV_INPUTS+0].getVoltage(i) : no_value );
 			outputs[CV_OUTPUTS + i].value = inputs[CV_INPUTS + i].value;
+		}
 	}
 };
 
@@ -103,8 +110,8 @@ struct FourViewWidget : ModuleWidget {
 		}
 		
 		void cvToStr(int index2) {
-			if (module->inputs[FourView::CV_INPUTS + baseIndex + index2].active) {
-				float cvVal = module->inputs[FourView::CV_INPUTS + baseIndex + index2].value;
+			float cvVal = module->values[baseIndex + index2];
+			if (cvVal != module->no_value) {
 				printNote(cvVal, text, module->showSharp);
 			}
 			else
@@ -185,7 +192,7 @@ struct FourViewWidget : ModuleWidget {
 	}
 };
 
-Model *modelFourView = Model::create<FourView, FourViewWidget>("Impromptu Modular", "Four-View", "FourView", VISUAL_TAG);
+Model *modelFourView = Model::create<FourView, FourViewWidget>("Impromptu Modular", "Four-View", "FourView", VISUAL_TAG, POLYPHONIC_TAG);
 
 /*CHANGE LOG
 
